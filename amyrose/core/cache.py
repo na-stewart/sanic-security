@@ -7,7 +7,7 @@ config_parser = ConfigParser()
 
 
 def write_to_config():
-    with open('roseconfig.ini', 'w+') as configfile:
+    with open('../../roseconfig.ini', 'w+') as configfile:
         config_parser.write(configfile)
 
 
