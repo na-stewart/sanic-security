@@ -2,12 +2,12 @@ import os
 from configparser import ConfigParser
 
 cache_path = '../rosecache'
-config_path = cache_path + '/' + 'config.ini'
+config_path = '../' + 'rose.ini'
 config_parser = ConfigParser()
 
 
 def write_to_config():
-    with open('config.ini', 'w+') as configfile:
+    with open('roseconfig.ini', 'w+') as configfile:
         config_parser.write(configfile)
 
 
