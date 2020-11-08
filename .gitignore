@@ -1,3 +1,3 @@
 # Project exclude paths
 /venv/
-amyrose/roseconfig.ini
+amyrose/core/roseconfig.ini
