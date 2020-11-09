@@ -1,8 +1,9 @@
 import bcrypt
+from sanic.exceptions import ServerError
 from tortoise.exceptions import IntegrityError
 
 from amyrose.core.models import Account, VerificationSession, AccountErrorFactory, AuthenticationSession, \
-    SessionErrorFactory, Session
+    SessionErrorFactory
 from amyrose.core.utils import best_by
 
 session_error_factory = SessionErrorFactory()
@@ -61,14 +62,13 @@ async def authenticated(authentication_session_token):
     return login_session
 
 
-def authentication_middleware(request):
+async def authentication_middleware(request):
     token = request.cookies.get("authtkn")
     try:
-        if token:
-            authenticated(token)
-    except Session.ExpiredError as e:
-        del token
-        raise e
+        await authenticated(token)
+    except ServerError as e:
+        if 'register' not in request.url and 'login' not in request.url:
+            raise e
 
 
 async def prevent_xss_middleware(request, response):

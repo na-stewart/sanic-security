@@ -68,7 +68,6 @@ class Account(BaseModel):
 class AccountErrorFactory(ErrorFactory):
     def get(self, model):
         error = None
-        print(model)
         if not model:
             error = Account.NotFoundError()
         elif model.disabled:

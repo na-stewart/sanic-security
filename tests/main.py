@@ -10,7 +10,7 @@ app = Sanic("AmyRose example")
 
 @app.middleware('request')
 async def print_on_request(request):
-    authentication_middleware(request)
+    await authentication_middleware(request)
 
 
 @app.post("/register")
@@ -35,6 +35,10 @@ async def on_verify(request):
     await verify_account(request)
     return text('Verification successful')
 
+
+@app.get("/test")
+async def on_verify(request):
+    return text('Test successful')
 
 if __name__ == "__main__":
     app.add_task(tortoise_init())
