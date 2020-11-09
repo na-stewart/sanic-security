@@ -1,7 +1,8 @@
 from sanic import Sanic
 from sanic.response import text
 
-from amyrose.core.authentication import register, verify_account, authentication_middleware, login
+from amyrose.core.authentication import register, verify_account, authentication_middleware, login, \
+    prevent_xss_middleware
 from amyrose.core.utils import send_verification_code
 from amyrose.lib.tortoise import tortoise_init
 
@@ -9,8 +10,13 @@ app = Sanic("AmyRose example")
 
 
 @app.middleware('request')
-async def print_on_request(request):
+async def auth_middleware(request):
     await authentication_middleware(request)
+
+
+@app.middleware('response')
+async def xxs_middleware(request, response):
+    await prevent_xss_middleware(request, response)
 
 
 @app.post("/register")
@@ -39,6 +45,7 @@ async def on_verify(request):
 @app.get("/test")
 async def on_verify(request):
     return text('Test successful')
+
 
 if __name__ == "__main__":
     app.add_task(tortoise_init())
