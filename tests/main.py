@@ -43,7 +43,7 @@ async def on_verify(request):
 
 
 @app.get("/test")
-async def on_verify(request):
+async def on_test(request):
     return text('Test successful')
 
 
