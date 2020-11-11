@@ -21,12 +21,12 @@ class BaseModel(Model):
         abstract = True
 
     class NotFoundError(ServerError):
-        def __init__(self):
-            super().__init__('What you are looking for could not found.', 404)
+        def __init__(self, message):
+            super().__init__(message, 404)
 
     class DeletedError(ServerError):
-        def __init__(self):
-            super().__init__('What you are looking for is permanently deleted.', 404)
+        def __init__(self, message):
+            super().__init__(message, 404)
 
 
 class AuthenticationError(ServerError):
@@ -90,7 +90,9 @@ class AccountErrorFactory(ErrorFactory):
     def get(self, model):
         error = None
         if not model:
-            error = Account.NotFoundError()
+            error = Account.NotFoundError('This account does not exist.')
+        elif model.deleted:
+            error = Account.DeletedError('This account has been permanently deleted.')
         elif model.disabled:
             error = Account.DisabledError()
         elif not model.verified:
@@ -120,7 +122,7 @@ class SessionErrorFactory(ErrorFactory):
     def get(self, model):
         error = None
         if model is None:
-            error = Session.NotFoundError()
+            error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
         elif not model.valid:
             error = Session.InvalidError()
         elif is_expired(model.expiration_date):

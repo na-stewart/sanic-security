@@ -74,8 +74,5 @@ async def authentication_middleware(request, override_phrases=['register', 'logi
             raise e
 
 
-
-
-
 async def prevent_xss_middleware(request, response):
     response.headers['x-xss-protection'] = '1; mode=block'
