@@ -11,7 +11,7 @@ app = Sanic("AmyRose example")
 
 @app.middleware('request')
 async def auth_middleware(request):
-    await authentication_middleware(request)
+    await authentication_middleware(request, override_phrases=['register', 'login'])
 
 
 @app.middleware('response')

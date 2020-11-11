@@ -22,11 +22,36 @@ class BaseModel(Model):
 
     class NotFoundError(ServerError):
         def __init__(self):
-            super().__init__('Not found.', 404)
+            super().__init__('What you are looking for could not found.', 404)
 
     class DeletedError(ServerError):
         def __init__(self):
-            super().__init__('Permanently deleted.', 404)
+            super().__init__('What you are looking for is permanently deleted.', 404)
+
+
+class AuthenticationError(ServerError):
+    def __init__(self, message, status_code):
+        super().__init__(message, status_code)
+
+
+class AuthorizationError(ServerError):
+    def __init__(self, message, status_code):
+        super().__init__(message, status_code)
+
+
+class InsufficientPermissionsError(ServerError):
+    def __init__(self, message, status_code):
+        super().__init__(message, status_code)
+
+
+class InsufficientRoleError(ServerError):
+    def __init__(self, message, status_code):
+        super().__init__(message, status_code)
+
+
+class IncorrectPasswordError(AuthenticationError):
+    def __init__(self):
+        super().__init__('The password provided is incorrect.', 401)
 
 
 class ErrorFactory:
@@ -59,10 +84,6 @@ class Account(BaseModel):
     class DisabledError(ServerError):
         def __init__(self):
             super().__init__("This account has been disabled.", 401)
-
-    class IncorrectPasswordError(ServerError):
-        def __init__(self):
-            super().__init__('Password given is incorrect.', 401)
 
 
 class AccountErrorFactory(ErrorFactory):
@@ -118,3 +139,11 @@ class VerificationSession(Session):
 
 class AuthenticationSession(Session):
     pass
+
+
+class Role(BaseModel):
+    role_name = fields.CharField(max_length=45, null=False)
+
+
+class Permission(BaseModel):
+    permission_name = fields.CharField(max_length=45, null=False)

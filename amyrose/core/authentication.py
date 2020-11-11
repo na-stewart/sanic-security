@@ -3,7 +3,7 @@ from sanic.exceptions import ServerError
 from tortoise.exceptions import IntegrityError
 
 from amyrose.core.models import Account, VerificationSession, AccountErrorFactory, AuthenticationSession, \
-    SessionErrorFactory
+    SessionErrorFactory, IncorrectPasswordError
 from amyrose.core.utils import best_by
 
 session_error_factory = SessionErrorFactory()
@@ -52,7 +52,7 @@ async def login(request):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid, expiration_date=best_by(30))
         return account, authentication_session
     else:
-        raise Account.IncorrectPasswordError()
+        raise IncorrectPasswordError()
 
 
 async def authenticated(authentication_session_token):
@@ -62,13 +62,19 @@ async def authenticated(authentication_session_token):
     return login_session
 
 
-async def authentication_middleware(request):
+async def authentication_middleware(request, override_phrases=['register', 'login']):
     token = request.cookies.get("authtkn")
     try:
         await authenticated(token)
     except ServerError as e:
-        if 'register' not in request.url and 'login' not in request.url:
+        for phrase in override_phrases:
+            if phrase in request.url:
+                break
+        else:
             raise e
+
+
+
 
 
 async def prevent_xss_middleware(request, response):
