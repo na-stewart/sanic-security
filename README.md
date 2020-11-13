@@ -11,7 +11,6 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -22,10 +21,10 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Best-README-Template</h3>
+  <h3 align="center">Amy Rose</h3>
 
   <p align="center">
-    An awesome README template to jumpstart your projects!
+    A powerful yet simple async authentication and authorization library for Sanic.
     <br />
     <a href="https://github.com/sunset-developer/Amy-Rose"><strong>Explore the docs »</strong></a>
     <br />
@@ -61,7 +60,7 @@
 ## About The Project
 
 Amy Rose is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
-Amy Rose comes backed with features not found in most open source authentication libraries such as
+Amy Rose comes packed with features not found in most open source security libraries such as
 
 * SMS verification
 * Email verification

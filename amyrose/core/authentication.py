@@ -1,13 +1,15 @@
+import functools
+
 import bcrypt
-from sanic.exceptions import ServerError
 from tortoise.exceptions import IntegrityError
 
 from amyrose.core.models import Account, VerificationSession, AccountErrorFactory, AuthenticationSession, \
     SessionErrorFactory, IncorrectPasswordError
-from amyrose.core.utils import best_by
+from amyrose.core.utils import best_by, url_endpoint
 
 session_error_factory = SessionErrorFactory()
 account_error_factory = AccountErrorFactory()
+endpoints_requiring_authentication = []
 
 
 def client_ip(request):
@@ -55,24 +57,19 @@ async def login(request):
         raise IncorrectPasswordError()
 
 
-async def authenticated(authentication_session_token):
-    login_session = await AuthenticationSession.filter(token=authentication_session_token).first()
-    session_error_factory.raise_error(login_session)
-    account_error_factory.raise_error(await Account.filter(uid=login_session.parent_uid).first())
-    return login_session
+async def authenticate(request):
+    print(url_endpoint(request.url))
+    if url_endpoint(request.url) in endpoints_requiring_authentication:
+        authentication_session = await AuthenticationSession.filter(token=request.cookies.get('authtkn')).first()
+        session_error_factory.raise_error(authentication_session)
+        account_error_factory.raise_error(await Account.filter(uid=authentication_session.parent_uid).first())
+        return authentication_session
 
 
-async def authentication_middleware(request, override_phrases=['register', 'login']):
-    token = request.cookies.get("authtkn")
-    try:
-        await authenticated(token)
-    except ServerError as e:
-        for phrase in override_phrases:
-            if phrase in request.url:
-                break
-        else:
-            raise e
+def requires_authentication(*args, **kwargs):
+    def inner(func):
+        if args[0] not in endpoints_requiring_authentication:
+            endpoints_requiring_authentication.append(args[0])
+        return func
 
-
-async def prevent_xss_middleware(request, response):
-    response.headers['x-xss-protection'] = '1; mode=block'
+    return inner

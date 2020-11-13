@@ -1,23 +1,23 @@
 from fnmatch import fnmatch
 
-from amyrose.core.models import AuthenticationSession, Role, Permission, InsufficientRoleError, \
+from amyrose.core.models import Role, Permission, InsufficientRoleError, \
     InsufficientPermissionsError
 
-
-async def account_authorized(request, authorized_role=None, authorized_permission=None):
-    if authorized_role:
-        await _check_role(request, authorized_role)
-    else:
-        await _check_permissions(request, authorized_permission)
+endpoints_requiring_role = {}
+endpoints_requiring_permission = {}
 
 
-async def _check_role(request, authorized_role):
-    if not await Role.filter(parent_uid=await get_account_uid(request), role_name=authorized_role).exists():
+async def authorize(authentication_session):
+    pass
+
+
+async def _check_role(authentication_session, authorized_role):
+    if not await Role.filter(parent_uid=authentication_session.uid, role_name=authorized_role).exists():
         raise InsufficientRoleError('You do not have ' + authorized_role + ' access.', 403)
 
 
-async def _check_permissions(request, authorized_permission):
-    permissions = await Permission.filter(parent_uid=await get_account_uid(request)).all()
+async def _check_permissions(authentication_session, authorized_permission):
+    permissions = await Permission.filter(parent_uid=authentication_session.uid).all()
     for permission in permissions:
         if fnmatch(authorized_permission, permission):
             break
@@ -25,7 +25,19 @@ async def _check_permissions(request, authorized_permission):
         raise InsufficientPermissionsError('You do not have the required permissions for this action.', 403)
 
 
-async def get_account_uid(request):
-    token = request.cookies.get("authtkn")
-    session = await AuthenticationSession.filter(token=token).first()
-    return session.parent_uid
+def requires_permission(*args, **kwargs):
+    def inner(func):
+        if args[0] not in endpoints_requiring_permission:
+            endpoints_requiring_permission[args[0]] = args[1]
+        return func
+
+    return inner
+
+
+def requires_role(*args, **kwargs):
+    def inner(func):
+        if args[0] not in endpoints_requiring_role:
+            endpoints_requiring_role[args[0]] = args[1]
+        return func
+
+    return inner
