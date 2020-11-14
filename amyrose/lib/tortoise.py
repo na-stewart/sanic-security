@@ -4,7 +4,6 @@ from amyrose.core.cache import config_parser, read_config
 
 
 async def tortoise_init():
-    read_config()
     username = config_parser['TORTOISE']['username']
     password = config_parser['TORTOISE']['password']
     endpoint = config_parser['TORTOISE']['endpoint']

@@ -1,10 +1,10 @@
-import functools
-
 import bcrypt
+import jwt
 from tortoise.exceptions import IntegrityError
 
+from amyrose import config_parser
 from amyrose.core.models import Account, VerificationSession, AccountErrorFactory, AuthenticationSession, \
-    SessionErrorFactory, IncorrectPasswordError
+    SessionErrorFactory, IncorrectPasswordError, Session, Role
 from amyrose.core.utils import best_by, url_endpoint
 
 session_error_factory = SessionErrorFactory()
@@ -21,23 +21,27 @@ def client_ip(request):
     return ip
 
 
-async def register(request, requires_verification=True):
+async def get_client(request):
+    client_uid = request.headers.get('X-Client-Uid')
+    return await Account.filter(uid=client_uid).first()
+
+
+async def register(request):
     params = request.form
     hashed_pass = bcrypt.hashpw(params.get('password').encode('utf8'), bcrypt.gensalt())
-    verification_session = None
     try:
         account = await Account.create(email=params.get('email'), username=params.get('username'), password=hashed_pass,
-                                       phone=params.get('phone'), verified=not requires_verification)
-        if requires_verification:
-            verification_session = await VerificationSession.create(parent_uid=account.uid, expiration_date=best_by(1))
-        return verification_session, account
+                                       phone=params.get('phone'))
+        verification_session = await VerificationSession.create(parent_uid=account.uid, expiration_date=best_by(1))
+        return account, verification_session
     except IntegrityError:
         raise Account.AccountExistsError()
 
 
 async def verify_account(request):
     params = request.form
-    verification_session_query = VerificationSession.filter(token=request.cookies.get('veritkn'))
+    token = request.cookies.get('veritkn')
+    verification_session_query = VerificationSession.filter(token=token)
     verification_session = await verification_session_query.first()
     session_error_factory.raise_error(verification_session)
     if verification_session.code != params.get('code'):
@@ -48,7 +52,8 @@ async def verify_account(request):
 
 async def login(request):
     params = request.form
-    account = await Account.filter(email=params.get('email')).first()
+    account_query = Account.filter(email=params.get('email'))
+    account = await account_query.first()
     account_error_factory.raise_error(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid, expiration_date=best_by(30))
@@ -58,9 +63,9 @@ async def login(request):
 
 
 async def authenticate(request):
-    print(url_endpoint(request.url))
     if url_endpoint(request.url) in endpoints_requiring_authentication:
-        authentication_session = await AuthenticationSession.filter(token=request.cookies.get('authtkn')).first()
+        token = request.cookies.get('authtkn')
+        authentication_session = await AuthenticationSession.filter(token=token).first()
         session_error_factory.raise_error(authentication_session)
         account_error_factory.raise_error(await Account.filter(uid=authentication_session.parent_uid).first())
         return authentication_session
@@ -68,8 +73,16 @@ async def authenticate(request):
 
 def requires_authentication(*args, **kwargs):
     def inner(func):
-        if args[0] not in endpoints_requiring_authentication:
-            endpoints_requiring_authentication.append(args[0])
+        endpoints_requiring_authentication.append(args[0])
         return func
 
     return inner
+
+
+async def generate_admin_account():
+    if not await Account.exists():
+        account = await Account.create(email=config_parser['ROSE']['admin_email'],
+                                       phone=config_parser['ROSE']['admin_phone'],
+                                       username=config_parser['ROSE']['admin_username'],
+                                       password=config_parser['ROSE']['admin_password'], verified=True)
+        await Role(parent_uid=account.uid, role_name='Admin')

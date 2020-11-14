@@ -1,7 +1,8 @@
 from sanic import Sanic
 from sanic.response import text
 
-from amyrose.core.authentication import register, login, verify_account, requires_authentication
+from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client
+from amyrose.core.authorization import requires_role, requires_permission
 from amyrose.core.middleware import xss_middleware, auth_middleware
 from amyrose.core.utils import send_verification_code
 from amyrose.lib.tortoise import tortoise_init
@@ -30,7 +31,7 @@ async def on_register(request):
 
 @app.post('/login')
 async def on_login(request):
-    account, session = await login(request)
+    account, session, cookie = await login(request)
     response = text('Login successful')
     response.cookies[session.token_name] = session.token
     return response
@@ -44,8 +45,27 @@ async def on_verify(request):
 
 @requires_authentication('/test')
 @app.get('/test')
-async def on_test(request):
-    return text('Hello world!')
+async def on_test_auth(request):
+    return text('Hello auth world!')
+
+
+@requires_authentication('/testclient')
+@app.get('/testclient')
+async def on_test_auth(request):
+    client = await get_client(request)
+    return text('Client retrieved: ' + str(client.username))
+
+
+@requires_role('/testrole', 'admin')
+@app.get('/testrole')
+async def on_test_role(request):
+    return text('Hello role world!')
+
+
+@requires_permission('/testperm', 'admin:edit,update')
+@app.get('/testperm')
+async def on_test_perm(request):
+    return text('Hello perm world!')
 
 
 if __name__ == '__main__':

@@ -21,5 +21,10 @@ def read_config():
     config_parser.read(config_path)
 
 
-if not os.path.exists(cache_path):
-    os.makedirs(cache_path)
+if __name__ == '__main__':
+    if not os.path.exists(cache_path):
+        os.makedirs(cache_path)
+    read_config()
+
+
+

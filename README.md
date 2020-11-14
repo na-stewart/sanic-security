@@ -17,17 +17,11 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/sunset-developer/Amy-Rose">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
   <h3 align="center">Amy Rose</h3>
 
   <p align="center">
     A powerful yet simple async authentication and authorization library for Sanic.
-    <br />
-    <a href="https://github.com/sunset-developer/Amy-Rose"><strong>Explore the docs »</strong></a>
-    <br />
     <br />
     <a href="https://github.com/sunset-developer/Amy-Rose">View Demo</a>
     ·

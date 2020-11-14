@@ -68,9 +68,9 @@ class ErrorFactory:
 class Account(BaseModel):
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
-    phone = fields.CharField(unique=True, max_length=20)
+    phone = fields.CharField(unique=True, max_length=20, null=True)
     password = fields.BinaryField(null=False)
-    verified = fields.BooleanField(default=True)
+    verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
 
     class AccountExistsError(ServerError):
@@ -117,6 +117,14 @@ class Session(BaseModel):
         def __init__(self):
             super().__init__("Session has expired", 403)
 
+    class SessionDecodeError(ServerError):
+        def __init__(self):
+            super().__init__('Session could not be decoded. You may need to re-login.', 500)
+
+    class SessionEncodeError(ServerError):
+        def __init__(self):
+            super().__init__('Session could not be encoded. Make sure secret has been defined in config.', 500)
+
 
 class SessionErrorFactory(ErrorFactory):
     def get(self, model):
@@ -144,8 +152,8 @@ class AuthenticationSession(Session):
 
 
 class Role(BaseModel):
-    role_name = fields.CharField(max_length=45, null=False)
+    name = fields.CharField(max_length=45, null=False)
 
 
 class Permission(BaseModel):
-    permission_name = fields.CharField(max_length=45, null=False)
+    name = fields.CharField(max_length=45, null=False)
