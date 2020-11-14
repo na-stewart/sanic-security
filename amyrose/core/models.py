@@ -3,16 +3,18 @@ import secrets
 import string
 import uuid
 
-from sanic.exceptions import ServerError, ServerError, ServerError
+import jwt
+from sanic.exceptions import ServerError
 from tortoise import fields, Model
 
+from amyrose import config_parser
 from amyrose.core.utils import is_expired
 
 
 class BaseModel(Model):
     id = fields.IntField(pk=True)
-    uid = fields.UUIDField(default=uuid.uuid1, null=False)
-    parent_uid = fields.UUIDField(null=True)
+    uid = fields.UUIDField(default=uuid.uuid1, max_length=36)
+    parent_uid = fields.UUIDField(null=True, max_length=36)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
@@ -27,31 +29,6 @@ class BaseModel(Model):
     class DeletedError(ServerError):
         def __init__(self, message):
             super().__init__(message, 404)
-
-
-class AuthenticationError(ServerError):
-    def __init__(self, message, status_code):
-        super().__init__(message, status_code)
-
-
-class AuthorizationError(ServerError):
-    def __init__(self, message, status_code):
-        super().__init__(message, status_code)
-
-
-class InsufficientPermissionsError(ServerError):
-    def __init__(self, message, status_code):
-        super().__init__(message, status_code)
-
-
-class InsufficientRoleError(ServerError):
-    def __init__(self, message, status_code):
-        super().__init__(message, status_code)
-
-
-class IncorrectPasswordError(AuthenticationError):
-    def __init__(self):
-        super().__init__('The password provided is incorrect.', 401)
 
 
 class ErrorFactory:
@@ -69,8 +46,8 @@ class Account(BaseModel):
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
     phone = fields.CharField(unique=True, max_length=20, null=True)
-    password = fields.BinaryField(null=False)
-    verified = fields.BooleanField(default=False)
+    password = fields.BinaryField()
+    verified = fields.BooleanField(default=True)
     disabled = fields.BooleanField(default=False)
 
     class AccountExistsError(ServerError):
@@ -84,6 +61,10 @@ class Account(BaseModel):
     class DisabledError(ServerError):
         def __init__(self):
             super().__init__("This account has been disabled.", 401)
+
+    class IncorrectPasswordError(ServerError):
+        def __init__(self):
+            super().__init__('The password provided is incorrect.', 401)
 
 
 class AccountErrorFactory(ErrorFactory):
@@ -103,11 +84,26 @@ class AccountErrorFactory(ErrorFactory):
 class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
-    token = fields.CharField(default=secrets.token_hex(32), max_length=64)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.token_name = self.__class__.__name__[:4].lower() + 'tkn'
+        self.cookie_name = self.__class__.__name__[:4].lower() + 'tkn'
+
+    def to_cookie(self):
+        payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid)}
+        return jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
+
+    @classmethod
+    def from_cookie(cls, cookie_content):
+        return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
+
+
+    class Meta:
+        abstract = True
+
+    class DecodeError(ServerError):
+        def __init__(self):
+            super().__init__("Session could not be decoded or cookie content is empty.", 500)
 
     class InvalidError(ServerError):
         def __init__(self):
@@ -116,14 +112,6 @@ class Session(BaseModel):
     class ExpiredError(ServerError):
         def __init__(self):
             super().__init__("Session has expired", 403)
-
-    class SessionDecodeError(ServerError):
-        def __init__(self):
-            super().__init__('Session could not be decoded. You may need to re-login.', 500)
-
-    class SessionEncodeError(ServerError):
-        def __init__(self):
-            super().__init__('Session could not be encoded. Make sure secret has been defined in config.', 500)
 
 
 class SessionErrorFactory(ErrorFactory):
@@ -142,9 +130,9 @@ class VerificationSession(Session):
     code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters + string.digits, k=9)),
                             max_length=9)
 
-    class InvalidCodeError(Session.InvalidError):
+    class IncorrectCodeError(ServerError):
         def __init__(self):
-            super('The code given does not match session code.', 403)
+            super().__init__('The code given does not match session code.')
 
 
 class AuthenticationSession(Session):
@@ -152,8 +140,16 @@ class AuthenticationSession(Session):
 
 
 class Role(BaseModel):
-    name = fields.CharField(max_length=45, null=False)
+    name = fields.CharField(max_length=45)
+
+    class InsufficientRoleError(ServerError):
+        def __init__(self):
+            super().__init__('You do not have the required role for this action.', 403)
 
 
 class Permission(BaseModel):
-    name = fields.CharField(max_length=45, null=False)
+    name = fields.CharField(max_length=45)
+
+    class InsufficientPermissionsError(ServerError):
+        def __init__(self):
+            super().__init__('You do not have the required permissions for this action.', 403)

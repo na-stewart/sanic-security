@@ -2,7 +2,7 @@ from sanic import Sanic
 from sanic.response import text
 
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client
-from amyrose.core.authorization import requires_role, requires_permission
+from amyrose.core.authorization import requires_role, create_role, create_permission, requires_permission
 from amyrose.core.middleware import xss_middleware, auth_middleware
 from amyrose.core.utils import send_verification_code
 from amyrose.lib.tortoise import tortoise_init
@@ -25,15 +25,15 @@ async def on_register(request):
     account, session = await register(request)
     await send_verification_code(account, session)
     response = text('Registration successful')
-    response.cookies[session.token_name] = session.token
+    response.cookies[session.cookie_name] = session.to_cookie()
     return response
 
 
 @app.post('/login')
 async def on_login(request):
-    account, session, cookie = await login(request)
+    account, session = await login(request)
     response = text('Login successful')
-    response.cookies[session.token_name] = session.token
+    response.cookies[session.cookie_name] = session.to_cookie()
     return response
 
 
@@ -49,23 +49,36 @@ async def on_test_auth(request):
     return text('Hello auth world!')
 
 
-@requires_authentication('/testclient')
-@app.get('/testclient')
-async def on_test_auth(request):
+@app.post('/createadmin')
+async def on_create_admin(request):
     client = await get_client(request)
-    return text('Client retrieved: ' + str(client.username))
+    await create_role(client, 'Admin')
+    return text('Hello Admin!')
 
 
-@requires_role('/testrole', 'admin')
-@app.get('/testrole')
-async def on_test_role(request):
-    return text('Hello role world!')
+@app.post('/createadminperm')
+async def on_create_admin_perm(request):
+    client = await get_client(request)
+    await create_permission(client, 'admin:update')
+    return text('Hello Admin who can only update!')
 
 
-@requires_permission('/testperm', 'admin:edit,update')
+@app.get('/testclient')
+async def on_test_client(request):
+    client = await get_client(request)
+    return text('Hello ' + client.username + '!')
+
+
+@requires_permission('/testperm', 'admin:update')
 @app.get('/testperm')
 async def on_test_perm(request):
-    return text('Hello perm world!')
+    return text('Admin who can only update gained access!')
+
+
+@requires_role('/testrole', 'Admin')
+@app.get('/testrole')
+async def on_test_role(request):
+    return text('Admin gained access!')
 
 
 if __name__ == '__main__':
