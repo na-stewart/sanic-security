@@ -1,6 +1,6 @@
 from fnmatch import fnmatch
 
-from amyrose.core.authentication import endpoints_requiring_authentication, append_endpoints_requiring_authentication
+from amyrose.core.authentication import append_endpoints_requiring_authentication
 from amyrose.core.models import Role, Permission
 from amyrose.core.utils import url_endpoint
 

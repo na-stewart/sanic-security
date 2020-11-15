@@ -22,18 +22,18 @@ async def response_middleware(request, response):
 
 @app.post('/register')
 async def on_register(request):
-    account, session = await register(request)
-    await send_verification_code(account, session)
+    account, verification_session = await register(request)
+    await send_verification_code(account, verification_session)
     response = text('Registration successful')
-    response.cookies[session.cookie_name] = session.to_cookie()
+    response.cookies[verification_session.cookie_name] = verification_session.to_cookie()
     return response
 
 
 @app.post('/login')
 async def on_login(request):
-    account, session = await login(request)
+    account, authentication_session = await login(request)
     response = text('Login successful')
-    response.cookies[session.cookie_name] = session.to_cookie()
+    response.cookies[authentication_session.cookie_name] = authentication_session.to_cookie()
     return response
 
 
