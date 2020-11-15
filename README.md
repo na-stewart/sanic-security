@@ -23,7 +23,7 @@
   <p align="center">
     A powerful yet simple async authentication and authorization library for Sanic.
     <br />
-    <a href="https://github.com/sunset-developer/Amy-Rose">View Demo</a>
+    <a href="https://github.com/sunset-developer/Amy-Rose/blob/master/example/api.py">View Demo</a>
     ·
     <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
     ·
@@ -58,15 +58,13 @@ Amy Rose comes packed with features not found in most open source security libra
 
 * SMS verification
 * Email verification
-* 2FA
 * JWT
 * Out of the box database integration
 * Wildcard permissions
 * Role permissions
 * Authentication middleware
 * Pre-Configured rate limiting
-* IP address configuration
-
+* Logging
 
 Amy Rose is completely async, efficient, and contains all of your basic security needs.
 

@@ -4,6 +4,7 @@ import string
 import uuid
 
 import jwt
+from jwt import DecodeError
 from sanic.exceptions import ServerError
 from tortoise import fields, Model
 
@@ -87,7 +88,9 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie_name = self.__class__.__name__[:4].lower() + 'tkn'
+
+    def get_cookie_name(self):
+        return self.__class__.__name__[:4].lower() + 'tkn'
 
     def to_cookie(self):
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid)}
@@ -95,15 +98,17 @@ class Session(BaseModel):
 
     @classmethod
     def from_cookie(cls, cookie_content):
-        return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
-
+        try:
+            return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
+        except DecodeError:
+            raise Session.DecodeError()
 
     class Meta:
         abstract = True
 
     class DecodeError(ServerError):
         def __init__(self):
-            super().__init__("Session could not be decoded or cookie content is empty.", 500)
+            super().__init__("Session could not be decoded due to an error or cookie is non existent.", 500)
 
     class InvalidError(ServerError):
         def __init__(self):

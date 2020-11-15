@@ -8,5 +8,4 @@ async def xss_middleware(request, response):
 
 async def auth_middleware(request):
     account = await authenticate(request)
-    print(account)
     await authorize(request, account)

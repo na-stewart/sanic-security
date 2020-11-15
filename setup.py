@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='amyrose',
     version='0.1.0',
-    packages=['amyrose', 'amyrose.lib', 'amyrose.core', 'example'],
+    packages=['amyrose', 'amyrose.lib', 'amyrose.core', 'examples'],
     url='https://github.com/sunset-developer/Amy-Rose',
     license='GNU General Public License v3.0',
     author='sunset-developer',

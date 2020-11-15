@@ -17,6 +17,6 @@ def is_expired(date):
     return date < datetime.datetime.utcnow() and date
 
 
-async def send_verification_code(account, verification_session):
+async def text_verification_code(account, verification_session):
     sms_str = 'Your verification code is: ' + str(verification_session.code)
     await send_sms(account.phone, sms_str)

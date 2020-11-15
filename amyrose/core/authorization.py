@@ -1,6 +1,7 @@
 from fnmatch import fnmatch
+from functools import wraps
 
-from amyrose.core.authentication import append_endpoints_requiring_authentication
+from amyrose.core.authentication import authenticate
 from amyrose.core.models import Role, Permission
 from amyrose.core.utils import url_endpoint
 
@@ -8,12 +9,12 @@ endpoints_requiring_role = {}
 endpoints_requiring_permission = {}
 
 
-async def _check_role(account, authorized_role):
+async def check_role(account, authorized_role):
     if not await Role.filter(parent_uid=account.uid, name=authorized_role).exists():
         raise Role.InsufficientRoleError()
 
 
-async def _check_permissions(account, authorized_permission):
+async def check_permissions(account, authorized_permission):
     permissions = await Permission.filter(parent_uid=account.uid).all()
     for permission in permissions:
         if fnmatch(permission.name, authorized_permission):
@@ -35,24 +36,30 @@ async def authorize(request, account):
     endpoint_role = endpoints_requiring_role.get(endpoint)
     endpoint_permission = endpoints_requiring_permission.get(endpoint)
     if endpoint_role:
-        await _check_role(account, endpoint_role)
+        await check_role(account, endpoint_role)
     if endpoint_permission:
-        await _check_permissions(account, endpoint_permission)
+        await check_permissions(account, endpoint_permission)
 
 
-def requires_permission(*args, **kwargs):
-    def inner(func):
-        append_endpoints_requiring_authentication(args[0])
-        endpoints_requiring_permission[args[0]] = args[1]
-        return func
+def requires_permission(permission):
+    def decorator(f):
+        @wraps(f)
+        async def decorated_function(request, *args, **kwargs):
+            account, authentication_session = authenticate(request)
+            await check_permissions(account, permission)
 
-    return inner
+        return decorated_function
+
+    return decorator
 
 
-def requires_role(*args, **kwargs):
-    def inner(func):
-        append_endpoints_requiring_authentication(args[0])
-        endpoints_requiring_role[args[0]] = args[1]
-        return func
+def requires_role(role):
+    def decorator(f):
+        @wraps(f)
+        async def decorated_function(request, *args, **kwargs):
+            account, authentication_session = authenticate(request)
+            await check_role(account, role)
 
-    return inner
+        return decorated_function
+
+    return decorator

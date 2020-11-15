@@ -1,13 +1,15 @@
 from sanic import Sanic
 from sanic.response import text
 
-from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client
+from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client, logout
 from amyrose.core.authorization import requires_role, create_role, create_permission, requires_permission
 from amyrose.core.middleware import xss_middleware, auth_middleware
-from amyrose.core.utils import send_verification_code
+from amyrose.core.utils import text_verification_code
 from amyrose.lib.tortoise import tortoise_init
 
-app = Sanic('AmyRose example')
+app = Sanic('AmyRose tests')
+
+
 
 
 @app.middleware('request')
@@ -23,9 +25,9 @@ async def response_middleware(request, response):
 @app.post('/register')
 async def on_register(request):
     account, verification_session = await register(request)
-    await send_verification_code(account, verification_session)
+    await text_verification_code(account, verification_session)
     response = text('Registration successful')
-    response.cookies[verification_session.cookie_name] = verification_session.to_cookie()
+    response.cookies[verification_session.get_cookie_name()] = verification_session.to_cookie()
     return response
 
 
@@ -33,8 +35,17 @@ async def on_register(request):
 async def on_login(request):
     account, authentication_session = await login(request)
     response = text('Login successful')
-    response.cookies[authentication_session.cookie_name] = authentication_session.to_cookie()
+    response.cookies[authentication_session.get_cookie_name()] = authentication_session.to_cookie()
     return response
+
+
+@app.post('/logout')
+async def on_logout(request):
+    account, authentication_session = await logout(request)
+    response = text('Logout successful')
+    del response.cookies[authentication_session.get_cookie_name()]
+    return response
+
 
 
 @app.post('/verify')
@@ -43,8 +54,9 @@ async def on_verify(request):
     return text('Verification successful')
 
 
-@requires_authentication('/test')
+
 @app.get('/test')
+@requires_authentication()
 async def on_test_auth(request):
     return text('Hello auth world!')
 
@@ -69,14 +81,16 @@ async def on_test_client(request):
     return text('Hello ' + client.username + '!')
 
 
-@requires_permission('/testperm', 'admin:update')
+
 @app.get('/testperm')
+@requires_permission('admin:update')
 async def on_test_perm(request):
     return text('Admin who can only update gained access!')
 
 
-@requires_role('/testrole', 'Admin')
+
 @app.get('/testrole')
+@requires_role('Admin')
 async def on_test_role(request):
     return text('Admin gained access!')
 
