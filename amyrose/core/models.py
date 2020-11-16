@@ -32,12 +32,6 @@ class BaseModel(Model):
             super().__init__(message, 404)
 
 
-class ErrorFactory:
-
-    def raise_error(self, model, request):
-        raise NotImplementedError
-
-
 class Account(BaseModel):
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
@@ -61,21 +55,6 @@ class Account(BaseModel):
     class IncorrectPasswordError(ServerError):
         def __init__(self):
             super().__init__('The password provided is incorrect.', 401)
-
-
-class AccountErrorFactory(ErrorFactory):
-    def raise_error(self, model, request=None):
-        error = None
-        if not model:
-            error = Account.NotFoundError('This account does not exist.')
-        elif model.deleted:
-            error = Account.DeletedError('This account has been permanently deleted.')
-        elif model.disabled:
-            error = Account.DisabledError()
-        elif not model.verified:
-            error = Account.UnverifiedError()
-        if error:
-            raise error
 
 
 class Session(BaseModel):
@@ -118,21 +97,6 @@ class Session(BaseModel):
     class IpMismatchError(ServerError):
         def __init__(self):
             super().__init__("Session ip address does not match client ip address.", 401)
-
-
-class SessionErrorFactory(ErrorFactory):
-    def raise_error(self, model, request):
-        error = None
-        if model is None:
-            error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
-        elif not model.valid:
-            error = Session.InvalidError()
-        elif model.ip != request.ip:
-            error = Session.IpMismatchError()
-        elif is_expired(model.expiration_date):
-            error = Session.ExpiredError()
-        if error:
-            raise error
 
 
 class VerificationSession(Session):

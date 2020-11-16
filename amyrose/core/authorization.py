@@ -3,7 +3,6 @@ from fnmatch import fnmatch
 
 from amyrose.core.authentication import authenticate
 from amyrose.core.models import Role, Permission
-from amyrose.core.utils import url_endpoint
 
 endpoints_requiring_role = {}
 endpoints_requiring_permission = {}
