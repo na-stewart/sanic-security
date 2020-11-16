@@ -1,5 +1,3 @@
-import os
-
 import aiohttp
 
 from amyrose.core.config import config_parser

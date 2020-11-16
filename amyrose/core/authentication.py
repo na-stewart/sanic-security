@@ -1,12 +1,8 @@
 import functools
-
 import bcrypt
 from tortoise.exceptions import IntegrityError
-
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
 from amyrose.core.utils import best_by, is_expired
-
-endpoints_requiring_authentication = []
 
 
 async def get_client(request):

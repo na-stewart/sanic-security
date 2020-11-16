@@ -1,11 +1,7 @@
 import functools
 from fnmatch import fnmatch
-
 from amyrose.core.authentication import authenticate
 from amyrose.core.models import Role, Permission
-
-endpoints_requiring_role = {}
-endpoints_requiring_permission = {}
 
 
 async def check_role(account, authorized_role):
@@ -37,7 +33,9 @@ def requires_permission(permission):
             account, authentication_session = await authenticate(request)
             await check_permissions(account, permission)
             return await func(request, *args, **kwargs)
+
         return wrapped
+
     return wrapper
 
 
@@ -48,6 +46,7 @@ def requires_role(role):
             account, authentication_session = await authenticate(request)
             await check_role(account, role)
             return await func(request, *args, **kwargs)
-        return wrapped
-    return wrapper
 
+        return wrapped
+
+    return wrapper

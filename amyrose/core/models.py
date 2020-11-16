@@ -98,8 +98,8 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters + string.digits, k=9)),
-                            max_length=9)
+    code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters + string.digits, k=7)),
+                            max_length=7)
 
     class IncorrectCodeError(ServerError):
         def __init__(self):

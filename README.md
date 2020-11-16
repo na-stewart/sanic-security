@@ -23,7 +23,7 @@
   <p align="center">
     A powerful yet simple async authentication and authorization library for Sanic.
     <br />
-    <a href="https://github.com/sunset-developer/Amy-Rose/blob/master/example/api.py">View Demo</a>
+    <a href="https://github.com/sunset-developer/Amy-Rose/tree/master/examples">View Demo</a>
     ·
     <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
     ·
@@ -42,6 +42,9 @@
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
 * [Usage](#usage)
+    * [Initial Setup](#initial-setup)
+    * [Authentication](#authentication)
+    * [Authorization](#authorization)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -57,18 +60,12 @@ Amy Rose is an authentication and authorization library made easy. Specifically 
 Amy Rose comes packed with features not found in most open source security libraries such as
 
 * SMS verification
-* Email verification
 * JWT
 * Out of the box database integration
 * Wildcard permissions
 * Role permissions
-* Authentication middleware
-* Pre-Configured rate limiting
-* Logging
 
-Amy Rose is completely async, efficient, and contains all of your basic security needs.
-
-DISCLAIMER: AS OF CURRENT NOT ALL FEATURES ARE AVAILABLE BUT ARE PLANNED AND WILL BE IMPLEMENTED.
+Amy Rose contains all of your basic security needs.
 
 ### Built With
 * [Tortoise](https://tortoise.github.io/)
@@ -80,49 +77,169 @@ DISCLAIMER: AS OF CURRENT NOT ALL FEATURES ARE AVAILABLE BUT ARE PLANNED AND WIL
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+In order to get started, please install pip.
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
+* pip
 ```sh
-npm install npm@latest -g
+sudo apt-get install python3-pip
 ```
+
 
 ### Installation
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
+* Clone the repo
 ```sh
-git clone https://github.com/your_username_/Project-Name.git
+git clone https://github.com/sunset-developer/Amy-Rose
 ```
-3. Install NPM packages
+* Install pip packages
 ```sh
-npm install
-```
-4. Enter your API in `config.js`
-```JS
-const API_KEY = 'ENTER YOUR API';
+pip3 install amyrose
 ```
 
 
-
-<!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+Once Amy Rose is all setup and good to go, implementing is easy as pie.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+### Initial Setup
+
+First you have to create a configuration file called rose.ini. Below is an example of it's contents: 
+
+```
+[ROSE]
+secret=05jF8cSMAdjlXcXeS2ZJ
+
+[TORTOISE]
+username=admin
+password=8KjLQtVKTCtItAi
+endpoint=amyrose.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
+schema=amyrose
+models=['amyrose.core.models']
+generate=true
+
+[TWILIO]
+from=+12058469963
+token=1bcioi878ygO8fi766Fb34750e82a5ab
+sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
+```
+
+If you're initializing Tortoise yourself you do not have to configure it here.
+
+If you're not using Twilio as your verification method, you do not have to configure it here. 
+
+Once you've configured Amy Rose, you can initialize Sanic with the example below:
+
+```
+if __name__ == '__main__':
+    app.add_task(tortoise_init())
+    app.run(host='0.0.0.0', port=8000, debug=True)
+``` 
+
+All request bodies should be sent as `form-data`
+
+## Authentication
+
+* Registration
+
+Key | Value |
+--- | --- |
+**username** | test 
+**email** | test@test.com 
+**phone** | +19876854892
+**password** | testpass
 
 
+```python
+@app.post('/register')
+async def on_register(request):
+    account, verification_session = await register(request)
+    await text_verification_code(account, verification_session)
+    response = text('Registration successful')
+    response.cookies[verification_session.get_cookie_name()] = verification_session.to_cookie()
+    return response
+```
+
+* Verification
+
+Key | Value |
+--- | --- |
+**code** | GUmrRLD
+
+
+```python
+@app.post('/verify')
+async def on_verify(request):
+    account, verification_session = await verify_account(request)
+    return text('Verification successful')
+```
+
+
+* Login
+
+Key | Value |
+--- | --- |
+**email** | test@test.com
+**password** | testpass
+
+
+```python
+@app.post('/login')
+async def on_login(request):
+    account, authentication_session = await login(request)
+    response = text('Login successful')
+    response.cookies[authentication_session.get_cookie_name()] = authentication_session.to_cookie()
+    return response
+```
+
+* Requires Authentication
+
+```python
+@app.get("/get")
+@requires_authentication()
+async def get_user_info(request):
+    return text('Sensitive user information')
+```
+
+## Authorization
+
+Examples of wildcard permissions are:
+
+```
+admin:add,update,delete
+admin:add
+admin:*
+employee:add,delete
+employee:delete
+employee:*
+```
+
+A library called [Apache Shiro](https://shiro.apache.org/permissions.html) explains this concept incredibly well. I 
+absolutely recommend this library for Java developers.
+
+* Requires Role
+
+```python
+@app.get('/update')
+@requires_permission('admin:update')
+async def on_test_perm(request):
+    return text('Admin has manipulated very sensitive data') 
+```
+
+* Requires Permission
+
+```python
+@app.get('/get')
+@requires_role('Admin')
+async def on_test_role(request):
+    return text('Admin has retrieved very sensitive data')
+```
 
 <!-- ROADMAP -->
 ## Roadmap
 
 Keep up with Amy Rose's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
-
 
 
 <!-- CONTRIBUTING -->
@@ -141,7 +258,7 @@ Contributions are what make the open source community such an amazing place to b
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
 
 
 
@@ -155,6 +272,8 @@ Project Link: [https://github.com/sunset-developer/Amy-Rose](https://github.com/
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
+
+* [Be the first! Submit a pull request.](https://github.com/sunset-developer/PyBus3/pulls)
 
 
 

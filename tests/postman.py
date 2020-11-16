@@ -42,7 +42,7 @@ async def on_logout(request):
 
 @app.post('/verify')
 async def on_verify(request):
-    await verify_account(request)
+    account, verification_session = await verify_account(request)
     return text('Verification successful')
 
 
