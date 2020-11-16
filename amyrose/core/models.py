@@ -8,6 +8,7 @@ from sanic.exceptions import ServerError
 from tortoise import fields, Model
 
 from amyrose.core.config import config_parser
+from amyrose.core.utils import is_expired
 
 
 class BaseModel(Model):
@@ -29,6 +30,10 @@ class BaseModel(Model):
         def __init__(self, message):
             super().__init__(message, 404)
 
+    @classmethod
+    def error_factory(cls, model, request):
+        raise NotImplementedError()
+
 
 class Account(BaseModel):
     username = fields.CharField(max_length=45)
@@ -37,6 +42,20 @@ class Account(BaseModel):
     password = fields.BinaryField()
     verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
+
+    @classmethod
+    def error_factory(cls, model, request=None):
+        error = None
+        if not model:
+            error = Account.NotFoundError('This account does not exist.')
+        elif model.deleted:
+            error = Account.DeletedError('This account has been permanently deleted.')
+        elif model.disabled:
+            error = Account.DisabledError()
+        elif not model.verified:
+            error = Account.UnverifiedError()
+        if error:
+            raise error
 
     class AccountExistsError(ServerError):
         def __init__(self):
@@ -76,6 +95,20 @@ class Session(BaseModel):
             return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
         except DecodeError:
             raise Session.DecodeError()
+
+    @classmethod
+    def error_factory(cls, model, request):
+        error = None
+        if model is None:
+            error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
+        elif not model.valid:
+            error = Session.InvalidError()
+        elif model.ip != request.ip:
+            error = Session.IpMismatchError()
+        elif is_expired(model.expiration_date):
+            error = Session.ExpiredError()
+        if error:
+            raise error
 
     class Meta:
         abstract = True

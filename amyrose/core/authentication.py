@@ -8,36 +8,8 @@ from amyrose.core.utils import best_by, is_expired
 async def get_client(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    raise_account_error(account)
+    Account.error_factory(account)
     return account
-
-
-def raise_account_error(model):
-    error = None
-    if not model:
-        error = Account.NotFoundError('This account does not exist.')
-    elif model.deleted:
-        error = Account.DeletedError('This account has been permanently deleted.')
-    elif model.disabled:
-        error = Account.DisabledError()
-    elif not model.verified:
-        error = Account.UnverifiedError()
-    if error:
-        raise error
-
-
-def raise_session_error(model, request):
-    error = None
-    if model is None:
-        error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
-    elif not model.valid:
-        error = Session.InvalidError()
-    elif model.ip != request.ip:
-        error = Session.IpMismatchError()
-    elif is_expired(model.expiration_date):
-        error = Session.ExpiredError()
-    if error:
-        raise error
 
 
 async def register(request):
@@ -60,7 +32,7 @@ async def verify_account(request):
     if verification_session.code != params.get('code'):
         raise VerificationSession.IncorrectCodeError()
     else:
-        raise_session_error(verification_session, request)
+        VerificationSession.error_factory(verification_session, request)
     verification_session.valid = False
     account.verified = True
     await account.save(update_fields=['verified'])
@@ -71,7 +43,7 @@ async def verify_account(request):
 async def login(request):
     params = request.form
     account = await Account.filter(email=params.get('email')).first()
-    raise_account_error(account)
+    Account.error_factory(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid,
                                                                     ip=request.ip, expiration_date=best_by(30))
@@ -82,7 +54,6 @@ async def login(request):
 
 async def logout(request):
     account, authentication_session = await authenticate(request)
-    raise_session_error(authentication_session, request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])
     return account, authentication_session
@@ -92,8 +63,8 @@ async def authenticate(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
     account = await Account.filter(uid=authentication_session.parent_uid).first()
-    raise_session_error(authentication_session, request)
-    raise_account_error(account)
+    AuthenticationSession.error_factory(authentication_session, request)
+    Account.error_factory(account)
     return account, authentication_session
 
 
