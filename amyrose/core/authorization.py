@@ -1,3 +1,4 @@
+import functools
 from fnmatch import fnmatch
 from functools import wraps
 
@@ -42,24 +43,23 @@ async def authorize(request, account):
 
 
 def requires_permission(permission):
-    def decorator(f):
-        @wraps(f)
-        async def decorated_function(request, *args, **kwargs):
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
             account, authentication_session = authenticate(request)
             await check_permissions(account, permission)
-
-        return decorated_function
-
-    return decorator
+            return await func(request, *args, **kwargs)
+        return wrapped
+    return wrapper
 
 
 def requires_role(role):
-    def decorator(f):
-        @wraps(f)
-        async def decorated_function(request, *args, **kwargs):
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
             account, authentication_session = authenticate(request)
             await check_role(account, role)
+            return await func(request, *args, **kwargs)
+        return wrapped
+    return wrapper
 
-        return decorated_function
-
-    return decorator

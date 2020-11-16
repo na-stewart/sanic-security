@@ -1,20 +1,13 @@
 from sanic import Sanic
-from sanic.response import text
+from sanic.response import text, json
 
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client, logout
 from amyrose.core.authorization import requires_role, create_role, create_permission, requires_permission
-from amyrose.core.middleware import xss_middleware, auth_middleware
+from amyrose.core.middleware import xss_middleware
 from amyrose.core.utils import text_verification_code
 from amyrose.lib.tortoise import tortoise_init
 
 app = Sanic('AmyRose tests')
-
-
-
-
-@app.middleware('request')
-async def request_middleware(request):
-    await auth_middleware(request)
 
 
 @app.middleware('response')
@@ -47,18 +40,16 @@ async def on_logout(request):
     return response
 
 
-
 @app.post('/verify')
 async def on_verify(request):
     await verify_account(request)
     return text('Verification successful')
 
 
-
-@app.get('/test')
+@app.get("/test")
 @requires_authentication()
-async def on_test_auth(request):
-    return text('Hello auth world!')
+async def test(request):
+    return json({'status': 'authorized'})
 
 
 @app.post('/createadmin')
@@ -81,12 +72,10 @@ async def on_test_client(request):
     return text('Hello ' + client.username + '!')
 
 
-
 @app.get('/testperm')
 @requires_permission('admin:update')
 async def on_test_perm(request):
     return text('Admin who can only update gained access!')
-
 
 
 @app.get('/testrole')

@@ -1,3 +1,4 @@
+import functools
 from functools import wraps
 
 import bcrypt
@@ -85,14 +86,16 @@ async def authenticate(request):
 
 
 def requires_authentication():
-    def decorator(f):
-        @wraps(f)
-        async def decorated_function(request, *args, **kwargs):
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
             await authenticate(request)
+            return await func(request, *args, **kwargs)
 
-        return decorated_function
+        return wrapped
 
-    return decorator
+    return wrapper
+
 
 
 def _hash_pass(password):
