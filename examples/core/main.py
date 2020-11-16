@@ -1,5 +1,5 @@
 from sanic import Sanic
-from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client
+from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client, logout
 from amyrose.core.authorization import requires_role
 from amyrose.core.middleware import xss_middleware
 from amyrose.core.utils import text_verification_code
@@ -51,6 +51,12 @@ async def submit_forum_entry(request):
                                       content=params.get('content'))
     content = {'author': entry.parent_name, 'title': entry.title, 'content': entry.content}
     return base_response('Forum entry submitted!', content)
+
+
+@app.post('/logout')
+async def on_logout(request):
+    account, authentication_session = await logout(request)
+    return base_response('Logout successful!', None)
 
 
 @app.get('/getforums')

@@ -17,11 +17,15 @@ async def get_client(request):
     return account
 
 
+async def create_account(email, phone, username, password):
+    return await Account.create(email=email, username=username, password=_hash_pass(password), phone=phone)
+
+
 async def register(request):
     params = request.form
     try:
-        account = await Account.create(email=params.get('email'), username=params.get('username'),
-                                       password=_hash_pass(params.get('password')), phone=params.get('phone'))
+        account = await create_account(params.get('email'), params.get('username'), params.get('password'),
+                                       params.get('phone'))
         verification_session = await VerificationSession().create(ip=request.ip, parent_uid=account.uid,
                                                                   expiration_date=best_by(1))
         return account, verification_session

@@ -192,6 +192,16 @@ async def on_login(request):
     return response
 ```
 
+* Logout
+
+```python
+@app.post('/logout')
+async def on_logout(request):
+    account, authentication_session = await logout(request)
+    response = text('Logout successful')
+    return response
+```
+
 * Requires Authentication
 
 ```python
