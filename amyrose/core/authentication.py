@@ -50,7 +50,7 @@ async def login(request):
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid,
                                                                     ip=request.ip, expiration_date=best_by(30))
-        session_error_factory.raise_error(authentication_session)
+        session_error_factory.raise_error(authentication_session, request)
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()

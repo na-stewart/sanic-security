@@ -12,13 +12,14 @@ from amyrose.core.utils import is_expired
 
 
 class ErrorFactory:
-    def get(self, model, request=None):
+    def get(self, model, request, raise_error):
         raise NotImplementedError()
 
-    def raise_error(self, model, request=None):
-        error = self.get(model, request)
-        if error:
+    def raise_or_return(self, error, raise_error):
+        if error and raise_error:
             raise error
+        else:
+            return error
 
 
 class BaseModel(Model):
@@ -50,7 +51,7 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
 
     class ErrorFactory(ErrorFactory):
-        def get(self, model, raise_error=False, request=None):
+        def get(self, model, request=None, raise_error=True):
             error = None
             if not model:
                 error = Account.NotFoundError('This account does not exist.')
@@ -60,7 +61,8 @@ class Account(BaseModel):
                 error = Account.DisabledError()
             elif not model.verified:
                 error = Account.UnverifiedError()
-            return error
+            return self.raise_or_return(error, raise_error)
+
 
     class AccountExistsError(ServerError):
         def __init__(self):
@@ -102,7 +104,7 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(ErrorFactory):
-        def get(self, model, request=None):
+        def get(self, model, request, raise_error=True):
             error = None
             if model is None:
                 error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
@@ -114,7 +116,7 @@ class Session(BaseModel):
                 error = Session.IpMismatchError()
             elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
-            return error
+            self.raise_or_return(error, raise_error)
 
     class DecodeError(ServerError):
         def __init__(self):
