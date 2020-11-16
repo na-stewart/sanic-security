@@ -11,7 +11,7 @@ session_error_factory = Session.ErrorFactory()
 async def get_client(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    account_error_factory.raise_error(account)
+    account_error_factory.get(account)
     return account
 
 
@@ -35,7 +35,7 @@ async def verify_account(request):
     if verification_session.code != params.get('code'):
         raise VerificationSession.IncorrectCodeError()
     else:
-        session_error_factory.raise_error(verification_session, request)
+        session_error_factory.get(verification_session, request)
     verification_session.valid = False
     account.verified = True
     await account.save(update_fields=['verified'])
@@ -46,11 +46,11 @@ async def verify_account(request):
 async def login(request):
     params = request.form
     account = await Account.filter(email=params.get('email')).first()
-    account_error_factory.raise_error(account)
+    account_error_factory.get(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid,
                                                                     ip=request.ip, expiration_date=best_by(30))
-        session_error_factory.raise_error(authentication_session, request)
+        session_error_factory.get(authentication_session, request)
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -67,8 +67,8 @@ async def authenticate(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
     account = await Account.filter(uid=authentication_session.parent_uid).first()
-    session_error_factory.raise_error(authentication_session, request)
-    account_error_factory.raise_error(account)
+    session_error_factory.get(authentication_session, request)
+    account_error_factory.get(account)
     return account, authentication_session
 
 

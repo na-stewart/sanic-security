@@ -15,7 +15,7 @@ class ErrorFactory:
     def get(self, model, request, raise_error):
         raise NotImplementedError()
 
-    def raise_or_return(self, error, raise_error):
+    def _raise_or_return(self, error, raise_error):
         if error and raise_error:
             raise error
         else:
@@ -61,8 +61,7 @@ class Account(BaseModel):
                 error = Account.DisabledError()
             elif not model.verified:
                 error = Account.UnverifiedError()
-            return self.raise_or_return(error, raise_error)
-
+            return self._raise_or_return(error, raise_error)
 
     class AccountExistsError(ServerError):
         def __init__(self):
@@ -116,7 +115,7 @@ class Session(BaseModel):
                 error = Session.IpMismatchError()
             elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
-            self.raise_or_return(error, raise_error)
+            self._raise_or_return(error, raise_error)
 
     class DecodeError(ServerError):
         def __init__(self):
