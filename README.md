@@ -218,7 +218,7 @@ employee:*
 A library called [Apache Shiro](https://shiro.apache.org/permissions.html) explains this concept incredibly well. I 
 absolutely recommend this library for Java developers.
 
-* Requires Role
+* Requires Permission
 
 ```python
 @app.get('/update')
@@ -227,7 +227,7 @@ async def on_test_perm(request):
     return text('Admin has manipulated very sensitive data') 
 ```
 
-* Requires Permission
+* Requires Role
 
 ```python
 @app.get('/get')
