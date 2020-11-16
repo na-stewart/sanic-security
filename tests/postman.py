@@ -49,7 +49,7 @@ async def on_verify(request):
 @app.get("/test")
 @requires_authentication()
 async def test(request):
-    return json({'status': 'authorized'})
+    return text('Hello auth world!')
 
 
 @app.post('/createadmin')
@@ -86,4 +86,4 @@ async def on_test_role(request):
 
 if __name__ == '__main__':
     app.add_task(tortoise_init())
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000, debug=True)

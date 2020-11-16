@@ -1,6 +1,5 @@
 import functools
 from fnmatch import fnmatch
-from functools import wraps
 
 from amyrose.core.authentication import authenticate
 from amyrose.core.models import Role, Permission
@@ -21,7 +20,7 @@ async def check_permissions(account, authorized_permission):
         if fnmatch(permission.name, authorized_permission):
             break
     else:
-        raise Permission.InsufficientPermissionsError()
+        raise Permission.InsufficientPermissionError()
 
 
 async def create_role(account, role):
@@ -46,7 +45,7 @@ def requires_permission(permission):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            account, authentication_session = authenticate(request)
+            account, authentication_session = await authenticate(request)
             await check_permissions(account, permission)
             return await func(request, *args, **kwargs)
         return wrapped
@@ -57,7 +56,7 @@ def requires_role(role):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            account, authentication_session = authenticate(request)
+            account, authentication_session = await authenticate(request)
             await check_role(account, role)
             return await func(request, *args, **kwargs)
         return wrapped

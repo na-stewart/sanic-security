@@ -1,31 +1,21 @@
 import functools
-from functools import wraps
 
 import bcrypt
 from tortoise.exceptions import IntegrityError
 
 from amyrose.core.models import Account, VerificationSession, AccountErrorFactory, AuthenticationSession, \
     SessionErrorFactory
-from amyrose.core.utils import best_by, url_endpoint
+from amyrose.core.utils import best_by
 
 session_error_factory = SessionErrorFactory()
 account_error_factory = AccountErrorFactory()
 endpoints_requiring_authentication = []
 
 
-def client_ip(request):
-    try:
-        ip = request.headers.get("X-Real-IP") or request.headers.get("X-Forwarded-For") or \
-             request.remote_ip
-    except AttributeError:
-        ip = None
-    return ip
-
-
 async def get_client(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    account_error_factory.raise_error(account)
+    account_error_factory.raise_error(account, None)
     return account
 
 
@@ -34,7 +24,8 @@ async def register(request):
     try:
         account = await Account.create(email=params.get('email'), username=params.get('username'),
                                        password=_hash_pass(params.get('password')), phone=params.get('phone'))
-        verification_session = await VerificationSession().create(parent_uid=account.uid, expiration_date=best_by(1))
+        verification_session = await VerificationSession().create(ip=request.ip, parent_uid=account.uid,
+                                                                  expiration_date=best_by(1))
         return account, verification_session
     except IntegrityError:
         raise Account.AccountExistsError()
@@ -48,7 +39,7 @@ async def verify_account(request):
     if verification_session.code != params.get('code'):
         raise VerificationSession.IncorrectCodeError()
     else:
-        session_error_factory.raise_error(verification_session)
+        session_error_factory.raise_error(verification_session, request)
     verification_session.valid = False
     account.verified = True
     await account.save(update_fields=['verified'])
@@ -62,7 +53,7 @@ async def login(request):
     account_error_factory.raise_error(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid,
-                                                                    expiration_date=best_by(30))
+                                                                    ip=request.ip, expiration_date=best_by(30))
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -70,7 +61,7 @@ async def login(request):
 
 async def logout(request):
     account, authentication_session = await authenticate(request)
-    session_error_factory.raise_error(authentication_session)
+    session_error_factory.raise_error(authentication_session, request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])
     return account, authentication_session
@@ -80,7 +71,7 @@ async def authenticate(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
     account = await Account.filter(uid=authentication_session.parent_uid).first()
-    session_error_factory.raise_error(authentication_session)
+    session_error_factory.raise_error(authentication_session, request)
     account_error_factory.raise_error(account)
     return account, authentication_session
 
@@ -95,7 +86,6 @@ def requires_authentication():
         return wrapped
 
     return wrapper
-
 
 
 def _hash_pass(password):

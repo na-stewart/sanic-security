@@ -2,7 +2,7 @@ import os
 
 import aiohttp
 
-from amyrose.core.cache import config_parser
+from amyrose.core.config import config_parser
 
 
 async def send_sms(to, msg):

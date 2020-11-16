@@ -8,7 +8,7 @@ from jwt import DecodeError
 from sanic.exceptions import ServerError
 from tortoise import fields, Model
 
-from amyrose import config_parser
+from amyrose.core.config import config_parser
 from amyrose.core.utils import is_expired
 
 
@@ -34,13 +34,8 @@ class BaseModel(Model):
 
 class ErrorFactory:
 
-    def get(self, model):
+    def raise_error(self, model, request):
         raise NotImplementedError
-
-    def raise_error(self, model):
-        error = self.get(model)
-        if error:
-            raise error
 
 
 class Account(BaseModel):
@@ -48,7 +43,7 @@ class Account(BaseModel):
     email = fields.CharField(unique=True, max_length=45)
     phone = fields.CharField(unique=True, max_length=20, null=True)
     password = fields.BinaryField()
-    verified = fields.BooleanField(default=True)
+    verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
 
     class AccountExistsError(ServerError):
@@ -69,7 +64,7 @@ class Account(BaseModel):
 
 
 class AccountErrorFactory(ErrorFactory):
-    def get(self, model):
+    def raise_error(self, model, request=None):
         error = None
         if not model:
             error = Account.NotFoundError('This account does not exist.')
@@ -79,12 +74,14 @@ class AccountErrorFactory(ErrorFactory):
             error = Account.DisabledError()
         elif not model.verified:
             error = Account.UnverifiedError()
-        return error
+        if error:
+            raise error
 
 
 class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
+    ip = fields.CharField(max_length=16)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -93,7 +90,7 @@ class Session(BaseModel):
         return self.__class__.__name__[:4].lower() + 'tkn'
 
     def to_cookie(self):
-        payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid)}
+        payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         return jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
 
     @classmethod
@@ -108,27 +105,34 @@ class Session(BaseModel):
 
     class DecodeError(ServerError):
         def __init__(self):
-            super().__init__("Session could not be decoded due to an error or cookie is non existent.", 500)
+            super().__init__("Session requested could not be decoded due to an error or cookie is non existent.", 401)
 
     class InvalidError(ServerError):
         def __init__(self):
-            super().__init__("Session is invalid.", 403)
+            super().__init__("Session is invalid.", 401)
 
     class ExpiredError(ServerError):
         def __init__(self):
-            super().__init__("Session has expired", 403)
+            super().__init__("Session has expired", 401)
+
+    class IpMismatchError(ServerError):
+        def __init__(self):
+            super().__init__("Session ip address does not match client ip address.", 401)
 
 
 class SessionErrorFactory(ErrorFactory):
-    def get(self, model):
+    def raise_error(self, model, request):
         error = None
         if model is None:
             error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
         elif not model.valid:
             error = Session.InvalidError()
+        elif model.ip != request.ip:
+            error = Session.IpMismatchError()
         elif is_expired(model.expiration_date):
             error = Session.ExpiredError()
-        return error
+        if error:
+            raise error
 
 
 class VerificationSession(Session):
@@ -155,6 +159,6 @@ class Role(BaseModel):
 class Permission(BaseModel):
     name = fields.CharField(max_length=45)
 
-    class InsufficientPermissionsError(ServerError):
+    class InsufficientPermissionError(ServerError):
         def __init__(self):
             super().__init__('You do not have the required permissions for this action.', 403)
