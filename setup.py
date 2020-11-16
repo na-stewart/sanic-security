@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='amyrose',
-    version='0.1.3',
+    version='0.1.4',
     packages=['tests', 'amyrose', 'amyrose.lib', 'amyrose.core', 'examples', 'examples.core'],
     url='https://github.com/sunset-developer/Amy-Rose',
     license='GNU General Public License v3.0',
