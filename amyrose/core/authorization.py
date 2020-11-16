@@ -31,16 +31,6 @@ async def create_permission(account, perm):
     await Permission().create(parent_uid=account.uid, name=perm)
 
 
-async def authorize(request, account):
-    endpoint = url_endpoint(request.url)
-    endpoint_role = endpoints_requiring_role.get(endpoint)
-    endpoint_permission = endpoints_requiring_permission.get(endpoint)
-    if endpoint_role:
-        await check_role(account, endpoint_role)
-    if endpoint_permission:
-        await check_permissions(account, endpoint_permission)
-
-
 def requires_permission(permission):
     def wrapper(func):
         @functools.wraps(func)
