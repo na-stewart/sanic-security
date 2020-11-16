@@ -1,8 +1,10 @@
 import functools
+
 import bcrypt
 from tortoise.exceptions import IntegrityError
+
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
-from amyrose.core.utils import best_by, is_expired
+from amyrose.core.utils import best_by
 
 account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
