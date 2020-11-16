@@ -11,6 +11,16 @@ from amyrose.core.config import config_parser
 from amyrose.core.utils import is_expired
 
 
+class ErrorFactory:
+    def get(self, model, request=None):
+        raise NotImplementedError()
+
+    def raise_error(self, model, request=None):
+        error = self.get(model, request)
+        if error:
+            raise error
+
+
 class BaseModel(Model):
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(default=uuid.uuid1, max_length=36)
@@ -30,10 +40,6 @@ class BaseModel(Model):
         def __init__(self, message):
             super().__init__(message, 404)
 
-    @classmethod
-    def error_factory_raise(cls, model, request):
-        raise NotImplementedError()
-
 
 class Account(BaseModel):
     username = fields.CharField(max_length=45)
@@ -43,19 +49,18 @@ class Account(BaseModel):
     verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
 
-    @classmethod
-    def error_factory_raise(cls, model, request=None):
-        error = None
-        if not model:
-            error = Account.NotFoundError('This account does not exist.')
-        elif model.deleted:
-            error = Account.DeletedError('This account has been permanently deleted.')
-        elif model.disabled:
-            error = Account.DisabledError()
-        elif not model.verified:
-            error = Account.UnverifiedError()
-        if error:
-            raise error
+    class ErrorFactory(ErrorFactory):
+        def get(self, model, raise_error=False, request=None):
+            error = None
+            if not model:
+                error = Account.NotFoundError('This account does not exist.')
+            elif model.deleted:
+                error = Account.DeletedError('This account has been permanently deleted.')
+            elif model.disabled:
+                error = Account.DisabledError()
+            elif not model.verified:
+                error = Account.UnverifiedError()
+            return error
 
     class AccountExistsError(ServerError):
         def __init__(self):
@@ -79,9 +84,6 @@ class Session(BaseModel):
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def get_cookie_name(self):
         return self.__class__.__name__[:4].lower() + 'tkn'
 
@@ -96,24 +98,23 @@ class Session(BaseModel):
         except DecodeError:
             raise Session.DecodeError()
 
-    @classmethod
-    def error_factory_raise(cls, model, request):
-        error = None
-        if model is None:
-            error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
-        elif not model.valid:
-            error = Session.InvalidError()
-        elif model.deleted:
-            error=Session.DeletedError('Your session has been deleted.')
-        elif model.ip != request.ip:
-            error = Session.IpMismatchError()
-        elif is_expired(model.expiration_date):
-            error = Session.ExpiredError()
-        if error:
-            raise error
-
     class Meta:
         abstract = True
+
+    class ErrorFactory(ErrorFactory):
+        def get(self, model, request=None):
+            error = None
+            if model is None:
+                error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
+            elif not model.valid:
+                error = Session.InvalidError()
+            elif model.deleted:
+                error = Session.DeletedError('Your session has been deleted.')
+            elif model.ip != request.ip:
+                error = Session.IpMismatchError()
+            elif is_expired(model.expiration_date):
+                error = Session.ExpiredError()
+            return error
 
     class DecodeError(ServerError):
         def __init__(self):

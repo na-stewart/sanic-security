@@ -4,11 +4,14 @@ from tortoise.exceptions import IntegrityError
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
 from amyrose.core.utils import best_by, is_expired
 
+account_error_factory = Account.ErrorFactory()
+session_error_factory = Session.ErrorFactory()
+
 
 async def get_client(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    Account.error_factory_raise(account)
+    account_error_factory.raise_error(account)
     return account
 
 
@@ -32,7 +35,7 @@ async def verify_account(request):
     if verification_session.code != params.get('code'):
         raise VerificationSession.IncorrectCodeError()
     else:
-        VerificationSession.error_factory_raise(verification_session, request)
+        session_error_factory.raise_error(verification_session, request)
     verification_session.valid = False
     account.verified = True
     await account.save(update_fields=['verified'])
@@ -43,10 +46,11 @@ async def verify_account(request):
 async def login(request):
     params = request.form
     account = await Account.filter(email=params.get('email')).first()
-    Account.error_factory_raise(account)
+    account_error_factory.raise_error(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(parent_uid=account.uid,
                                                                     ip=request.ip, expiration_date=best_by(30))
+        session_error_factory.raise_error(authentication_session)
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -63,8 +67,8 @@ async def authenticate(request):
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
     account = await Account.filter(uid=authentication_session.parent_uid).first()
-    AuthenticationSession.error_factory_raise(authentication_session, request)
-    Account.error_factory_raise(account)
+    session_error_factory.raise_error(authentication_session, request)
+    account_error_factory.raise_error(account)
     return account, authentication_session
 
 
