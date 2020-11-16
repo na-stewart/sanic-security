@@ -31,7 +31,7 @@ class BaseModel(Model):
             super().__init__(message, 404)
 
     @classmethod
-    def error_factory(cls, model, request):
+    def error_factory_raise(cls, model, request):
         raise NotImplementedError()
 
 
@@ -44,7 +44,7 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
 
     @classmethod
-    def error_factory(cls, model, request=None):
+    def error_factory_raise(cls, model, request=None):
         error = None
         if not model:
             error = Account.NotFoundError('This account does not exist.')
@@ -97,12 +97,14 @@ class Session(BaseModel):
             raise Session.DecodeError()
 
     @classmethod
-    def error_factory(cls, model, request):
+    def error_factory_raise(cls, model, request):
         error = None
         if model is None:
             error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
         elif not model.valid:
             error = Session.InvalidError()
+        elif model.deleted:
+            error=Session.DeletedError('Your session has been deleted.')
         elif model.ip != request.ip:
             error = Session.IpMismatchError()
         elif is_expired(model.expiration_date):
