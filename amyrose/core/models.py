@@ -1,5 +1,4 @@
 import random
-import secrets
 import string
 import uuid
 
@@ -9,7 +8,6 @@ from sanic.exceptions import ServerError
 from tortoise import fields, Model
 
 from amyrose.core.config import config_parser
-from amyrose.core.utils import is_expired
 
 
 class BaseModel(Model):
