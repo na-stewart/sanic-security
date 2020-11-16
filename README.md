@@ -10,7 +10,6 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![GNU Affero General Public License v3.0][license-shield]][license-url]
 
 
 
