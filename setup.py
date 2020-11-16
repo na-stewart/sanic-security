@@ -1,3 +1,4 @@
+import setuptools
 from setuptools import setup
 
 with open("README.md", "r") as fh:
@@ -6,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
     name='amyrose',
     version='0.1.6',
-    packages=['tests', 'amyrose', 'amyrose.lib', 'amyrose.core', 'examples', 'examples.core'],
+    packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/Amy-Rose',
     license='GNU General Public License v3.0',
     author='sunset-developer',
