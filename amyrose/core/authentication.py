@@ -11,21 +11,57 @@ session_error_factory = Session.ErrorFactory()
 
 
 async def get_client(request):
+    """
+    Retrieves account information from an authentication session found within cookie.
+
+    :param request: Sanic request parameter.
+
+    :return: account
+    """
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    account_error_factory.get(account)
     return account
 
 
-async def create_account(email, phone, username, password):
-    return await Account.create(email=email, username=username, password=_hash_pass(password), phone=phone)
+async def create_account(email, phone, username, password, verified):
+    """
+    This method should not be used for regular user registration. The intent is to make it easy for
+    developers and administrators to instantly create accounts.
+
+    :return: account
+    """
+    try:
+        return await Account.create(email=email, username=username, password=_hash_pass(password), phone=phone,
+                                    verified=verified)
+    except IntegrityError:
+        raise Account.AccountExistsError()
+
+
+async def delete_account(email):
+    """
+    Renders an account inoperable while remaining on the database.
+    :param email:
+    :return:
+    """
+    account = await Account.filter(email=email).first()
+    account.deleted = True
+    await account.save(update_fields=['deleted'])
+    return account
 
 
 async def register(request):
+    """
+    Creates an unverified account. This is the recommend and most secure method for registering accounts' with Amy Rose.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    email, username, phone, and password.
+
+    :return: account, verification_session
+    """
     params = request.form
     try:
         account = await create_account(params.get('email'), params.get('username'), params.get('password'),
-                                       params.get('phone'))
+                                       params.get('phone'), False)
         verification_session = await VerificationSession().create(ip=request.ip, parent_uid=account.uid,
                                                                   expiration_date=best_by(1))
         return account, verification_session
@@ -34,6 +70,13 @@ async def register(request):
 
 
 async def verify_account(request):
+    """
+    Verifies an account for use using a code sent via email or text.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following argument: code.
+
+    :return: account, verification_session
+    """
     params = request.form
     decoded_cookie = VerificationSession.from_cookie(request.cookies.get('veritkn'))
     verification_session = await VerificationSession.filter(uid=decoded_cookie['uid']).first()
@@ -50,6 +93,14 @@ async def verify_account(request):
 
 
 async def login(request):
+    """
+    Creates an authentication session that is used to verify the account making requests requiring authentication.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following argument:
+    email.
+
+    :return: account, authentication_session
+    """
     params = request.form
     account = await Account.filter(email=params.get('email')).first()
     account_error_factory.get(account)
@@ -63,6 +114,13 @@ async def login(request):
 
 
 async def logout(request):
+    """
+    Invalidates client's authentication session.
+
+    :param request: Sanic request parameter.
+
+    :return: account, authentication_session
+    """
     account, authentication_session = await authenticate(request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])
@@ -70,6 +128,13 @@ async def logout(request):
 
 
 async def authenticate(request):
+    """
+    Verifies the client's authentication session.
+
+    :param request: Sanic request parameter.
+
+    :return: account, authentication_session
+    """
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
     account = await Account.filter(uid=authentication_session.parent_uid).first()
@@ -79,6 +144,9 @@ async def authenticate(request):
 
 
 def requires_authentication():
+    """
+    A decorator used to authenticate a client before executing a method.
+    """
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):

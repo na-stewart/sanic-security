@@ -31,7 +31,7 @@ async def on_login(request):
     cookie = authentication_session.to_cookie()
     content = {'Username': account.username, 'Email': account.email, 'Token': cookie}
     response = base_response('Login successful!', content)
-    response.cookies[authentication_session.get_cookie_name()] = cookie
+    response.cookies[authentication_session.cookie_name()] = cookie
     return response
 
 

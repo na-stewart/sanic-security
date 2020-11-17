@@ -11,8 +11,15 @@ from amyrose.core.config import config_parser
 from amyrose.core.utils import is_expired
 
 
-class ErrorFactory:
+class BaseErrorFactory:
+    """
+    Easily raise or retrieve errors based off of variables values without flooding critical code with if/else
+    statements.
+    """
     def get(self, model, request, raise_error):
+        """
+        Retrieves or raises an error if certain conditions are met.
+        """
         raise NotImplementedError()
 
     def _raise_or_return(self, error, raise_error):
@@ -34,6 +41,7 @@ class BaseModel(Model):
         abstract = True
 
     class NotFoundError(ServerError):
+
         def __init__(self, message):
             super().__init__(message, 404)
 
@@ -50,7 +58,7 @@ class Account(BaseModel):
     verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
 
-    class ErrorFactory(ErrorFactory):
+    class ErrorFactory(BaseErrorFactory):
         def get(self, model, request=None, raise_error=True):
             error = None
             if not model:
@@ -85,15 +93,30 @@ class Session(BaseModel):
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
 
-    def get_cookie_name(self):
+    def cookie_name(self):
+        """
+        The name of the cookie that stores the session's jwt.
+
+        :return: cookie_name
+        """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
     def to_cookie(self):
+        """
+        Transforms session into a jwt to be stored as a cookie.
+
+        :return: jwt
+        """
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         return jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
 
     @classmethod
     def from_cookie(cls, cookie_content):
+        """
+        Transforms jwt token retrieved from cookie into a readable payload dictionary.
+
+        :return: payload
+        """
         try:
             return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
         except DecodeError:
@@ -102,7 +125,7 @@ class Session(BaseModel):
     class Meta:
         abstract = True
 
-    class ErrorFactory(ErrorFactory):
+    class ErrorFactory(BaseErrorFactory):
         def get(self, model, request, raise_error=True):
             error = None
             if model is None:
