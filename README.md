@@ -20,7 +20,7 @@
   <h3 align="center">Amy Rose</h3>
 
   <p align="center">
-    A powerful, simple and async authentication and authorization library for Sanic.
+    A powerful, simple, and async authentication and authorization library for Sanic.
     <br />
     <a href="https://github.com/sunset-developer/Amy-Rose/tree/master/examples">View Demo</a>
     ·
