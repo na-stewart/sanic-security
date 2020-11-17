@@ -21,7 +21,7 @@ async def on_register(request):
     content = {'Username': account.username, 'Email': account.email, 'Phone': account.phone,
                'Verified': account.verified}
     response = base_response('Registration successful, please verify your account', content)
-    response.cookies[verification_session.cookie_name] = verification_session.to_cookie()
+    response.cookies[verification_session.cookie_name()] = verification_session.to_cookie()
     return response
 
 
