@@ -1,9 +1,5 @@
-import distutils
-from pathlib import Path
-
 import setuptools
 from setuptools import setup
-from setuptools._distutils import text_file
 
 with open("README.md", "r") as rm:
     long_description = rm.read()
