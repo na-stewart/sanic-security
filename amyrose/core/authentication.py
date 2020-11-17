@@ -40,8 +40,10 @@ async def create_account(email, phone, username, password, verified):
 async def delete_account(email):
     """
     Renders an account inoperable while remaining on the database.
+
     :param email:
-    :return:
+
+    :return: account
     """
     account = await Account.filter(email=email).first()
     account.deleted = True

@@ -19,6 +19,8 @@ class BaseErrorFactory:
     def get(self, model, request, raise_error):
         """
         Retrieves or raises an error if certain conditions are met.
+
+        :return: error
         """
         raise NotImplementedError()
 
