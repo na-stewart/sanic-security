@@ -60,7 +60,7 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model, request=None, raise_error=True):
+        def get(self, model, request=None):
             error = None
             if not model:
                 error = Account.NotFoundError('This account does not exist.')
@@ -70,7 +70,7 @@ class Account(BaseModel):
                 error = Account.DisabledError()
             elif not model.verified:
                 error = Account.UnverifiedError()
-            return self._raise_or_return(error, raise_error)
+            return error
 
     class AccountExistsError(ServerError):
         def __init__(self):
@@ -127,7 +127,7 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model, request, raise_error=True):
+        def get(self, model, request=None):
             error = None
             if model is None:
                 error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
@@ -139,7 +139,7 @@ class Session(BaseModel):
                 error = Session.IpMismatchError()
             elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
-            self._raise_or_return(error, raise_error)
+            return error
 
     class DecodeError(ServerError):
         def __init__(self):
