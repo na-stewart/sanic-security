@@ -22,7 +22,7 @@ async def get_client(request):
     return account
 
 
-async def get_account(uid=None):
+async def get_account(uid):
     """
     Retrieves account information with a uid.
 
@@ -45,15 +45,13 @@ async def create_account(email, phone, username, password, verified=True):
         raise Account.AccountExistsError()
 
 
-async def delete_account(email):
+async def delete_account(uid):
     """
     Renders an account inoperable while remaining on the database.
 
-    :param email:
-
     :return: account
     """
-    account = await Account.filter(email=email).first()
+    account = await Account.filter(uid=uid).first()
     account.deleted = True
     await account.save(update_fields=['deleted'])
     return account

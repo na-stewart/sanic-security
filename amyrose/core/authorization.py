@@ -42,13 +42,13 @@ async def get_roles(account):
     return await Role().filter(parent_uid=account.parent_uid).all()
 
 
-async def delete_role(account, role_name):
+async def delete_role(account, role_uid):
     """
     Renders an role inoperable while remaining on the database.
 
     :return: role
     """
-    role = await Role().filter(parent_uid=account, name=role_name).first()
+    role = await Role().filter(parent_uid=account, uid=role_uid).first()
     role.deleted = True
     return role
 
@@ -67,11 +67,11 @@ async def get_account_permissions(account):
     return await Permission().filter(parent_uid=account.parent_uid).all()
 
 
-async def delete_account_permission(account, permission_name):
+async def delete_account_permission(account, permission_uid):
     """
     Deletes a permission associated to an account.
     """
-    permission = await Permission.filter(parent_uid=account, name=permission_name).first()
+    permission = await Permission.filter(parent_uid=account, uid=permission_uid).first()
     permission.deleted = True
     await permission.save(update_fields=['deleted'])
     return permission
