@@ -16,19 +16,19 @@ class BaseErrorFactory:
     Easily raise or retrieve errors based off of variables values without flooding critical code with if/else
     statements.
     """
-    def get(self, model, request, raise_error):
+
+    def get(self, model, request=None):
         """
-        Retrieves or raises an error if certain conditions are met.
+        Retrieves an error if certain conditions are met.
 
         :return: error
         """
         raise NotImplementedError()
 
-    def _raise_or_return(self, error, raise_error):
-        if error and raise_error:
+    def raise_error(self, model, request=None):
+        error = self.get(model, request)
+        if error:
             raise error
-        else:
-            return error
 
 
 class BaseModel(Model):
@@ -43,7 +43,6 @@ class BaseModel(Model):
         abstract = True
 
     class NotFoundError(ServerError):
-
         def __init__(self, message):
             super().__init__(message, 404)
 
