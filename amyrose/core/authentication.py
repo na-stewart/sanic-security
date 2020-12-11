@@ -2,6 +2,8 @@ import functools
 
 import bcrypt
 from tortoise.exceptions import IntegrityError
+
+from amyrose.core.management import create_account
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
 from amyrose.core.utils import best_by
 
@@ -19,41 +21,6 @@ async def get_client(request):
     """
     decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
     account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
-    return account
-
-
-async def get_account(uid):
-    """
-    Retrieves account information with a uid.
-
-    :return: account
-    """
-    return await Account.filter(uid=uid).first()
-
-
-async def create_account(email, phone, username, password, verified=True):
-    """
-    This method should not be used for regular user registration. The intent is to make it easy for
-    developers and administrators to instantly create accounts.
-
-    :return: account
-    """
-    try:
-        return await Account.create(email=email, username=username, password=_hash_pass(password), phone=phone,
-                                    verified=verified)
-    except IntegrityError:
-        raise Account.AccountExistsError()
-
-
-async def delete_account(uid):
-    """
-    Renders an account inoperable while remaining on the database.
-
-    :return: account
-    """
-    account = await Account.filter(uid=uid).first()
-    account.deleted = True
-    await account.save(update_fields=['deleted'])
     return account
 
 
@@ -167,5 +134,4 @@ def requires_authentication():
     return wrapper
 
 
-def _hash_pass(password):
-    return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+

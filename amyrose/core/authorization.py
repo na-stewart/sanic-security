@@ -24,59 +24,6 @@ async def check_permissions(account, required_permission_name):
         raise Permission.InsufficientPermissionError()
 
 
-async def create_role(account, role_name):
-    """
-    Assigns a role to an account.
-
-    :return: role
-    """
-    return await Role().create(parent_uid=account.uid, name=role_name)
-
-
-async def get_roles(account):
-    """
-    Retrieves all roles associated to an account.
-
-    :return: roles
-    """
-    return await Role().filter(parent_uid=account.parent_uid).all()
-
-
-async def delete_role(account, uid):
-    """
-    Renders an role inoperable while remaining on the database.
-
-    :return: role
-    """
-    role = await Role().filter(parent_uid=account, uid=uid).first()
-    role.deleted = True
-    return role
-
-
-async def create_permission(account, permission_name):
-    """
-    Assigns a permission to an account.
-    """
-    return await Permission().create(parent_uid=account.uid, name=permission_name)
-
-
-async def get_account_permissions(account):
-    """
-    Retrieves all permissions associated to an account.
-    """
-    return await Permission().filter(parent_uid=account.parent_uid).all()
-
-
-async def delete_account_permission(account, uid):
-    """
-    Deletes a permission associated to an account.
-    """
-    permission = await Permission.filter(parent_uid=account, uid=uid).first()
-    permission.deleted = True
-    await permission.save(update_fields=['deleted'])
-    return permission
-
-
 def requires_permission(permission):
     """
     A decorator used to verify if a client has permission before executing a method.

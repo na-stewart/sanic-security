@@ -13,7 +13,7 @@ from amyrose.core.utils import is_expired
 
 class BaseErrorFactory:
     """
-    Easily raise or retrieve errors based off of variables values without flooding critical code with if/else
+    Easily raise or retrieve errors based off of variable values without flooding code with if/else
     statements.
     """
 
@@ -135,10 +135,10 @@ class Session(BaseModel):
                 error = Session.InvalidError()
             elif model.deleted:
                 error = Session.DeletedError('Your session has been deleted.')
-            elif model.ip != request.ip:
-                error = Session.IpMismatchError()
             elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
+            elif not await Session.filter(ip=request.ip).exists():
+                error = Session.IpMismatchError()
             return error
 
     class DecodeError(ServerError):
@@ -159,8 +159,7 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters + string.digits, k=7)),
-                            max_length=7)
+    code = fields.CharField(unique=True, default=''.join(random.choices(string.digits, k=7)), max_length=7)
 
     class IncorrectCodeError(ServerError):
         def __init__(self):
