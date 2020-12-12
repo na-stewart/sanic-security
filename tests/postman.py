@@ -2,7 +2,8 @@ from sanic import Sanic
 from sanic.response import text, json
 
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, get_client, logout
-from amyrose.core.authorization import requires_role, create_role, create_permission, requires_permission
+from amyrose.core.authorization import requires_permission, requires_role
+from amyrose.core.management import create_permission, create_role
 from amyrose.core.middleware import xss_middleware
 from amyrose.core.utils import text_verification_code
 from amyrose.lib.tortoise import tortoise_init

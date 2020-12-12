@@ -1,3 +1,4 @@
+import inspect
 import random
 import string
 import uuid
@@ -13,11 +14,10 @@ from amyrose.core.utils import is_expired
 
 class BaseErrorFactory:
     """
-    Easily raise or retrieve errors based off of variable values without flooding code with if/else
-    statements.
+    Easily raise or retrieve errors based off of variable values.
     """
 
-    def get(self, model, request=None):
+    def get(self, model):
         """
         Retrieves an error if certain conditions are met.
 
@@ -25,8 +25,8 @@ class BaseErrorFactory:
         """
         raise NotImplementedError()
 
-    def raise_error(self, model, request=None):
-        error = self.get(model, request)
+    def raise_error(self, model):
+        error = self.get(model)
         if error:
             raise error
 
@@ -56,11 +56,11 @@ class Account(BaseModel):
     email = fields.CharField(unique=True, max_length=45)
     phone = fields.CharField(unique=True, max_length=20, null=True)
     password = fields.BinaryField()
-    verified = fields.BooleanField(default=False)
     disabled = fields.BooleanField(default=False)
+    verified = fields.BooleanField(default=False)
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model, request=None):
+        def get(self, model):
             error = None
             if not model:
                 error = Account.NotFoundError('This account does not exist.')
@@ -72,21 +72,25 @@ class Account(BaseModel):
                 error = Account.UnverifiedError()
             return error
 
-    class AccountExistsError(ServerError):
+    class AccountError(ServerError):
+        def __init__(self, message, code):
+            super().__init__(message, code)
+
+    class AccountExistsError(AccountError):
         def __init__(self):
             super().__init__('Account with this email or phone number already exists.', 409)
 
-    class UnverifiedError(ServerError):
-        def __init__(self):
-            super().__init__("Account requires verification.", 401)
-
-    class DisabledError(ServerError):
+    class DisabledError(AccountError):
         def __init__(self):
             super().__init__("This account has been disabled.", 401)
 
-    class IncorrectPasswordError(ServerError):
+    class IncorrectPasswordError(AccountError):
         def __init__(self):
             super().__init__('The password provided is incorrect.', 401)
+
+    class UnverifiedError(AccountError):
+        def __init__(self):
+            super().__init__('This account is unverified.', 401)
 
 
 class Session(BaseModel):
@@ -127,7 +131,7 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model, request=None):
+        async def get(self, model):
             error = None
             if model is None:
                 error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
@@ -137,33 +141,39 @@ class Session(BaseModel):
                 error = Session.DeletedError('Your session has been deleted.')
             elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
-            elif not await Session.filter(ip=request.ip).exists():
-                error = Session.IpMismatchError()
             return error
 
-    class DecodeError(ServerError):
+    class SessionError(ServerError):
+        def __init__(self, message, code):
+            super.__init__(message, code)
+
+    class DecodeError(SessionError):
         def __init__(self):
             super().__init__("Session requested could not be decoded due to an error or cookie is non existent.", 401)
 
-    class InvalidError(ServerError):
+    class InvalidError(SessionError):
         def __init__(self):
             super().__init__("Session is invalid.", 401)
 
-    class ExpiredError(ServerError):
+    class ExpiredError(SessionError):
         def __init__(self):
             super().__init__("Session has expired", 401)
 
-    class IpMismatchError(ServerError):
+    class UnknownLocationError(SessionError):
         def __init__(self):
-            super().__init__("Session ip address does not match client ip address.", 401)
+            super().__init__("No session with client ip has been found. Location unknown.", 401)
 
 
 class VerificationSession(Session):
     code = fields.CharField(unique=True, default=''.join(random.choices(string.digits, k=7)), max_length=7)
 
-    class IncorrectCodeError(ServerError):
+    class IncorrectCodeError(Session.SessionError):
         def __init__(self):
-            super().__init__('The code given does not match session code.')
+            super().__init__('The code given does not match session code.', 401)
+
+    class VerificationPendingError(Session.SessionError):
+        def __init__(self):
+            super().__init__('A verification session for this account is pending.', 401)
 
 
 class AuthenticationSession(Session):
