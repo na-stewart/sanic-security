@@ -48,7 +48,6 @@ async def invalidate_verification_session(verification_session: VerificationSess
 
     :return: authentication_sessions
     """
-    verification_session = await VerificationSession().filter(uid=verification_session.uid).first()
     verification_session.valid = False
     await verification_session.save(update_fields=['valid'])
     return verification_session
@@ -76,7 +75,7 @@ async def get_client(request: Request):
     :return: account
     """
     authentication_session = await AuthenticationSession().decode(request)
-    account = await Account.filter(uid=authentication_session.uid).first()
+    account = await Account.filter(uid=authentication_session.parent_uid).first()
     return account
 
 
@@ -123,7 +122,6 @@ async def delete_account(account: Account):
 
     :return: account
     """
-    account = await Account().filter(uid=account.uid).first()
     account.deleted = True
     await account.save(update_fields=['deleted'])
     return account
@@ -148,7 +146,6 @@ async def delete_role(role: Role):
 
     :return: role
     """
-    role = await Role().filter(uid=role.uid).first()
     role.deleted = True
     await role.save(update_fields=['deleted'])
     return role
@@ -186,7 +183,6 @@ async def delete_permission(permission: Permission):
 
     :return: permission
     """
-    permission = await Permission().filter(uid=permission.uid).first()
     permission.deleted = True
     await permission.save(update_fields=['deleted'])
     return permission
