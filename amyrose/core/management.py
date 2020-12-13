@@ -13,7 +13,7 @@ async def get_authentication_sessions(account: Account):
 
     :return: authentication_sessions
     """
-    return await AuthenticationSession.filter(parent_uid=account.uid).all()
+    return await AuthenticationSession().filter(parent_uid=account.uid).all()
 
 
 async def invalidate_authentication_session(authentication_session: AuthenticationSession):
@@ -37,7 +37,7 @@ async def get_verification_sessions(account: Account):
 
     :return: verification_sessions
     """
-    return await VerificationSession.filter(parent_uid=account.uid).all()
+    return await VerificationSession().filter(parent_uid=account.uid).all()
 
 
 async def invalidate_verification_session(verification_session: VerificationSession):
@@ -48,7 +48,7 @@ async def invalidate_verification_session(verification_session: VerificationSess
 
     :return: authentication_sessions
     """
-    verification_session = await VerificationSession.filter(uid=verification_session.uid).first()
+    verification_session = await VerificationSession().filter(uid=verification_session.uid).first()
     verification_session.valid = False
     await verification_session.save(update_fields=['valid'])
     return verification_session
@@ -88,7 +88,7 @@ async def get_account_via_email(email: str):
 
     :return: account
     """
-    return await Account.filter(email=email).first()
+    return await Account().filter(email=email).first()
 
 
 async def create_account(email: str, username: str, password: str, phone: str = None, verified: bool = False):
@@ -109,8 +109,8 @@ async def create_account(email: str, username: str, password: str, phone: str = 
     :return: account
     """
     try:
-        return await Account.create(email=email, username=username, verified=verified, phone=phone,
-                                    password=bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt()))
+        return await Account().create(email=email, username=username, verified=verified, phone=phone,
+                                      password=bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt()))
     except IntegrityError:
         raise Account.AccountExistsError()
 
@@ -123,7 +123,7 @@ async def delete_account(account: Account):
 
     :return: account
     """
-    account = await Account.filter(uid=account.uid).first()
+    account = await Account().filter(uid=account.uid).first()
     account.deleted = True
     await account.save(update_fields=['deleted'])
     return account
@@ -137,7 +137,7 @@ async def get_roles(account: Account):
 
     :return: roles
     """
-    return await Role.filter(parent_uid=account.uid).all()
+    return await Role().filter(parent_uid=account.uid).all()
 
 
 async def delete_role(role: Role):
@@ -148,7 +148,7 @@ async def delete_role(role: Role):
 
     :return: role
     """
-    role = await Role.filter(uid=role.uid).first()
+    role = await Role().filter(uid=role.uid).first()
     role.deleted = True
     await role.save(update_fields=['deleted'])
     return role
@@ -164,7 +164,7 @@ async def create_permission(account: Account, permission: str):
 
     :return: permission
     """
-    return await Permission.create(parent_uid=account.uid, name=permission)
+    return await Permission().create(parent_uid=account.uid, name=permission)
 
 
 async def get_permissions(account: Account):
@@ -175,7 +175,7 @@ async def get_permissions(account: Account):
 
     :return: permissions
     """
-    return await Permission.filter(parent_uid=account.uid).all()
+    return await Permission().filter(parent_uid=account.uid).all()
 
 
 async def delete_permission(permission: Permission):
@@ -186,7 +186,7 @@ async def delete_permission(permission: Permission):
 
     :return: permission
     """
-    permission = await Permission.filter(uid=permission.uid).first()
+    permission = await Permission().filter(uid=permission.uid).first()
     permission.deleted = True
     await permission.save(update_fields=['deleted'])
     return permission

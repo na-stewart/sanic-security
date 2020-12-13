@@ -8,6 +8,7 @@ import jwt
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
+from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from amyrose.core.config import config_parser
@@ -121,14 +122,15 @@ class Session(BaseModel):
         """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
-    def encode(self):
+    def encode(self, response: HTTPResponse):
         """
         Transforms session into a jwt to be stored as a cookie.
 
         :return: jwt
         """
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
-        return jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
+        encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
+        response.cookies[self.cookie_name()] = encoded
 
     async def decode(self, request: Request):
         """
