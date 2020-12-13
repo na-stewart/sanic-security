@@ -136,7 +136,7 @@ class Session(BaseModel):
         """
         Transforms jwt token retrieved from cookie into a session.
 
-        :return: session.
+        :return: session
         """
         try:
             decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
