@@ -3,9 +3,11 @@ import random
 import string
 import uuid
 
+
 import jwt
 from jwt import DecodeError
 from sanic.exceptions import ServerError
+from sanic.request import Request
 from tortoise import fields, Model
 
 from amyrose.core.config import config_parser
@@ -90,13 +92,26 @@ class Account(BaseModel):
 
     class UnverifiedError(AccountError):
         def __init__(self):
-            super().__init__('This account is unverified.', 401)
+            super().__init__('Account requires verification.', 401)
 
 
 class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+
+    async def validate_access_location(self, request: Request, decoded_cookie: dict):
+        """
+        Validates if client using session is in a known location. Prevents cookie jacking.
+
+        :param request: Sanic request parameter.
+
+        :param decoded_cookie: Decoded cookie from client.
+
+        :raises UnknownLocationError:
+        """
+        if not await AuthenticationSession.filter(ip=request.ip, parent_uid=decoded_cookie['parent_uid']).exists():
+            raise Session.UnknownLocationError()
 
     def cookie_name(self):
         """
@@ -106,7 +121,7 @@ class Session(BaseModel):
         """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
-    def to_cookie(self):
+    def encode(self):
         """
         Transforms session into a jwt to be stored as a cookie.
 
@@ -115,15 +130,16 @@ class Session(BaseModel):
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         return jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
 
-    @classmethod
-    def from_cookie(cls, cookie_content):
+    async def decode(self, request: Request):
         """
         Transforms jwt token retrieved from cookie into a readable payload dictionary.
 
         :return: payload
         """
         try:
-            return jwt.decode(cookie_content, config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
+            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
+            session = await self.filter(uid=decoded['uid']).first()
+            return session
         except DecodeError:
             raise Session.DecodeError()
 
@@ -131,7 +147,7 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(BaseErrorFactory):
-        async def get(self, model):
+        def get(self, model):
             error = None
             if model is None:
                 error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
@@ -145,7 +161,7 @@ class Session(BaseModel):
 
     class SessionError(ServerError):
         def __init__(self, message, code):
-            super.__init__(message, code)
+            super().__init__(message, code)
 
     class DecodeError(SessionError):
         def __init__(self):
@@ -165,7 +181,8 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, default=''.join(random.choices(string.digits, k=7)), max_length=7)
+    code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters.lower() + string.digits,
+                                                                        k=7)), max_length=6)
 
     class IncorrectCodeError(Session.SessionError):
         def __init__(self):

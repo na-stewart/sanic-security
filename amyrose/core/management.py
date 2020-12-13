@@ -64,7 +64,7 @@ async def create_role(account: Account, role: str):
 
     :return: role
     """
-    return await Role.create(parent_uid=account.uid, name=account)
+    return await Role.create(parent_uid=account.uid, name=role)
 
 
 async def get_client(request: Request):
@@ -75,9 +75,20 @@ async def get_client(request: Request):
 
     :return: account
     """
-    decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
-    account = await Account.filter(uid=decoded_cookie['parent_uid']).first()
+    authentication_session = await AuthenticationSession().decode(request)
+    account = await Account.filter(uid=authentication_session.uid).first()
     return account
+
+
+async def get_account_via_email(email: str):
+    """
+    Retrieves account information from an email.
+
+    :param email: Email of the account being retrieved.
+
+    :return: account
+    """
+    return await Account.filter(email=email).first()
 
 
 async def create_account(email: str, username: str, password: str, phone: str = None, verified: bool = False):

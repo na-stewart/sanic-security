@@ -21,14 +21,14 @@ async def on_register(request):
     content = {'Username': account.username, 'Email': account.email, 'Phone': account.phone,
                'Verified': account.verified}
     response = base_response('Registration successful, please verify your account', content)
-    response.cookies[verification_session.cookie_name()] = verification_session.to_cookie()
+    response.cookies[verification_session.cookie_name()] = verification_session.encode()
     return response
 
 
 @app.post('/login')
 async def on_login(request):
     account, authentication_session = await login(request)
-    cookie = authentication_session.to_cookie()
+    cookie = authentication_session.encode()
     content = {'Username': account.username, 'Email': account.email, 'Token': cookie}
     response = base_response('Login successful!', content)
     response.cookies[authentication_session.cookie_name()] = cookie

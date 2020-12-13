@@ -4,26 +4,12 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError
 
-from amyrose.core.management import create_account
+from amyrose.core.management import create_account, get_account_via_email
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
 from amyrose.core.utils import best_by
 
 account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
-
-
-async def _validate_client_location(request: Request, decoded_cookie: dict):
-    """
-    Validates if client using session is in a known location. Prevents cookie jacking.
-
-    :param request: Sanic request parameter.
-
-    :param decoded_cookie: Decoded cookie from client.
-
-    :raises UnknownLocationError:
-    """
-    if not await AuthenticationSession.filter(ip=request.ip, parent_uid=decoded_cookie['parent_uid']).exists():
-        raise Session.UnknownLocationError()
 
 
 async def _request_verification(request: Request, account: Account):
@@ -39,9 +25,9 @@ async def _request_verification(request: Request, account: Account):
     if account.verified:
         account.verified = False
         await account.save(update_fields=['verified'])
-    await VerificationSession.filter(parent_uid=account.uid, valid=True).update(valid=False)
-    verification_session = await VerificationSession.create(expiration_date=best_by(1), parent_uid=account.uid,
-                                                            ip=request.ip)
+    await VerificationSession().filter(parent_uid=account.uid, valid=True).update(valid=False)
+    verification_session = await VerificationSession().create(expiration_date=best_by(1), parent_uid=account.uid,
+                                                              ip=request.ip)
     return account, verification_session
 
 
@@ -93,15 +79,12 @@ async def verify_account(request: Request):
 
     :return: account, verification_session
     """
-    decoded_cookie = VerificationSession.from_cookie(request.cookies.get('veritkn'))
-    await _validate_client_location(request, decoded_cookie)
-    verification_session = await VerificationSession.filter(uid=decoded_cookie['uid']).first()
-    account = await Account.filter(uid=verification_session.parent_uid).first()
+    verification_session = await VerificationSession().decode(request)
     if verification_session.code != request.form.get('code'):
-        raise VerificationSession.IncorrectCodeError()
+        raise VerificationSession().IncorrectCodeError()
     else:
-        account_error_factory.raise_error(account)
         session_error_factory.raise_error(verification_session)
+        account = await Account().filter(uid=verification_session.parent_uid).first()
     return await _complete_verification(account, verification_session)
 
 
@@ -119,12 +102,11 @@ async def login(request: Request):
     :return: account, authentication_session
     """
     params = request.form
-    account = await Account.filter(email=params.get('email')).first()
+    account = await get_account_via_email(params.get('email'))
     account_error_factory.raise_error(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await AuthenticationSession.create(parent_uid=account.uid, ip=request.ip,
+        authentication_session = await AuthenticationSession().create(parent_uid=account.uid, ip=request.ip,
                                                                     expiration_date=best_by(30))
-        session_error_factory.raise_error(authentication_session)
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -156,11 +138,9 @@ async def authenticate(request: Request):
 
     :return: account, authentication_session
     """
-    decoded_cookie = AuthenticationSession.from_cookie(request.cookies.get('authtkn'))
-    await _validate_client_location(request, decoded_cookie)
-    authentication_session = await AuthenticationSession.filter(uid=decoded_cookie['uid']).first()
+    authentication_session = await AuthenticationSession().decode(request)
     session_error_factory.raise_error(authentication_session)
-    account = await Account.filter(uid=authentication_session.parent_uid).first()
+    account = await Account().filter(uid=authentication_session.parent_uid).first()
     account_error_factory.raise_error(account)
     return account, authentication_session
 
@@ -173,6 +153,7 @@ def requires_authentication():
 
     :raises SessionError:
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):

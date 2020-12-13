@@ -12,8 +12,8 @@ def best_by(days=1):
     return datetime.datetime.utcnow() + datetime.timedelta(days=days)
 
 
-def is_expired(date):
-    return date < datetime.datetime.utcnow() and date
+def is_expired(date_time):
+    return date_time < datetime.datetime.now(datetime.timezone.utc) and date_time
 
 
 async def text_verification_code(account, verification_session):

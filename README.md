@@ -149,14 +149,13 @@ Key | Value |
 **phone** | +19876854892
 **password** | testpass
 
-
 ```python
 @app.post('/register')
 async def on_register(request):
     account, verification_session = await register(request)
     await text_verification_code(account, verification_session)
     response = text('Registration successful')
-    response.cookies[verification_session.cookie_name()] = verification_session.to_cookie()
+    response.cookies[verification_session.cookie_name()] = verification_session.encode()
     return response
 ```
 
@@ -182,13 +181,12 @@ Key | Value |
 **email** | test@test.com
 **password** | testpass
 
-
 ```python
 @app.post('/login')
 async def on_login(request):
     account, authentication_session = await login(request)
     response = text('Login successful')
-    response.cookies[authentication_session.cookie_name()] = authentication_session.to_cookie()
+    response.cookies[authentication_session.cookie_name()] = authentication_session.encode()
     return response
 ```
 
