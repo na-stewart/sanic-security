@@ -38,7 +38,6 @@ async def on_login(request):
 async def on_logout(request):
     account, authentication_session = await logout(request)
     response = text('Logout successful')
-    del response.cookies[authentication_session.cookie_name()]
     return response
 
 
