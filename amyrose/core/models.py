@@ -124,9 +124,9 @@ class Session(BaseModel):
 
     def encode(self, response: HTTPResponse):
         """
-        Transforms session into a jwt to be stored as a cookie.
+        Transforms session into jwt and then is stored in a cookie.
 
-        :return: jwt
+        :param response: Response used to store cookie.
         """
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
@@ -134,9 +134,9 @@ class Session(BaseModel):
 
     async def decode(self, request: Request):
         """
-        Transforms jwt token retrieved from cookie into a readable payload dictionary.
+        Transforms jwt token retrieved from cookie into a session.
 
-        :return: payload
+        :return: session.
         """
         try:
             decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
