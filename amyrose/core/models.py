@@ -125,15 +125,20 @@ class Session(BaseModel):
         """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
-    def encode(self, response: HTTPResponse):
+    def encode(self, response: HTTPResponse, secure=False):
         """
         Transforms session into jwt and then is stored in a cookie.
 
         :param response: Response used to store cookie.
+
+        :param secure: If true, connections must be SSL encrypted (aka https).
         """
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
-        response.cookies[self.cookie_name()] = encoded
+        cookie_name = self.cookie_name()
+        response.cookies[cookie_name] = encoded
+        response.cookies[cookie_name]['expires'] = self.expiration_date
+        response.cookies[cookie_name]['secure'] = secure
 
     async def decode(self, request: Request):
         """

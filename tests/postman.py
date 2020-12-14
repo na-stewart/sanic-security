@@ -91,7 +91,7 @@ async def on_test_role(request):
 async def on_rose_error_test(request, exception: ServerError):
     payload = {
         'error': str(exception),
-        'code': exception.status_code
+        'status': exception.status_code
     }
     return json(payload, status=exception.status_code)
 
