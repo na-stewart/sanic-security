@@ -1,8 +1,8 @@
 import functools
 from fnmatch import fnmatch
 from amyrose.core.authentication import authenticate
+from amyrose.core.management import get_permissions
 from amyrose.core.models import Role, Permission, Account
-from build.lib.amyrose.core.authorization import get_account_permissions
 
 
 async def check_role(account: Account, required_role: str):
@@ -29,7 +29,7 @@ async def check_permission(account: Account, required_permission: str):
 
     :raises InsufficientPermissionError:
     """
-    permissions = await get_account_permissions(account)
+    permissions = await get_permissions(account)
     for permission in permissions:
         if fnmatch(permission.name, required_permission):
             break

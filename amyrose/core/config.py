@@ -1,4 +1,3 @@
-import os
 from configparser import ConfigParser
 
 config_path = '../rose.ini'

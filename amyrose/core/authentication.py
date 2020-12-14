@@ -3,7 +3,6 @@ import functools
 import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError
-
 from amyrose.core.management import create_account, get_account_via_email
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Session
 from amyrose.core.utils import best_by
