@@ -32,6 +32,11 @@ class BaseErrorFactory:
             raise error
 
 
+class AmyRoseError(ServerError):
+    def __init__(self, message, code):
+        super().__init__(message, code)
+
+
 class BaseModel(Model):
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
@@ -42,10 +47,6 @@ class BaseModel(Model):
 
     class Meta:
         abstract = True
-
-    class AmyRoseError(ServerError):
-        def __init__(self, message, code):
-            super().__init__(message, code)
 
     class NotFoundError(AmyRoseError):
         def __init__(self, message):
