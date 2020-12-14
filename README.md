@@ -248,7 +248,7 @@ async def on_test_role(request):
 
 ```python
 @app.exception(RoseError)
-async def on_rose_error_resr(request, exception):
+async def on_rose_error_test(request, exception):
     payload = {
         'error': str(exception),
         'code': exception.code
