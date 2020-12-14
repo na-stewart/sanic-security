@@ -79,6 +79,15 @@ async def get_client(request: Request):
     return account
 
 
+async def get_accounts():
+    """
+    Retrieves all accounts in database.
+
+    :return: accounts
+    """
+    return await Account().all()
+
+
 async def get_account_via_email(email: str):
     """
     Retrieves account information from an email.
