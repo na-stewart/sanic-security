@@ -44,6 +44,7 @@
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
     * [Authorization](#authorization)
+    * [Error Handling](#error-handling)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -241,6 +242,18 @@ async def on_test_perm(request):
 @requires_role('Admin')
 async def on_test_role(request):
     return text('Admin has retrieved very sensitive data')
+```
+
+## Error Handling
+
+```python
+@app.exception(RoseError)
+async def on_rose_error_resr(request, exception):
+    payload = {
+        'error': str(exception),
+        'code': exception.code
+    }
+    return json(payload, status=exception.code)
 ```
 
 <!-- ROADMAP -->

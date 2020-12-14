@@ -32,9 +32,10 @@ class BaseErrorFactory:
             raise error
 
 
-class RoseError(ServerError):
+class RoseError(Exception):
     def __init__(self, message, code):
-        super().__init__(message, code)
+        self.code = code
+        super().__init__(message)
 
 
 class BaseModel(Model):

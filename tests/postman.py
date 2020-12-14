@@ -1,11 +1,12 @@
 from sanic import Sanic
 from sanic.response import text, json
 
-from amyrose.core.authentication import register, login, verify_account, requires_authentication,\
+from amyrose.core.authentication import register, login, verify_account, requires_authentication, \
     logout
 from amyrose.core.authorization import requires_permission, requires_role
 from amyrose.core.management import create_permission, create_role, get_client
 from amyrose.core.middleware import xss_middleware
+from amyrose.core.models import RoseError
 from amyrose.core.utils import text_verification_code
 from amyrose.lib.tortoise import tortoise_init
 
@@ -83,6 +84,15 @@ async def on_test_perm(request):
 @requires_role('Admin')
 async def on_test_role(request):
     return text('Admin gained access!')
+
+
+@app.exception(RoseError)
+async def on_rose_error_resr(request, exception):
+    payload = {
+        'error': str(exception),
+        'code': exception.code
+    }
+    return json(payload, status=exception.code)
 
 
 if __name__ == '__main__':
