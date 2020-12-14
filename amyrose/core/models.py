@@ -182,7 +182,7 @@ class Session(BaseModel):
 
 class VerificationSession(Session):
     code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters.lower() + string.digits,
-                                                                        k=7)), max_length=6)
+                                                                        k=7)), max_length=7)
 
     class IncorrectCodeError(Session.SessionError):
         def __init__(self):
