@@ -125,7 +125,7 @@ class Session(BaseModel):
         """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
-    def encode(self, response: HTTPResponse, secure: bool = True, same_site=None):
+    def encode(self, response: HTTPResponse, secure: bool = True, same_site: str = None):
         """
         Transforms session into jwt and then is stored in a cookie.
 
