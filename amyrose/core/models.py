@@ -43,11 +43,15 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    class NotFoundError(ServerError):
+    class AmyRoseError(ServerError):
+        def __init__(self, message, code):
+            super().__init__(message, code)
+
+    class NotFoundError(AmyRoseError):
         def __init__(self, message):
             super().__init__(message, 404)
 
-    class DeletedError(ServerError):
+    class DeletedError(AmyRoseError):
         def __init__(self, message):
             super().__init__(message, 404)
 
@@ -73,7 +77,7 @@ class Account(BaseModel):
                 error = Account.UnverifiedError()
             return error
 
-    class AccountError(ServerError):
+    class AccountError(BaseModel.AmyRoseError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -137,7 +141,8 @@ class Session(BaseModel):
         :return: session
         """
         try:
-            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8', algorithms='HS256')
+            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8',
+                                 algorithms='HS256')
             session = await self.filter(uid=decoded['uid']).first()
             return session
         except DecodeError:
@@ -159,7 +164,7 @@ class Session(BaseModel):
                 error = Session.ExpiredError()
             return error
 
-    class SessionError(ServerError):
+    class SessionError(BaseModel.AmyRoseError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -200,7 +205,7 @@ class AuthenticationSession(Session):
 class Role(BaseModel):
     name = fields.CharField(max_length=45)
 
-    class InsufficientRoleError(ServerError):
+    class InsufficientRoleError(BaseModel.AmyRoseError):
         def __init__(self):
             super().__init__('You do not have the required role for this action.', 403)
 
@@ -208,6 +213,6 @@ class Role(BaseModel):
 class Permission(BaseModel):
     name = fields.CharField(max_length=45)
 
-    class InsufficientPermissionError(ServerError):
+    class InsufficientPermissionError(BaseModel.AmyRoseError):
         def __init__(self):
             super().__init__('You do not have the required permissions for this action.', 403)
