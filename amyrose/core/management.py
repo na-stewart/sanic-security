@@ -81,7 +81,7 @@ async def get_client(request: Request):
 
 async def get_accounts():
     """
-    Retrieves all accounts.
+    Retrieves all accounts in database.
 
     :return: accounts
     """
