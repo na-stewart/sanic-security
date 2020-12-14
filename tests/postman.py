@@ -1,4 +1,5 @@
 from sanic import Sanic
+from sanic.exceptions import ServerError
 from sanic.response import text, json
 
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, \
@@ -87,12 +88,12 @@ async def on_test_role(request):
 
 
 @app.exception(RoseError)
-async def on_rose_error_test(request, exception):
+async def on_rose_error_test(request, exception: ServerError):
     payload = {
         'error': str(exception),
-        'code': exception.code
+        'code': exception.status_code
     }
-    return json(payload, status=exception.code)
+    return json(payload, status=exception.status_code)
 
 
 if __name__ == '__main__':

@@ -248,12 +248,12 @@ async def on_test_role(request):
 
 ```python
 @app.exception(RoseError)
-async def on_rose_error_test(request, exception):
+async def on_rose_error_test(request, exception: ServerError):
     payload = {
         'error': str(exception),
-        'code': exception.code
+        'code': exception.status_code
     }
-    return json(payload, status=exception.code)
+    return json(payload, status=exception.status_code)
 ```
 
 <!-- ROADMAP -->
