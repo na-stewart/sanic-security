@@ -48,7 +48,6 @@ async def register(request: Request):
     params = request.form
     try:
         hashed = bcrypt.hashpw(params.get('password').encode('utf8'), bcrypt.gensalt())
-
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
                                            password=hashed, phone=params.get('phone'))
         return await _request_verification(request, account)
