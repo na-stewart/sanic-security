@@ -100,7 +100,7 @@ class AccountDTO(DTO):
         :return: account
         """
         authentication_session = await AuthenticationSession().decode(request)
-        account = await Account.filter(uid=authentication_session.parent_uid).first()
+        account = await self.get(authentication_session.parent_uid)
         return account
 
 
@@ -120,8 +120,6 @@ class VerificationSessionDTO(DTO):
 class AuthenticationSessionDTO(DTO):
     def __init__(self):
         super().__init__(AuthenticationSession)
-
-    pass
 
 
 class RoleDTO(DTO):
