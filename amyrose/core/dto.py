@@ -1,7 +1,5 @@
 from typing import TypeVar, Generic, Type
-
 from sanic.request import Request
-
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission
 
 T = TypeVar('T')
