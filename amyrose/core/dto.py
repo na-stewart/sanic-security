@@ -61,8 +61,7 @@ class DTO(Generic[T]):
         :return: T
         """
         t.deleted = True
-        await t.save(update_fields=['deleted'])
-        return t
+        return t.update(t, ['deleted'])
 
 
 class AccountDTO(DTO):
@@ -78,8 +77,8 @@ class AccountDTO(DTO):
         :return: account
         """
         account.disabled = True
-        await account.save(update_fields=['disabled'])
-        return account
+        return self.update(account, ['disabled'])
+
 
     async def get_by_email(self, email: str):
         """
