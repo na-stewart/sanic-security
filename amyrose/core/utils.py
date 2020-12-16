@@ -17,8 +17,8 @@ def is_expired(date_time: datetime.datetime):
     """
     Checks if current time is beyond expiration date passed.
 
-    :param date_time:
-    :return:
+    :param date_time: Date to check.
+    :return: expiration_date
     """
     return date_time < datetime.datetime.now(datetime.timezone.utc) and date_time
 
