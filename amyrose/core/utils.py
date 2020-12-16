@@ -27,7 +27,7 @@ async def text_verification_code(account_phone: str, verification_code: str):
     """
     Sends account verification code via text.
 
-    :param account: Phone number to send code too.
+    :param account_phone: Phone number to send code too.
     :param verification_code: Code sent to account for them to verify themselves.
     """
     sms_str = 'Your verification code is: ' + verification_code

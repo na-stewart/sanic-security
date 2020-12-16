@@ -24,7 +24,7 @@ async def response_middleware(request, response):
 @app.post('/register')
 async def on_register(request):
     account, verification_session = await register(request)
-    await text_verification_code(account, verification_session)
+    await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
     verification_session.encode(response)
     return response

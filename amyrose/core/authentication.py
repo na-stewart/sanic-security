@@ -28,7 +28,7 @@ async def _request_verification(request: Request, account: Account):
     account.verified = False
     await account_dto.update(account, ['verified'])
     await verification_session_dto.invalidate_previous_sessions(account)
-    verification_session = verification_session_dto.create(expiration_date=best_by(1), parent_uid=account.uid,
+    verification_session = await verification_session_dto.create(expiration_date=best_by(1), parent_uid=account.uid,
                                                            ip=request.ip)
     return account, verification_session
 
@@ -47,8 +47,10 @@ async def register(request: Request):
     """
     params = request.form
     try:
+        hashed = bcrypt.hashpw(params.get('password').encode('utf8'), bcrypt.gensalt())
+
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
-                                           passowrd=params.get('password'), phone=params.get('phone'))
+                                           password=hashed, phone=params.get('phone'))
         return await _request_verification(request, account)
     except IntegrityError:
         raise Account.AccountExistsError()

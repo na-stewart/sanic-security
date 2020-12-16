@@ -39,17 +39,17 @@ class DTO(Generic[T]):
         """
         return await self.t().create(**kwargs)
 
-    async def update(self, t: T, *args: list):
+    async def update(self, t: T, fields: list):
         """
         Updates a model in the database.
 
         :param t: Model being updated in database.
 
-        :param args: Fields being updated in the model.
+        :param fields: Fields being updated in the model to be updated in database.
 
         :return: T
         """
-        await t.save(update_fields=args)
+        await t.save(update_fields=fields)
         return t
 
     async def delete(self, t: T):
