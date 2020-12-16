@@ -11,7 +11,6 @@ class DTO(Generic[T]):
         self.t = t
 
     async def get_all(self):
-
         """
         Returns a list of models.
 
@@ -61,7 +60,7 @@ class DTO(Generic[T]):
         :return: T
         """
         t.deleted = True
-        return t.update(t, ['deleted'])
+        return self.update(t, ['deleted'])
 
 
 class AccountDTO(DTO):
@@ -78,7 +77,6 @@ class AccountDTO(DTO):
         """
         account.disabled = True
         return self.update(account, ['disabled'])
-
 
     async def get_by_email(self, email: str):
         """
