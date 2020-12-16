@@ -89,7 +89,7 @@ class AccountDTO(DTO):
 
         :return: T
         """
-        return await Account.filter(email=email).first()
+        return await self.t().filter(email=email).first()
 
     async def get_client(self, request: Request):
         """
@@ -112,7 +112,7 @@ class VerificationSessionDTO(DTO):
 
         :param account: Account to disable sessions for.
         """
-        await VerificationSession().filter(parent_uid=account.uid, valid=True).update(valid=False)
+        await self.t().filter(parent_uid=account.uid, valid=True).update(valid=False)
 
 
 class AuthenticationSessionDTO(DTO):
@@ -134,7 +134,7 @@ class RoleDTO(DTO):
 
         :return: has_role
         """
-        return await Role().filter(parent_uid=account.uid, name=role).exists()
+        return await self.t().filter(parent_uid=account.uid, name=role).exists()
 
     async def assign_role(self, account: Account, role: str):
         """
@@ -176,4 +176,4 @@ class PermissionDTO(DTO):
 
         :return: permissions
         """
-        return await Permission().filter(parent_uid=account.uid).all()
+        return await self.t().filter(parent_uid=account.uid).all()
