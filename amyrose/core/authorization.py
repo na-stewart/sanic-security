@@ -1,8 +1,11 @@
 import functools
 from fnmatch import fnmatch
 from amyrose.core.authentication import authenticate
-from amyrose.core.management import get_permissions
+from amyrose.core.dto import RoleDTO, PermissionDTO
 from amyrose.core.models import Role, Permission, Account
+
+role_dto = RoleDTO()
+permission_dto = PermissionDTO()
 
 
 async def check_role(account: Account, required_role: str):
@@ -15,7 +18,7 @@ async def check_role(account: Account, required_role: str):
 
     :raises InsufficientRoleError:
     """
-    if not await Role().filter(parent_uid=account.uid, name=required_role).exists():
+    if not await role_dto.has_role(account, required_role):
         raise Role.InsufficientRoleError()
 
 
@@ -29,7 +32,7 @@ async def check_permission(account: Account, required_permission: str):
 
     :raises InsufficientPermissionError:
     """
-    permissions = await get_permissions(account)
+    permissions = await permission_dto.get_permissions(account)
     for permission in permissions:
         if fnmatch(permission.name, required_permission):
             break
@@ -45,6 +48,7 @@ def requires_permission(required_permission: str):
 
     :raises InsufficientPermissionError:
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
@@ -65,6 +69,7 @@ def requires_role(required_role: str):
 
     :raises InsufficientRoleError:
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):

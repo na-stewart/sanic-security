@@ -88,7 +88,7 @@ class Account(BaseModel):
 
     class DisabledError(AccountError):
         def __init__(self):
-            super().__init__("This account has been disabled.", 401)
+            super().__init__("This account has been disabled. This could be due to an infraction.", 401)
 
     class IncorrectPasswordError(AccountError):
         def __init__(self):
@@ -125,7 +125,7 @@ class Session(BaseModel):
         """
         return self.__class__.__name__[:4].lower() + 'tkn'
 
-    def encode(self, response: HTTPResponse, secure: bool = True, same_site: str = None):
+    def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -142,7 +142,6 @@ class Session(BaseModel):
         response.cookies[cookie_name]['expires'] = self.expiration_date
         response.cookies[cookie_name]['secure'] = secure
         response.cookies[cookie_name]['samesite'] = same_site
-        print(response.cookies)
 
     async def decode(self, request: Request):
         """

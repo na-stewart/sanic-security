@@ -5,14 +5,16 @@ from sanic.response import text, json
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, \
     logout
 from amyrose.core.authorization import requires_permission, requires_role
-from amyrose.core.management import create_permission, create_role, get_client
+from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO
 from amyrose.core.middleware import xss_middleware
-from amyrose.core.models import RoseError
+from amyrose.core.models import RoseError, Account, Role, Permission
 from amyrose.core.utils import text_verification_code
 from amyrose.lib.tortoise import tortoise_init
 
 app = Sanic('AmyRose tests')
-
+account_dto = AccountDTO()
+role_dto = RoleDTO()
+permission_dto = PermissionDTO()
 
 @app.middleware('response')
 async def response_middleware(request, response):
@@ -57,21 +59,21 @@ async def test(request):
 
 @app.post('/createadmin')
 async def on_create_admin(request):
-    client = await get_client(request)
-    await create_role(client, 'Admin')
+    client = await account_dto.get_client(request)
+    await role_dto.assign_role(client, 'Admin')
     return text('Hello Admin!')
 
 
 @app.post('/createadminperm')
 async def on_create_admin_perm(request):
-    client = await get_client(request)
-    await create_permission(client, 'admin:update')
+    client = await account_dto.get_client(request)
+    await permission_dto.assign_permission(client, 'admin:update')
     return text('Hello Admin who can only update!')
 
 
 @app.get('/testclient')
 async def on_test_client(request):
-    client = await get_client(request)
+    client = await account_dto.get_client(request)
     return text('Hello ' + client.username + '!')
 
 
