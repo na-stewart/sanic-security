@@ -1,6 +1,8 @@
 from typing import TypeVar, Generic, Type
+
+import bcrypt
 from sanic.request import Request
-from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission
+from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session
 
 T = TypeVar('T')
 
@@ -78,6 +80,17 @@ class AccountDTO(DTO):
         account.disabled = True
         return self.update(account, ['disabled'])
 
+    async def enable(self, account: Account):
+        """
+        Enabled an account after being disabled.
+
+        :param account: account being enabled
+
+        :return: account
+        """
+        account.enable = True
+        return self.update(account, ['disabled'])
+
     async def get_by_email(self, email: str):
         """
         Retrieves account via email.
@@ -98,12 +111,20 @@ class AccountDTO(DTO):
         account = await self.get(authentication_session.parent_uid)
         return account
 
+    def hash_password(self, password):
+        """
+        Turns passed text into hashed password
+        :param password: Password to be hashed.
+        :return: hashed
+        """
+        return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+
 
 class VerificationSessionDTO(DTO):
     def __init__(self):
         super().__init__(VerificationSession)
 
-    async def invalidate_previous_sessions(self, account: Account):
+    async def invalidate_previous_session(self, account: Account):
         """
         Invalidates all previous verification sessions created by an account.
 
@@ -115,6 +136,19 @@ class VerificationSessionDTO(DTO):
 class AuthenticationSessionDTO(DTO):
     def __init__(self):
         super().__init__(AuthenticationSession)
+
+    async def validate_access_location(self, request: Request, decoded_cookie: dict):
+        """
+        Validates if client using session is in a known location. Prevents cookie jacking.
+
+        :param request: Sanic request parameter.
+
+        :param decoded_cookie: Decoded cookie from client.
+
+        :raises UnknownLocationError:
+        """
+        if not await AuthenticationSession.filter(ip=request.ip, parent_uid=decoded_cookie['parent_uid']).exists():
+            raise Session.UnknownLocationError()
 
 
 class RoleDTO(DTO):

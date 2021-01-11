@@ -15,27 +15,33 @@ account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def _request_verification(request: Request, account: Account):
+async def request_verification(request: Request, account: Account = None):
     """
-        Creates a verification session associated with an account. Invalidates all previous verification requests.
+    Creates a verification session associated with an account. Invalidates all previous verification requests.
 
-       :param request: Sanic request parameter.
+    :param request: Sanic request parameter.
 
-       :param account: The account that requires verification.
+    :param account: The account that requires verification.
 
-       :return: account, verification_session
-       """
-    account.verified = False
-    await account_dto.update(account, ['verified'])
-    await verification_session_dto.invalidate_previous_sessions(account)
+    :return: account, verification_session
+    """
+    if account is None:
+        verification_session = await VerificationSession().decode(request)
+        session_error_factory.raise_error(verification_session)
+        account = await account_dto.get(verification_session.parent_uid)
+    else:
+        account.verified = False
+        await account_dto.update(account, ['verified'])
+    await verification_session_dto.invalidate_previous_session(account)
     verification_session = await verification_session_dto.create(expiration_date=best_by(1), parent_uid=account.uid,
-                                                           ip=request.ip)
+                                                                 ip=request.ip)
     return account, verification_session
 
 
 async def register(request: Request):
     """
     Creates an unverified account. This is the recommend and most secure method for registering accounts' with Amy Rose.
+
     email, username, phone, and password.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
@@ -47,10 +53,10 @@ async def register(request: Request):
     """
     params = request.form
     try:
-        hashed = bcrypt.hashpw(params.get('password').encode('utf8'), bcrypt.gensalt())
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
-                                           password=hashed, phone=params.get('phone'))
-        return await _request_verification(request, account)
+                                           password=account_dto.hash_password(params.get('password')),
+                                           phone=params.get('phone'))
+        return await request_verification(request, account)
     except IntegrityError:
         raise Account.AccountExistsError()
 
@@ -125,7 +131,7 @@ async def logout(request: Request):
     """
     account, authentication_session = await authenticate(request)
     authentication_session.valid = False
-    await authentication_session_dto.update(authentication_session)
+    await authentication_session_dto.update(authentication_session, ['valid'])
     return account, authentication_session
 
 

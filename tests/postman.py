@@ -1,9 +1,10 @@
+import bcrypt
 from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.response import text, json
 
 from amyrose.core.authentication import register, login, verify_account, requires_authentication, \
-    logout
+    logout, request_verification
 from amyrose.core.authorization import requires_permission, requires_role
 from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO
 from amyrose.core.middleware import xss_middleware
@@ -26,6 +27,14 @@ async def on_register(request):
     account, verification_session = await register(request)
     await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
+    verification_session.encode(response)
+    return response
+
+@app.post('/resend')
+async def resend_verification_request(request):
+    account, verification_session = await request_verification(request)
+    await text_verification_code(account.phone, verification_session.code)
+    response = text('Resend request successful.')
     verification_session.encode(response)
     return response
 
@@ -81,6 +90,7 @@ async def on_test_client(request):
 @requires_permission('admin:update')
 async def on_test_perm(request):
     return text('Admin who can only update gained access!')
+
 
 
 @app.get('/testrole')

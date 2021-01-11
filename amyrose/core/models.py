@@ -10,7 +10,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from amyrose.core.config import config_parser
-from amyrose.core.utils import is_expired
+from amyrose.core.utils import is_expired, random_string
 
 
 class BaseErrorFactory:
@@ -104,18 +104,6 @@ class Session(BaseModel):
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
 
-    async def validate_access_location(self, request: Request, decoded_cookie: dict):
-        """
-        Validates if client using session is in a known location. Prevents cookie jacking.
-
-        :param request: Sanic request parameter.
-
-        :param decoded_cookie: Decoded cookie from client.
-
-        :raises UnknownLocationError:
-        """
-        if not await AuthenticationSession.filter(ip=request.ip, parent_uid=decoded_cookie['parent_uid']).exists():
-            raise Session.UnknownLocationError()
 
     def cookie_name(self):
         """
@@ -143,19 +131,23 @@ class Session(BaseModel):
         response.cookies[cookie_name]['secure'] = secure
         response.cookies[cookie_name]['samesite'] = same_site
 
-    async def decode(self, request: Request):
+    async def decode(self, request: Request, refresh=True):
         """
         Transforms jwt token retrieved from cookie into a session.
+
+        :param refresh: If true, request database for the session and return. If false, return raw cookie data as dict.
+
+        :param request: Sanic request parameter.
 
         :return: session
         """
         try:
             decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8',
                                  algorithms='HS256')
-            session = await self.filter(uid=decoded['uid']).first()
+            session = await self.filter(uid=decoded['uid']).first() if refresh else decoded
             return session
         except DecodeError:
-            raise Session.DecodeError()
+            raise Session.DecodeError(self.__class__.__name__)
 
     class Meta:
         abstract = True
@@ -178,8 +170,8 @@ class Session(BaseModel):
             super().__init__(message, code)
 
     class DecodeError(SessionError):
-        def __init__(self):
-            super().__init__("Session requested could not be decoded due to an error or cookie is non existent.", 401)
+        def __init__(self, name):
+            super().__init__(name + " requested could not be decoded due to an error or cookie is non existent.", 401)
 
     class InvalidError(SessionError):
         def __init__(self):
@@ -194,9 +186,12 @@ class Session(BaseModel):
             super().__init__("No session with client ip has been found. Location unknown.", 401)
 
 
+
+
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, default=''.join(random.choices(string.ascii_letters.lower() + string.digits,
-                                                                        k=7)), max_length=7)
+    code = fields.CharField(unique=True, default=random_string, max_length=7)
+
+
 
     class IncorrectCodeError(Session.SessionError):
         def __init__(self):
