@@ -160,6 +160,18 @@ async def on_register(request):
     return response
 ```
 
+* Resend Verification Request
+
+```python
+@app.post('/resend')
+async def resend_verification_request(request):
+    account, verification_session = await request_verification(request)
+    await text_verification_code(account.phone, verification_session.code)
+    response = text('Resend request successful.')
+    verification_session.encode(response)
+    return response
+```
+
 * Verification
 
 Key | Value |
