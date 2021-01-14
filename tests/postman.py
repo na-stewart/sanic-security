@@ -1,15 +1,17 @@
-import bcrypt
 from sanic import Sanic
 from sanic.exceptions import ServerError
-from sanic.response import text, json
+from sanic.response import text, json, file
 
-from amyrose.core.authentication import register, login, verify_account, requires_authentication, \
+from amyrose.core.authentication import register, login, requires_authentication, \
     logout, request_verification
 from amyrose.core.authorization import requires_permission, requires_role
-from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO
+from amyrose.core.captcha import request_captcha, captcha, captcha_init
+from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO, CaptchaSessionDTO
+from amyrose.core.initializer import initialize
 from amyrose.core.middleware import xss_middleware
 from amyrose.core.models import RoseError, Account, Role, Permission
 from amyrose.core.utils import text_verification_code
+from amyrose.core.verification import verify_account
 from amyrose.lib.tortoise import tortoise_init
 
 app = Sanic('AmyRose tests')
@@ -17,9 +19,8 @@ account_dto = AccountDTO()
 role_dto = RoleDTO()
 permission_dto = PermissionDTO()
 
-@app.middleware('response')
-async def response_middleware(request, response):
-    await xss_middleware(request, response)
+
+
 
 
 @app.post('/register')
@@ -29,6 +30,32 @@ async def on_register(request):
     response = text('Registration successful')
     verification_session.encode(response)
     return response
+
+
+@app.get('/captcha/img')
+async def on_captcha_img(request):
+    img_path = await CaptchaSessionDTO().get_client_img(request)
+    response = await file(img_path)
+    return response
+
+
+@app.get('/captcha')
+async def on_request_captcha(request):
+    captcha_session = await request_captcha(request)
+    response = text('Captcha request successful!')
+    captcha_session.encode(response)
+    return response
+
+
+@app.post('/register/')
+async def on_register_captcha(request):
+    await captcha(request)
+    account, verification_session = await register(request)
+    await text_verification_code(account.phone, verification_session.code)
+    response = text('Registration successful')
+    verification_session.encode(response)
+    return response
+
 
 @app.post('/resend')
 async def resend_verification_request(request):
@@ -92,7 +119,6 @@ async def on_test_perm(request):
     return text('Admin who can only update gained access!')
 
 
-
 @app.get('/testrole')
 @requires_role('Admin')
 async def on_test_role(request):
@@ -109,5 +135,5 @@ async def on_rose_error_test(request, exception: ServerError):
 
 
 if __name__ == '__main__':
-    app.add_task(tortoise_init())
+    initialize(app)
     app.run(host='0.0.0.0', port=8000, debug=True)

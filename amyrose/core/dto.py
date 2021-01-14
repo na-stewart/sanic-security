@@ -2,7 +2,8 @@ from typing import TypeVar, Generic, Type
 
 import bcrypt
 from sanic.request import Request
-from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session
+from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
+    CaptchaSession
 
 T = TypeVar('T')
 
@@ -65,6 +66,20 @@ class DTO(Generic[T]):
         return self.update(t, ['deleted'])
 
 
+class CaptchaSessionDTO(DTO):
+    def __init__(self):
+        super().__init__(CaptchaSession)
+
+    async def get_client_img(self, request):
+        """
+        Retrieves image path of client captcha.
+
+        :return: captcha_img_path
+        """
+        captcha_session = await CaptchaSession().decode(request)
+        return '../resources/captcha/img/' + captcha_session.challenge + '.png'
+
+
 class AccountDTO(DTO):
     def __init__(self):
         super().__init__(Account)
@@ -107,8 +122,8 @@ class AccountDTO(DTO):
         :param request: Sanic request parameter.
         :return: account
         """
-        authentication_session = await AuthenticationSession().decode(request)
-        account = await self.get(authentication_session.parent_uid)
+        authentication_session = await AuthenticationSession().decode(request, raw=True)
+        account = await self.get(authentication_session.get('parent_uid'))
         return account
 
     def hash_password(self, password):
@@ -124,20 +139,12 @@ class VerificationSessionDTO(DTO):
     def __init__(self):
         super().__init__(VerificationSession)
 
-    async def invalidate_previous_session(self, account: Account):
-        """
-        Invalidates all previous verification sessions created by an account.
-
-        :param account: Account to disable sessions for.
-        """
-        await self.t().filter(parent_uid=account.uid, valid=True).update(valid=False)
-
 
 class AuthenticationSessionDTO(DTO):
     def __init__(self):
         super().__init__(AuthenticationSession)
 
-    async def validate_access_location(self, request: Request, decoded_cookie: dict):
+    async def validate_access_location(self, request: Request):
         """
         Validates if client using session is in a known location. Prevents cookie jacking.
 
@@ -147,7 +154,9 @@ class AuthenticationSessionDTO(DTO):
 
         :raises UnknownLocationError:
         """
-        if not await AuthenticationSession.filter(ip=request.ip, parent_uid=decoded_cookie['parent_uid']).exists():
+        decoded_authentication_session = AuthenticationSession().decode(request, True)
+        if not await AuthenticationSession.filter(ip=request.ip,
+                                                  parent_uid=decoded_authentication_session['parent_uid']).exists():
             raise Session.UnknownLocationError()
 
 

@@ -43,8 +43,10 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
+    * [Captcha](#captcha)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
+    * [DTO](#DTO)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -131,9 +133,9 @@ If you're not using Twilio as your verification method, you do not have to confi
 
 Once you've configured Amy Rose, you can initialize Sanic with the example below:
 
-```
+```python
 if __name__ == '__main__':
-    app.add_task(tortoise_init())
+    initialize(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
@@ -160,18 +162,6 @@ async def on_register(request):
     return response
 ```
 
-* Resend Verification Request
-
-```python
-@app.post('/resend')
-async def resend_verification_request(request):
-    account, verification_session = await request_verification(request)
-    await text_verification_code(account.phone, verification_session.code)
-    response = text('Resend request successful.')
-    verification_session.encode(response)
-    return response
-```
-
 * Verification
 
 Key | Value |
@@ -186,7 +176,6 @@ async def on_verify(request):
     return text('Verification successful')
 ```
 
-
 * Login
 
 Key | Value |
@@ -200,6 +189,18 @@ async def on_login(request):
     account, authentication_session = await login(request)
     response = text('Login successful')
     authentication_session.encode(response)
+    return response
+```
+
+* Resend Verification Request
+
+```python
+@app.post('/resend')
+async def resend_verification_request(request):
+    account, verification_session = await request_verification(request)
+    await text_verification_code(account.phone, verification_session.code)
+    response = text('Resend request successful.')
+    verification_session.encode(response)
     return response
 ```
 
@@ -220,6 +221,42 @@ async def on_logout(request):
 @requires_authentication()
 async def get_user_info(request):
     return text('Sensitive user information')
+```
+
+## Captcha
+
+* Request Captcha
+
+```python
+@app.get('/captcha')
+async def on_request_captcha(request):
+    captcha_session = await request_captcha(request)
+    response = text('Captcha request successful!')
+    captcha_session.encode(response)
+    return response
+```
+
+* Captcha Image
+
+```python
+@app.get('/captcha/img')
+async def on_captcha_img(request):
+    img_path = await CaptchaSessionDTO().get_client_img(request)
+    response = await file(img_path)
+    return response
+```
+
+* Register (with captcha)
+
+```python
+@app.post('/register/')
+async def on_register_captcha(request):
+    await captcha(request)
+    account, verification_session = await register(request)
+    await text_verification_code(account.phone, verification_session.code)
+    response = text('Registration successful')
+    verification_session.encode(response)
+    return response
 ```
 
 ## Authorization
@@ -267,6 +304,77 @@ async def on_rose_error_test(request, exception: ServerError):
     }
     return json(payload, status=exception.status_code)
 ```
+
+## DTO
+
+A DTO object is a simple way to organize interactions with the database. It's completely abstract, so it can be used 
+with any model. If you choose not to use the DTO and instead work directly with Tortoise, that's completely fine.
+
+* Role DTO (Example)
+
+```python
+class RoleDTO(DTO):
+    def __init__(self):
+        super().__init__(Role)
+
+    async def has_role(self, account: Account, role: str):
+        """
+        Checks if the account has the required role being requested.
+
+        :param account: Account being checked.
+
+        :param role: The role that is required for validation.
+
+        :return: has_role
+        """
+        
+        return await self.t().filter(parent_uid=account.uid, name=role).exists()
+
+    async def assign_role(self, account: Account, role: str):
+        """
+        Creates a role associated with an account
+
+        :param account: Account associated with role.
+
+        :param role: role to be associated with account.
+
+        :return: role
+        """
+
+        return await self.create(parent_uid=account.uid, name=role)
+```
+
+* Usage Examples
+
+```python
+if not await role_dto.has_role(account, required_role):
+    raise Role.InsufficientRoleError()
+```
+
+```python 
+client = await account_dto.get_client(request)
+await role_dto.assign_role(client, 'Admin')
+```
+
+```python 
+client = await account_dto.get_client(request)
+await role_dto.assign_role(client, 'Admin')
+```
+
+```python
+params = request.form
+account = await account_dto.create(email=params.get('email'), username=params.get('username'),
+                                    password=account_dto.hash_password(params.get('password')),
+                                    phone=params.get('phone'))
+```
+
+```python
+account, authentication_session = await authenticate(request)
+authentication_session.valid = False
+await authentication_session_dto.update(authentication_session, fields=['valid'])
+```
+
+
 
 <!-- ROADMAP -->
 ## Roadmap

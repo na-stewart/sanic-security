@@ -9,8 +9,9 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
+
 from amyrose.core.config import config_parser
-from amyrose.core.utils import is_expired, random_string
+from amyrose.core.utils import is_expired, best_by
 
 
 class BaseErrorFactory:
@@ -100,10 +101,9 @@ class Account(BaseModel):
 
 
 class Session(BaseModel):
-    expiration_date = fields.DatetimeField(null=True)
+    expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-
 
     def cookie_name(self):
         """
@@ -131,11 +131,11 @@ class Session(BaseModel):
         response.cookies[cookie_name]['secure'] = secure
         response.cookies[cookie_name]['samesite'] = same_site
 
-    async def decode(self, request: Request, refresh=True):
+    async def decode(self, request: Request, raw=False):
         """
         Transforms jwt token retrieved from cookie into a session.
 
-        :param refresh: If true, request database for the session and return. If false, return raw cookie data as dict.
+        :param raw: If true, request database for the session and return. If false, return raw cookie data as dict.
 
         :param request: Sanic request parameter.
 
@@ -144,7 +144,7 @@ class Session(BaseModel):
         try:
             decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8',
                                  algorithms='HS256')
-            session = await self.filter(uid=decoded['uid']).first() if refresh else decoded
+            session = decoded if raw else await self.filter(uid=decoded['uid']).first()
             return session
         except DecodeError:
             raise Session.DecodeError(self.__class__.__name__)
@@ -158,11 +158,11 @@ class Session(BaseModel):
             if model is None:
                 error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
             elif not model.valid:
-                error = Session.InvalidError()
+                error = Session.InvalidError(model.__class__.__name__)
             elif model.deleted:
-                error = Session.DeletedError('Your session has been deleted.')
+                error = Session.DeletedError(model.__class__.__name__ + ' has been deleted.')
             elif is_expired(model.expiration_date):
-                error = Session.ExpiredError()
+                error = Session.ExpiredError(model.__class__.__name__)
             return error
 
     class SessionError(RoseError):
@@ -174,32 +174,42 @@ class Session(BaseModel):
             super().__init__(name + " requested could not be decoded due to an error or cookie is non existent.", 401)
 
     class InvalidError(SessionError):
-        def __init__(self):
-            super().__init__("Session is invalid.", 401)
+        def __init__(self, name):
+            super().__init__(name + " is invalid.", 401)
 
     class ExpiredError(SessionError):
-        def __init__(self):
-            super().__init__("Session has expired", 401)
+        def __init__(self, name):
+            super().__init__(name + " has expired", 401)
 
     class UnknownLocationError(SessionError):
         def __init__(self):
             super().__init__("No session with client ip has been found. Location unknown.", 401)
 
 
-
-
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, default=random_string, max_length=7)
+    code = fields.CharField(unique=True, max_length=7)
 
-
-
-    class IncorrectCodeError(Session.SessionError):
+    class VerificationAttemptError(Session.SessionError):
         def __init__(self):
             super().__init__('The code given does not match session code.', 401)
 
     class VerificationPendingError(Session.SessionError):
         def __init__(self):
             super().__init__('A verification session for this account is pending.', 401)
+
+
+class CaptchaSession(Session):
+    challenge = fields.CharField(max_length=5)
+    attempts = fields.IntField(default=0, max_length=1)
+
+    class ChallengeAttemptError(Session.SessionError):
+        def __init__(self):
+            super().__init__('The guess given does not match the captcha challenge.', 401)
+
+    class MaximumAttemptsError(Session.SessionError):
+        def __init__(self):
+            super().__init__('The maximum amount of attempts have been reached for this captcha. '
+                             'Captcha session has been invalidated.', 401)
 
 
 class AuthenticationSession(Session):

@@ -2,6 +2,9 @@ import datetime
 import random
 import string
 
+import aiofiles
+
+
 from amyrose.lib.twilio import send_sms
 
 
@@ -42,5 +45,10 @@ def random_string(length=7):
     Generates a random string of letters and numbers of specific length.
 
     :param length: The size of the random string.
+
+    :return: random_str
     """
     return ''.join(random.choices(string.ascii_letters.lower() + string.digits, k=length))
+
+
+
