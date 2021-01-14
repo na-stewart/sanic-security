@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 
-config_path = '../rose.ini'
+config_path = './rose.ini'
 config_parser = ConfigParser()
 
 
