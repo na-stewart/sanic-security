@@ -16,7 +16,7 @@ account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def register(request: Request, requires_verification: bool = True):
+async def register(request: Request, requires_verification=True):
     """
     Creates an unverified account. This is the recommend and most secure method for registering accounts' with Amy Rose.
 
@@ -36,7 +36,7 @@ async def register(request: Request, requires_verification: bool = True):
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
                                            password=account_dto.hash_password(params.get('password')),
                                            phone=params.get('phone'), verified=not requires_verification)
-        return await request_verification(request, account)
+        return await request_verification(request, account) if requires_verification else account, None
     except IntegrityError:
         raise Account.AccountExistsError()
 

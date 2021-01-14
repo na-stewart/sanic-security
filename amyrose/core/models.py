@@ -68,7 +68,7 @@ class Account(BaseModel):
     phone = fields.CharField(unique=True, max_length=20, null=True)
     password = fields.BinaryField()
     disabled = fields.BooleanField(default=False)
-    verified = fields.BooleanField(default=False)
+    verified = fields.BooleanField()
 
     class ErrorFactory(BaseErrorFactory):
         def get(self, model):
