@@ -18,7 +18,8 @@ async def verification_init():
     """
     Generates up to 100 verification code variations as string and image within their respective folders if empty.
     """
-    if os.path.getsize(verification_cache_path + 'codes.txt') == 0:
+    if not os.path.exists(verification_cache_path):
+        os.makedirs(verification_cache_path)
         async with aiofiles.open(verification_cache_path + 'codes.txt', mode="w") as f:
             for i in range(100):
                 random_str = random_string(7)

@@ -18,8 +18,8 @@ async def captcha_init():
     """
     Generates up to 100 captcha variations as string and image within their respective folders if empty.
     """
-
-    if os.path.getsize(captcha_cache_path + 'captcha.txt') == 0:
+    if not os.path.exists(captcha_cache_path):
+        os.makedirs(captcha_cache_path + '/img')
         async with aiofiles.open(captcha_cache_path + 'captcha.txt', mode="w") as f:
             for i in range(100):
                 random_str = random_string(5)

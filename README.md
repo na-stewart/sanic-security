@@ -66,6 +66,7 @@ Amy Rose comes packed with features such as:
 * Out of the box database integration
 * Wildcard permissions
 * Role permissions
+* Captcha
 
 Amy Rose contains all of your basic security needs.
 

@@ -47,7 +47,7 @@ async def on_request_captcha(request):
     return response
 
 
-@app.post('/register/')
+@app.post('/register/captcha')
 async def on_register_captcha(request):
     await captcha(request)
     account, verification_session = await register(request)
