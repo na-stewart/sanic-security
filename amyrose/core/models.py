@@ -9,7 +9,6 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
-
 from amyrose.core.config import config_parser
 from amyrose.core.utils import is_expired, best_by
 
@@ -36,6 +35,11 @@ class BaseErrorFactory:
 class RoseError(ServerError):
     def __init__(self, message, code):
         super().__init__(message, code)
+
+
+class EmptyEntryError(RoseError):
+    def __init__(self, message):
+        super().__init__(message, 400)
 
 
 class BaseModel(Model):
@@ -87,6 +91,10 @@ class Account(BaseModel):
         def __init__(self):
             super().__init__('Account with this email or phone number already exists.', 409)
 
+    class InvalidEmailError(AccountError):
+        def __init__(self):
+            super().__init__('Please use a valid email format such as you@mail.com.', 400)
+
     class DisabledError(AccountError):
         def __init__(self):
             super().__init__("This account has been disabled. This could be due to an infraction.", 401)
@@ -123,6 +131,7 @@ class Session(BaseModel):
 
         :param same_site: Allows you to declare if your cookie should be restricted to a first-party or same-site context.
         """
+
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
         encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
         cookie_name = self.cookie_name()
@@ -202,14 +211,14 @@ class CaptchaSession(Session):
     challenge = fields.CharField(max_length=5)
     attempts = fields.IntField(default=0, max_length=1)
 
-    class ChallengeAttemptError(Session.SessionError):
+    class IncorrectAttemptError(Session.SessionError):
         def __init__(self):
-            super().__init__('The guess given does not match the captcha challenge.', 401)
+            super().__init__('Your captcha attempt was incorrect. Please try again or refresh.', 401)
 
     class MaximumAttemptsError(Session.SessionError):
         def __init__(self):
-            super().__init__('The maximum amount of attempts have been reached for this captcha. '
-                             'Captcha session has been invalidated.', 401)
+            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. '
+                             'Captcha has been invalidated.', 401)
 
 
 class AuthenticationSession(Session):

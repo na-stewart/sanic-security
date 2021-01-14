@@ -46,7 +46,7 @@ async def _complete_failed_captcha_attempt(captcha_session):
         raise CaptchaSession.MaximumAttemptsError()
     else:
         await captcha_session_dto.update(captcha_session, ['attempts'])
-    raise CaptchaSession.ChallengeAttemptError()
+    raise CaptchaSession.IncorrectAttemptError()
 
 
 async def captcha(request: Request):
@@ -63,8 +63,6 @@ async def captcha(request: Request):
     if captcha_session.challenge != params.get('captcha'):
         await _complete_failed_captcha_attempt(captcha_session)
     else:
-        captcha_session.valid = False
-        await captcha_session_dto.update(captcha_session, ['valid'])
         return captcha_session
 
 

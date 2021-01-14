@@ -1,4 +1,5 @@
 import functools
+import re
 
 import bcrypt
 from sanic.request import Request
@@ -15,9 +16,11 @@ account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def register(request: Request):
+async def register(request: Request, requires_verification: bool = True):
     """
     Creates an unverified account. This is the recommend and most secure method for registering accounts' with Amy Rose.
+
+    :param requires_verification: If true, account being registered must be verified before use.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     email, username, password, phone.
@@ -27,10 +30,12 @@ async def register(request: Request):
     :return: account, verification_session
     """
     params = request.form
+    if not re.search('^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$', params.get('email')):
+        raise Account.InvalidEmailError()
     try:
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
                                            password=account_dto.hash_password(params.get('password')),
-                                           phone=params.get('phone'))
+                                           phone=params.get('phone'), verified=not requires_verification)
         return await request_verification(request, account)
     except IntegrityError:
         raise Account.AccountExistsError()

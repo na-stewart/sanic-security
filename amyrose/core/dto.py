@@ -3,7 +3,7 @@ from typing import TypeVar, Generic, Type
 import bcrypt
 from sanic.request import Request
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
-    CaptchaSession
+    CaptchaSession, RoseError, EmptyEntryError
 
 T = TypeVar('T')
 
@@ -39,6 +39,11 @@ class DTO(Generic[T]):
 
         :return: T
         """
+        for key, value in kwargs.items():
+            if value is not None:
+                if isinstance(value, str) and not value:
+                    raise EmptyEntryError(key.title() + ' is empty!')
+
         return await self.t().create(**kwargs)
 
     async def update(self, t: T, fields: list):

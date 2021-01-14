@@ -2,9 +2,6 @@ import datetime
 import random
 import string
 
-import aiofiles
-
-
 from amyrose.lib.twilio import send_sms
 
 
@@ -49,6 +46,7 @@ def random_string(length=7):
     :return: random_str
     """
     return ''.join(random.choices(string.ascii_letters.lower() + string.digits, k=length))
+
 
 
 
