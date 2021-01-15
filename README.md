@@ -150,7 +150,7 @@ Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19876854892
+**phone** | +19811354186
 **password** | testpass
 
 ```python
