@@ -357,11 +357,6 @@ client = await account_dto.get_client(request)
 await role_dto.assign_role(client, 'Admin')
 ```
 
-```python 
-client = await account_dto.get_client(request)
-await role_dto.assign_role(client, 'Admin')
-```
-
 ```python
 params = request.form
 account = await account_dto.create(email=params.get('email'), username=params.get('username'),
