@@ -82,7 +82,7 @@ class CaptchaSessionDTO(DTO):
         :return: captcha_img_path
         """
         captcha_session = await CaptchaSession().decode(request)
-        return '../resources/captcha/img/' + captcha_session.validate_captcha + '.png'
+        return '../resources/captcha/img/' + captcha_session.captcha + '.png'
 
 
 class AccountDTO(DTO):

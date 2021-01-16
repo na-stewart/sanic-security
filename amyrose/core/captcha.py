@@ -35,8 +35,8 @@ async def request_captcha(request: Request):
 
     :return: account, captcha_session
     """
-    captcha_challenge = await random_cached_captcha()
-    captcha_session = await captcha_session_dto.create(ip=request.ip, challenge=captcha_challenge)
+    random_captcha = await random_cached_captcha()
+    captcha_session = await captcha_session_dto.create(ip=request.ip, captcha=random_captcha)
     return captcha_session
 
 
@@ -61,7 +61,7 @@ async def captcha(request: Request):
     params = request.form
     captcha_session = await CaptchaSession().decode(request)
     CaptchaSession.ErrorFactory().raise_error(captcha_session)
-    if captcha_session.validate_captcha != params.get('captcha'):
+    if captcha_session.captcha != params.get('captcha'):
         await _on_failed_captcha_attempt(captcha_session)
     else:
         captcha_session.valid = False
@@ -84,4 +84,4 @@ def get_captcha_image(captcha):
     Retrieves image path of captcha.
 
     """
-    return '../resources/captcha/img/' + captcha.validate_captcha + '.png'
+    return '../resources/captcha/img/' + captcha.captcha + '.png'

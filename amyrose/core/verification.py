@@ -43,8 +43,8 @@ async def request_verification(request: Request, account: Account = None):
     else:
         account.verified = False
         await account_dto.update(account, ['verified'])
-    verification_code = await random_cached_code()
-    verification_session = await verification_session_dto.create(code=verification_code, parent_uid=account.uid,
+    random_code = await random_cached_code()
+    verification_session = await verification_session_dto.create(code=random_code, parent_uid=account.uid,
                                                                  ip=request.ip)
     return account, verification_session
 
