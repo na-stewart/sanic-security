@@ -150,7 +150,7 @@ Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19876854892
+**phone** | +19811354186
 **password** | testpass
 
 ```python
@@ -350,11 +350,6 @@ class RoleDTO(DTO):
 ```python
 if not await role_dto.has_role(account, required_role):
     raise Role.InsufficientRoleError()
-```
-
-```python 
-client = await account_dto.get_client(request)
-await role_dto.assign_role(client, 'Admin')
 ```
 
 ```python 
