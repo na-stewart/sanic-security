@@ -5,14 +5,12 @@ from sanic.response import text, json, file
 from amyrose.core.authentication import register, login, requires_authentication, \
     logout, request_verification
 from amyrose.core.authorization import requires_permission, requires_role
-from amyrose.core.captcha import request_captcha, captcha, captcha_init
+from amyrose.core.captcha import request_captcha, captcha
 from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO, CaptchaSessionDTO
 from amyrose.core.initializer import initialize
-from amyrose.core.middleware import xss_middleware
-from amyrose.core.models import RoseError, Account, Role, Permission
+from amyrose.core.models import RoseError
 from amyrose.core.utils import text_verification_code
 from amyrose.core.verification import verify_account
-from amyrose.lib.tortoise import tortoise_init
 
 app = Sanic('AmyRose tests')
 account_dto = AccountDTO()
@@ -20,15 +18,12 @@ role_dto = RoleDTO()
 permission_dto = PermissionDTO()
 
 
-
-
-
 @app.post('/register')
 async def on_register(request):
     account, verification_session = await register(request, False)
-    #await text_verification_code(account.phone, verification_session.code)
+    # await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
-    verification_session.encode(response)
+#    verification_session.encode(response)
     return response
 
 

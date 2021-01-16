@@ -35,38 +35,41 @@ async def request_captcha(request: Request):
 
     :return: account, captcha_session
     """
-    captcha_challenge = await random_captcha()
+    captcha_challenge = await random_cached_captcha()
     captcha_session = await captcha_session_dto.create(ip=request.ip, challenge=captcha_challenge)
     return captcha_session
 
 
-async def _complete_failed_captcha_attempt(captcha_session):
+async def _on_failed_captcha_attempt(captcha_session):
     captcha_session.attempts += 1
     if captcha_session.attempts > 5:
         raise CaptchaSession.MaximumAttemptsError()
     else:
         await captcha_session_dto.update(captcha_session, ['attempts'])
-    raise CaptchaSession.IncorrectAttemptError()
+    raise CaptchaSession.IncorrectCaptchaError()
 
 
 async def captcha(request: Request):
     """
     Validated captcha challenge attempt. Captcha is invalid after 5 attempts.
 
-    :param request: Sanic request parameter.
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    captcha.
 
     :return: account, captcha_session
     """
     params = request.form
     captcha_session = await CaptchaSession().decode(request)
     CaptchaSession.ErrorFactory().raise_error(captcha_session)
-    if captcha_session.challenge != params.get('captcha'):
-        await _complete_failed_captcha_attempt(captcha_session)
+    if captcha_session.validate_captcha != params.get('captcha'):
+        await _on_failed_captcha_attempt(captcha_session)
     else:
+        captcha_session.valid = False
+        await captcha_session_dto.update(captcha_session, ['valid'])
         return captcha_session
 
 
-async def random_captcha():
+async def random_cached_captcha():
     """
     Retrieves a random captcha from the generated captcha list,
 
@@ -81,4 +84,4 @@ def get_captcha_image(captcha):
     Retrieves image path of captcha.
 
     """
-    return '../resources/captcha/img/' + captcha.challenge + '.png'
+    return '../resources/captcha/img/' + captcha.validate_captcha + '.png'

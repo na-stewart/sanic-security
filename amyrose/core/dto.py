@@ -3,7 +3,7 @@ from typing import TypeVar, Generic, Type
 import bcrypt
 from sanic.request import Request
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
-    CaptchaSession, RoseError, EmptyEntryError
+    CaptchaSession
 
 T = TypeVar('T')
 
@@ -41,8 +41,8 @@ class DTO(Generic[T]):
         """
         for key, value in kwargs.items():
             if value is not None:
-                if isinstance(value, str) and not value:
-                    raise EmptyEntryError(key.title() + ' is empty!')
+                if not isinstance(value, bool) and not value:
+                    raise self.t.EmptyEntryError(key.title() + ' is empty!')
 
         return await self.t().create(**kwargs)
 
@@ -82,7 +82,7 @@ class CaptchaSessionDTO(DTO):
         :return: captcha_img_path
         """
         captcha_session = await CaptchaSession().decode(request)
-        return '../resources/captcha/img/' + captcha_session.challenge + '.png'
+        return '../resources/captcha/img/' + captcha_session.validate_captcha + '.png'
 
 
 class AccountDTO(DTO):
@@ -137,7 +137,11 @@ class AccountDTO(DTO):
         :param password: Password to be hashed.
         :return: hashed
         """
-        return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+        if password:
+            return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+        else:
+            raise self.t.EmptyEntryError('password is empty!')
+
 
 
 class VerificationSessionDTO(DTO):

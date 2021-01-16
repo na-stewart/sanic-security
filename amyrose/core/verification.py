@@ -43,7 +43,7 @@ async def request_verification(request: Request, account: Account = None):
     else:
         account.verified = False
         await account_dto.update(account, ['verified'])
-    verification_code = await random_verification_code()
+    verification_code = await random_cached_code()
     verification_session = await verification_session_dto.create(code=verification_code, parent_uid=account.uid,
                                                                  ip=request.ip)
     return account, verification_session
@@ -66,7 +66,7 @@ async def _complete_verification(account: Account, verification_session: Verific
     return account, verification_session
 
 
-async def random_verification_code():
+async def random_cached_code():
     """
     Retrieves a random verification code from the generated captcha list,
 

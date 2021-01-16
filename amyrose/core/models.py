@@ -37,11 +37,6 @@ class RoseError(ServerError):
         super().__init__(message, code)
 
 
-class EmptyEntryError(RoseError):
-    def __init__(self, message):
-        super().__init__(message, 400)
-
-
 class BaseModel(Model):
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
@@ -52,6 +47,10 @@ class BaseModel(Model):
 
     class Meta:
         abstract = True
+
+    class EmptyEntryError(RoseError):
+        def __init__(self, message):
+            super().__init__(message, 400)
 
     class NotFoundError(RoseError):
         def __init__(self, message):
@@ -68,7 +67,7 @@ class Account(BaseModel):
     phone = fields.CharField(unique=True, max_length=20, null=True)
     password = fields.BinaryField()
     disabled = fields.BooleanField(default=False)
-    verified = fields.BooleanField()
+    verified = fields.BooleanField(default=False)
 
     class ErrorFactory(BaseErrorFactory):
         def get(self, model):
@@ -179,20 +178,16 @@ class Session(BaseModel):
             super().__init__(message, code)
 
     class DecodeError(SessionError):
-        def __init__(self, name):
-            super().__init__(name + " requested could not be decoded due to an error or cookie is non existent.", 401)
+        def __init__(self, session_name):
+            super().__init__(session_name + " could not be decoded due to an error or cookie is non existent.", 401)
 
     class InvalidError(SessionError):
-        def __init__(self, name):
-            super().__init__(name + " is invalid.", 401)
+        def __init__(self, session_name):
+            super().__init__(session_name + " is invalid.", 401)
 
     class ExpiredError(SessionError):
-        def __init__(self, name):
-            super().__init__(name + " has expired", 401)
-
-    class UnknownLocationError(SessionError):
-        def __init__(self):
-            super().__init__("No session with client ip has been found. Location unknown.", 401)
+        def __init__(self, session_name):
+            super().__init__(session_name + " has expired", 401)
 
 
 class VerificationSession(Session):
@@ -208,17 +203,16 @@ class VerificationSession(Session):
 
 
 class CaptchaSession(Session):
-    challenge = fields.CharField(max_length=5)
+    captcha = fields.CharField(max_length=5)
     attempts = fields.IntField(default=0, max_length=1)
 
-    class IncorrectAttemptError(Session.SessionError):
+    class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):
             super().__init__('Your captcha attempt was incorrect. Please try again or refresh.', 401)
 
     class MaximumAttemptsError(Session.SessionError):
         def __init__(self):
-            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. '
-                             'Captcha has been invalidated.', 401)
+            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. ', 401)
 
 
 class AuthenticationSession(Session):
