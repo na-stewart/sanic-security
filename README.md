@@ -249,6 +249,14 @@ async def on_captcha_img(request):
 
 * Register (with captcha)
 
+Key | Value |
+--- | --- |
+**username** | test 
+**email** | test@test.com 
+**phone** | +19811354186
+**password** | testpass
+**captcha** | ah17ek
+
 ```python
 @app.post('/register/')
 async def on_register_captcha(request):
