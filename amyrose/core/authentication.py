@@ -36,7 +36,10 @@ async def register(request: Request, requires_verification=True):
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
                                            password=account_dto.hash_password(params.get('password')),
                                            phone=params.get('phone'), verified=not requires_verification)
-        return await request_verification(request, account) if requires_verification else account, None
+        if requires_verification:
+            return await request_verification(request, account)
+        else:
+            return account, None
     except IntegrityError:
         raise Account.AccountExistsError()
 

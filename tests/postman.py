@@ -20,10 +20,10 @@ permission_dto = PermissionDTO()
 
 @app.post('/register')
 async def on_register(request):
-    account, verification_session = await register(request, False)
-    # await text_verification_code(account.phone, verification_session.code)
+    account, verification_session = await register(request)
+    await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
-#    verification_session.encode(response)
+    verification_session.encode(response)
     return response
 
 
@@ -45,7 +45,7 @@ async def on_request_captcha(request):
 @app.post('/register/captcha')
 async def on_register_captcha(request):
     await captcha(request)
-    account, verification_session = await register(request, False)
+    account, verification_session = await register(request)
     await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
     verification_session.encode(response)
