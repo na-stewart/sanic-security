@@ -10,7 +10,7 @@ from amyrose.core.models import CaptchaSession
 from amyrose.core.utils import random_string
 
 captcha_session_dto = CaptchaSessionDTO()
-captcha_cache_path = '../resources/captcha/'
+captcha_cache_path = './resources/captcha/'
 image = ImageCaptcha()
 
 
@@ -24,7 +24,7 @@ async def captcha_init():
             for i in range(100):
                 random_str = random_string(5)
                 await f.write(random_str + '\n' if i < 99 else random_str)
-                image.write(random_str, '../resources/captcha/' + 'img/' + random_str + '.png')
+                image.write(random_str, captcha_cache_path + 'img/' + random_str + '.png')
 
 
 async def request_captcha(request: Request):
@@ -84,4 +84,4 @@ def get_captcha_image(captcha):
     Retrieves image path of captcha.
 
     """
-    return '../resources/captcha/img/' + captcha.captcha + '.png'
+    return captcha_cache_path + 'img/' + captcha.captcha + '.png'

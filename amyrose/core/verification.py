@@ -10,7 +10,7 @@ from amyrose.core.utils import random_string
 
 session_error_factory = Session.ErrorFactory()
 account_dto = AccountDTO()
-verification_cache_path = '../resources/verification/'
+verification_cache_path = './resources/verification/'
 verification_session_dto = VerificationSessionDTO()
 
 
