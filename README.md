@@ -62,7 +62,7 @@ Amy Rose is an authentication and authorization library made easy. Specifically 
 Amy Rose comes packed with features such as:
 
 * SMS verification
-* Authentication
+* Easy login and registering.
 * JWT
 * Out of the box database integration
 * Wildcard permissions
