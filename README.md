@@ -72,7 +72,7 @@ Amy Rose comes packed with features such as:
 
 Amy Rose contains all of your basic security needs.
 
-This repository has been starred by Sanic's core maintainer.
+This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/amyrose/blob/master/images/ahopkins.png)
 
