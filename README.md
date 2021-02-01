@@ -72,6 +72,10 @@ Amy Rose comes packed with features such as:
 
 Amy Rose contains all of your basic security needs.
 
+This repository has even been starred by Sanic's core maintainer.
+
+
+
 ### Built With
 * [Tortoise](https://tortoise.github.io/)
 * [Sanic](https://github.com/huge-success/sanic)
