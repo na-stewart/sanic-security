@@ -31,6 +31,16 @@ class DTO(Generic[T]):
         """
         return await self.t().filter(uid=uid, deleted=False).first()
 
+    async def get_by_parent(self, parent_uid: str):
+        """
+        Retrieves a model via parent uid.
+
+        :param parent_uid: Parent uid of model.
+
+        :return: T
+        """
+        return await self.t().filter(parent_uid=parent_uid, deleted=False).first()
+
     async def create(self, **kwargs):
         """
         Initializes a model and creates in database.

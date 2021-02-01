@@ -354,16 +354,32 @@ class RoleDTO(DTO):
         return await self.create(parent_uid=account.uid, name=role)
 ```
 
-* Usage Examples
+* Base DTO Methods
 
 ```python
-if not await role_dto.has_role(account, required_role):
-    raise Role.InsufficientRoleError()
+dto.get(uid)
+dto.get_by_parent(uid)
+dto.create(username='test', password='testtest')
+dto.update(username='cooltestname', ['username']) 
+dto.delete(account)
+```
+
+* Example Usages Throughout Amyrose:
+
+```python
+account_dto = AccountDTO()
+role_dto = RoleDTO()
+permission_dto = PermissionDTO()
 ```
 
 ```python 
 client = await account_dto.get_client(request)
 await role_dto.assign_role(client, 'Admin')
+```
+
+```python
+client = await account_dto.get_client(request)
+entry = await entry_dto.get_by_parent(client.uid)
 ```
 
 ```python
