@@ -1,7 +1,7 @@
 from sanic.response import redirect
 
 
-def xss_middleware(request, response):
+def xss_prevention(request, response):
     response.headers['x-xss-protection'] = '1; mode=block'
 
 

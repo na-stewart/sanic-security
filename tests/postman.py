@@ -8,7 +8,7 @@ from amyrose.core.authorization import requires_permission, requires_role
 from amyrose.core.captcha import request_captcha, captcha, requires_captcha
 from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO, CaptchaSessionDTO
 from amyrose.core.initializer import initialize
-from amyrose.core.middleware import xss_middleware, https_redirect
+from amyrose.core.middleware import xss_prevention, https_redirect
 from amyrose.core.models import RoseError
 from amyrose.core.utils import text_verification_code
 from amyrose.core.verification import verify_account
@@ -21,7 +21,7 @@ permission_dto = PermissionDTO()
 
 @app.middleware('response')
 async def response_middleware(request, response):
-    xss_middleware(request, response)
+    xss_prevention(request, response)
     https_redirect(request)
 
 
