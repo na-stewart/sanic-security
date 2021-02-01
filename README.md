@@ -260,8 +260,8 @@ Key | Value |
 
 ```python
 @app.post('/register/')
+@requires_captcha()
 async def on_register_captcha(request):
-    await captcha(request)
     account, verification_session = await register(request)
     await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
