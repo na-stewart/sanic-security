@@ -1,3 +1,4 @@
+import functools
 import os
 import random
 
@@ -47,6 +48,26 @@ async def _on_failed_captcha_attempt(captcha_session):
     else:
         await captcha_session_dto.update(captcha_session, ['attempts'])
     raise CaptchaSession.IncorrectCaptchaError()
+
+
+def requires_captcha():
+    """
+    Has the same function as the authenticate method, but is in the form of a decorator and authenticates client.
+
+    :raises AccountError:
+
+    :raises SessionError:
+    """
+
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
+            await captcha(request)
+            return await func(request, *args, **kwargs)
+
+        return wrapped
+
+    return wrapper
 
 
 async def captcha(request: Request):

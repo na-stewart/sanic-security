@@ -5,7 +5,7 @@ from sanic.response import text, json, file
 from amyrose.core.authentication import register, login, requires_authentication, \
     logout, request_verification
 from amyrose.core.authorization import requires_permission, requires_role
-from amyrose.core.captcha import request_captcha, captcha
+from amyrose.core.captcha import request_captcha, captcha, requires_captcha
 from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO, CaptchaSessionDTO
 from amyrose.core.initializer import initialize
 from amyrose.core.models import RoseError
@@ -43,8 +43,8 @@ async def on_request_captcha(request):
 
 
 @app.post('/register/captcha')
+@requires_captcha()
 async def on_register_captcha(request):
-    await captcha(request)
     account, verification_session = await register(request)
     await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
