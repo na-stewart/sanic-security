@@ -5,7 +5,7 @@ aiosqlite==0.16.0
 async-timeout==3.0.1
 attrs==20.3.0
 bcrypt==3.2.0
-bleach==3.2.1
+bleach==3.3.0
 captcha==0.3
 certifi==2020.11.8
 cffi==1.14.3
