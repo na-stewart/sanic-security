@@ -78,7 +78,7 @@ class DTO(Generic[T]):
         :return: T
         """
         t.deleted = True
-        return self.update(t, ['deleted'])
+        return await self.update(t, ['deleted'])
 
 
 class CaptchaSessionDTO(DTO):
