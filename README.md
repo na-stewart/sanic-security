@@ -410,6 +410,10 @@ await authentication_session_dto.update(authentication_session, fields=['valid']
 @app.middleware('response')
 async def response_middleware(request, response):
     xss_prevention(request, response)
+
+
+@app.middleware('request')
+async def request_middleware(request):
     return https_redirect(request)
 ```
 
