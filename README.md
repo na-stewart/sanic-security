@@ -408,7 +408,7 @@ await authentication_session_dto.update(authentication_session, fields=['valid']
 @app.middleware('response')
 async def response_middleware(request, response):
     xss_prevention(request, response)
-    https_redirect(request)
+    return https_redirect(request)
 ```
 
 <!-- ROADMAP -->
