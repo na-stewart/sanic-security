@@ -3,6 +3,7 @@ import random
 import string
 
 from sanic.request import Request
+from sanic_ipware import get_client_ip
 
 from amyrose.lib.twilio import send_sms
 
@@ -56,5 +57,6 @@ def request_ip(request: Request):
 
     :param request: Sanic request.
     """
-    return request.remote_addr or request.ip
+    ip, routable = get_client_ip(request)
+    return ip if ip is not None else '0.0.0.0'
 

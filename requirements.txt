@@ -12,7 +12,7 @@ h11==0.9.0
 httpcore==0.11.1
 httptools==0.1.1
 httpx==0.15.4
-idna==3.1
+idna==2.10
 iso8601==0.1.14
 multidict==5.1.0
 Pillow==8.1.0
@@ -29,3 +29,6 @@ ujson==4.0.2
 uvloop==0.15.1
 websockets==8.1
 yarl==1.6.3
+sanic-ipware==0.1.0
+PyJWT==2.0.1
+
