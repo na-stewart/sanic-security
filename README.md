@@ -102,7 +102,7 @@ sudo apt-get install python3-pip
 
 * Clone the repo
 ```sh
-git clone https://github.com/sunset-developer/Amy-Rose
+git clone https://github.com/sunset-developer/amyrose
 ```
 * Install pip packages
 ```sh
