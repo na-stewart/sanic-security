@@ -366,6 +366,8 @@ class RoleDTO(DTO):
 ```python
 dto.get(uid)
 dto.get_by_parent(uid)
+dto.getall()
+dto.get_all_by_parent()
 dto.create(username='test', password='testtest')
 dto.update(username='cooltestname', ['username']) 
 dto.delete(account)
