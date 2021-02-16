@@ -2,6 +2,8 @@ import datetime
 import random
 import string
 
+from sanic.request import Request
+
 from amyrose.lib.twilio import send_sms
 
 
@@ -37,7 +39,7 @@ async def text_verification_code(account_phone: str, verification_code: str):
     await send_sms(account_phone, sms_str)
 
 
-def random_string(length=7):
+def random_string(length: int = 7):
     """
     Generates a random string of letters and numbers of specific length.
 
@@ -48,5 +50,11 @@ def random_string(length=7):
     return ''.join(random.choices(string.ascii_letters.lower() + string.digits, k=length))
 
 
+def request_ip(request: Request):
+    """
+    Retrieves the ip address of the request.
 
+    :param request: Sanic request.
+    """
+    return request.remote_addr or request.ip
 

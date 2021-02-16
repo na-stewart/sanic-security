@@ -8,7 +8,7 @@ from sanic.request import Request
 
 from amyrose.core.dto import CaptchaSessionDTO
 from amyrose.core.models import CaptchaSession
-from amyrose.core.utils import random_string
+from amyrose.core.utils import random_string, request_ip
 
 captcha_session_dto = CaptchaSessionDTO()
 captcha_cache_path = './resources/captcha/'
@@ -37,7 +37,7 @@ async def request_captcha(request: Request):
     :return: account, captcha_session
     """
     random_captcha = await random_cached_captcha()
-    captcha_session = await captcha_session_dto.create(ip=request.ip, captcha=random_captcha)
+    captcha_session = await captcha_session_dto.create(ip=request_ip(request), captcha=random_captcha)
     return captcha_session
 
 

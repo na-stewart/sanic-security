@@ -1,5 +1,3 @@
-import random
-import string
 import uuid
 
 import jwt
@@ -132,7 +130,7 @@ class Session(BaseModel):
         """
 
         payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
-        encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256').decode('utf-8')
+        encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256')
         cookie_name = self.cookie_name()
         response.cookies[cookie_name] = encoded
         response.cookies[cookie_name]['expires'] = self.expiration_date
@@ -150,7 +148,7 @@ class Session(BaseModel):
         :return: session
         """
         try:
-            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'], 'utf-8',
+            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'],
                                  algorithms='HS256')
             session = decoded if raw else await self.filter(uid=decoded['uid']).first()
             return session
@@ -164,7 +162,7 @@ class Session(BaseModel):
         def get(self, model):
             error = None
             if model is None:
-                error = Session.NotFoundError('Your session could not be found, please re-login and try again.')
+                error = Session.NotFoundError('Your session could not be found, please login and try again.')
             elif not model.valid:
                 error = Session.InvalidError(model.__class__.__name__)
             elif model.deleted:
@@ -179,7 +177,11 @@ class Session(BaseModel):
 
     class DecodeError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " could not be decoded due to an error or cookie is non existent.", 401)
+            super().__init__(session_name + " is not available, please login.", 401)
+
+    class UnknownLocationError(SessionError):
+        def __init__(self, session_name):
+            super().__init__(session_name + " is being accessed from an unknown location.", 401)
 
     class InvalidError(SessionError):
         def __init__(self, session_name):

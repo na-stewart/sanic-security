@@ -7,7 +7,7 @@ from tortoise.exceptions import IntegrityError
 
 from amyrose.core.dto import AccountDTO, AuthenticationSessionDTO
 from amyrose.core.models import Account, AuthenticationSession, Session
-from amyrose.core.utils import best_by
+from amyrose.core.utils import best_by, request_ip
 from amyrose.core.verification import request_verification
 
 account_dto = AccountDTO()
@@ -61,7 +61,7 @@ async def login(request: Request):
     account = await account_dto.get_by_email(params.get('email'))
     account_error_factory.raise_error(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await authentication_session_dto.create(parent_uid=account.uid, ip=request.ip,
+        authentication_session = await authentication_session_dto.create(parent_uid=account.uid, ip=request_ip(request),
                                                                          expiration_date=best_by(30))
         return account, authentication_session
     else:
@@ -94,6 +94,7 @@ async def authenticate(request: Request):
 
     :return: account, authentication_session
     """
+    await authentication_session_dto.validate_access_location(request)
     authentication_session = await AuthenticationSession().decode(request)
     session_error_factory.raise_error(authentication_session)
     account = await account_dto.get(authentication_session.parent_uid)

@@ -4,6 +4,7 @@ import bcrypt
 from sanic.request import Request
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
     CaptchaSession
+from amyrose.core.utils import request_ip
 
 T = TypeVar('T')
 
@@ -20,6 +21,16 @@ class DTO(Generic[T]):
         :return: List[T]
         """
         return await self.t().filter(deleted=False).all()
+
+    async def get_all_by_parent(self, parent_uid: str):
+        """
+        Retrieves a list of models via parent uid.
+
+        :param parent_uid: Parent uid of model.
+
+        :return: T
+        """
+        return await self.t().filter(parent_uid=parent_uid, deleted=False).all()
 
     async def get(self, uid: str):
         """
@@ -173,10 +184,10 @@ class AuthenticationSessionDTO(DTO):
 
         :raises UnknownLocationError:
         """
-        decoded_authentication_session = AuthenticationSession().decode(request, True)
-        if not await AuthenticationSession.filter(ip=request.ip,
-                                                  parent_uid=decoded_authentication_session['parent_uid']).exists():
-            raise Session.UnknownLocationError()
+        decoded_authentication_session = await AuthenticationSession().decode(request, True)
+        if not await AuthenticationSession.filter(ip=request_ip(request),
+                                                  parent_uid=decoded_authentication_session.get('parent_uid')).exists():
+            raise Session.UnknownLocationError('AuthenticationSession')
 
 
 class RoleDTO(DTO):
