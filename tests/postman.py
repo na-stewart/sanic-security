@@ -22,16 +22,12 @@ permission_dto = PermissionDTO()
 @app.middleware('response')
 async def response_middleware(request, response):
     xss_prevention(request, response)
-    https_redirect(request)
-
 
 
 @app.post('/register')
 async def on_register(request):
-    account, verification_session = await register(request)
-    await text_verification_code(account.phone, verification_session.code)
+    account, verification_session = await register(request, False)
     response = text('Registration successful')
-    verification_session.encode(response)
     return response
 
 
@@ -54,9 +50,7 @@ async def on_request_captcha(request):
 @requires_captcha()
 async def on_register_captcha(request):
     account, verification_session = await register(request)
-    await text_verification_code(account.phone, verification_session.code)
     response = text('Registration successful')
-    verification_session.encode(response)
     return response
 
 

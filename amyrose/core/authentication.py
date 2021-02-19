@@ -94,7 +94,7 @@ async def authenticate(request: Request):
 
     :return: account, authentication_session
     """
-    await authentication_session_dto.validate_access_location(request)
+    await authentication_session_dto.in_known_location(request)
     authentication_session = await AuthenticationSession().decode(request)
     session_error_factory.raise_error(authentication_session)
     account = await account_dto.get(authentication_session.parent_uid)

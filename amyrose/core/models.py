@@ -94,7 +94,7 @@ class Account(BaseModel):
 
     class DisabledError(AccountError):
         def __init__(self):
-            super().__init__("This account has been disabled. This could be due to an infraction.", 401)
+            super().__init__("This account has been disabled.", 403)
 
     class IncorrectPasswordError(AccountError):
         def __init__(self):
@@ -141,7 +141,7 @@ class Session(BaseModel):
         """
         Transforms jwt token retrieved from cookie into a session.
 
-        :param raw: If true, request database for the session and return. If false, return raw cookie data as dict.
+        :param raw: If false, request database for the session and return. If true, return raw cookie data as dict.
 
         :param request: Sanic request parameter.
 
@@ -177,11 +177,11 @@ class Session(BaseModel):
 
     class DecodeError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " is not available, please login.", 401)
+            super().__init__(session_name + " is not available.", 403)
 
     class UnknownLocationError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " is being accessed from an unknown location.", 401)
+            super().__init__(session_name + " is being accessed from an unknown location.", 403)
 
     class InvalidError(SessionError):
         def __init__(self, session_name):
@@ -197,11 +197,7 @@ class VerificationSession(Session):
 
     class VerificationAttemptError(Session.SessionError):
         def __init__(self):
-            super().__init__('The code given does not match session code.', 401)
-
-    class VerificationPendingError(Session.SessionError):
-        def __init__(self):
-            super().__init__('A verification session for this account is pending.', 401)
+            super().__init__('The code given does not match session code.', 403)
 
 
 class CaptchaSession(Session):
@@ -210,11 +206,12 @@ class CaptchaSession(Session):
 
     class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):
-            super().__init__('Your captcha attempt was incorrect. Please try again or refresh.', 401)
+            super().__init__('Your captcha attempt was incorrect. Please try again or refresh.', 403)
 
     class MaximumAttemptsError(Session.SessionError):
         def __init__(self):
-            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. ', 401)
+            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. '
+                             'Please refresh.', 403)
 
 
 class AuthenticationSession(Session):

@@ -52,6 +52,12 @@ class DTO(Generic[T]):
         """
         return await self.t().filter(parent_uid=parent_uid, deleted=False).first()
 
+    def check_for_empty(self, **kwargs):
+        for key, value in kwargs.items():
+            if value is not None:
+                if not isinstance(value, bool) and not value:
+                    raise self.t.EmptyEntryError(key.title() + ' is empty!')
+
     async def create(self, **kwargs):
         """
         Initializes a model and creates in database.
@@ -60,36 +66,31 @@ class DTO(Generic[T]):
 
         :return: T
         """
-        for key, value in kwargs.items():
-            if value is not None:
-                if not isinstance(value, bool) and not value:
-                    raise self.t.EmptyEntryError(key.title() + ' is empty!')
-
+        self.check_for_empty(**kwargs)
         return await self.t().create(**kwargs)
 
-    async def update(self, t: T, fields: list):
+    async def update(self, uid: str, **kwargs):
         """
         Updates a model in the database.
 
-        :param t: Model being updated in database.
+        :param uid: Uid of model being updated in database.
 
-        :param fields: Fields being updated in the model to be updated in database.
+        :param kwargs: Model parameters to be updated.
 
         :return: T
         """
-        await t.save(update_fields=fields)
-        return t
+        self.check_for_empty(**kwargs)
+        return await self.t().filter(uid=uid).update(**kwargs)
 
-    async def delete(self, t: T):
+    async def delete(self, uid: str):
         """
         Renders a model inoperable while remaining in the database.
 
-        :param t: Model being deleted.
+        :param uid: Uid of model being deleted.
 
         :return: T
         """
-        t.deleted = True
-        return await self.update(t, ['deleted'])
+        return await self.update(uid, deleted=True)
 
 
 class CaptchaSessionDTO(DTO):
@@ -118,8 +119,7 @@ class AccountDTO(DTO):
 
         :return: account
         """
-        account.disabled = True
-        return self.update(account, ['disabled'])
+        return await self.update(account.uid, disabled=True)
 
     async def enable(self, account: Account):
         """
@@ -129,8 +129,7 @@ class AccountDTO(DTO):
 
         :return: account
         """
-        account.enable = True
-        return self.update(account, ['disabled'])
+        return await self.update(account.uid, disabled=False)
 
     async def get_by_email(self, email: str):
         """
@@ -148,9 +147,21 @@ class AccountDTO(DTO):
         :param request: Sanic request parameter.
         :return: account
         """
-        authentication_session = await AuthenticationSession().decode(request, raw=True)
-        account = await self.get(authentication_session.get('parent_uid'))
+        try:
+            authentication_session = await AuthenticationSession().decode(request, raw=True)
+            account = await self.get(authentication_session.get('parent_uid'))
+        except AuthenticationSession.SessionError:
+            account = None
         return account
+
+    async def change_password(self, uid: str, new_password):
+        """
+        Changes account password.
+        :param uid: Uid of account.
+        :param new_password: Password to replace current account password with.
+        :return: account
+        """
+        return await self.update(uid, password=self.hash_password(new_password))
 
     def hash_password(self, password):
         """
@@ -164,7 +175,6 @@ class AccountDTO(DTO):
             raise self.t.EmptyEntryError('password is empty!')
 
 
-
 class VerificationSessionDTO(DTO):
     def __init__(self):
         super().__init__(VerificationSession)
@@ -174,19 +184,17 @@ class AuthenticationSessionDTO(DTO):
     def __init__(self):
         super().__init__(AuthenticationSession)
 
-    async def validate_access_location(self, request: Request):
+    async def in_known_location(self, request: Request):
         """
-        Validates if client using session is in a known location. Prevents cookie jacking.
+        Checks if client using session is in a known location (ip address). Prevents cookie jacking.
 
         :param request: Sanic request parameter.
 
-        :param decoded_cookie: Decoded cookie from client.
-
         :raises UnknownLocationError:
         """
-        decoded_authentication_session = await AuthenticationSession().decode(request, True)
+        authentication_session = await AuthenticationSession().decode(request, True)
         if not await AuthenticationSession.filter(ip=request_ip(request),
-                                                  parent_uid=decoded_authentication_session.get('parent_uid')).exists():
+                                                  parent_uid=authentication_session.get('parent_uid')).exists():
             raise Session.UnknownLocationError('AuthenticationSession')
 
 
@@ -235,7 +243,6 @@ class PermissionDTO(DTO):
 
         :return: permission
         """
-
         return await self.create(parent_uid=account.uid, name=permission)
 
     async def get_permissions(self, account: Account):

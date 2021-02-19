@@ -41,15 +41,6 @@ async def request_captcha(request: Request):
     return captcha_session
 
 
-async def _on_failed_captcha_attempt(captcha_session):
-    captcha_session.attempts += 1
-    if captcha_session.attempts > 5:
-        raise CaptchaSession.MaximumAttemptsError()
-    else:
-        await captcha_session_dto.update(captcha_session, ['attempts'])
-    raise CaptchaSession.IncorrectCaptchaError()
-
-
 def requires_captcha():
     """
     Has the same function as the authenticate method, but is in the form of a decorator and authenticates client.
@@ -72,7 +63,7 @@ def requires_captcha():
 
 async def captcha(request: Request):
     """
-    Validated captcha challenge attempt. Captcha is invalid after 5 attempts.
+    Validated captcha challenge attempt. Captcha is unusable after 5 attempts.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     captcha.
@@ -85,9 +76,18 @@ async def captcha(request: Request):
     if captcha_session.captcha != params.get('captcha'):
         await _on_failed_captcha_attempt(captcha_session)
     else:
-        captcha_session.valid = False
-        await captcha_session_dto.update(captcha_session, ['valid'])
+        captcha_session = await captcha_session_dto.update(captcha_session.uid, valid=False)
         return captcha_session
+
+
+async def _on_failed_captcha_attempt(captcha_session):
+    attempts = captcha_session.attempts + 1
+    print(attempts)
+    if attempts > 5:
+        raise CaptchaSession.MaximumAttemptsError()
+    else:
+        await captcha_session_dto.update(captcha_session.uid, attempts=attempts)
+    raise CaptchaSession.IncorrectCaptchaError()
 
 
 async def random_cached_captcha():
@@ -103,6 +103,5 @@ async def random_cached_captcha():
 def get_captcha_image(captcha):
     """
     Retrieves image path of captcha.
-
     """
     return captcha_cache_path + 'img/' + captcha.captcha + '.png'
