@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as rq:
 
 setup(
     name='amyrose',
-    version='0.6.17.1',
+    version='0.6.17.2',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/Amy-Rose',
     license='GNU General Public License v3.0',
