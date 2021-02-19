@@ -405,7 +405,7 @@ role_dto.assign_role(account_uid, role)
 * Additional Permission DTO Methods
 
 ```python
-permission_dto.assign_permission(account_uid, role)
+permission_dto.assign_permission(account_uid, permission)
 permission_dto.get_permissions(account_uid)
 ```
 
