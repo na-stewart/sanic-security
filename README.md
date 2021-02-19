@@ -47,6 +47,7 @@
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [DTO](#DTO)
+    * [Utils](#Utils)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -439,6 +440,20 @@ account = await account_dto.create(email=params.get('email'), username=params.ge
 account, authentication_session = await authenticate(request)
 await authentication_session_dto.update(authentication_session.uid, valid=False)
 ```
+
+## Utils
+
+* Utility methods
+
+```python
+best_by(days)
+is_expired(date_time)
+text_verification_code(account_phone, verification_code)
+random_string(length)
+request_ip(request)
+hash_password(request)
+```
+
 
 ## Middleware
 
