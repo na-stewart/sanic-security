@@ -2,6 +2,7 @@ import datetime
 import random
 import string
 
+import bcrypt
 from sanic.request import Request
 from sanic_ipware import get_client_ip
 
@@ -60,3 +61,11 @@ def request_ip(request: Request):
     ip, routable = get_client_ip(request)
     return ip if ip is not None else '0.0.0.0'
 
+
+def hash_password(password):
+    """
+    Turns passed text into hashed password
+    :param password: Password to be hashed.
+    :return: hashed
+    """
+    return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())

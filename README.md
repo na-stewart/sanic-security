@@ -63,7 +63,7 @@ Amy Rose is an authentication and authorization library made easy. Specifically 
 Amy Rose comes packed with features such as:
 
 * SMS verification
-* Easy login and registering
+* Easy login and registering.
 * JWT
 * Out of the box database integration
 * Wildcard permissions
@@ -369,9 +369,46 @@ dto.get_by_parent(uid)
 dto.getall()
 dto.get_all_by_parent(uid)
 dto.create(username='test', password='testtest')
-dto.update(username='cooltestname', ['username']) 
-dto.delete(account)
+dto.update(account.uid, username='newusername', password='newpass') 
+dto.delete(account.uid)
 ```
+
+* Additional Captcha DTO Methods
+
+```python
+captcha_dto.get_client_img(request)
+```
+
+* Additional Account DTO Methods
+
+```python
+account_dto.enable(uid)
+account_dto.disable(uid)
+account_dto.get_by_email(email)
+account_dto.get_client(request)
+account_dto.change_password(uid, new_password)
+```
+
+* Additional Authentication Session DTO Methods
+
+```python
+authentication_session_dto.in_known_location(request)
+```
+
+* Additional Role DTO Methods
+
+```python
+role_dto.has_role(account_uid, role)
+role_dto.assign_role(account_uid, role)
+```
+
+* Additional Permission DTO Methods
+
+```python
+permission_dto.assign_permission(account_uid, role)
+permission_dto.get_permissions(account_uid)
+```
+
 
 * Example Usages Throughout Amyrose:
 
@@ -400,8 +437,7 @@ account = await account_dto.create(email=params.get('email'), username=params.ge
 
 ```python
 account, authentication_session = await authenticate(request)
-authentication_session.valid = False
-await authentication_session_dto.update(authentication_session, fields=['valid'])
+await authentication_session_dto.update(authentication_session.uid, valid=False)
 ```
 
 ## Middleware

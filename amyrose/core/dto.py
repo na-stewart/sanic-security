@@ -4,7 +4,7 @@ import bcrypt
 from sanic.request import Request
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
     CaptchaSession
-from amyrose.core.utils import request_ip
+from amyrose.core.utils import request_ip, hash_password
 
 T = TypeVar('T')
 
@@ -111,25 +111,25 @@ class AccountDTO(DTO):
     def __init__(self):
         super().__init__(Account)
 
-    async def disable(self, account: Account):
+    async def disable(self, uid: str):
         """
         Renders an account inoperable while remaining retrievable.
 
-        :param account: account  being disabled
+        :param uid: Uid of account to be disabled.
 
         :return: account
         """
-        return await self.update(account.uid, disabled=True)
+        return await self.update(uid, disabled=True)
 
-    async def enable(self, account: Account):
+    async def enable(self, uid: str):
         """
         Enabled an account after being disabled.
 
-        :param account: account being enabled
+        :param uid: Uid of account to be enabled.
 
         :return: account
         """
-        return await self.update(account.uid, disabled=False)
+        return await self.update(uid, disabled=False)
 
     async def get_by_email(self, email: str):
         """
@@ -161,18 +161,9 @@ class AccountDTO(DTO):
         :param new_password: Password to replace current account password with.
         :return: account
         """
-        return await self.update(uid, password=self.hash_password(new_password))
-
-    def hash_password(self, password):
-        """
-        Turns passed text into hashed password
-        :param password: Password to be hashed.
-        :return: hashed
-        """
-        if password:
-            return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
-        else:
-            raise self.t.EmptyEntryError('password is empty!')
+        if not new_password:
+            raise Account.EmptyEntryError('New password cannot be empty.')
+        return await self.update(uid, password=hash_password(new_password))
 
 
 class VerificationSessionDTO(DTO):
@@ -202,30 +193,30 @@ class RoleDTO(DTO):
     def __init__(self):
         super().__init__(Role)
 
-    async def has_role(self, account: Account, role: str):
+    async def has_role(self, uid: str, role: str):
         """
         Checks if the account has the required role being requested.
 
-        :param account: Account being checked.
+        :param uid: Uid of account being checked.
 
         :param role: The role that is required for validation.
 
         :return: has_role
         """
-        return await self.t().filter(parent_uid=account.uid, name=role).exists()
+        return await self.t().filter(parent_uid=uid, name=role).exists()
 
-    async def assign_role(self, account: Account, role: str):
+    async def assign_role(self, uid: str, role: str):
         """
         Creates a role associated with an account
 
-        :param account: Account associated with role.
+        :param uid: Uid of account associated with role.
 
         :param role: role to be associated with account.
 
         :return: role
         """
 
-        return await self.create(parent_uid=account.uid, name=role)
+        return await self.create(parent_uid=uid, name=role)
 
 
 class PermissionDTO(DTO):
@@ -233,24 +224,24 @@ class PermissionDTO(DTO):
     def __init__(self):
         super().__init__(Permission)
 
-    async def assign_permission(self, account: Account, permission: str):
+    async def assign_permission(self, uid: str, permission: str):
         """
         Creates a permission associated with an account
 
-        :param account: Account associated with role.
+        :param uid: Uid of account associated with role.
 
         :param permission: permission to be associated with account.
 
         :return: permission
         """
-        return await self.create(parent_uid=account.uid, name=permission)
+        return await self.create(parent_uid=uid, name=permission)
 
-    async def get_permissions(self, account: Account):
+    async def get_permissions(self, uid: str):
         """
         Retrieves all permissions associated with an account.
 
-        :param account: Account associated with permissions
+        :param uid: Uid of account associated with permissions
 
         :return: permissions
         """
-        return await self.t().filter(parent_uid=account.uid).all()
+        return await self.t().filter(parent_uid=uid).all()
