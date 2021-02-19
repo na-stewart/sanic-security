@@ -18,7 +18,7 @@ async def check_role(account: Account, required_role: str):
 
     :raises InsufficientRoleError:
     """
-    if not await role_dto.has_role(account, required_role):
+    if not await role_dto.has_role(account.uid, required_role):
         raise Role.InsufficientRoleError()
 
 
@@ -32,7 +32,7 @@ async def check_permission(account: Account, required_permission: str):
 
     :raises InsufficientPermissionError:
     """
-    permissions = await permission_dto.get_permissions(account)
+    permissions = await permission_dto.get_permissions(account.uid)
     for permission in permissions:
         if fnmatch(permission.name, required_permission):
             break

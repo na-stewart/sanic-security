@@ -41,8 +41,7 @@ async def request_verification(request: Request, account: Account = None):
         session_error_factory.raise_error(verification_session)
         account = await account_dto.get(verification_session.parent_uid)
     else:
-        account.verified = False
-        await account_dto.update(account, ['verified'])
+        await account_dto.update(account.uid, verified=False)
     random_code = await random_cached_code()
     verification_session = await verification_session_dto.create(code=random_code, parent_uid=account.uid,
                                                                  ip=request.ip)
@@ -59,10 +58,8 @@ async def _complete_verification(account: Account, verification_session: Verific
 
     :return: account, verification_session
     """
-    verification_session.valid = False
-    account.verified = True
-    await account_dto.update(account, ['verified'])
-    await verification_session_dto.update(verification_session, ['valid'])
+    await account_dto.update(account.uid, verified=True)
+    await verification_session_dto.update(verification_session.uid, valid=False)
     return account, verification_session
 
 

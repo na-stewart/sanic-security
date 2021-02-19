@@ -7,7 +7,7 @@ from tortoise.exceptions import IntegrityError
 
 from amyrose.core.dto import AccountDTO, AuthenticationSessionDTO
 from amyrose.core.models import Account, AuthenticationSession, Session
-from amyrose.core.utils import best_by, request_ip
+from amyrose.core.utils import best_by, request_ip, hash_password
 from amyrose.core.verification import request_verification
 
 account_dto = AccountDTO()
@@ -34,7 +34,7 @@ async def register(request: Request, requires_verification=True):
         raise Account.InvalidEmailError()
     try:
         account = await account_dto.create(email=params.get('email'), username=params.get('username'),
-                                           password=account_dto.hash_password(params.get('password')),
+                                           password=hash_password(params.get('password')),
                                            phone=params.get('phone'), verified=not requires_verification)
         if requires_verification:
             return await request_verification(request, account)
