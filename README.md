@@ -443,8 +443,6 @@ await authentication_session_dto.update(authentication_session.uid, valid=False)
 
 ## Utils
 
-* Utility methods
-
 ```python
 best_by(days)
 is_expired(date_time)
