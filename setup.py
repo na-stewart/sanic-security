@@ -15,7 +15,7 @@ setup(
     license='GNU General Public License v3.0',
     author='sunset-developer',
     author_email='aidanstewart@sunsetdeveloper.com',
-    description='A powerful, simple, and async authentication and authorization library for Sanic. v0.6.10.1',
+    description='A powerful, simple, and async authentication and authorization library for Sanic. v0.6.10.2',
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=requirements

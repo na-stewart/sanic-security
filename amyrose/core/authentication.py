@@ -77,8 +77,7 @@ async def logout(request: Request):
     :return: account, authentication_session
     """
     account, authentication_session = await authenticate(request)
-    authentication_session.valid = False
-    await authentication_session_dto.update(authentication_session, fields=['valid'])
+    await authentication_session_dto.update(authentication_session.uid, valid=False)
     return account, authentication_session
 
 
