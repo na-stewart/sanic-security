@@ -3,7 +3,7 @@ from typing import TypeVar, Generic, Type
 import bcrypt
 from sanic.request import Request
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession, Role, Permission, Session, \
-    CaptchaSession
+    CaptchaSession, NotUpdatedError
 from amyrose.core.utils import request_ip, hash_password
 
 T = TypeVar('T')
@@ -77,10 +77,13 @@ class DTO(Generic[T]):
 
         :param kwargs: Model parameters to be updated.
 
-        :return: T
+        :return: successful
         """
         self.check_for_empty(**kwargs)
-        return await self.t().filter(uid=uid).update(**kwargs)
+        status = await self.t().filter(uid=uid).update(**kwargs)
+        if status == 0:
+            raise NotUpdatedError('Update call resulted in no changes.')
+        return status == 1
 
     async def delete(self, uid: str):
         """
@@ -88,7 +91,7 @@ class DTO(Generic[T]):
 
         :param uid: Uid of model being deleted.
 
-        :return: T
+        :return: successful
         """
         return await self.update(uid, deleted=True)
 

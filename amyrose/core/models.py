@@ -35,6 +35,11 @@ class RoseError(ServerError):
         super().__init__(message, code)
 
 
+class NotUpdatedError(RuntimeWarning):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class BaseModel(Model):
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
