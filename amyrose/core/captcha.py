@@ -15,13 +15,19 @@ captcha_session_dto = CaptchaSessionDTO()
 captcha_cache_path = './resources/captcha/'
 
 
+def try_to_get_captcha_fonts():
+    try:
+        return str_to_list(config_parser['ROSE']['captcha_fonts'])
+    except KeyError:
+        return None
+
+
 
 async def captcha_init():
     """
     Generates up to 100 captcha variations as string and image within their respective folders if empty.
     """
-    fonts = str_to_list(config_parser['ROSE']['fonts']) if config_parser['ROSE']['fonts'] else None
-    image = ImageCaptcha(fonts=fonts)
+    image = ImageCaptcha(fonts=try_to_get_captcha_fonts())
     if not os.path.exists(captcha_cache_path):
         os.makedirs(captcha_cache_path + '/img')
         async with aiofiles.open(captcha_cache_path + 'captcha.txt', mode="w") as f:

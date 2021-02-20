@@ -122,6 +122,7 @@ First you have to create a configuration file called rose.ini. Below is an examp
 ```
 [ROSE]
 secret=05jF8cSMAdjlXcXeS2ZJ
+captcha_fonts=['raleway.regular.ttf']
 
 [TORTOISE]
 username=admin
@@ -447,9 +448,10 @@ await authentication_session_dto.update(authentication_session.uid, valid=False)
 best_by(days)
 is_expired(date_time)
 text_verification_code(account_phone, verification_code)
-random_string(length)
+random_str(length)
 request_ip(request)
 hash_password(request)
+str_to_list(request)
 ```
 
 
