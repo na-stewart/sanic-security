@@ -142,6 +142,8 @@ If you're initializing Tortoise yourself you do not have to configure it here.
 
 If you're not using Twilio as your verification method, you do not have to configure it here. 
 
+Although not recommended, you can remove the captcha_fonts field if you plan on using the default font.
+
 Once you've configured Amy Rose, you can initialize Sanic with the example below:
 
 ```python
