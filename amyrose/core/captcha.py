@@ -12,7 +12,7 @@ from amyrose.core.utils import random_string, request_ip
 
 captcha_session_dto = CaptchaSessionDTO()
 captcha_cache_path = './resources/captcha/'
-image = ImageCaptcha()
+image = ImageCaptcha(fonts=['amyrose/core/captcha.ttf'])
 
 
 async def captcha_init():
