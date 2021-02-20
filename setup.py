@@ -9,13 +9,14 @@ with open("requirements.txt", "r") as rq:
 
 setup(
     name='amyrose',
-    version='0.6.19',
+    version='0.6.20',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/Amy-Rose',
+    include_package_data=True,
     license='GNU General Public License v3.0',
     author='sunset-developer',
     author_email='aidanstewart@sunsetdeveloper.com',
-    description='A powerful, simple, and async authentication and authorization library for Sanic. v0.6.12',
+    description='A powerful, simple, and async authentication and authorization library for Sanic. v0.6.13',
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=requirements

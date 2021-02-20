@@ -6,7 +6,7 @@ from sanic.request import Request
 
 from amyrose.core.dto import AccountDTO, VerificationSessionDTO
 from amyrose.core.models import Account, VerificationSession, Session
-from amyrose.core.utils import random_string
+from amyrose.core.utils import random_str
 
 session_error_factory = Session.ErrorFactory()
 account_dto = AccountDTO()
@@ -22,7 +22,7 @@ async def verification_init():
         os.makedirs(verification_cache_path)
         async with aiofiles.open(verification_cache_path + 'codes.txt', mode="w") as f:
             for i in range(100):
-                random_str = random_string(7)
+                random_str = random_str(7)
                 await f.write(random_str + '\n' if i < 99 else random_str)
 
 

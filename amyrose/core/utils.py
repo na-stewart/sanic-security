@@ -41,7 +41,7 @@ async def text_verification_code(account_phone: str, verification_code: str):
     await send_sms(account_phone, sms_str)
 
 
-def random_string(length: int = 7):
+def random_str(length: int = 7):
     """
     Generates a random string of letters and numbers of specific length.
 
@@ -69,3 +69,13 @@ def hash_password(password):
     :return: hashed
     """
     return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+
+
+def str_to_list(string):
+    """
+    Turns passed string into an array
+    :param string: string to be turned into an array
+    :return: array
+    """
+    return string.replace(']', '').replace('[', '').replace(' ', '') \
+        .replace('\'', '').replace('\"', '').split(',')

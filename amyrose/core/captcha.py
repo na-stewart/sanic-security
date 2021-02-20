@@ -6,26 +6,29 @@ import aiofiles
 from captcha.image import ImageCaptcha
 from sanic.request import Request
 
+from amyrose.core.config import config_parser
 from amyrose.core.dto import CaptchaSessionDTO
 from amyrose.core.models import CaptchaSession
-from amyrose.core.utils import random_string, request_ip
+from amyrose.core.utils import random_str, request_ip, str_to_list
 
 captcha_session_dto = CaptchaSessionDTO()
 captcha_cache_path = './resources/captcha/'
-image = ImageCaptcha(fonts=['amyrose/core/captcha.ttf'])
+
 
 
 async def captcha_init():
     """
     Generates up to 100 captcha variations as string and image within their respective folders if empty.
     """
+    fonts = str_to_list(config_parser['ROSE']['fonts']) if config_parser['ROSE']['fonts'] else None
+    image = ImageCaptcha(fonts=fonts)
     if not os.path.exists(captcha_cache_path):
         os.makedirs(captcha_cache_path + '/img')
         async with aiofiles.open(captcha_cache_path + 'captcha.txt', mode="w") as f:
             for i in range(100):
-                random_str = random_string(5)
-                await f.write(random_str + '\n' if i < 99 else random_str)
-                image.write(random_str, captcha_cache_path + 'img/' + random_str + '.png')
+                random_string = random_str(5)
+                await f.write(random_string + '\n' if i < 99 else random_string)
+                image.write(random_string, captcha_cache_path + 'img/' + random_string + '.png')
 
 
 async def request_captcha(request: Request):
