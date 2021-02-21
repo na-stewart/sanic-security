@@ -142,7 +142,9 @@ If you're initializing Tortoise yourself you do not have to configure it here.
 
 If you're not using Twilio as your verification method, you do not have to configure it here. 
 
-Although not recommended, you can remove the captcha_fonts field if you plan on using the default font.
+Although not recommended, you can remove the captcha_fonts field if you plan on using the default font. 
+
+Captcha_fonts are a list of paths to ttf files. Currently, in the example config, 'raleway.regular.ttf' is a file in the project root.
 
 Once you've configured Amy Rose, you can initialize Sanic with the example below:
 
