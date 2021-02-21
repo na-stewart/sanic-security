@@ -60,8 +60,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-v0.6.12 is currently the most stable version.
-
 Amy Rose is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
 Amy Rose comes packed with features such as:
 
