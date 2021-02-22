@@ -7,37 +7,13 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
-from amyrose.core.config import config_parser
-from amyrose.core.utils import is_expired, best_by
-
-
-class BaseErrorFactory:
-    """
-    Easily raise or retrieve errors based off of variable values.
-    """
-
-    def get(self, model):
-        """
-        Retrieves an error if certain conditions are met.
-
-        :return: error
-        """
-        raise NotImplementedError()
-
-    def raise_error(self, model):
-        error = self.get(model)
-        if error:
-            raise error
+from amyrose.core.config import config
+from amyrose.core.utils import is_expired, best_by, request_ip
 
 
 class RoseError(ServerError):
     def __init__(self, message, code):
         super().__init__(message, code)
-
-
-class NotUpdatedError(RuntimeWarning):
-    def __init__(self, message):
-        super().__init__(message)
 
 
 class BaseModel(Model):
@@ -47,6 +23,12 @@ class BaseModel(Model):
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
+
+    def check_condition(self):
+        """
+        Checks if any errors should be raised due to the model's variable states.
+        """
+        raise NotImplementedError()
 
     class Meta:
         abstract = True
@@ -72,18 +54,29 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
 
-    class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
-            error = None
-            if not model:
-                error = Account.NotFoundError('This account does not exist.')
-            elif model.deleted:
-                error = Account.DeletedError('This account has been permanently deleted.')
-            elif model.disabled:
-                error = Account.DisabledError()
-            elif not model.verified:
-                error = Account.UnverifiedError()
-            return error
+    def check_condition(self):
+        error = None
+        if self.deleted:
+            error = Account.DeletedError('This account has been permanently deleted.')
+        elif self.disabled:
+            error = Account.DisabledError()
+        elif not self.verified:
+            error = Account.UnverifiedError()
+        if error:
+            raise error
+
+    async def get_client(self, request: Request):
+        """
+        Retrieves account information from an authentication session found within cookie.
+        :param request: Sanic request parameter.
+        :return: account
+        """
+        try:
+            authentication_session = AuthenticationSession().decode_raw(request)
+            account = await self.filter(uid=authentication_session.get('parent_uid')).first()
+        except AuthenticationSession.SessionError:
+            account = None
+        return account
 
     class AccountError(RoseError):
         def __init__(self, message, code):
@@ -134,28 +127,41 @@ class Session(BaseModel):
         :param same_site: Allows you to declare if your cookie should be restricted to a first-party or same-site context.
         """
 
-        payload = {'uid': str(self.uid), 'parent_uid': str(self.parent_uid), 'ip': self.ip}
-        encoded = jwt.encode(payload, config_parser['ROSE']['secret'], algorithm='HS256')
+        payload = {
+            'uid': str(self.uid),
+            'date_created': str(self.date_created),
+            'parent_uid': str(self.parent_uid),
+            'ip': self.ip
+        }
+        encoded = jwt.encode(payload, config['ROSE']['secret'], algorithm='HS256')
         cookie_name = self.cookie_name()
         response.cookies[cookie_name] = encoded
         response.cookies[cookie_name]['expires'] = self.expiration_date
         response.cookies[cookie_name]['secure'] = secure
         response.cookies[cookie_name]['samesite'] = same_site
 
-    async def decode(self, request: Request, raw=False):
+    async def decode(self, request: Request):
         """
-        Transforms jwt token retrieved from cookie into a session.
-
-        :param raw: If false, request database for the session and return. If true, return raw cookie data as dict.
+        Decodes JWT token in cookie and transforms into session.
 
         :param request: Sanic request parameter.
 
         :return: session
         """
+        decoded = self.decode_raw(request)
+        return await self.filter(uid=decoded.get('uid')).first()
+
+    def decode_raw(self, request: Request):
+        """
+        Decodes JWT token in cookie to dict.
+
+        :param request: Sanic request parameter.
+
+        :return: raw
+        """
         try:
-            decoded = jwt.decode(request.cookies.get(self.cookie_name()), config_parser['ROSE']['secret'],
+            session = jwt.decode(request.cookies.get(self.cookie_name()), config['ROSE']['secret'],
                                  algorithms='HS256')
-            session = decoded if raw else await self.filter(uid=decoded['uid']).first()
             return session
         except DecodeError:
             raise Session.DecodeError(self.__class__.__name__)
@@ -163,18 +169,16 @@ class Session(BaseModel):
     class Meta:
         abstract = True
 
-    class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
-            error = None
-            if model is None:
-                error = Session.NotFoundError('Your session could not be found, please login and try again.')
-            elif not model.valid:
-                error = Session.InvalidError(model.__class__.__name__)
-            elif model.deleted:
-                error = Session.DeletedError(model.__class__.__name__ + ' has been deleted.')
-            elif is_expired(model.expiration_date):
-                error = Session.ExpiredError(model.__class__.__name__)
-            return error
+    def check_condition(self):
+        error = None
+        if not self.valid:
+            error = Session.InvalidError(self.__class__.__name__)
+        elif self.deleted:
+            error = Session.DeletedError(self.__class__.__name__ + ' has been deleted.')
+        elif is_expired(self.expiration_date):
+            error = Session.ExpiredError(self.__class__.__name__)
+        if error:
+            raise error
 
     class SessionError(RoseError):
         def __init__(self, message, code):
@@ -182,7 +186,7 @@ class Session(BaseModel):
 
     class DecodeError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " is not available.", 403)
+            super().__init__(session_name + " is not available. Could not decode.", 403)
 
     class UnknownLocationError(SessionError):
         def __init__(self, session_name):
@@ -218,9 +222,31 @@ class CaptchaSession(Session):
             super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. '
                              'Please refresh.', 403)
 
+    async def get_client_img(self, request):
+        """
+        Retrieves image path of client captcha.
+
+        :return: captcha_img_path
+        """
+        decoded_captcha_session = CaptchaSession().decode_raw(request)
+        captcha_session = await CaptchaSession().filter(uid=decoded_captcha_session.get('uid')).first()
+        return './resources/captcha/img/' + captcha_session.captcha + '.png'
+
 
 class AuthenticationSession(Session):
-    pass
+
+    async def in_known_location(self, request: Request):
+        """
+        Checks if client using session is in a known location (ip address). Prevents cookie jacking.
+
+        :param request: Sanic request parameter.
+
+        :raises UnknownLocationError:
+        """
+        authentication_session = AuthenticationSession().decode_raw(request)
+        if not await AuthenticationSession.filter(ip=request_ip(request),
+                                                  parent_uid=authentication_session.get('parent_uid')).exists():
+            raise Session.UnknownLocationError('AuthenticationSession')
 
 
 class Role(BaseModel):
@@ -232,7 +258,7 @@ class Role(BaseModel):
 
 
 class Permission(BaseModel):
-    name = fields.CharField(max_length=45)
+    wildcard = fields.CharField(max_length=45)
 
     class InsufficientPermissionError(RoseError):
         def __init__(self):

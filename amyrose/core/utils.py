@@ -6,6 +6,7 @@ import bcrypt
 from sanic.request import Request
 from sanic_ipware import get_client_ip
 
+from amyrose.lib.smtp import send_email
 from amyrose.lib.twilio import send_sms
 
 
@@ -39,6 +40,17 @@ async def text_verification_code(account_phone: str, verification_code: str):
     """
     sms_str = 'Your verification code is: ' + verification_code
     await send_sms(account_phone, sms_str)
+
+
+async def email_verification_code(account_email: str, verification_code: str):
+    """
+    Sends account verification code via text.
+
+    :param account_email: Email number to send code too.
+    :param verification_code: Code sent to account for them to verify themselves.
+    """
+    email_str = 'Your verification code is: ' + verification_code
+    await send_email(account_email, 'Account Verification', email_str)
 
 
 def random_str(length: int = 7):

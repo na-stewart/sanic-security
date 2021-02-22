@@ -1,12 +1,12 @@
 import aiohttp
 
-from amyrose.core.config import config_parser
+from amyrose.core.config import config
 
 
 async def send_sms(to, msg):
-    account_sid = config_parser['TWILIO']['sid']
-    auth_token = config_parser['TWILIO']['token']
-    from_num = config_parser['TWILIO']['from']
+    account_sid = config['TWILIO']['sid']
+    auth_token = config['TWILIO']['token']
+    from_num = config['TWILIO']['from']
     if account_sid and auth_token and from_num:
         auth = aiohttp.BasicAuth(login=account_sid, password=auth_token)
         async with aiohttp.ClientSession(auth=auth) as session:

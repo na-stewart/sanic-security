@@ -5,15 +5,9 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError
 
-from amyrose.core.dto import AccountDTO, AuthenticationSessionDTO
-from amyrose.core.models import Account, AuthenticationSession, Session
+from amyrose.core.models import Account, AuthenticationSession
 from amyrose.core.utils import best_by, request_ip, hash_password
 from amyrose.core.verification import request_verification
-
-account_dto = AccountDTO()
-authentication_session_dto = AuthenticationSessionDTO()
-account_error_factory = Account.ErrorFactory()
-session_error_factory = Session.ErrorFactory()
 
 
 async def register(request: Request, requires_verification=True):
@@ -29,17 +23,17 @@ async def register(request: Request, requires_verification=True):
 
     :return: account, verification_session
     """
-    params = request.form
-    if not re.search('^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$', params.get('email')):
+    forms = request.form
+    if not re.search('^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$', forms.get('email')):
         raise Account.InvalidEmailError()
     try:
-        account = await account_dto.create(email=params.get('email'), username=params.get('username'),
-                                           password=hash_password(params.get('password')),
-                                           phone=params.get('phone'), verified=not requires_verification)
+        account = await Account().create(email=forms.get('email'), username=forms.get('username'),
+                                         password=hash_password(forms.get('password')),
+                                         phone=forms.get('phone'), verified=not requires_verification)
         if requires_verification:
             return await request_verification(request, account)
         else:
-            return account, None
+            return account
     except IntegrityError:
         raise Account.AccountExistsError()
 
@@ -58,11 +52,11 @@ async def login(request: Request):
     :return: account, authentication_session
     """
     params = request.form
-    account = await account_dto.get_by_email(params.get('email'))
-    account_error_factory.raise_error(account)
+    account = await Account().filter(email=params.get('email')).first()
+    account.check_condition()
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await authentication_session_dto.create(parent_uid=account.uid, ip=request_ip(request),
-                                                                         expiration_date=best_by(30))
+        authentication_session = await AuthenticationSession().create(parent_uid=account.uid, ip=request_ip(request),
+                                                                      expiration_date=best_by(30))
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -73,12 +67,9 @@ async def logout(request: Request):
     Invalidates client's authentication session.
 
     :param request: Sanic request parameter.
-
-    :return: account, authentication_session
     """
-    account, authentication_session = await authenticate(request)
-    await authentication_session_dto.update(authentication_session.uid, valid=False)
-    return account, authentication_session
+    authentication_session = AuthenticationSession().decode_raw(request)
+    await AuthenticationSession().filter(uid=authentication_session.get('uid')).update(valid=False)
 
 
 async def authenticate(request: Request):
@@ -93,11 +84,12 @@ async def authenticate(request: Request):
 
     :return: account, authentication_session
     """
-    await authentication_session_dto.in_known_location(request)
+
     authentication_session = await AuthenticationSession().decode(request)
-    session_error_factory.raise_error(authentication_session)
-    account = await account_dto.get(authentication_session.parent_uid)
-    account_error_factory.raise_error(account)
+    await authentication_session.in_known_location(request)
+    authentication_session.check_condition()
+    account = await Account.filter(uid=authentication_session.parent_uid).first()
+    account.check_condition()
     return account, authentication_session
 
 

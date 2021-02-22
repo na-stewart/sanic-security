@@ -6,21 +6,18 @@ import aiofiles
 from captcha.image import ImageCaptcha
 from sanic.request import Request
 
-from amyrose.core.config import config_parser
-from amyrose.core.dto import CaptchaSessionDTO
+from amyrose.core.config import config
 from amyrose.core.models import CaptchaSession
 from amyrose.core.utils import random_str, request_ip, str_to_list
 
-captcha_session_dto = CaptchaSessionDTO()
 captcha_cache_path = './resources/captcha/'
 
 
 def try_to_get_captcha_fonts():
     try:
-        return str_to_list(config_parser['ROSE']['captcha_fonts'])
+        return str_to_list(config['ROSE']['captcha_fonts'])
     except KeyError:
         return None
-
 
 
 async def captcha_init():
@@ -46,7 +43,7 @@ async def request_captcha(request: Request):
     :return: account, captcha_session
     """
     random_captcha = await random_cached_captcha()
-    captcha_session = await captcha_session_dto.create(ip=request_ip(request), captcha=random_captcha)
+    captcha_session = await CaptchaSession.create(ip=request_ip(request), captcha=random_captcha)
     return captcha_session
 
 
@@ -81,22 +78,18 @@ async def captcha(request: Request):
     """
     params = request.form
     captcha_session = await CaptchaSession().decode(request)
-    CaptchaSession.ErrorFactory().raise_error(captcha_session)
+    captcha_session.check_condition()
     if captcha_session.captcha != params.get('captcha'):
-        await _on_failed_captcha_attempt(captcha_session)
+        attempts = captcha_session.attempts + 1
+        if attempts > 5:
+            raise CaptchaSession.MaximumAttemptsError()
+        else:
+            captcha_session.attempts = attempts
+            await captcha_session.save(update_fields=['attempts'])
     else:
-        captcha_session = await captcha_session_dto.update(captcha_session.uid, valid=False)
-        return captcha_session
-
-
-async def _on_failed_captcha_attempt(captcha_session):
-    attempts = captcha_session.attempts + 1
-    print(attempts)
-    if attempts > 5:
-        raise CaptchaSession.MaximumAttemptsError()
-    else:
-        await captcha_session_dto.update(captcha_session.uid, attempts=attempts)
-    raise CaptchaSession.IncorrectCaptchaError()
+        captcha_session.valid = False
+        await captcha_session.save(update_fields=['valid'])
+    return captcha_session
 
 
 async def random_cached_captcha():

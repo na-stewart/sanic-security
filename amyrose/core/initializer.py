@@ -3,7 +3,7 @@ from amyrose.core.verification import verification_init
 from amyrose.lib.tortoise import tortoise_init
 
 
-def initialize(app):
+def initialize_rose(app):
     app.add_task(tortoise_init())
     app.add_task(verification_init())
     app.add_task(captcha_init())

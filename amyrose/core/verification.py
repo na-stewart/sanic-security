@@ -4,14 +4,10 @@ import random
 import aiofiles
 from sanic.request import Request
 
-from amyrose.core.dto import AccountDTO, VerificationSessionDTO
-from amyrose.core.models import Account, VerificationSession, Session
+from amyrose.core.models import Account, VerificationSession, AuthenticationSession
 from amyrose.core.utils import random_str
 
-session_error_factory = Session.ErrorFactory()
-account_dto = AccountDTO()
 verification_cache_path = './resources/verification/'
-verification_session_dto = VerificationSessionDTO()
 
 
 async def verification_init():
@@ -22,44 +18,31 @@ async def verification_init():
         os.makedirs(verification_cache_path)
         async with aiofiles.open(verification_cache_path + 'codes.txt', mode="w") as f:
             for i in range(100):
-                random_str = random_str(7)
-                await f.write(random_str + '\n' if i < 99 else random_str)
+                random_string = random_str(7)
+                await f.write(random_string + '\n' if i < 99 else random_string)
 
 
 async def request_verification(request: Request, account: Account = None):
     """
-    Creates a verification session associated with an account. Invalidates all previous verification requests.
+    Creates a verification session associated with an account. Renders account unverified.
 
     :param request: Sanic request parameter.
 
-    :param account: The account that requires verification.
+    :param account: The account that requires verification. If none, will retrieve account from verification or
+    authentication session.
 
     :return: account, verification_session
     """
     if account is None:
-        verification_session = await VerificationSession().decode(request)
-        session_error_factory.raise_error(verification_session)
-        account = await account_dto.get(verification_session.parent_uid)
-    else:
-        await account_dto.update(account.uid, verified=False)
-    random_code = await random_cached_code()
-    verification_session = await verification_session_dto.create(code=random_code, parent_uid=account.uid,
-                                                                 ip=request.ip)
-    return account, verification_session
-
-
-async def _complete_verification(account: Account, verification_session: VerificationSession):
-    """
-    The last step in the verification process which is too verify the account and invalidate the session after use.
-
-    :param account: account to be verified.
-
-    :param verification_session: session to be invalidated after use.
-
-    :return: account, verification_session
-    """
-    await account_dto.update(account.uid, verified=True)
-    await verification_session_dto.update(verification_session.uid, valid=False)
+        try:
+            decoded_session = VerificationSession().decode_raw(request)
+        except VerificationSession.DecodeError as e:
+            decoded_session = AuthenticationSession().decode_raw(request)
+        account = await Account.filter(uid=decoded_session.get('parent_uid')).first()
+    account.verified = False
+    await account.save(update_fields=['verified'])
+    verification_session = await VerificationSession.create(code=await random_cached_code(),
+                                                            parent_uid=account.uid, ip=request.ip)
     return account, verification_session
 
 
@@ -83,10 +66,15 @@ async def verify_account(request: Request):
 
     :return: account, verification_session
     """
+
     verification_session = await VerificationSession().decode(request)
+    account = await Account().filter(uid=verification_session.parent_uid).first()
     if verification_session.code != request.form.get('code'):
         raise VerificationSession().VerificationAttemptError()
     else:
-        session_error_factory.raise_error(verification_session)
-        account = await account_dto.get(verification_session.parent_uid)
-    return await _complete_verification(account, verification_session)
+        verification_session.check_condition()
+    account.verified = True
+    verification_session.valid = False
+    await account.save(update_fields=['verified'])
+    await verification_session.save(update_fields=['valid'])
+    return account, verification_session

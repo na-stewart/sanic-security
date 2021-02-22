@@ -6,17 +6,13 @@ from amyrose.core.authentication import register, login, requires_authentication
     logout, request_verification
 from amyrose.core.authorization import requires_permission, requires_role
 from amyrose.core.captcha import request_captcha, captcha, requires_captcha
-from amyrose.core.dto import AccountDTO, RoleDTO, PermissionDTO, CaptchaSessionDTO
-from amyrose.core.initializer import initialize
+from amyrose.core.initializer import initialize_rose
 from amyrose.core.middleware import xss_prevention, https_redirect
-from amyrose.core.models import RoseError
-from amyrose.core.utils import text_verification_code
+from amyrose.core.models import RoseError, CaptchaSession, Account, Role, Permission
+from amyrose.core.utils import text_verification_code, email_verification_code
 from amyrose.core.verification import verify_account
 
 app = Sanic('AmyRose tests')
-account_dto = AccountDTO()
-role_dto = RoleDTO()
-permission_dto = PermissionDTO()
 
 
 @app.middleware('response')
@@ -25,15 +21,25 @@ async def response_middleware(request, response):
 
 
 @app.post('/register')
+@requires_captcha()
 async def on_register(request):
-    account, verification_session = await register(request, False)
+    account, none = await register(request, False)
     response = text('Registration successful')
+    return response
+
+
+@app.post('/register/verification')
+async def on_register(request):
+    account, verification_session = await register(request)
+    await email_verification_code(account.email, verification_session.code)
+    response = text('Registration successful')
+    verification_session.encode(response)
     return response
 
 
 @app.get('/captcha/img')
 async def on_captcha_img(request):
-    img_path = await CaptchaSessionDTO().get_client_img(request)
+    img_path = await CaptchaSession().get_client_img(request)
     response = await file(img_path)
     return response
 
@@ -49,7 +55,7 @@ async def on_request_captcha(request):
 @app.post('/register/captcha')
 @requires_captcha()
 async def on_register_captcha(request):
-    account, verification_session = await register(request)
+    account = await register(request)
     response = text('Registration successful')
     return response
 
@@ -73,7 +79,7 @@ async def on_login(request):
 
 @app.post('/logout')
 async def on_logout(request):
-    account, authentication_session = await logout(request)
+    await logout(request)
     response = text('Logout successful')
     return response
 
@@ -92,21 +98,21 @@ async def test(request):
 
 @app.post('/createadmin')
 async def on_create_admin(request):
-    client = await account_dto.get_client(request)
-    await role_dto.assign_role(client, 'Admin')
+    client = await Account().get_client(request)
+    await Role().create(parent_uid=client.uid, name='Admin')
     return text('Hello Admin!')
 
 
 @app.post('/createadminperm')
 async def on_create_admin_perm(request):
-    client = await account_dto.get_client(request)
-    await permission_dto.assign_permission(client, 'admin:update')
+    client = await Account().get_client(request)
+    await Permission().create(parent_uid=client.uid, wildcard='admin:update')
     return text('Hello Admin who can only update!')
 
 
 @app.get('/testclient')
 async def on_test_client(request):
-    client = await account_dto.get_client(request)
+    client = await Account().get_client(request)
     return text('Hello ' + client.username + '!')
 
 
@@ -132,5 +138,5 @@ async def on_rose_error_test(request, exception: ServerError):
 
 
 if __name__ == '__main__':
-    initialize(app)
+    initialize_rose(app)
     app.run(host='0.0.0.0', port=8000, debug=True)

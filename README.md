@@ -46,8 +46,6 @@
     * [Captcha](#captcha)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
-    * [DTO](#DTO)
-    * [Utils](#Utils)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -63,10 +61,10 @@
 Amy Rose is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
 Amy Rose comes packed with features such as:
 
-* SMS verification
+* SMS and email verification
 * Easy login and registering.
 * JWT
-* Out of the box database integration
+* Easy database integration
 * Wildcard permissions
 * Role permissions
 * Captcha
@@ -83,6 +81,7 @@ This repository has been starred by Sanic's core maintainer:
 * [Tortoise](https://tortoise.github.io/)
 * [Sanic](https://github.com/huge-success/sanic)
 * [Twilio](https://www.twilio.com/)
+* [aiosmtplib](https://github.com/cole/aiosmtplib)
 
 
 
@@ -122,37 +121,48 @@ First you have to create a configuration file called rose.ini. Below is an examp
 ```
 [ROSE]
 secret=05jF8cSMAdjlXcXeS2ZJ
-captcha_fonts=['raleway.regular.ttf']
+captcha_fonts=raleway.regular.ttf
 
 [TORTOISE]
 username=admin
 password=8KjLQtVKTCtItAi
 endpoint=amyrose.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
 schema=amyrose
-models=['amyrose.core.models']
+models=amyrose.core.models
 generate=true
 
 [TWILIO]
 from=+12058469963
 token=1bcioi878ygO8fi766Fb34750e82a5ab
 sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
+
+[SMTP]
+host=smtp.gmail.com
+port=465
+from=test@gmail.com
+username=test@gmail.com
+password=wfrfouwiurhwlnj
+tls=true
+start_tls=false
 ```
 
 If you're initializing Tortoise yourself you do not have to configure it here.
 
 If you're not using Twilio as your verification method, you do not have to configure it here. 
 
-The models field is a list of python files that contain database models. You will need to add your own models to the list. For example: ['amyrose.core.models', 'yourpackage.core.models']
+If you're not using SMTP as your verification method, you do not have to configure it here. 
+
+The models field is a list of python files that contain database models. You will need to add your own models to the list. For example: amyrose.core.models, yourpackage.core.models
 
 Although not recommended, you can remove the captcha_fonts field if you plan on using the default font. 
 
-The captcha_fonts field are a list of paths to ttf files. Currently, in the example config, 'raleway.regular.ttf' is a file in the project root.
+The captcha_fonts field are a list of paths to ttf files. Currently, in the example config, raleway.regular.ttf is a file in the project root.
 
 Once you've configured Amy Rose, you can initialize Sanic with the example below:
 
 ```python
 if __name__ == '__main__':
-    initialize(app)
+    initialize_rose(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
@@ -179,12 +189,47 @@ async def on_register(request):
     return response
 ```
 
+* Registration (with email)
+
+Key | Value |
+--- | --- |
+**username** | test 
+**email** | test@test.com 
+**phone** | +19811354186
+**password** | testpass
+
+```python
+@app.post('/register')
+async def on_register(request):
+    account, verification_session = await register(request)
+    await email_verification_code(account.email, verification_session.code)
+    response = text('Registration successful')
+    verification_session.encode(response)
+    return response
+```
+
+* Registration (without verification)
+
+Key | Value |
+--- | --- |
+**username** | test 
+**email** | test@test.com 
+**phone** | +19811354186
+**password** | testpass
+
+```python
+@app.post('/register')
+async def on_register(request):
+    account = await register(request, False)
+    response = text('Registration successful')
+    return response
+```
+
 * Verification
 
 Key | Value |
 --- | --- |
 **code** | GUmrRLD
-
 
 ```python
 @app.post('/verify')
@@ -209,7 +254,7 @@ async def on_login(request):
     return response
 ```
 
-* Resend Verification Request
+* Request Verification (for resending code or 2FA)
 
 ```python
 @app.post('/resend')
@@ -226,7 +271,7 @@ async def resend_verification_request(request):
 ```python
 @app.post('/logout')
 async def on_logout(request):
-    account, authentication_session = await logout(request)
+    await logout(request)
     response = text('Logout successful')
     return response
 ```
@@ -274,7 +319,7 @@ Key | Value |
 **captcha** | ah17ek
 
 ```python
-@app.post('/register/')
+@app.post('/register')
 @requires_captcha()
 async def on_register_captcha(request):
     account, verification_session = await register(request)
@@ -322,144 +367,13 @@ async def on_test_role(request):
 
 ```python
 @app.exception(RoseError)
-async def on_rose_error_test(request, exception: ServerError):
+async def on_rose_error_test(request, exception: RoseError):
     payload = {
         'error': str(exception),
         'code': exception.status_code
     }
     return json(payload, status=exception.status_code)
 ```
-
-## DTO
-
-A DTO object is a simple way to organize interactions with the database. It's completely abstract, so it can be used 
-with any model. If you choose not to use the DTO and instead work directly with Tortoise, that's completely fine.
-
-* Role DTO (Example)
-
-```python
-class RoleDTO(DTO):
-    def __init__(self):
-        super().__init__(Role)
-
-    async def has_role(self, account: Account, role: str):
-        """
-        Checks if the account has the required role being requested.
-
-        :param account: Account being checked.
-
-        :param role: The role that is required for validation.
-
-        :return: has_role
-        """
-        
-        return await self.t().filter(parent_uid=account.uid, name=role).exists()
-
-    async def assign_role(self, account: Account, role: str):
-        """
-        Creates a role associated with an account
-
-        :param account: Account associated with role.
-
-        :param role: role to be associated with account.
-
-        :return: role
-        """
-
-        return await self.create(parent_uid=account.uid, name=role)
-```
-
-* Base DTO Methods
-
-```python
-dto.get(uid)
-dto.get_by_parent(uid)
-dto.getall()
-dto.get_all_by_parent(uid)
-dto.create(username='test', password='testtest')
-dto.update(account.uid, username='newusername', password='newpass') 
-dto.delete(account.uid)
-```
-
-* Additional Captcha DTO Methods
-
-```python
-captcha_dto.get_client_img(request)
-```
-
-* Additional Account DTO Methods
-
-```python
-account_dto.enable(uid)
-account_dto.disable(uid)
-account_dto.get_by_email(email)
-account_dto.get_client(request)
-account_dto.change_password(uid, new_password)
-```
-
-* Additional Authentication Session DTO Methods
-
-```python
-authentication_session_dto.in_known_location(request)
-```
-
-* Additional Role DTO Methods
-
-```python
-role_dto.has_role(account_uid, role)
-role_dto.assign_role(account_uid, role)
-```
-
-* Additional Permission DTO Methods
-
-```python
-permission_dto.assign_permission(account_uid, permission)
-permission_dto.get_permissions(account_uid)
-```
-
-
-* Example Usages Throughout Amyrose:
-
-```python
-account_dto = AccountDTO()
-role_dto = RoleDTO()
-permission_dto = PermissionDTO()
-```
-
-```python 
-client = await account_dto.get_client(request)
-await role_dto.assign_role(client, 'Admin')
-```
-
-```python
-client = await account_dto.get_client(request)
-entry = await entry_dto.get_by_parent(client.uid)
-```
-
-```python
-params = request.form
-account = await account_dto.create(email=params.get('email'), username=params.get('username'),
-                                    password=account_dto.hash_password(params.get('password')),
-                                    phone=params.get('phone'))
-```
-
-```python
-account, authentication_session = await authenticate(request)
-await authentication_session_dto.update(authentication_session.uid, valid=False)
-```
-
-## Utils
-
-```python
-best_by(days)
-is_expired(date_time)
-text_verification_code(account_phone, verification_code)
-random_str(length)
-request_ip(request)
-hash_password(request)
-str_to_list(request)
-```
-
 
 ## Middleware
 
@@ -512,10 +426,6 @@ Project Link: [https://github.com/sunset-developer/Amy-Rose](https://github.com/
 ## Acknowledgements
 
 * [Be the first! Submit a pull request.](https://github.com/sunset-developer/PyBus3/pulls)
-
-
-
-
 
 
 <!-- MARKDOWN LINKS & IMAGES -->

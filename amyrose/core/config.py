@@ -1,12 +1,11 @@
 from configparser import ConfigParser
 
 config_path = './rose.ini'
-config_parser = ConfigParser()
+config = ConfigParser()
 
 
 def read_config():
-    config_parser.read(config_path)
-
+    config.read(config_path)
 
 
 read_config()
