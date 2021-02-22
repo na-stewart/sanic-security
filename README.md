@@ -62,14 +62,15 @@ Amy Rose is an authentication and authorization library made easy. Specifically 
 Amy Rose comes packed with features such as:
 
 * SMS and email verification
-* Easy login and registering.
+* Easy login and registering
 * JWT
 * Easy database integration
 * Wildcard permissions
 * Role permissions
 * Captcha
+* Completely async
 
-Amy Rose contains all of your basic security needs.
+Amy Rose contains all of your security needs.
 
 This repository has been starred by Sanic's core maintainer:
 

@@ -39,7 +39,8 @@ async def check_permission(account: Account, required_permission: str):
 
 def requires_permission(required_permission: str):
     """
-    Has the same function as the check_permission method, but is in the form of a decorator and validates client.
+    Has the same function as the check_permission method, but is in the form of a decorator and validates client
+    permission.
 
     :param required_permission: The permission that is required for validation.
 
@@ -60,7 +61,7 @@ def requires_permission(required_permission: str):
 
 def requires_role(required_role: str):
     """
-    Has the same function as the check_role method, but is in the form of a decorator and validates client.
+    Has the same function as the check_role method, but is in the form of a decorator and validates client role.
 
     :param required_role: The role that is required for validation.
 
