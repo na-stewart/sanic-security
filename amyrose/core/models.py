@@ -188,10 +188,6 @@ class Session(BaseModel):
         def __init__(self, session_name):
             super().__init__(session_name + " is not available. Could not decode.", 403)
 
-    class UnknownLocationError(SessionError):
-        def __init__(self, session_name):
-            super().__init__(session_name + " is being accessed from an unknown location.", 403)
-
     class InvalidError(SessionError):
         def __init__(self, session_name):
             super().__init__(session_name + " is invalid.", 401)
@@ -234,6 +230,9 @@ class CaptchaSession(Session):
 
 
 class AuthenticationSession(Session):
+    class UnknownLocationError(Session.SessionError):
+        def __init__(self):
+            super().__init__('Attempting to authenticate in an unknown location. Please login.', 403)
 
     async def in_known_location(self, request: Request):
         """
@@ -246,7 +245,7 @@ class AuthenticationSession(Session):
         authentication_session = AuthenticationSession().decode_raw(request)
         if not await AuthenticationSession.filter(ip=request_ip(request),
                                                   parent_uid=authentication_session.get('parent_uid')).exists():
-            raise Session.UnknownLocationError('AuthenticationSession')
+            raise AuthenticationSession.UnknownLocationError()
 
 
 class Role(BaseModel):
