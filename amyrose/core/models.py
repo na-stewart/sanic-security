@@ -186,7 +186,7 @@ class Session(BaseModel):
 
     class DecodeError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " is not available. Could not decode.", 403)
+            super().__init__(session_name + " is not available. Could not decode.", 401)
 
     class InvalidError(SessionError):
         def __init__(self, session_name):
@@ -202,7 +202,7 @@ class VerificationSession(Session):
 
     class VerificationAttemptError(Session.SessionError):
         def __init__(self):
-            super().__init__('The code given does not match session code.', 403)
+            super().__init__('Your verification attempt does not match the verification session code.', 403)
 
 
 class CaptchaSession(Session):
@@ -211,12 +211,11 @@ class CaptchaSession(Session):
 
     class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):
-            super().__init__('Your captcha attempt was incorrect. Please try again or refresh.', 403)
+            super().__init__('Your captcha attempt was incorrect.', 403)
 
     class MaximumAttemptsError(Session.SessionError):
         def __init__(self):
-            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha. '
-                             'Please refresh.', 403)
+            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha.', 403)
 
     async def get_client_img(self, request):
         """
@@ -232,7 +231,7 @@ class CaptchaSession(Session):
 class AuthenticationSession(Session):
     class UnknownLocationError(Session.SessionError):
         def __init__(self):
-            super().__init__('Attempting to authenticate in an unknown location. Please login.', 403)
+            super().__init__('Attempting to authenticate in an unknown location.', 403)
 
     async def in_known_location(self, request: Request):
         """
