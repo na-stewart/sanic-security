@@ -70,9 +70,9 @@ async def verify_account(request: Request):
     verification_session = await VerificationSession().decode(request)
     account = await Account().filter(uid=verification_session.parent_uid).first()
     if verification_session.code != request.form.get('code'):
-        raise VerificationSession().VerificationAttemptError()
+        raise VerificationSession.VerificationAttemptError()
     else:
-        verification_session.check_condition()
+        VerificationSession.ErrorFactory(verification_session)
     account.verified = True
     verification_session.valid = False
     await account.save(update_fields=['verified'])

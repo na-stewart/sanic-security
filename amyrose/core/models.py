@@ -11,7 +11,29 @@ from amyrose.core.config import config
 from amyrose.core.utils import is_expired, best_by, request_ip
 
 
+class BaseErrorFactory:
+    """
+    Easily raise or retrieve errors based off of variable values.
+    """
+
+    def __init__(self, model):
+        error = self.get(model)
+        if error:
+            raise error
+
+    def get(self, model):
+        """
+        Retrieves an error if certain conditions are met.
+        :return: error
+        """
+        raise NotImplementedError()
+
+
 class RoseError(ServerError):
+    """
+    Amyrose specific error.
+    """
+
     def __init__(self, message, code):
         super().__init__(message, code)
 
@@ -24,18 +46,8 @@ class BaseModel(Model):
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
-    def check_condition(self):
-        """
-        Checks if any errors should be raised due to the model's variable states.
-        """
-        raise NotImplementedError()
-
     class Meta:
         abstract = True
-
-    class EmptyEntryError(RoseError):
-        def __init__(self, message):
-            super().__init__(message, 400)
 
     class NotFoundError(RoseError):
         def __init__(self, message):
@@ -54,16 +66,18 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
 
-    def check_condition(self):
-        error = None
-        if self.deleted:
-            error = Account.DeletedError('This account has been permanently deleted.')
-        elif self.disabled:
-            error = Account.DisabledError()
-        elif not self.verified:
-            error = Account.UnverifiedError()
-        if error:
-            raise error
+    class ErrorFactory(BaseErrorFactory):
+        def get(self, model):
+            error = None
+            if not model:
+                error = Account.NotFoundError('This account does not exist.')
+            elif model.deleted:
+                error = Account.DeletedError('This account has been permanently deleted.')
+            elif model.disabled:
+                error = Account.DisabledError()
+            elif not model.verified:
+                error = Account.UnverifiedError()
+            return error
 
     async def get_client(self, request: Request):
         """
@@ -169,16 +183,18 @@ class Session(BaseModel):
     class Meta:
         abstract = True
 
-    def check_condition(self):
-        error = None
-        if not self.valid:
-            error = Session.InvalidError(self.__class__.__name__)
-        elif self.deleted:
-            error = Session.DeletedError(self.__class__.__name__ + ' has been deleted.')
-        elif is_expired(self.expiration_date):
-            error = Session.ExpiredError(self.__class__.__name__)
-        if error:
-            raise error
+    class ErrorFactory(BaseErrorFactory):
+        def get(self, model):
+            error = None
+            if model is None:
+                error = Session.NotFoundError('Your session could not be found, please login and try again.')
+            elif not model.valid:
+                error = Session.InvalidError(model.__class__.__name__)
+            elif model.deleted:
+                error = Session.DeletedError(model.__class__.__name__ + ' has been deleted.')
+            elif is_expired(model.expiration_date):
+                error = Session.ExpiredError(model.__class__.__name__)
+            return error
 
     class SessionError(RoseError):
         def __init__(self, message, code):

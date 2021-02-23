@@ -78,7 +78,7 @@ async def captcha(request: Request):
     """
     params = request.form
     captcha_session = await CaptchaSession().decode(request)
-    captcha_session.check_condition()
+    CaptchaSession.ErrorFactory(captcha_session)
     if captcha_session.captcha != params.get('captcha'):
         attempts = captcha_session.attempts + 1
         if attempts > 5:

@@ -53,7 +53,7 @@ async def login(request: Request):
     """
     params = request.form
     account = await Account().filter(email=params.get('email')).first()
-    account.check_condition()
+    Account.ErrorFactory(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession().create(parent_uid=account.uid, ip=request_ip(request),
                                                                       expiration_date=best_by(30))
@@ -87,9 +87,9 @@ async def authenticate(request: Request):
 
     authentication_session = await AuthenticationSession().decode(request)
     await authentication_session.in_known_location(request)
-    authentication_session.check_condition()
+    AuthenticationSession.ErrorFactory(authentication_session)
     account = await Account.filter(uid=authentication_session.parent_uid).first()
-    account.check_condition()
+    Account.ErrorFactory(account)
     return account, authentication_session
 
 
