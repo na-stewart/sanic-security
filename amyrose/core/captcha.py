@@ -86,6 +86,7 @@ async def captcha(request: Request):
         else:
             captcha_session.attempts = attempts
             await captcha_session.save(update_fields=['attempts'])
+            raise CaptchaSession.IncorrectCaptchaError()
     else:
         captcha_session.valid = False
         await captcha_session.save(update_fields=['valid'])
