@@ -69,7 +69,7 @@ Amy Rose comes packed with features such as:
 * Captcha
 * Completely async
 
-Amy Rose contains all of your security needs.
+Amyrose, the perfect partner for Sanic, has all of your secutity needs.
 
 This repository has been starred by Sanic's core maintainer:
 
