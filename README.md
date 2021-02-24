@@ -36,7 +36,6 @@
 ## Table of Contents
 
 * [About the Project](#about-the-project)
-  * [Built With](#built-with)
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
@@ -75,16 +74,6 @@ Amy Rose contains all of your security needs.
 This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/amyrose/blob/master/images/ahopkins.png)
-
-
-
-### Built With
-* [Tortoise](https://tortoise.github.io/)
-* [Sanic](https://github.com/huge-success/sanic)
-* [Twilio](https://www.twilio.com/)
-* [aiosmtplib](https://github.com/cole/aiosmtplib)
-
-
 
 <!-- GETTING STARTED -->
 ## Getting Started
