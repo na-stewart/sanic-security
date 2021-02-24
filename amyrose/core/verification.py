@@ -5,7 +5,7 @@ import aiofiles
 from sanic.request import Request
 
 from amyrose.core.models import Account, VerificationSession, AuthenticationSession
-from amyrose.core.utils import random_str
+from amyrose.core.utils import random_str, request_ip
 
 verification_cache_path = './resources/verification/'
 
@@ -42,7 +42,7 @@ async def request_verification(request: Request, account: Account = None):
     account.verified = False
     await account.save(update_fields=['verified'])
     verification_session = await VerificationSession.create(code=await random_cached_code(),
-                                                            parent_uid=account.uid, ip=request.ip)
+                                                            parent_uid=account.uid, ip=request_ip(request))
     return account, verification_session
 
 
