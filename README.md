@@ -136,18 +136,6 @@ tls=true
 start_tls=false
 ```
 
-If you're initializing Tortoise yourself you do not have to configure it here.
-
-If you're not using Twilio as your verification method, you do not have to configure it here. 
-
-If you're not using SMTP as your verification method, you do not have to configure it here. 
-
-The models field is a list of python files that contain database models. You will need to add your own models to the list. For example: amyrose.core.models, yourpackage.core.models
-
-Although not recommended, you can remove the captcha_fonts field if you plan on using the default font. 
-
-The captcha_fonts field are a list of paths to ttf files. Currently, in the example config, raleway.regular.ttf is a file in the project root.
-
 Once you've configured Amy Rose, you can initialize Sanic with the example below:
 
 ```python
