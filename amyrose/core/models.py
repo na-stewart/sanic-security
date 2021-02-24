@@ -214,7 +214,7 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
-    code = fields.CharField(unique=True, max_length=7)
+    code = fields.CharField(max_length=7)
 
     class VerificationAttemptError(Session.SessionError):
         def __init__(self):
