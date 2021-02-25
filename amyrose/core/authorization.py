@@ -15,7 +15,7 @@ async def check_role(account: Account, required_role: str):
 
     :raises InsufficientRoleError:
     """
-    if not await Role().filter(parent_uid=account.uid, name=required_role).exists():
+    if not await Role.filter(parent_uid=account.uid, name=required_role).exists():
         raise Role.InsufficientRoleError()
 
 
@@ -29,7 +29,7 @@ async def check_permission(account: Account, required_permission: str):
 
     :raises InsufficientPermissionError:
     """
-    permissions = await Permission().filter(parent_uid=account.uid).all()
+    permissions = await Permission.filter(parent_uid=account.uid).all()
     for permission in permissions:
         if fnmatch(permission.wildcard, required_permission):
             break

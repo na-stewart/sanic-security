@@ -98,7 +98,7 @@ async def test(request):
 
 @app.post('/createadmin')
 async def on_create_admin(request):
-    client = await Account().get_client(request)
+    client = await Account.get_client(request)
     await Role().create(parent_uid=client.uid, name='Admin')
     return text('Hello Admin!')
 

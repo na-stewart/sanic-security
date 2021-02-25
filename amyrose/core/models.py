@@ -79,7 +79,8 @@ class Account(BaseModel):
                 error = Account.UnverifiedError()
             return error
 
-    async def get_client(self, request: Request):
+    @staticmethod
+    async def get_client(request: Request):
         """
         Retrieves account information from an authentication session found within cookie.
         :param request: Sanic request parameter.
@@ -87,7 +88,7 @@ class Account(BaseModel):
         """
         try:
             authentication_session = AuthenticationSession().decode_raw(request)
-            account = await self.filter(uid=authentication_session.get('parent_uid')).first()
+            account = await Account.filter(uid=authentication_session.get('parent_uid')).first()
         except AuthenticationSession.SessionError:
             account = None
         return account
@@ -187,7 +188,7 @@ class Session(BaseModel):
         def get(self, model):
             error = None
             if model is None:
-                error = Session.NotFoundError('Your session could not be found, please login and try again.')
+                error = Session.NotFoundError('Your session could not be found.')
             elif not model.valid:
                 error = Session.InvalidError(model.__class__.__name__)
             elif model.deleted:
@@ -202,7 +203,7 @@ class Session(BaseModel):
 
     class DecodeError(SessionError):
         def __init__(self, session_name):
-            super().__init__(session_name + " is not available. Could not decode.", 401)
+            super().__init__(session_name + " is not available.", 401)
 
     class InvalidError(SessionError):
         def __init__(self, session_name):
@@ -218,7 +219,7 @@ class VerificationSession(Session):
 
     class VerificationAttemptError(Session.SessionError):
         def __init__(self):
-            super().__init__('Your verification attempt does not match the verification session code.', 403)
+            super().__init__('Your verification attempt was incorrect', 403)
 
 
 class CaptchaSession(Session):
@@ -240,7 +241,7 @@ class CaptchaSession(Session):
         :return: captcha_img_path
         """
         decoded_captcha_session = CaptchaSession().decode_raw(request)
-        captcha_session = await CaptchaSession().filter(uid=decoded_captcha_session.get('uid')).first()
+        captcha_session = await CaptchaSession.filter(uid=decoded_captcha_session.get('uid')).first()
         return './resources/captcha/img/' + captcha_session.captcha + '.png'
 
 

@@ -27,9 +27,9 @@ async def register(request: Request, requires_verification=True):
     if not re.search('^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$', forms.get('email')):
         raise Account.InvalidEmailError()
     try:
-        account = await Account().create(email=forms.get('email'), username=forms.get('username'),
-                                         password=hash_password(forms.get('password')),
-                                         phone=forms.get('phone'), verified=not requires_verification)
+        account = await Account.create(email=forms.get('email'), username=forms.get('username'),
+                                       password=hash_password(forms.get('password')),
+                                       phone=forms.get('phone'), verified=not requires_verification)
         if requires_verification:
             return await request_verification(request, account)
         else:
@@ -52,11 +52,11 @@ async def login(request: Request):
     :return: account, authentication_session
     """
     params = request.form
-    account = await Account().filter(email=params.get('email')).first()
+    account = await Account.filter(email=params.get('email')).first()
     Account.ErrorFactory(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await AuthenticationSession().create(parent_uid=account.uid, ip=request_ip(request),
-                                                                      expiration_date=best_by(30))
+        authentication_session = await AuthenticationSession.create(parent_uid=account.uid, ip=request_ip(request),
+                                                                    expiration_date=best_by(30))
         return account, authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -69,7 +69,7 @@ async def logout(request: Request):
     :param request: Sanic request parameter.
     """
     authentication_session = AuthenticationSession().decode_raw(request)
-    await AuthenticationSession().filter(uid=authentication_session.get('uid')).update(valid=False)
+    await AuthenticationSession.filter(uid=authentication_session.get('uid')).update(valid=False)
 
 
 async def authenticate(request: Request):
