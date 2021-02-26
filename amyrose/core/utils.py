@@ -49,7 +49,7 @@ async def email_verification_code(account_email: str, verification_code: str):
     :param account_email: Email number to send code too.
     :param verification_code: Code sent to account for them to verify themselves.
     """
-    email_str = 'Thank you for registering! Your verification code is:\n\n ' + verification_code
+    email_str = 'Your verification code is:\n\n ' + verification_code
     await send_email(account_email, 'Account Verification', email_str)
 
 
