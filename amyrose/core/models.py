@@ -240,7 +240,7 @@ class CaptchaSession(Session):
 
         :return: captcha_img_path
         """
-        decoded_captcha_session = CaptchaSession().decode_raw(request)
+        decoded_captcha_session = self.decode_raw(request)
         captcha_session = await CaptchaSession.filter(uid=decoded_captcha_session.get('uid')).first()
         return './resources/captcha/img/' + captcha_session.captcha + '.png'
 
@@ -258,7 +258,7 @@ class AuthenticationSession(Session):
 
         :raises UnknownLocationError:
         """
-        authentication_session = AuthenticationSession().decode_raw(request)
+        authentication_session = self.decode_raw(request)
         if not await AuthenticationSession.filter(ip=request_ip(request),
                                                   parent_uid=authentication_session.get('parent_uid')).exists():
             raise AuthenticationSession.UnknownLocationError()
