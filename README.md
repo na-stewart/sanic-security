@@ -71,6 +71,8 @@ Amy Rose comes packed with features such as:
 
 Amyrose, a perfect partner with Sanic, has all of your security needs.
 
+More documentation can be found in the [wiki](https://github.com/sunset-developer/amyrose/wiki).
+
 This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/amyrose/blob/master/images/ahopkins.png)
