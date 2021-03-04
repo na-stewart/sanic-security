@@ -122,6 +122,12 @@ async def on_test_perm(request):
     return text('Admin who can only update gained access!')
 
 
+@app.get('/testjson')
+async def on_test_json(request):
+    client = await Account().get_client(request)
+    return json(client.json(), 200)
+
+
 @app.get('/testrole')
 @requires_role('Admin')
 async def on_test_role(request):

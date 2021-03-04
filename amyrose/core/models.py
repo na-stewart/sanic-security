@@ -46,6 +46,9 @@ class BaseModel(Model):
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
+    def json(self):
+        raise NotImplementedError()
+
     class Meta:
         abstract = True
 
@@ -78,6 +81,17 @@ class Account(BaseModel):
             elif not model.verified:
                 error = Account.UnverifiedError()
             return error
+
+    def json(self):
+        return {
+            'uid': str(self.uid),
+            'date-created': str(self.date_created),
+            'date-updated': str(self.date_updated),
+            'email': self.email,
+            'username': self.username,
+            'disabled': self.disabled,
+            'verified': self.verified
+        }
 
     @staticmethod
     async def get_client(request: Request):
@@ -122,6 +136,17 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+
+    def json(self):
+        return {
+            'parent-uid': str(self.parent_uid),
+            'uid': str(self.uid),
+            'date-created': str(self.date_created),
+            'date-updated': str(self.date_updated),
+            'expiration-date': str(self.expiration_date),
+            'valid': self.valid,
+            'ip': self.ip
+        }
 
     def cookie_name(self):
         """
@@ -267,6 +292,15 @@ class AuthenticationSession(Session):
 class Role(BaseModel):
     name = fields.CharField(max_length=45)
 
+    def json(self):
+        return {
+            'parent-uid': str(self.parent_uid),
+            'uid': str(self.uid),
+            'date-created': str(self.date_created),
+            'date-updated': str(self.date_updated),
+            'name': self.name
+        }
+
     class InsufficientRoleError(RoseError):
         def __init__(self):
             super().__init__('You do not have the required role for this action.', 403)
@@ -274,6 +308,15 @@ class Role(BaseModel):
 
 class Permission(BaseModel):
     wildcard = fields.CharField(max_length=45)
+
+    def json(self):
+        return {
+            'parent-uid': str(self.parent_uid),
+            'uid': str(self.uid),
+            'date-created': str(self.date_created),
+            'date-updated': str(self.date_updated),
+            'wildcard': self.wildcard
+        }
 
     class InsufficientPermissionError(RoseError):
         def __init__(self):
