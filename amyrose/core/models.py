@@ -85,8 +85,8 @@ class Account(BaseModel):
     def json(self):
         return {
             'uid': str(self.uid),
-            'date-created': str(self.date_created),
-            'date-updated': str(self.date_updated),
+            'date_created': str(self.date_created),
+            'date_updated': str(self.date_updated),
             'email': self.email,
             'username': self.username,
             'disabled': self.disabled,
@@ -139,11 +139,11 @@ class Session(BaseModel):
 
     def json(self):
         return {
-            'parent-uid': str(self.parent_uid),
+            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
-            'date-created': str(self.date_created),
-            'date-updated': str(self.date_updated),
-            'expiration-date': str(self.expiration_date),
+            'date_created': str(self.date_created),
+            'date_updated': str(self.date_updated),
+            'expiration_date': str(self.expiration_date),
             'valid': self.valid,
             'ip': self.ip
         }
@@ -294,10 +294,10 @@ class Role(BaseModel):
 
     def json(self):
         return {
-            'parent-uid': str(self.parent_uid),
+            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
-            'date-created': str(self.date_created),
-            'date-updated': str(self.date_updated),
+            'date_created': str(self.date_created),
+            'date_updated': str(self.date_updated),
             'name': self.name
         }
 
@@ -311,10 +311,10 @@ class Permission(BaseModel):
 
     def json(self):
         return {
-            'parent-uid': str(self.parent_uid),
+            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
-            'date-created': str(self.date_created),
-            'date-updated': str(self.date_updated),
+            'date_created': str(self.date_created),
+            'date_updated': str(self.date_updated),
             'wildcard': self.wildcard
         }
 
