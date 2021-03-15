@@ -24,7 +24,7 @@ async def register(request: Request, requires_verification=True):
     :return: account, verification_session
     """
     forms = request.form
-    if not re.search('^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$', forms.get('email')):
+    if not re.search('[^@]+@[^@]+.[^@]+', forms.get('email')):
         raise Account.InvalidEmailError()
     try:
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
