@@ -92,10 +92,6 @@ sudo apt-get install python3-pip
 
 ### Installation
 
-* Clone the repo
-```sh
-git clone https://github.com/sunset-developer/amyrose
-```
 * Install pip packages
 ```sh
 pip3 install amyrose
