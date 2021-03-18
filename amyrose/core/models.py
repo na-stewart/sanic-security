@@ -1,4 +1,5 @@
 import uuid
+from abc import ABC
 
 import jwt
 from jwt import DecodeError
@@ -41,7 +42,6 @@ class RoseError(ServerError):
 class BaseModel(Model):
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
-    parent_uid = fields.UUIDField(null=True, max_length=36)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
@@ -111,9 +111,13 @@ class Account(BaseModel):
         def __init__(self, message, code):
             super().__init__(message, code)
 
-    class AccountExistsError(AccountError):
+    class ExistsError(AccountError):
         def __init__(self):
             super().__init__('Account with this email or phone number already exists.', 409)
+
+    class TooManyCharsError(AccountError):
+        def __init__(self):
+            super().__init__('Email, username, or password ig too long.', 400)
 
     class InvalidEmailError(AccountError):
         def __init__(self):
@@ -136,10 +140,10 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    account = fields.ForeignKeyField('models.Account', null=True)
 
     def json(self):
         return {
-            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
@@ -168,9 +172,8 @@ class Session(BaseModel):
         """
 
         payload = {
-            'uid': str(self.uid),
             'date_created': str(self.date_created),
-            'parent_uid': str(self.parent_uid),
+            'uid': str(self.uid),
             'ip': self.ip
         }
         encoded = jwt.encode(payload, config['ROSE']['secret'], algorithm='HS256')
@@ -289,16 +292,21 @@ class AuthenticationSession(Session):
             raise AuthenticationSession.UnknownLocationError()
 
 
-class Role(BaseModel):
+class AuthorizationCredential(BaseModel, ABC):
+    account = fields.ForeignKeyField('models.Account')
+    description = fields.TextField()
+
+
+class Role(AuthorizationCredential):
     name = fields.CharField(max_length=45)
 
     def json(self):
         return {
-            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
-            'name': self.name
+            'name': self.name,
+            'description': self.description
         }
 
     class InsufficientRoleError(RoseError):
@@ -306,16 +314,16 @@ class Role(BaseModel):
             super().__init__('You do not have the required role for this action.', 403)
 
 
-class Permission(BaseModel):
+class Permission(AuthorizationCredential):
     wildcard = fields.CharField(max_length=45)
 
     def json(self):
         return {
-            'parent_uid': str(self.parent_uid),
             'uid': str(self.uid),
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
-            'wildcard': self.wildcard
+            'wildcard': self.wildcard,
+            'description': self.description
         }
 
     class InsufficientPermissionError(RoseError):

@@ -3,23 +3,25 @@ import re
 
 import bcrypt
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError
+from tortoise.exceptions import IntegrityError, ValidationError
 
 from amyrose.core.models import Account, AuthenticationSession
 from amyrose.core.utils import best_by, request_ip, hash_password
 from amyrose.core.verification import request_verification
 
 
-async def register(request: Request, requires_verification=True):
+async def register(request: Request, verified=False, disabled=False):
     """
     Creates an unverified account. This is the recommend and most secure method for registering accounts' with Amy Rose.
-
-    :param requires_verification: If true, account being registered must be verified before use.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     email, username, password, phone.
 
-    :raises AccountExistsError:
+    :param verified: If false, account being registered must be verified before use.
+
+    :param disabled: If true, account being registered must be enabled before use.
+
+    :raises AccountError
 
     :return: account, verification_session
     """
@@ -29,13 +31,15 @@ async def register(request: Request, requires_verification=True):
     try:
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
                                        password=hash_password(forms.get('password')),
-                                       phone=forms.get('phone'), verified=not requires_verification)
-        if requires_verification:
+                                       phone=forms.get('phone'), verified=verified, disabled=disabled)
+        if not verified:
             return await request_verification(request, account)
         else:
             return account
     except IntegrityError:
-        raise Account.AccountExistsError()
+        raise Account.ExistsError()
+    except ValidationError:
+        raise Account.TooManyCharsError()
 
 
 async def login(request: Request):
@@ -55,7 +59,7 @@ async def login(request: Request):
     account = await Account.filter(email=params.get('email')).first()
     Account.ErrorFactory(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await AuthenticationSession.create(parent_uid=account.uid, ip=request_ip(request),
+        authentication_session = await AuthenticationSession.create(account=account, ip=request_ip(request),
                                                                     expiration_date=best_by(30))
         return account, authentication_session
     else:
@@ -88,9 +92,8 @@ async def authenticate(request: Request):
     authentication_session = await AuthenticationSession().decode(request)
     await authentication_session.in_known_location(request)
     AuthenticationSession.ErrorFactory(authentication_session)
-    account = await Account.filter(uid=authentication_session.parent_uid).first()
-    Account.ErrorFactory(account)
-    return account, authentication_session
+    Account.ErrorFactory(authentication_session.account)
+    return authentication_session.account, authentication_session
 
 
 def requires_authentication():

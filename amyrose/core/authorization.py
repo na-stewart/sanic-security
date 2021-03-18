@@ -5,44 +5,47 @@ from amyrose.core.authentication import authenticate
 from amyrose.core.models import Role, Permission, Account
 
 
-async def check_role(account: Account, required_role: str):
+async def check_roles(account: Account, *required_roles: str):
     """
     Checks if the account has the required role being requested.
 
     :param account: Account being checked.
 
-    :param required_role: The role that is required for validation.
+    :param required_roles: The roles required to authorize an action.
 
     :raises InsufficientRoleError:
     """
-    if not await Role.filter(parent_uid=account.uid, name=required_role).exists():
+    for role in required_roles:
+        if await Role.filter(account=account, name=role).exists():
+            break
+    else:
         raise Role.InsufficientRoleError()
 
 
-async def check_permission(account: Account, required_permission: str):
+async def check_permissions(account: Account, *required_permissions: str):
     """
     Checks if the account has the required permission requested.
 
     :param account: Account being checked.
 
-    :param required_permission: The permission that is required for validation.
+    :param required_permissions: The permissions required to authorize an action.
 
     :raises InsufficientPermissionError:
     """
-    permissions = await Permission.filter(parent_uid=account.uid).all()
-    for permission in permissions:
-        if fnmatch(permission.wildcard, required_permission):
+    for required_permission in required_permissions:
+        permission = await Permission.filter(account=account, wildcard=required_permission).first()
+        if permission is not None and fnmatch(required_permission, permission.wildcard):
             break
     else:
         raise Permission.InsufficientPermissionError()
 
 
-def requires_permission(required_permission: str):
+def requires_permission(*required_permissions: str):
     """
-    Has the same function as the check_permission method, but is in the form of a decorator and validates client
+    Has the same function as the check_permissions method, but is in the form of a decorator and validates client
     permission.
 
-    :param required_permission: The permission that is required for validation.
+    :param required_permissions: The permissions required to authorize an action.
 
     :raises InsufficientPermissionError:
     """
@@ -51,7 +54,7 @@ def requires_permission(required_permission: str):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
             account, authentication_session = await authenticate(request)
-            await check_permission(account, required_permission)
+            await check_permissions(account, *required_permissions)
             return await func(request, *args, **kwargs)
 
         return wrapped
@@ -59,11 +62,11 @@ def requires_permission(required_permission: str):
     return wrapper
 
 
-def requires_role(required_role: str):
+def requires_role(*required_roles: str):
     """
-    Has the same function as the check_role method, but is in the form of a decorator and validates client role.
+    Has the same function as the check_roles method, but is in the form of a decorator and validates client role.
 
-    :param required_role: The role that is required for validation.
+    :param required_roles: The roles required to authorize an action.
 
     :raises InsufficientRoleError:
     """
@@ -72,7 +75,7 @@ def requires_role(required_role: str):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
             account, authentication_session = await authenticate(request)
-            await check_role(account, required_role)
+            await check_roles(account, *required_roles)
             return await func(request, *args, **kwargs)
 
         return wrapped

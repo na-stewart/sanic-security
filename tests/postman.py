@@ -21,9 +21,8 @@ async def response_middleware(request, response):
 
 
 @app.post('/register')
-@requires_captcha()
 async def on_register(request):
-    account, none = await register(request, False)
+    account = await register(request, verified=True, disabled=False)
     response = text('Registration successful')
     return response
 
