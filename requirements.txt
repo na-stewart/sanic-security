@@ -15,7 +15,7 @@ httpx==0.15.4
 idna==2.10
 iso8601==0.1.14
 multidict==5.1.0
-Pillow==8.1.0
+Pillow==8.1.1
 pycparser==2.20
 PyPika==0.44.1
 pytz==2020.5
