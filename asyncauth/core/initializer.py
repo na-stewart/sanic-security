@@ -1,4 +1,3 @@
-from asyncauth.core.captcha import captcha_init
 from asyncauth.core.verification import verification_init
 from asyncauth.lib.tortoise import tortoise_init
 
