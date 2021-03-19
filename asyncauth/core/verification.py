@@ -37,7 +37,7 @@ async def request_verification(request: Request, account: Account):
     await account.save(update_fields=['verified'])
     verification_session = await VerificationSession.create(code=await random_cached_code(),
                                                             account=account, ip=request_ip(request))
-    return account, verification_session
+    return verification_session
 
 
 async def random_cached_code():
@@ -70,4 +70,4 @@ async def verify_account(request: Request):
     verification_session.valid = False
     await verification_session.account.save(update_fields=['verified'])
     await verification_session.save(update_fields=['valid'])
-    return verification_session.account, verification_session
+    return verification_session

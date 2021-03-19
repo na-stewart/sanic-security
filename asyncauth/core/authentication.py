@@ -61,7 +61,7 @@ async def login(request: Request):
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
         authentication_session = await AuthenticationSession.create(account=account, ip=request_ip(request),
                                                                     expiration_date=best_by(30))
-        return account, authentication_session
+        return authentication_session
     else:
         raise Account.IncorrectPasswordError()
 
@@ -93,7 +93,7 @@ async def authenticate(request: Request):
     await authentication_session.in_known_location(request)
     AuthenticationSession.ErrorFactory(authentication_session)
     Account.ErrorFactory(authentication_session.account)
-    return authentication_session.account, authentication_session
+    return authentication_session
 
 
 def requires_authentication():
