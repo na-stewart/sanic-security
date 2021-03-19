@@ -52,7 +52,7 @@ async def request_verification(request: Request, account: Account):
     :param account: The account that requires verification. If none, will retrieve account from verification or
     authentication session.
 
-    :return: account, verification_session
+    :return: verification_session
     """
     account.verified = False
     await account.save(update_fields=['verified'])
@@ -69,7 +69,7 @@ async def verify_account(request: Request):
 
     :raises SessionError:
 
-    :return: account, verification_session
+    :return: verification_session
     """
 
     verification_session = await VerificationSession().decode(request)
@@ -109,7 +109,7 @@ async def request_captcha(request: Request):
 
     :param request: Sanic request parameter.
 
-    :return: account, captcha_session
+    :return: captcha_session
     """
     random_captcha = await get_random_code('/captcha')
     captcha_session = await CaptchaSession.create(ip=request_ip(request), captcha=random_captcha)
@@ -143,7 +143,7 @@ async def captcha(request: Request):
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     captcha.
 
-    :return: account, captcha_session
+    :return: captcha_session
     """
     params = request.form
     captcha_session = await CaptchaSession().decode(request)

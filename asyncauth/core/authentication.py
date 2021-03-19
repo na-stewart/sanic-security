@@ -5,7 +5,7 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.models import Account, AuthenticationSession
+from asyncauth.core.models import Account, AuthenticationSession, VerificationSession
 from asyncauth.core.utils import best_by, request_ip, hash_password
 from asyncauth.core.verification import request_verification
 
@@ -21,9 +21,9 @@ async def register(request: Request, verified=False, disabled=False):
 
     :param disabled: If true, account being registered must be enabled before use.
 
-    :raises AccountError
+    :raises AccountError:
 
-    :return: account, verification_session
+    :return: account if verified or  verification_session if not verified
     """
     forms = request.form
     if not re.search('[^@]+@[^@]+.[^@]+', forms.get('email')):
@@ -49,11 +49,9 @@ async def login(request: Request):
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     email, password.
 
-    :raises SessionError:
-
     :raises AccountError:
 
-    :return: account, authentication_session
+    :return: authentication_session
     """
     params = request.form
     account = await Account.filter(email=params.get('email')).first()
@@ -86,7 +84,7 @@ async def authenticate(request: Request):
 
     :raises AccountError:
 
-    :return: account, authentication_session
+    :return: authentication_session
     """
 
     authentication_session = await AuthenticationSession().decode(request)
