@@ -1,25 +1,46 @@
+import functools
 import os
 import random
 
 import aiofiles
+from captcha.image import ImageCaptcha
 from sanic.request import Request
 
-from asyncauth.core.models import Account, VerificationSession, AuthenticationSession
-from asyncauth.core.utils import random_str, request_ip
+from asyncauth.core.config import config
+from asyncauth.core.models import Account, VerificationSession, CaptchaSession
+from asyncauth.core.utils import random_str, request_ip, str_to_list
 
-verification_cache_path = './resources/verification/'
+resources_path = './resources'
 
 
 async def verification_init():
+    await generate_random_codes('/verification', 7)
+    await generate_random_codes('/captcha', 5)
+    await generate_captcha_images()
+
+
+async def generate_random_codes(path: str, length: int):
     """
-    Generates up to 100 verification code variations as string and image within their respective folders if empty.
+    Generates up to 100 verification code variations in a codes.txt file
     """
-    if not os.path.exists(verification_cache_path):
-        os.makedirs(verification_cache_path)
-        async with aiofiles.open(verification_cache_path + 'codes.txt', mode="w") as f:
+    path = resources_path + path
+    if not os.path.exists(path):
+        os.makedirs(path)
+        async with aiofiles.open(path + '/codes.txt', mode="w") as f:
             for i in range(100):
-                random_string = random_str(7)
+                random_string = random_str(length)
                 await f.write(random_string + '\n' if i < 99 else random_string)
+
+
+async def get_random_code(path: str):
+    """
+    Retrieves a random verification code from a codes.txt file
+
+    :return: verification_code_str
+    """
+    path = resources_path + path
+    async with aiofiles.open(path + '/codes.txt', mode="r") as f:
+        return random.choice([line.strip() async for line in f])
 
 
 async def request_verification(request: Request, account: Account):
@@ -35,19 +56,9 @@ async def request_verification(request: Request, account: Account):
     """
     account.verified = False
     await account.save(update_fields=['verified'])
-    verification_session = await VerificationSession.create(code=await random_cached_code(),
+    verification_session = await VerificationSession.create(code=await get_random_code('/verification'),
                                                             account=account, ip=request_ip(request))
     return verification_session
-
-
-async def random_cached_code():
-    """
-    Retrieves a random verification code from the generated captcha list,
-
-    :return: verification_code_str
-    """
-    async with aiofiles.open(verification_cache_path + 'codes.txt', mode="r") as f:
-        return random.choice([line.strip() async for line in f])
 
 
 async def verify_account(request: Request):
@@ -71,3 +82,81 @@ async def verify_account(request: Request):
     await verification_session.account.save(update_fields=['verified'])
     await verification_session.save(update_fields=['valid'])
     return verification_session
+
+
+def try_to_get_captcha_fonts():
+    try:
+        return str_to_list(config['AUTH']['captcha_fonts'])
+    except KeyError:
+        return None
+
+
+async def generate_captcha_images():
+    """
+    Retrieves a random verification code from a codes.txt file
+
+    :return: verification_code_str
+    """
+    image = ImageCaptcha(fonts=try_to_get_captcha_fonts())
+    async with aiofiles.open(resources_path + 'captcha/codes.txt', mode="r") as f:
+        async for captcha_challenge in f:
+            image.write(captcha_challenge, resources_path + 'captcha/img/' + captcha_challenge + '.png')
+
+
+async def request_captcha(request: Request):
+    """
+    Creates a captcha session associated with an account.
+
+    :param request: Sanic request parameter.
+
+    :return: account, captcha_session
+    """
+    random_captcha = await get_random_code('/captcha')
+    captcha_session = await CaptchaSession.create(ip=request_ip(request), captcha=random_captcha)
+    return captcha_session
+
+
+def requires_captcha():
+    """
+    Has the same function as the authenticate method, but is in the form of a decorator and authenticates client.
+
+    :raises AccountError:
+
+    :raises SessionError:
+    """
+
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
+            await captcha(request)
+            return await func(request, *args, **kwargs)
+
+        return wrapped
+
+    return wrapper
+
+
+async def captcha(request: Request):
+    """
+    Validated captcha challenge attempt. Captcha is unusable after 5 attempts.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    captcha.
+
+    :return: account, captcha_session
+    """
+    params = request.form
+    captcha_session = await CaptchaSession().decode(request)
+    CaptchaSession.ErrorFactory(captcha_session)
+    if captcha_session.captcha != params.get('captcha'):
+        attempts = captcha_session.attempts + 1
+        if attempts > 5:
+            raise CaptchaSession.MaximumAttemptsError()
+        else:
+            captcha_session.attempts = attempts
+            await captcha_session.save(update_fields=['attempts'])
+            raise CaptchaSession.IncorrectCaptchaError()
+    else:
+        captcha_session.valid = False
+        await captcha_session.save(update_fields=['valid'])
+    return captcha_session
