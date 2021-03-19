@@ -8,8 +8,8 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
-from amyrose.core.config import config
-from amyrose.core.utils import is_expired, best_by, request_ip
+from asyncauth.core.config import config
+from asyncauth.core.utils import is_expired, best_by, request_ip
 
 
 class BaseErrorFactory:
@@ -100,12 +100,9 @@ class Account(BaseModel):
         :param request: Sanic request parameter.
         :return: account
         """
-        try:
-            authentication_session = AuthenticationSession().decode_raw(request)
-            account = await Account.filter(uid=authentication_session.get('parent_uid')).first()
-        except AuthenticationSession.SessionError:
-            account = None
-        return account
+
+        authentication_session = await AuthenticationSession().decode_raw(request)
+        return authentication_session.account
 
     class AccountError(RoseError):
         def __init__(self, message, code):
@@ -176,7 +173,7 @@ class Session(BaseModel):
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = jwt.encode(payload, config['ROSE']['secret'], algorithm='HS256')
+        encoded = jwt.encode(payload, config['AUTH']['secret'], algorithm='HS256')
         cookie_name = self.cookie_name()
         response.cookies[cookie_name] = encoded
         response.cookies[cookie_name]['expires'] = self.expiration_date
@@ -203,7 +200,7 @@ class Session(BaseModel):
         :return: raw
         """
         try:
-            session = jwt.decode(request.cookies.get(self.cookie_name()), config['ROSE']['secret'],
+            session = jwt.decode(request.cookies.get(self.cookie_name()), config['AUTH']['secret'],
                                  algorithms='HS256')
             return session
         except DecodeError:
@@ -286,9 +283,8 @@ class AuthenticationSession(Session):
 
         :raises UnknownLocationError:
         """
-        authentication_session = self.decode_raw(request)
-        if not await AuthenticationSession.filter(ip=request_ip(request),
-                                                  parent_uid=authentication_session.get('parent_uid')).exists():
+        authentication_session = await self.decode(request)
+        if not await AuthenticationSession.filter(ip=request_ip(request), account=authentication_session.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
 

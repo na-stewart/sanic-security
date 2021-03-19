@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as rq:
     requirements = [r.strip() for r in rq.readlines()]
 
 setup(
-    name='amyrose',
+    name='asyncauth',
     version='0.7.7.2',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/Amy-Rose',

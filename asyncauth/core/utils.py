@@ -6,8 +6,8 @@ import bcrypt
 from sanic.request import Request
 from sanic_ipware import get_client_ip
 
-from amyrose.lib.smtp import send_email
-from amyrose.lib.twilio import send_sms
+from asyncauth.lib.smtp import send_email
+from asyncauth.lib.twilio import send_sms
 
 
 def best_by(days: int = 1):

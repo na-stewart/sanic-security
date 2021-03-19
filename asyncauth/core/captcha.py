@@ -6,16 +6,16 @@ import aiofiles
 from captcha.image import ImageCaptcha
 from sanic.request import Request
 
-from amyrose.core.config import config
-from amyrose.core.models import CaptchaSession
-from amyrose.core.utils import random_str, request_ip, str_to_list
+from asyncauth.core.config import config
+from asyncauth.core.models import CaptchaSession
+from asyncauth.core.utils import random_str, request_ip, str_to_list
 
 captcha_cache_path = './resources/captcha/'
 
 
 def try_to_get_captcha_fonts():
     try:
-        return str_to_list(config['ROSE']['captcha_fonts'])
+        return str_to_list(config['AUTH']['captcha_fonts'])
     except KeyError:
         return None
 

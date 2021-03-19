@@ -1,8 +1,8 @@
 import functools
 from fnmatch import fnmatch
 
-from amyrose.core.authentication import authenticate
-from amyrose.core.models import Role, Permission, Account
+from asyncauth.core.authentication import authenticate
+from asyncauth.core.models import Role, Permission, Account
 
 
 async def check_roles(account: Account, *required_roles: str):
@@ -40,7 +40,7 @@ async def check_permissions(account: Account, *required_permissions: str):
         raise Permission.InsufficientPermissionError()
 
 
-def requires_permission(*required_permissions: str):
+def require_permissions(*required_permissions: str):
     """
     Has the same function as the check_permissions method, but is in the form of a decorator and validates client
     permission.
@@ -62,7 +62,7 @@ def requires_permission(*required_permissions: str):
     return wrapper
 
 
-def requires_role(*required_roles: str):
+def require_roles(*required_roles: str):
     """
     Has the same function as the check_roles method, but is in the form of a decorator and validates client role.
 

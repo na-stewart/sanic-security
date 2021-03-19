@@ -5,9 +5,9 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from amyrose.core.models import Account, AuthenticationSession
-from amyrose.core.utils import best_by, request_ip, hash_password
-from amyrose.core.verification import request_verification
+from asyncauth.core.models import Account, AuthenticationSession
+from asyncauth.core.utils import best_by, request_ip, hash_password
+from asyncauth.core.verification import request_verification
 
 
 async def register(request: Request, verified=False, disabled=False):

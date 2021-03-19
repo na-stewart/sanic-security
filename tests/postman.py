@@ -2,15 +2,15 @@ from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.response import text, json, file
 
-from amyrose.core.authentication import register, login, requires_authentication, \
+from asyncauth.core.authentication import register, login, requires_authentication, \
     logout, request_verification
-from amyrose.core.authorization import requires_permission, requires_role
-from amyrose.core.captcha import request_captcha, captcha, requires_captcha
-from amyrose.core.initializer import initialize_rose
-from amyrose.core.middleware import xss_prevention, https_redirect
-from amyrose.core.models import RoseError, CaptchaSession, Account, Role, Permission
-from amyrose.core.utils import text_verification_code, email_verification_code
-from amyrose.core.verification import verify_account
+from asyncauth.core.authorization import requires_permission, requires_role
+from asyncauth.core.captcha import request_captcha, captcha, requires_captcha
+from asyncauth.core.initializer import initialize_rose
+from asyncauth.core.middleware import xss_prevention, https_redirect
+from asyncauth.core.models import RoseError, CaptchaSession, Account, Role, Permission
+from asyncauth.core.utils import text_verification_code, email_verification_code
+from asyncauth.core.verification import verify_account
 
 app = Sanic('AmyRose tests')
 
@@ -98,14 +98,14 @@ async def test(request):
 @app.post('/createadmin')
 async def on_create_admin(request):
     client = await Account.get_client(request)
-    await Role().create(parent_uid=client.uid, name='Admin')
+    await Role().create(account=client, name='Admin')
     return text('Hello Admin!')
 
 
 @app.post('/createadminperm')
 async def on_create_admin_perm(request):
     client = await Account().get_client(request)
-    await Permission().create(parent_uid=client.uid, wildcard='admin:update')
+    await Permission().create(account=client, wildcard='admin:update')
     return text('Hello Admin who can only update!')
 
 

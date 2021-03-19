@@ -1,7 +1,7 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from aiosmtplib import send
-from amyrose.core.config import config
+from asyncauth.core.config import config
 
 
 async def send_email(to, subj, msg, text_type="plain"):

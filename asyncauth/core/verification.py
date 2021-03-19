@@ -4,8 +4,8 @@ import random
 import aiofiles
 from sanic.request import Request
 
-from amyrose.core.models import Account, VerificationSession, AuthenticationSession
-from amyrose.core.utils import random_str, request_ip
+from asyncauth.core.models import Account, VerificationSession, AuthenticationSession
+from asyncauth.core.utils import random_str, request_ip
 
 verification_cache_path = './resources/verification/'
 

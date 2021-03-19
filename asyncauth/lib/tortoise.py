@@ -1,7 +1,7 @@
 from tortoise import Tortoise
 
-from amyrose.core.config import config
-from amyrose.core.utils import str_to_list
+from asyncauth.core.config import config
+from asyncauth.core.utils import str_to_list
 
 
 async def tortoise_init():

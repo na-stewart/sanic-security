@@ -1,6 +1,6 @@
 import aiohttp
 
-from amyrose.core.config import config
+from asyncauth.core.config import config
 
 
 async def send_sms(to, msg):
