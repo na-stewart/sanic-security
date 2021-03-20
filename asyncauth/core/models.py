@@ -1,7 +1,12 @@
+import os
+import random
 import uuid
-from abc import ABC
+from abc import ABC, ABCMeta
 
+import aiofiles
 import jwt
+
+from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
@@ -9,7 +14,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list
 
 
 class BaseErrorFactory:
@@ -94,7 +99,7 @@ class Account(BaseModel):
         }
 
     @staticmethod
-    async def get_client(request: Request):
+    async def get_client(request: Request) -> Account:
         """
         Retrieves account information from an authentication session found within cookie.
         :param request: Sanic request parameter.
@@ -180,6 +185,20 @@ class Session(BaseModel):
         response.cookies[cookie_name]['secure'] = secure
         response.cookies[cookie_name]['samesite'] = same_site
 
+    def decode_raw(self, request: Request) -> dict:
+        """
+        Decodes JWT token in cookie to dict.
+
+        :param request: Sanic request parameter.
+
+        :return: raw
+        """
+        try:
+            session = jwt.decode(request.cookies.get(self.cookie_name()), config['AUTH']['secret'], algorithms='HS256')
+            return session
+        except DecodeError:
+            raise Session.DecodeError(self.__class__.__name__)
+
     async def decode(self, request: Request):
         """
         Decodes JWT token in cookie and transforms into session.
@@ -189,22 +208,7 @@ class Session(BaseModel):
         :return: session
         """
         decoded = self.decode_raw(request)
-        return await self.filter(uid=decoded.get('uid')).first()
-
-    def decode_raw(self, request: Request):
-        """
-        Decodes JWT token in cookie to dict.
-
-        :param request: Sanic request parameter.
-
-        :return: raw
-        """
-        try:
-            session = jwt.decode(request.cookies.get(self.cookie_name()), config['AUTH']['secret'],
-                                 algorithms='HS256')
-            return session
-        except DecodeError:
-            raise Session.DecodeError(self.__class__.__name__)
+        return await self.filter(uid=decoded.get('uid')).prefetch_related('account').first()
 
     class Meta:
         abstract = True
@@ -239,6 +243,56 @@ class Session(BaseModel):
             super().__init__(session_name + " has expired", 401)
 
 
+class SessionFactory:
+    resources_path = './resources/'
+
+    def _get_code_image_fonts(self):
+        try:
+            return str_to_list(config['AUTH']['captcha_fonts'])
+        except KeyError:
+            return None
+
+    async def _generate_random_codes(self, path_endpoint: str, length: int, with_image=False):
+        """
+        Generates up to 100 verification code variations in a codes.txt file
+        """
+        path = self.resources_path + path_endpoint
+        if not os.path.exists(path):
+            os.makedirs(path)
+            async with aiofiles.open(path + '/codes.txt', mode="w") as f:
+                image = ImageCaptcha(fonts=self._get_code_image_fonts())
+                for i in range(100):
+                    code = random_str(length)
+                    await f.write(code)
+                    if with_image:
+                        image.write(code, path + '/' + code + '.png')
+
+    async def _get_random_code(self, path_endpoint: str):
+        """
+        Retrieves a random verification code from a codes.txt file
+
+        :return: code
+        """
+        path = self.resources_path + path_endpoint
+        async with aiofiles.open(path + '/codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
+
+    async def get(self, session_type: str, request: Request, account: Account = None):
+        if session_type == 'captcha':
+            await self._generate_random_codes(session_type, 5, True)
+            return await CaptchaSession.create(ip=request_ip(request), captcha=self._get_random_code(session_type))
+        elif session_type == 'verification':
+            await self._generate_random_codes(session_type, 7)
+            return await VerificationSession.create(code=await self._get_random_code(session_type), account=account,
+                                                    ip=request_ip(request))
+        elif session_type == 'authentication':
+            return await AuthenticationSession.create(account=account, ip=request_ip(request),
+                                                      expiration_date=best_by(30))
+        else:
+            raise ValueError
+
+
 class VerificationSession(Session):
     code = fields.CharField(max_length=7)
 
@@ -254,10 +308,6 @@ class CaptchaSession(Session):
     class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):
             super().__init__('Your captcha attempt was incorrect.', 403)
-
-    class MaximumAttemptsError(Session.SessionError):
-        def __init__(self):
-            super().__init__('The maximum amount of incorrect attempts have been reached for this captcha.', 403)
 
     async def get_client_img(self, request):
         """
@@ -275,22 +325,23 @@ class AuthenticationSession(Session):
         def __init__(self):
             super().__init__('Attempting to authenticate in an unknown location.', 403)
 
-    async def in_known_location(self, request: Request):
+    async def verify_location(self, request):
         """
         Checks if client using session is in a known location (ip address). Prevents cookie jacking.
 
-        :param request: Sanic request parameter.
-
         :raises UnknownLocationError:
         """
-        authentication_session = await self.decode(request)
-        if not await AuthenticationSession.filter(ip=request_ip(request), account=authentication_session.account).exists():
+
+        if not await AuthenticationSession.filter(ip=request_ip(request), account=self.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
 
-class AuthorizationCredential(BaseModel, ABC):
+class AuthorizationCredential(BaseModel):
     account = fields.ForeignKeyField('models.Account')
     description = fields.TextField()
+
+    def json(self):
+        raise NotImplementedError
 
 
 class Role(AuthorizationCredential):

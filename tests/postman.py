@@ -4,13 +4,12 @@ from sanic.response import text, json, file
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
     logout, request_verification
-from asyncauth.core.authorization import requires_permission, requires_role
-from asyncauth.core.captcha import request_captcha, captcha, requires_captcha
-from asyncauth.core.initializer import initialize_rose
+from asyncauth.core.authorization import require_permissions, require_roles
+from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
-from asyncauth.core.models import RoseError, CaptchaSession, Account, Role, Permission
+from asyncauth.core.models import RoseError, CaptchaSession, Account, Role, Permission, VerificationSession
 from asyncauth.core.utils import text_verification_code, email_verification_code
-from asyncauth.core.verification import verify_account
+from asyncauth.core.verification import verify_account, requires_captcha, request_captcha
 
 app = Sanic('AmyRose tests')
 
@@ -29,8 +28,8 @@ async def on_register(request):
 
 @app.post('/register/verification')
 async def on_register(request):
-    account, verification_session = await register(request)
-    await email_verification_code(account.email, verification_session.code)
+    verification_session = await register(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code)
     response = text('Registration successful')
     verification_session.encode(response)
     return response
@@ -61,8 +60,9 @@ async def on_register_captcha(request):
 
 @app.post('/resend')
 async def resend_verification_request(request):
-    account, verification_session = await request_verification(request)
-    await text_verification_code(account.phone, verification_session.code)
+    verification_session = await VerificationSession().decode(request)
+    verification_session = await request_verification(request, verification_session.account)
+    await text_verification_code(verification_session.account.phone, verification_session.code)
     response = text('Resend request successful.')
     verification_session.encode(response)
     return response
@@ -70,7 +70,7 @@ async def resend_verification_request(request):
 
 @app.post('/login')
 async def on_login(request):
-    account, authentication_session = await login(request)
+    authentication_session = await login(request)
     response = text('Login successful')
     authentication_session.encode(response)
     return response
@@ -85,7 +85,8 @@ async def on_logout(request):
 
 @app.post('/verify')
 async def on_verify(request):
-    account, verification_session = await verify_account(request)
+    verification_session = await verify_account(request)
+    print(verification_session.account.verified)
     return text('Verification successful')
 
 
@@ -116,7 +117,7 @@ async def on_test_client(request):
 
 
 @app.get('/testperm')
-@requires_permission('admin:update')
+@require_permissions('admin:update')
 async def on_test_perm(request):
     return text('Admin who can only update gained access!')
 
@@ -128,7 +129,7 @@ async def on_test_json(request):
 
 
 @app.get('/testrole')
-@requires_role('Admin')
+@require_roles('Admin')
 async def on_test_role(request):
     return text('Admin gained access!')
 
@@ -143,5 +144,5 @@ async def on_rose_error_test(request, exception: ServerError):
 
 
 if __name__ == '__main__':
-    initialize_rose(app)
+    initialize_auth(app)
     app.run(host='0.0.0.0', port=8000, debug=True)

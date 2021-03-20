@@ -5,9 +5,11 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.models import Account, AuthenticationSession, VerificationSession
-from asyncauth.core.utils import best_by, request_ip, hash_password
+from asyncauth.core.models import Account, SessionFactory, AuthenticationSession
+from asyncauth.core.utils import hash_password
 from asyncauth.core.verification import request_verification
+
+session_factory = SessionFactory()
 
 
 async def register(request: Request, verified=False, disabled=False):
@@ -32,10 +34,7 @@ async def register(request: Request, verified=False, disabled=False):
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
                                        password=hash_password(forms.get('password')),
                                        phone=forms.get('phone'), verified=verified, disabled=disabled)
-        if not verified:
-            return await request_verification(request, account)
-        else:
-            return account
+        return await request_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()
     except ValidationError:
@@ -57,8 +56,7 @@ async def login(request: Request):
     account = await Account.filter(email=params.get('email')).first()
     Account.ErrorFactory(account)
     if bcrypt.checkpw(params.get('password').encode('utf-8'), account.password):
-        authentication_session = await AuthenticationSession.create(account=account, ip=request_ip(request),
-                                                                    expiration_date=best_by(30))
+        authentication_session = await session_factory.get('authentication', request, account)
         return authentication_session
     else:
         raise Account.IncorrectPasswordError()
@@ -70,8 +68,10 @@ async def logout(request: Request):
 
     :param request: Sanic request parameter.
     """
-    authentication_session = AuthenticationSession().decode_raw(request)
-    await AuthenticationSession.filter(uid=authentication_session.get('uid')).update(valid=False)
+    authentication_session = await AuthenticationSession().decode(request)
+    authentication_session.valid = False
+    authentication_session.save(update_fields=['valid'])
+    return authentication_session
 
 
 async def authenticate(request: Request):
@@ -88,7 +88,7 @@ async def authenticate(request: Request):
     """
 
     authentication_session = await AuthenticationSession().decode(request)
-    await authentication_session.in_known_location(request)
+    await authentication_session.verify_location(request)
     AuthenticationSession.ErrorFactory(authentication_session)
     Account.ErrorFactory(authentication_session.account)
     return authentication_session
