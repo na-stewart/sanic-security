@@ -1,11 +1,9 @@
 import os
 import random
 import uuid
-from abc import ABC, ABCMeta
 
 import aiofiles
 import jwt
-
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
@@ -23,9 +21,7 @@ class BaseErrorFactory:
     """
 
     def __init__(self, model):
-        error = self.get(model)
-        if error:
-            raise error
+        self.error = self.get(model)
 
     def get(self, model):
         """
@@ -33,6 +29,14 @@ class BaseErrorFactory:
         :return: error
         """
         raise NotImplementedError()
+
+    def throw(self):
+        """
+        Retrieves an error and raises it if certain conditions are met.
+        :return: error
+        """
+        if self.error:
+            raise self.error
 
 
 class RoseError(ServerError):
@@ -119,7 +123,7 @@ class Account(BaseModel):
 
     class TooManyCharsError(AccountError):
         def __init__(self):
-            super().__init__('Email, username, or password ig too long.', 400)
+            super().__init__('Email, username, or phone number is too long.', 400)
 
     class InvalidEmailError(AccountError):
         def __init__(self):
@@ -142,7 +146,12 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    code = fields.CharField(max_length=6, null=True)
     account = fields.ForeignKeyField('models.Account', null=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
 
     def json(self):
         return {
@@ -153,14 +162,6 @@ class Session(BaseModel):
             'valid': self.valid,
             'ip': self.ip
         }
-
-    def cookie_name(self):
-        """
-        The name of the cookie that stores the session's jwt.
-
-        :return: cookie_name
-        """
-        return self.__class__.__name__[:4].lower() + 'tkn'
 
     def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
@@ -179,11 +180,10 @@ class Session(BaseModel):
             'ip': self.ip
         }
         encoded = jwt.encode(payload, config['AUTH']['secret'], algorithm='HS256')
-        cookie_name = self.cookie_name()
-        response.cookies[cookie_name] = encoded
-        response.cookies[cookie_name]['expires'] = self.expiration_date
-        response.cookies[cookie_name]['secure'] = secure
-        response.cookies[cookie_name]['samesite'] = same_site
+        response.cookies[self.cookie] = encoded
+        response.cookies[self.cookie]['expires'] = self.expiration_date
+        response.cookies[self.cookie]['secure'] = secure
+        response.cookies[self.cookie]['samesite'] = same_site
 
     def decode_raw(self, request: Request) -> dict:
         """
@@ -194,10 +194,10 @@ class Session(BaseModel):
         :return: raw
         """
         try:
-            session = jwt.decode(request.cookies.get(self.cookie_name()), config['AUTH']['secret'], algorithms='HS256')
+            session = jwt.decode(request.cookies.get(self.cookie), config['AUTH']['secret'], algorithms='HS256')
             return session
         except DecodeError:
-            raise Session.DecodeError(self.__class__.__name__)
+            raise Session.DecodeError()
 
     async def decode(self, request: Request):
         """
@@ -217,13 +217,13 @@ class Session(BaseModel):
         def get(self, model):
             error = None
             if model is None:
-                error = Session.NotFoundError('Your session could not be found.')
+                error = Session.NotFoundError('Session could not be found.')
             elif not model.valid:
-                error = Session.InvalidError(model.__class__.__name__)
+                error = Session.InvalidError()
             elif model.deleted:
-                error = Session.DeletedError(model.__class__.__name__ + ' has been deleted.')
+                error = Session.DeletedError('Session has been deleted.')
             elif is_expired(model.expiration_date):
-                error = Session.ExpiredError(model.__class__.__name__)
+                error = Session.ExpiredError()
             return error
 
     class SessionError(RoseError):
@@ -231,76 +231,65 @@ class Session(BaseModel):
             super().__init__(message, code)
 
     class DecodeError(SessionError):
-        def __init__(self, session_name):
-            super().__init__(session_name + " is not available.", 401)
+        def __init__(self):
+            super().__init__('Session is not available.', 401)
 
     class InvalidError(SessionError):
-        def __init__(self, session_name):
-            super().__init__(session_name + " is invalid.", 401)
+        def __init__(self):
+            super().__init__('Session is invalid.', 401)
 
     class ExpiredError(SessionError):
-        def __init__(self, session_name):
-            super().__init__(session_name + " has expired", 401)
+        def __init__(self):
+            super().__init__('Session has expired', 401)
 
 
 class SessionFactory:
-    resources_path = './resources/'
 
-    def _get_code_image_fonts(self):
-        try:
-            return str_to_list(config['AUTH']['captcha_fonts'])
-        except KeyError:
-            return None
+    def __init__(self):
+        self.path = './resources/scache'
 
-    async def _generate_random_codes(self, path_endpoint: str, length: int, with_image=False):
+    async def generate_session_codes(self):
         """
         Generates up to 100 verification code variations in a codes.txt file
         """
-        path = self.resources_path + path_endpoint
-        if not os.path.exists(path):
-            os.makedirs(path)
-            async with aiofiles.open(path + '/codes.txt', mode="w") as f:
-                image = ImageCaptcha(fonts=self._get_code_image_fonts())
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+            async with aiofiles.open(self.path + '/codes.txt', mode="w") as f:
+                image = ImageCaptcha(fonts=str_to_list(config['AUTH']['captcha_fonts']))
                 for i in range(100):
-                    code = random_str(length)
-                    await f.write(code)
-                    if with_image:
-                        image.write(code, path + '/' + code + '.png')
+                    code = random_str(6)
+                    await f.write(code + ' ')
+                    image.write(code, self.path + '/' + code + '.png')
 
-    async def _get_random_code(self, path_endpoint: str):
+    async def _get_random_code(self):
         """
-        Retrieves a random verification code from a codes.txt file
+        Retrieves a random code from a codes.txt file
 
         :return: code
         """
-        path = self.resources_path + path_endpoint
-        async with aiofiles.open(path + '/codes.txt', mode='r') as f:
+        async with aiofiles.open(self.path + '/codes.txt', mode='r') as f:
             codes = await f.read()
             return random.choice(codes.split())
 
     async def get(self, session_type: str, request: Request, **kwargs):
+        await self.generate_session_codes()
+        code = await self._get_random_code()
         if session_type == 'captcha':
-            await self._generate_random_codes(session_type, 5, True)
-            return await CaptchaSession.create(ip=request_ip(request), captcha=self._get_random_code(session_type))
+            return await CaptchaSession.create(ip=request_ip(request), code=code)
         elif session_type == 'verification':
-            await self._generate_random_codes(session_type, 7)
-            return await VerificationSession.create(code=await self._get_random_code(session_type),
-                                                    ip=request_ip(request), account=kwargs.get('account'))
+            return await VerificationSession.create(code=code, ip=request_ip(request), account=kwargs.get('account'))
         elif session_type == 'authentication':
             return await AuthenticationSession.create(account=kwargs.get('account'), ip=request_ip(request),
                                                       expiration_date=best_by(30))
         elif session_type == 'recovery':
-            await self._generate_random_codes(session_type, 9)
             return await RecoverySession.create(account=kwargs.get('account'), ip=request_ip(request),
-                                                password=hash_password(kwargs.get('password')))
+                                                password=hash_password(kwargs.get('password')), code=code)
         else:
             raise ValueError
 
 
 class VerificationSession(Session):
-    code = fields.CharField(max_length=7)
-
-    class VerificationAttemptError(Session.SessionError):
+    class VerificationCodeError(Session.SessionError):
         def __init__(self):
             super().__init__('Your verification attempt was incorrect', 403)
 
@@ -310,14 +299,13 @@ class RecoverySession(VerificationSession):
 
 
 class CaptchaSession(Session):
-    captcha = fields.CharField(max_length=5)
     attempts = fields.IntField(default=0, max_length=1)
 
     class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):
             super().__init__('Your captcha attempt was incorrect.', 403)
 
-    async def get_client_img(self, request):
+    async def captcha_img(self, request):
         """
         Retrieves image path of client captcha.
 
@@ -325,7 +313,7 @@ class CaptchaSession(Session):
         """
         decoded_captcha_session = self.decode_raw(request)
         captcha_session = await CaptchaSession.filter(uid=decoded_captcha_session.get('uid')).first()
-        return './resources/captcha/img/' + captcha_session.captcha + '.png'
+        return './resources/scache/' + captcha_session.code + '.png'
 
 
 class AuthenticationSession(Session):
@@ -346,10 +334,13 @@ class AuthenticationSession(Session):
 
 class AuthorizationCredential(BaseModel):
     account = fields.ForeignKeyField('models.Account')
-    description = fields.TextField()
+    description = fields.TextField(null=True)
 
     def json(self):
         raise NotImplementedError
+
+    class Meta:
+        abstract = True
 
 
 class Role(AuthorizationCredential):

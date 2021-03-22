@@ -54,7 +54,7 @@ async def login(request: Request):
     """
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
-    Account.ErrorFactory(account)
+    Account.ErrorFactory(account).throw()
     if bcrypt.checkpw(form.get('password').encode('utf-8'), account.password):
         authentication_session = await session_factory.get('authentication', request, account=account)
         return authentication_session
@@ -73,7 +73,8 @@ async def request_recovery(request: Request):
     """
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
-    return await session_factory.get('verification', request, account=account, password=form.get('password'))
+    Account.ErrorFactory(account).throw()
+    return await session_factory.get('recovery', request, account=account, password=form.get('password'))
 
 
 async def recover(request: Request):
@@ -86,14 +87,16 @@ async def recover(request: Request):
 
     :return: verification_session
     """
+    form = request.form
     recovery_session = await RecoverySession().decode(request)
-    if recovery_session.code != request.form.get('code'):
-        raise RecoverySession.VerificationAttemptError()
+    if recovery_session.code != form.get('code'):
+        raise RecoverySession.VerificationCodeError()
     else:
-        Account.ErrorFactory(recovery_session.account)
-        RecoverySession.ErrorFactory(recovery_session)
+        Account.ErrorFactory(recovery_session.account).throw()
+        RecoverySession.ErrorFactory(recovery_session).throw()
     recovery_session.account.password = recovery_session.password
     recovery_session.valid = False
+    await AuthenticationSession.filter(account=recovery_session.account, valid=True, deleted=False).update(valid=False)
     await recovery_session.account.save(update_fields=['password'])
     await recovery_session.save(update_fields=['valid'])
     return recovery_session
@@ -107,7 +110,7 @@ async def logout(request: Request):
     """
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
-    authentication_session.save(update_fields=['valid'])
+    await authentication_session.save(update_fields=['valid'])
     return authentication_session
 
 
@@ -126,8 +129,8 @@ async def authenticate(request: Request):
 
     authentication_session = await AuthenticationSession().decode(request)
     await authentication_session.verify_location(request)
-    AuthenticationSession.ErrorFactory(authentication_session)
-    Account.ErrorFactory(authentication_session.account)
+    AuthenticationSession.ErrorFactory(authentication_session).throw()
+    Account.ErrorFactory(authentication_session.account).throw()
     return authentication_session
 
 

@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory
+from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, AuthenticationSession
 
 resources_path = './resources'
 session_factory = SessionFactory()
@@ -38,9 +38,9 @@ async def verify_account(request: Request):
 
     verification_session = await VerificationSession().decode(request)
     if verification_session.code != request.form.get('code'):
-        raise VerificationSession.VerificationAttemptError()
+        raise VerificationSession.VerificationCodeError()
     else:
-        VerificationSession.ErrorFactory(verification_session)
+        VerificationSession.ErrorFactory(verification_session).throw()
     verification_session.valid = False
     verification_session.account.verified = True
     await verification_session.account.save(update_fields=['verified'])
@@ -56,12 +56,31 @@ async def request_captcha(request: Request):
 
     :return: captcha_session
     """
-    return session_factory.get('captcha', request)
+    return await session_factory.get('captcha', request)
+
+
+async def captcha(request: Request):
+    """
+    Validates captcha challenge attempt. Captcha is unusable after 1 incorrect attempt.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    captcha.
+
+    :return: captcha_session
+    """
+    params = request.form
+    captcha_session = await CaptchaSession().decode(request)
+    CaptchaSession.ErrorFactory(captcha_session).throw()
+    if captcha_session.code != params.get('captcha'):
+        raise CaptchaSession.IncorrectCaptchaError()
+    captcha_session.valid = False
+    await captcha_session.save(update_fields=['valid'])
+    return captcha_session
 
 
 def requires_captcha():
     """
-    Has the same function as the authenticate method, but is in the form of a decorator and authenticates client.
+    Has the same function as the captcha method, but is in the form of a decorator and authenticates client.
 
     :raises AccountError:
 
@@ -77,22 +96,3 @@ def requires_captcha():
         return wrapped
 
     return wrapper
-
-
-async def captcha(request: Request):
-    """
-    Validates captcha challenge attempt. Captcha is unusable after 1 incorrect attempt.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    captcha.
-
-    :return: captcha_session
-    """
-    params = request.form
-    captcha_session = await CaptchaSession().decode(request)
-    CaptchaSession.ErrorFactory(captcha_session)
-    if captcha_session.captcha != params.get('captcha'):
-        raise CaptchaSession.IncorrectCaptchaError()
-    captcha_session.valid = False
-    await captcha_session.save(update_fields=['valid'])
-    return captcha_session

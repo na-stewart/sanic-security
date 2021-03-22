@@ -7,7 +7,7 @@ from asyncauth.core.models import Role, Permission, Account
 
 async def check_roles(account: Account, *required_roles: str):
     """
-    Checks if the account has the required role being requested.
+    Checks if the account has the required roles being requested.
 
     :param account: Account being checked.
 
@@ -24,7 +24,7 @@ async def check_roles(account: Account, *required_roles: str):
 
 async def check_permissions(account: Account, *required_permissions: str):
     """
-    Checks if the account has the required permission requested.
+    Checks if the account has the required permissions requested.
 
     :param account: Account being checked.
 
@@ -53,8 +53,8 @@ def require_permissions(*required_permissions: str):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            account, authentication_session = await authenticate(request)
-            await check_permissions(account, *required_permissions)
+            authentication_session = await authenticate(request)
+            await check_permissions(authentication_session.account, *required_permissions)
             return await func(request, *args, **kwargs)
 
         return wrapped
@@ -74,8 +74,8 @@ def require_roles(*required_roles: str):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            account, authentication_session = await authenticate(request)
-            await check_roles(account, *required_roles)
+            authentication_session = await authenticate(request)
+            await check_roles(authentication_session.account, *required_roles)
             return await func(request, *args, **kwargs)
 
         return wrapped

@@ -61,7 +61,7 @@ def random_str(length: int = 7):
 
     :return: random_str
     """
-    return ''.join(random.choices(string.ascii_letters.lower() + string.digits, k=length))
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 def request_ip(request: Request):
