@@ -22,7 +22,7 @@ async def request_verification(request: Request, account: Account):
     if account.verified:
         account.verified = False
         await account.save(update_fields=['verified'])
-    return await session_factory.get('verification', request, account)
+    return await session_factory.get('verification', request, account=account)
 
 
 async def verify_account(request: Request):

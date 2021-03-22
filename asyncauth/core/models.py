@@ -14,7 +14,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list, hash_password
 
 
 class BaseErrorFactory:
@@ -99,14 +99,14 @@ class Account(BaseModel):
         }
 
     @staticmethod
-    async def get_client(request: Request) -> Account:
+    async def get_client(request: Request):
         """
         Retrieves account information from an authentication session found within cookie.
         :param request: Sanic request parameter.
         :return: account
         """
 
-        authentication_session = await AuthenticationSession().decode_raw(request)
+        authentication_session = await AuthenticationSession().decode(request)
         return authentication_session.account
 
     class AccountError(RoseError):
@@ -278,17 +278,21 @@ class SessionFactory:
             codes = await f.read()
             return random.choice(codes.split())
 
-    async def get(self, session_type: str, request: Request, account: Account = None):
+    async def get(self, session_type: str, request: Request, **kwargs):
         if session_type == 'captcha':
             await self._generate_random_codes(session_type, 5, True)
             return await CaptchaSession.create(ip=request_ip(request), captcha=self._get_random_code(session_type))
         elif session_type == 'verification':
             await self._generate_random_codes(session_type, 7)
-            return await VerificationSession.create(code=await self._get_random_code(session_type), account=account,
-                                                    ip=request_ip(request))
+            return await VerificationSession.create(code=await self._get_random_code(session_type),
+                                                    ip=request_ip(request), account=kwargs.get('account'))
         elif session_type == 'authentication':
-            return await AuthenticationSession.create(account=account, ip=request_ip(request),
+            return await AuthenticationSession.create(account=kwargs.get('account'), ip=request_ip(request),
                                                       expiration_date=best_by(30))
+        elif session_type == 'recovery':
+            await self._generate_random_codes(session_type, 9)
+            return await RecoverySession.create(account=kwargs.get('account'), ip=request_ip(request),
+                                                password=hash_password(kwargs.get('password')))
         else:
             raise ValueError
 
@@ -299,6 +303,10 @@ class VerificationSession(Session):
     class VerificationAttemptError(Session.SessionError):
         def __init__(self):
             super().__init__('Your verification attempt was incorrect', 403)
+
+
+class RecoverySession(VerificationSession):
+    password = fields.BinaryField()
 
 
 class CaptchaSession(Session):
