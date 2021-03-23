@@ -7,12 +7,12 @@ from asyncauth.core.authentication import register, login, requires_authenticati
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
-from asyncauth.core.models import RoseError, CaptchaSession, Account, Role, Permission, VerificationSession
+from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession
 from asyncauth.core.utils import text_verification_code
 from asyncauth.core.verification import verify_account, requires_captcha, request_captcha
 from test.models import json
 
-app = Sanic('asyncauth Postman Tests')
+app = Sanic('asyncauth Postman Test')
 
 
 @app.middleware('response')
@@ -24,8 +24,6 @@ async def response_middleware(request, response):
 async def request_middleware(request):
     return https_redirect(request, True)
 
-
-# AUTHENTICATION
 
 @app.post('api/test/register')
 # Tests registration without requiring captcha or verification.
@@ -140,6 +138,14 @@ async def on_recover_request(request):
 async def on_recover(request):
     recovery_session = await recover(request)
     return json('Account recovered successfully', recovery_session.account.json())
+
+
+@app.exception(ServerError)
+async def on_error(request, exception):
+    return json('An error has occurred!', {
+        'error': type(exception).__name__,
+        'summary': str(exception)
+    }, status_code=exception.status_code)
 
 
 if __name__ == '__main__':
