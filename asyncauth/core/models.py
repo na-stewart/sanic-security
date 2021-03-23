@@ -271,19 +271,18 @@ class SessionFactory:
             codes = await f.read()
             return random.choice(codes.split())
 
-    async def get(self, session_type: str, request: Request, **kwargs):
+    async def get(self, session_type: str, request: Request, account : Account):
         await self.generate_session_codes()
         code = await self._get_random_code()
         if session_type == 'captcha':
             return await CaptchaSession.create(ip=request_ip(request), code=code)
         elif session_type == 'verification':
-            return await VerificationSession.create(code=code, ip=request_ip(request), account=kwargs.get('account'))
+            return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
-            return await AuthenticationSession.create(account=kwargs.get('account'), ip=request_ip(request),
+            return await AuthenticationSession.create(account=account, ip=request_ip(request),
                                                       expiration_date=best_by(30))
         elif session_type == 'recovery':
-            return await RecoverySession.create(account=kwargs.get('account'), ip=request_ip(request),
-                                                password=hash_password(kwargs.get('password')), code=code)
+            return await RecoverySession.create(account=account, ip=request_ip(request), code=code)
         else:
             raise ValueError
 
@@ -295,7 +294,7 @@ class VerificationSession(Session):
 
 
 class RecoverySession(VerificationSession):
-    password = fields.BinaryField()
+    pass
 
 
 class CaptchaSession(Session):
