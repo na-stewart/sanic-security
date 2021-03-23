@@ -155,6 +155,7 @@ class Session(BaseModel):
 
     def json(self):
         return {
+            'account': str(self.account.uid),
             'uid': str(self.uid),
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
