@@ -1,5 +1,4 @@
 from sanic import Sanic
-from sanic.exceptions import ServerError
 from sanic.response import text, file
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
@@ -7,7 +6,7 @@ from asyncauth.core.authentication import register, login, requires_authenticati
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
-from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession
+from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession, AuthError
 from asyncauth.core.utils import text_verification_code
 from asyncauth.core.verification import verify_account, requires_captcha, request_captcha
 from asyncauth.test.models import json
@@ -48,7 +47,7 @@ async def on_register_verification(request):
     """
     verification_session = await register(request)
     await text_verification_code(verification_session.account.phone, verification_session.code)
-    response = text('Registration successful', verification_session.account.json())
+    response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
 
@@ -185,7 +184,7 @@ async def on_recover(request):
     return json('Account recovered successfully', recovery_session.account.json())
 
 
-@app.exception(ServerError)
+@app.exception(AuthError)
 async def on_error(request, exception):
     return json('An error has occurred!', {
         'error': type(exception).__name__,

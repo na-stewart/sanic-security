@@ -81,7 +81,7 @@ async def recover(request: Request):
     """
     Recovers an account by updating it's password to the recovery session password.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following argument:
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     code, password.
 
     :raises SessionError:
@@ -97,7 +97,7 @@ async def recover(request: Request):
     else:
         Account.ErrorFactory(recovery_session.account).throw()
         RecoverySession.ErrorFactory(recovery_session).throw()
-    recovery_session.account.password = request.form.get('password')
+    recovery_session.account.password = hash_password(request.form.get('password'))
     recovery_session.valid = False
     await AuthenticationSession.filter(account=recovery_session.account, valid=True, deleted=False).update(valid=False)
     await recovery_session.account.save(update_fields=['password'])

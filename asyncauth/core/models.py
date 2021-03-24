@@ -164,7 +164,7 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-    code = fields.CharField(max_length=12, null=True)
+    code = fields.CharField(max_length=8, null=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -172,13 +172,11 @@ class Session(BaseModel):
 
     def json(self):
         return {
-            'account': str(self.account.uid),
             'uid': str(self.uid),
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'expiration_date': str(self.expiration_date),
-            'valid': self.valid,
-            'ip': self.ip
+            'valid': self.valid
         }
 
     def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
@@ -278,9 +276,9 @@ class SessionFactory:
             async with aiofiles.open(self.path + '/codes.txt', mode="w") as f:
                 image = ImageCaptcha(fonts=str_to_list(config['AUTH']['captcha_fonts']))
                 for i in range(100):
-                    code = random_str(12)
+                    code = random_str(8)
                     await f.write(code + ' ')
-                    image.write(code, self.path + '/' + code + '.png')
+                    image.write(code[:5], self.path + '/' + code[:5] + '.png')
 
     async def _get_random_code(self):
         """
@@ -307,7 +305,7 @@ class SessionFactory:
         account = await Account.get_client(request) if None else account
         code = await self._get_random_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code.lower()[:5])
+            return await CaptchaSession.create(ip=request_ip(request), code=code[:5])
         elif session_type == 'verification':
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
