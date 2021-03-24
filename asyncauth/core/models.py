@@ -50,6 +50,12 @@ class AuthError(ServerError):
 
 
 class BaseModel(Model):
+    """
+    Base asyncauth model that all other models derive from. Some important elements to take in consideration is that
+    deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
+    the database. Retrieving asyncauth models should be done via filtering with the 'uid' variable rather then the id
+    variable.
+    """
 
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
@@ -73,6 +79,10 @@ class BaseModel(Model):
 
 
 class Account(BaseModel):
+    """
+    Contains all identifiable user information such as username, email, and more. All passwords must be hashed when
+    being created in the database using the hash_password(str) method in the utils package.
+    """
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
     phone = fields.CharField(unique=True, max_length=20, null=True)
@@ -145,6 +155,11 @@ class Account(BaseModel):
 
 
 class Session(BaseModel):
+    """
+    Used specifically for client side tracking. For example, an authentication session is stored on the client's browser
+    in order to identify the client. All sessions should be created using the SessionFactory().
+    """
+
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
@@ -247,6 +262,10 @@ class Session(BaseModel):
 
 
 class SessionFactory:
+    """
+    This factory was created to prevent human error when creating sessions. Current session types retrievable are
+    captcha, verification, authentication, and recovery.
+    """
 
     def __init__(self):
         self.path = './resources/scache'
@@ -274,7 +293,7 @@ class SessionFactory:
             codes = await f.read()
             return random.choice(codes.split())
 
-    async def get(self, session_type: str, request: Request, account : Account):
+    async def get(self, session_type: str, request: Request, account: Account):
         await self.generate_session_codes()
         code = await self._get_random_code()
         if session_type == 'captcha':
@@ -291,17 +310,25 @@ class SessionFactory:
 
 
 class VerificationSession(Session):
+    """
+    Verifies an account via emailing or texting a code.
+    """
     class VerificationCodeError(Session.SessionError):
         def __init__(self):
             super().__init__('Your verification attempt was incorrect', 403)
 
 
 class RecoverySession(VerificationSession):
+    """
+    Verifies password recovery attempts via emailing or texting a code.
+    """
     pass
 
 
 class CaptchaSession(Session):
-    attempts = fields.IntField(default=0, max_length=1)
+    """
+
+    """
 
     class IncorrectCaptchaError(Session.SessionError):
         def __init__(self):

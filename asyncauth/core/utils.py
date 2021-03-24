@@ -83,11 +83,11 @@ def hash_password(password):
     return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
 
-def str_to_list(string):
+def str_to_list(str):
     """
     Turns passed string into an array
-    :param string: string to be turned into an array
+    :param str: string to be turned into an array
     :return: array
     """
-    return string.replace(']', '').replace('[', '').replace(' ', '') \
+    return str.replace(']', '').replace('[', '').replace(' ', '') \
         .replace('\'', '').replace('\"', '').split(',')
