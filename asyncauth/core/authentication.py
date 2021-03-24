@@ -25,7 +25,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
 
     :raises AccountError:
 
-    :return: account if verified or  verification_session if not verified
+    :return: account if verified or verification_session if not verified
     """
     forms = request.form
     if not re.search('[^@]+@[^@]+.[^@]+', forms.get('email')):

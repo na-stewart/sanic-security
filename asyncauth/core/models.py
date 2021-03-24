@@ -12,7 +12,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list, hash_password
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list
 
 
 class BaseErrorFactory:
@@ -58,6 +58,7 @@ class BaseModel(Model):
     """
 
     id = fields.IntField(pk=True)
+    account = fields.ForeignKeyField('models.Account', null=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
@@ -123,7 +124,7 @@ class Account(BaseModel):
         """
 
         authentication_session = await AuthenticationSession().decode(request)
-        return authentication_session.account
+        return authentication_session.account if authentication_session else None
 
     class AccountError(AuthError):
         def __init__(self, message, code):
@@ -163,8 +164,7 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-    code = fields.CharField(max_length=6, null=True)
-    account = fields.ForeignKeyField('models.Account', null=True)
+    code = fields.CharField(max_length=12, null=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -263,8 +263,7 @@ class Session(BaseModel):
 
 class SessionFactory:
     """
-    This factory was created to prevent human error when creating sessions. Current session types retrievable are
-    captcha, verification, authentication, and recovery.
+    Prevents human error when creating sessions.
     """
 
     def __init__(self):
@@ -279,7 +278,7 @@ class SessionFactory:
             async with aiofiles.open(self.path + '/codes.txt', mode="w") as f:
                 image = ImageCaptcha(fonts=str_to_list(config['AUTH']['captcha_fonts']))
                 for i in range(100):
-                    code = random_str(6)
+                    code = random_str(12)
                     await f.write(code + ' ')
                     image.write(code, self.path + '/' + code + '.png')
 
@@ -293,8 +292,19 @@ class SessionFactory:
             codes = await f.read()
             return random.choice(codes.split())
 
-    async def get(self, session_type: str, request: Request, account: Account):
+    async def get(self, session_type: str, request: Request, account: Account = None):
+        """
+        :param session_type: The type of session being retrieved. Available types are: captcha, verification,
+        authentication, and recovery.
+
+        :param request: Sanic request parameter.
+
+        :param account:
+
+        :return:
+        """
         await self.generate_session_codes()
+        account = await Account.get_client(request) if None else account
         code = await self._get_random_code()
         if session_type == 'captcha':
             return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
@@ -327,7 +337,7 @@ class RecoverySession(VerificationSession):
 
 class CaptchaSession(Session):
     """
-
+    Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
 
     class IncorrectCaptchaError(Session.SessionError):
@@ -361,18 +371,10 @@ class AuthenticationSession(Session):
             raise AuthenticationSession.UnknownLocationError()
 
 
-class AuthorizationCredential(BaseModel):
-    account = fields.ForeignKeyField('models.Account')
-    description = fields.TextField(null=True)
-
-    def json(self):
-        raise NotImplementedError
-
-    class Meta:
-        abstract = True
-
-
-class Role(AuthorizationCredential):
+class Role(BaseModel):
+    """
+    Assigned to an account to authorize an action. Used for role based authorization.
+    """
     name = fields.CharField(max_length=45)
 
     def json(self):
@@ -381,7 +383,6 @@ class Role(AuthorizationCredential):
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'name': self.name,
-            'description': self.description
         }
 
     class InsufficientRoleError(AuthError):
@@ -389,7 +390,10 @@ class Role(AuthorizationCredential):
             super().__init__('You do not have the required role for this action.', 403)
 
 
-class Permission(AuthorizationCredential):
+class Permission(BaseModel):
+    """
+    Assigned to an account to authorize an action. Used for wildcard based authorization.
+    """
     wildcard = fields.CharField(max_length=45)
 
     def json(self):
@@ -398,7 +402,6 @@ class Permission(AuthorizationCredential):
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'wildcard': self.wildcard,
-            'description': self.description
         }
 
     class InsufficientPermissionError(AuthError):
