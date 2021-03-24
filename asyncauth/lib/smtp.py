@@ -5,6 +5,14 @@ from asyncauth.core.config import config
 
 
 async def send_email(to, subj, msg, text_type="plain"):
+    """
+    Sends an email using SMTP.
+
+    :param to: To email.
+    :param subj: Email subject.
+    :param msg: Email message.
+    :param text_type: Can be html or plain.
+    """
     message = MIMEMultipart("alternative")
     message["From"] = config['SMTP']['from']
     message["To"] = to

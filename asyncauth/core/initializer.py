@@ -1,4 +1,3 @@
-from asyncauth.core.models import SessionFactory
 from asyncauth.lib.tortoise import tortoise_init
 
 

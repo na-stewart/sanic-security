@@ -5,6 +5,9 @@ from asyncauth.core.utils import str_to_list
 
 
 async def tortoise_init():
+    """
+    Initializes the tortoise-orm.
+    """
     username = config['TORTOISE']['username']
     password = config['TORTOISE']['password']
     endpoint = config['TORTOISE']['endpoint']

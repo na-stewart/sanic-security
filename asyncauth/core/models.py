@@ -21,9 +21,9 @@ class BaseErrorFactory:
     """
 
     def __init__(self, model):
-        self.error = self.get(model)
+        self.model = model
 
-    def get(self, model):
+    def get(self):
         """
         Retrieves an error if certain conditions are met.
         :return: error
@@ -35,13 +35,14 @@ class BaseErrorFactory:
         Retrieves an error and raises it if certain conditions are met.
         :return: error
         """
-        if self.error:
-            raise self.error
+        error = self.get()
+        if error:
+            raise error
 
 
-class RoseError(ServerError):
+class AuthError(ServerError):
     """
-    Amyrose specific error.
+    Base error for all asyncauth related errors.
     """
 
     def __init__(self, message, code):
@@ -49,6 +50,7 @@ class RoseError(ServerError):
 
 
 class BaseModel(Model):
+
     id = fields.IntField(pk=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
     date_created = fields.DatetimeField(auto_now_add=True)
@@ -61,11 +63,11 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    class NotFoundError(RoseError):
+    class NotFoundError(AuthError):
         def __init__(self, message):
             super().__init__(message, 404)
 
-    class DeletedError(RoseError):
+    class DeletedError(AuthError):
         def __init__(self, message):
             super().__init__(message, 404)
 
@@ -79,15 +81,15 @@ class Account(BaseModel):
     verified = fields.BooleanField(default=False)
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
+        def get(self):
             error = None
-            if not model:
+            if not self.model:
                 error = Account.NotFoundError('This account does not exist.')
-            elif model.deleted:
+            elif self.model.deleted:
                 error = Account.DeletedError('This account has been permanently deleted.')
-            elif model.disabled:
+            elif self.model.disabled:
                 error = Account.DisabledError()
-            elif not model.verified:
+            elif not self.model.verified:
                 error = Account.UnverifiedError()
             return error
 
@@ -113,7 +115,7 @@ class Account(BaseModel):
         authentication_session = await AuthenticationSession().decode(request)
         return authentication_session.account
 
-    class AccountError(RoseError):
+    class AccountError(AuthError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -215,19 +217,19 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
+        def get(self):
             error = None
-            if model is None:
+            if self.model is None:
                 error = Session.NotFoundError('Session could not be found.')
-            elif not model.valid:
+            elif not self.model.valid:
                 error = Session.InvalidError()
-            elif model.deleted:
+            elif self.model.deleted:
                 error = Session.DeletedError('Session has been deleted.')
-            elif is_expired(model.expiration_date):
+            elif is_expired(self.model.expiration_date):
                 error = Session.ExpiredError()
             return error
 
-    class SessionError(RoseError):
+    class SessionError(AuthError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -276,7 +278,7 @@ class SessionFactory:
         await self.generate_session_codes()
         code = await self._get_random_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code)
+            return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
         elif session_type == 'verification':
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
@@ -355,7 +357,7 @@ class Role(AuthorizationCredential):
             'description': self.description
         }
 
-    class InsufficientRoleError(RoseError):
+    class InsufficientRoleError(AuthError):
         def __init__(self):
             super().__init__('You do not have the required role for this action.', 403)
 
@@ -372,6 +374,6 @@ class Permission(AuthorizationCredential):
             'description': self.description
         }
 
-    class InsufficientPermissionError(RoseError):
+    class InsufficientPermissionError(AuthError):
         def __init__(self):
             super().__init__('You do not have the required permissions for this action.', 403)

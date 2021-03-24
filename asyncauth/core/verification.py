@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, AuthenticationSession
+from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory
 
 resources_path = './resources'
 session_factory = SessionFactory()

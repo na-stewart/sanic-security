@@ -4,6 +4,12 @@ from asyncauth.core.config import config
 
 
 async def send_sms(to, msg):
+    """
+    Sends a text directly to a phone number using Twilio.
+
+    :param to: The phone number receiving a text, for example: +12092819472.
+    :param msg: The message to be sent as a text.
+    """
     account_sid = config['TWILIO']['sid']
     auth_token = config['TWILIO']['token']
     from_num = config['TWILIO']['from']
