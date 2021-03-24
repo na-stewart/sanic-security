@@ -335,7 +335,7 @@ class SessionFactory:
         account = await Account.get_client(request) if None else account
         code = await self._get_random_code()
         if session_type == &#39;captcha&#39;:
-            return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
+            return await CaptchaSession.create(ip=request_ip(request), code=code.lower()[:5])
         elif session_type == &#39;verification&#39;:
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == &#39;authentication&#39;:
@@ -1509,7 +1509,7 @@ in order to identify the client. All sessions should be created using the Sessio
         account = await Account.get_client(request) if None else account
         code = await self._get_random_code()
         if session_type == &#39;captcha&#39;:
-            return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
+            return await CaptchaSession.create(ip=request_ip(request), code=code.lower()[:5])
         elif session_type == &#39;verification&#39;:
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == &#39;authentication&#39;:
@@ -1573,7 +1573,7 @@ authentication, and recovery.</p>
     account = await Account.get_client(request) if None else account
     code = await self._get_random_code()
     if session_type == &#39;captcha&#39;:
-        return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
+        return await CaptchaSession.create(ip=request_ip(request), code=code.lower()[:5])
     elif session_type == &#39;verification&#39;:
         return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
     elif session_type == &#39;authentication&#39;:

@@ -307,7 +307,7 @@ class SessionFactory:
         account = await Account.get_client(request) if None else account
         code = await self._get_random_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code.lower())
+            return await CaptchaSession.create(ip=request_ip(request), code=code.lower()[:5])
         elif session_type == 'verification':
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
