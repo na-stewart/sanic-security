@@ -237,7 +237,7 @@ async def on_login(request):
 * Logout
 
 ```python
-@app.post('/logout')
+@app.post('api/logout')
 async def on_logout(request):
     await logout(request)
     response = text('Logout successful')
@@ -267,7 +267,7 @@ async def on_logout(request):
 ```
 
 
-* Recovery Request
+* Account Recovery
 
 ```python
 @app.post('api/recovery')
