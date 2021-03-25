@@ -4,15 +4,15 @@ import uuid
 
 import aiofiles
 import jwt
-from captcha.image import ImageCaptcha
+from PIL import Image
+from claptcha import Claptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
-
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, str_to_list
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
 
 
 class BaseErrorFactory:
@@ -164,6 +164,7 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(default=best_by, null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=8, null=True)
 
     def __init__(self, **kwargs):
@@ -176,8 +177,22 @@ class Session(BaseModel):
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'expiration_date': str(self.expiration_date),
-            'valid': self.valid
+            'valid': self.valid,
+            'attempts': self.attempts
         }
+
+    async def validate_code(self, code: str):
+        """
+        Used to validate if code passed is equivalent to the session code.
+
+        :param code: Code being validated.
+        """
+        if self.attempts > 5:
+            raise self.MaximumReachedError
+        elif self.code != code:
+            self.attempts += 1
+            await self.save(update_fields=['attempts'])
+            raise self.IncorrectCodeError()
 
     def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
@@ -246,9 +261,17 @@ class Session(BaseModel):
         def __init__(self, message, code):
             super().__init__(message, code)
 
+    class MaximumReachedError(SessionError):
+        def __init__(self):
+            super().__init__('Session code does not match and you\'ve reached the maximum amount of attempts.', 403)
+
+    class IncorrectCodeError(SessionError):
+        def __init__(self):
+            super().__init__('Session code does not match.', 403)
+
     class DecodeError(SessionError):
         def __init__(self):
-            super().__init__('Session is not available.', 401)
+            super().__init__('Session is not available.', 403)
 
     class InvalidError(SessionError):
         def __init__(self):
@@ -265,33 +288,45 @@ class SessionFactory:
     """
 
     def __init__(self):
-        self.path = './resources/scache'
+        self.session_cache_path = './resources/session-cache/'
 
-    async def generate_session_codes(self):
+    async def get_cached_session_code(self):
         """
-        Generates up to 100 verification code variations in a codes.txt file
-        """
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-            async with aiofiles.open(self.path + '/codes.txt', mode="w") as f:
-                image = ImageCaptcha(fonts=str_to_list(config['AUTH']['captcha_fonts']))
-                for i in range(100):
-                    code = random_str(8)
-                    await f.write(code + ' ')
-                    image.write(code[:5], self.path + '/' + code[:5] + '.png')
-
-    async def _get_random_code(self):
-        """
-        Retrieves a random code from a codes.txt file
+        Retrieves a random cached code from a codes.txt file
 
         :return: code
         """
-        async with aiofiles.open(self.path + '/codes.txt', mode='r') as f:
+        async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
             codes = await f.read()
             return random.choice(codes.split())
 
+    async def cache_session_codes(self):
+        """
+        Generates up to 100 code variations in a codes.txt file.
+        """
+        if not path_exists(self.session_cache_path):
+            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
+                for i in range(100):
+                    code = random_str(8)
+                    await f.write(code + ' ')
+
+    async def cache_session_challenges(self):
+        """
+        Generates up to 100 code challenges in their respective .png file. May be slow on first run.
+        """
+        session_cache_challenge_path = self.session_cache_path + 'chl/'
+        if not path_exists(session_cache_challenge_path):
+            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
+                codes = await f.read()
+                for code in codes.split():
+                    c = Claptcha(code[:6], config['AUTH']['captcha_font'], resample=Image.BICUBIC, noise=0.6)
+                    c.write(session_cache_challenge_path + code[:6] + '.png')
+
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
+        Creates and returns a session with all of the fulfilled requirements. Pre-cache session creation may
+        be slow, but will only occur once.
+
         :param session_type: The type of session being retrieved. Available types are: captcha, verification,
         authentication, and recovery.
 
@@ -301,11 +336,12 @@ class SessionFactory:
 
         :return:
         """
-        await self.generate_session_codes()
+        await self.cache_session_codes()  #
         account = await Account.get_client(request) if None else account
-        code = await self._get_random_code()
+        code = await self.get_cached_session_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code[:5])
+            await self.cache_session_challenges()
+            return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
         elif session_type == 'verification':
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
@@ -321,12 +357,10 @@ class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
     """
-    class VerificationCodeError(Session.SessionError):
-        def __init__(self):
-            super().__init__('Your verification attempt was incorrect', 403)
+    pass
 
 
-class RecoverySession(VerificationSession):
+class RecoverySession(Session):
     """
     Verifies password recovery attempts via emailing or texting a code.
     """
@@ -338,25 +372,20 @@ class CaptchaSession(Session):
     Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
 
-    class IncorrectCaptchaError(Session.SessionError):
-        def __init__(self):
-            super().__init__('Your captcha attempt was incorrect.', 403)
-
     async def captcha_img(self, request):
         """
         Retrieves image path of client captcha.
 
         :return: captcha_img_path
         """
-        decoded_captcha_session = self.decode_raw(request)
-        captcha_session = await CaptchaSession.filter(uid=decoded_captcha_session.get('uid')).first()
-        return './resources/scache/' + captcha_session.code + '.png'
+        decoded_captcha = await CaptchaSession().decode(request)
+        return './resources/session-cache/chl/' + decoded_captcha.code + '.png'
 
 
 class AuthenticationSession(Session):
     class UnknownLocationError(Session.SessionError):
         def __init__(self):
-            super().__init__('Attempting to authenticate in an unknown location.', 403)
+            super().__init__('Session in an unknown location.', 401)
 
     async def verify_location(self, request):
         """

@@ -1,6 +1,6 @@
 # Project exclude paths
 /venv/
-/rose.ini
+/auth.ini
 /amyrose.egg-info/
 /build/
 /dist/

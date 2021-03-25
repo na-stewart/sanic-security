@@ -17,7 +17,7 @@
 <br />
 <p align="center">
 
-  <h3 align="center">Amy Rose</h3>
+  <h3 align="center">As</h3>
 
   <p align="center">
     A powerful, simple, and async authentication and authorization library for Sanic.
@@ -57,8 +57,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Amy Rose is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
-Amy Rose comes packed with features such as:
+Async Auth is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
+This library comes packed with features such as:
 
 * SMS and email verification
 * Easy login and registering
@@ -67,15 +67,12 @@ Amy Rose comes packed with features such as:
 * Wildcard permissions
 * Role permissions
 * Captcha
+* Password recovery
 * Completely async
-
-Amyrose, a perfect partner with Sanic, has all of your security needs.
-
-More documentation can be found in the [wiki](https://github.com/sunset-developer/amyrose/wiki).
 
 This repository has been starred by Sanic's core maintainer:
 
-![alt text](https://github.com/sunset-developer/amyrose/blob/master/images/ahopkins.png)
+![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/ahopkins.png)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -94,22 +91,22 @@ sudo apt-get install python3-pip
 
 * Install pip packages
 ```sh
-pip3 install amyrose
+pip3 install asyncauth
 ```
 
 
 ## Usage
 
-Once Amy Rose is all setup and good to go, implementing is easy as pie.
+Once Async Auth is all setup and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
-First you have to create a configuration file called rose.ini. Below is an example of it's contents: 
+First you have to create a configuration file called auth.ini. Below is an example of it's contents: 
 
 ```
 [ROSE]
-secret=05jF8cSMAdjlXcXeS2ZJ
-captcha_fonts=raleway.regular.ttf
+secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
+captcha_font=source-sans-pro.semibold.ttf
 
 [TORTOISE]
 username=admin
@@ -134,19 +131,31 @@ tls=true
 start_tls=false
 ```
 
-Once you've configured Amy Rose, you can initialize Sanic with the example below:
+Once you've configured Async Auth, you can initialize Sanic with the example below:
 
 ```python
 if __name__ == '__main__':
-    initialize_rose(app)
+    initialize_auth(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
-All request bodies should be sent as `form-data`
+All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
+
+```python
+def json(message, content, status_code=200):
+    payload = {
+        'message': message,
+        'status_code': status_code,
+        'content': content
+    }
+    return sanic_json(payload, status=status_code)
+```
 
 ## Authentication
 
-* Registration
+* Registration (With all verification requirements)
+
+Phone can be null or empty.
 
 Key | Value |
 --- | --- |
@@ -156,16 +165,20 @@ Key | Value |
 **password** | testpass
 
 ```python
-@app.post('/register')
+@app.post('api/register')
+@requires_captcha()
 async def on_register(request):
-    account, verification_session = await register(request)
-    await text_verification_code(account.phone, verification_session.code)
-    response = text('Registration successful')
+    verification_session = await register(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code)
+    await email_verification_code(verification_session.account.email, verification_session.code)
+    response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
 ```
 
-* Registration (with email)
+* Registration (Without verification requirements)
+
+Phone can be null or empty.
 
 Key | Value |
 --- | --- |
@@ -175,43 +188,34 @@ Key | Value |
 **password** | testpass
 
 ```python
-@app.post('/register')
+@app.post('api/register')
 async def on_register(request):
-    account, verification_session = await register(request)
-    await email_verification_code(account.email, verification_session.code)
-    response = text('Registration successful')
-    verification_session.encode(response)
-    return response
+    account = await register(request, verified=True)
+    return json('Registration Successful!', account.json())
 ```
 
-* Registration (without verification)
+* Verify
 
 Key | Value |
 --- | --- |
-**username** | test 
-**email** | test@test.com 
-**phone** | +19811354186
-**password** | testpass
+**code** | GUmrRLDe
 
 ```python
-@app.post('/register')
-async def on_register(request):
-    account = await register(request, False)
-    response = text('Registration successful')
-    return response
-```
-
-* Verification
-
-Key | Value |
---- | --- |
-**code** | GUmrRLD
-
-```python
-@app.post('/verify')
+@app.post('api/verify')
 async def on_verify(request):
-    account, verification_session = await verify_account(request)
-    return text('Verification successful')
+    verification_session = await verify_account(request)
+    return json('Verification successful!', verification_session.json())
+```
+
+* Resend Verification Code
+
+```python
+@app.post('api/verification/resend')
+async def resend_verification_request(request):
+    verification_session = await VerificationSession().decode(request)
+    VerificationSession.ErrorFactory(verification_session).throw()
+    await text_verification_code(verification_session.account.phone, verification_session.code)
+    return json('Verification code resend successful', verification_session.json())
 ```
 
 * Login
@@ -222,23 +226,11 @@ Key | Value |
 **password** | testpass
 
 ```python
-@app.post('/login')
+@app.post('api/login')
 async def on_login(request):
-    account, authentication_session = await login(request)
-    response = text('Login successful')
+    authentication_session = await login(request)
+    response = json('Login successful!', authentication_session.account.json())
     authentication_session.encode(response)
-    return response
-```
-
-* Request Verification (for resending code or 2FA)
-
-```python
-@app.post('/resend')
-async def resend_verification_request(request):
-    account, verification_session = await request_verification(request)
-    await text_verification_code(account.phone, verification_session.code)
-    response = text('Resend request successful.')
-    verification_session.encode(response)
     return response
 ```
 
@@ -255,10 +247,52 @@ async def on_logout(request):
 * Requires Authentication
 
 ```python
-@app.get("/get")
+@app.get("api/profile")
 @requires_authentication()
 async def get_user_info(request):
     return text('Sensitive user information')
+```
+
+* Account Recovery Request
+
+```python
+@app.post('api/recovery')
+async def on_logout(request):
+    recovery_session = await request_recovery(request)
+    await email_verification_code(recovery_session.account.email, verification_session.code)
+    await text_verification_code(recovery_session.account.phone, recovery_session.code)
+    response = json('Account recovery request successful', recovery_session.json())
+    recovery_session.encode(response)
+    return response
+```
+
+
+* Recovery Request
+
+```python
+@app.post('api/recovery')
+async def on_logout(request):
+    recovery_session = await request_recovery(request)
+    await email_verification_code(recovery_session.account.email, verification_session.code)
+    await text_verification_code(recovery_session.account.phone, recovery_session.code)
+    response = json('Account recovery request successful', recovery_session.json())
+    recovery_session.encode(response)
+    return response
+```
+
+
+* Recover
+
+Key | Value |
+--- | --- |
+**code** | GUmrRLDe
+**password** | newpass
+
+```python
+@app.post('api/recover')
+async def on_recover(request):
+    recovery_session = await recover(request)
+    return json('Account password successfully changed', recovery_session.account.json())
 ```
 
 ## Captcha
@@ -266,10 +300,10 @@ async def get_user_info(request):
 * Request Captcha
 
 ```python
-@app.get('/captcha')
+@app.get('api/captcha')
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
-    response = text('Captcha request successful!')
+    response = json('Captcha request successful!', captcha_session.json())
     captcha_session.encode(response)
     return response
 ```
@@ -277,32 +311,10 @@ async def on_request_captcha(request):
 * Captcha Image
 
 ```python
-@app.get('/captcha/img')
+@app.get('api/captcha/img')
 async def on_captcha_img(request):
-    img_path = await CaptchaSessionDTO().get_client_img(request)
-    response = await file(img_path)
-    return response
-```
-
-* Register (with captcha)
-
-Key | Value |
---- | --- |
-**username** | test 
-**email** | test@test.com 
-**phone** | +19811354186
-**password** | testpass
-**captcha** | ah17ek
-
-```python
-@app.post('/register')
-@requires_captcha()
-async def on_register_captcha(request):
-    account, verification_session = await register(request)
-    await text_verification_code(account.phone, verification_session.code)
-    response = text('Registration successful')
-    verification_session.encode(response)
-    return response
+    img_path = await CaptchaSession().captcha_img(request)
+    return await file(img_path)
 ```
 
 ## Authorization
@@ -321,34 +333,36 @@ employee:*
 A library called [Apache Shiro](https://shiro.apache.org/permissions.html) explains this concept incredibly well. I 
 absolutely recommend this library for Java developers.
 
-* Requires Permission
+* Require Permissions
 
 ```python
-@app.get('/update')
-@requires_permission('admin:update')
-async def on_test_perm(request):
-    return text('Admin has manipulated very sensitive data') 
+@app.post('api/account/update')
+@require_permissions('admin:update')
+async def on_require_perms(request):
+    return text('Admin sucessfully updated account!')
 ```
 
-* Requires Role
+* Require Roles
 
 ```python
-@app.get('/get')
-@requires_role('Admin')
-async def on_test_role(request):
-    return text('Admin has retrieved very sensitive data')
+@app.get('api/dashboard/admin')
+@require_roles('Admin', 'Moderator')
+async def on_require_roles(request):
+    """
+    Tests client role authorization access.
+    """
+    return text('Admin gained access!')
 ```
 
 ## Error Handling
 
 ```python
-@app.exception(RoseError)
-async def on_rose_error_test(request, exception: RoseError):
-    payload = {
-        'error': str(exception),
-        'code': exception.status_code
-    }
-    return json(payload, status=exception.status_code)
+@app.exception(AuthError)
+async def on_error(request, exception):
+    return json('An error has occurred!', {
+        'error': type(exception).__name__,
+        'summary': str(exception)
+    }, status_code=exception.status_code)
 ```
 
 ## Middleware
@@ -367,7 +381,7 @@ async def request_middleware(request):
 <!-- ROADMAP -->
 ## Roadmap
 
-Keep up with Amy Rose's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
+Keep up with Async Auth's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 
 <!-- CONTRIBUTING -->

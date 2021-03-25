@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 
 """
-ROSE
+AUTH
 
 secret is a key used to encrypt and decrypt session tokens, this value must be changed or you will be in danger of an 
 account breach.
@@ -54,6 +54,6 @@ connection. To connect to a server that uses STARTTLS, set this true.
 Both tls and start_tls cannot be true. Either both can be false or one can be true. Ignoring this warning will result in 
 errors.
 """
-config_path = './rose.ini'
+config_path = './auth.ini'
 config = ConfigParser()
 config.read(config_path)

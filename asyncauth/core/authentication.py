@@ -37,8 +37,6 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         return await request_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()
-    except ValidationError:
-        raise Account.TooManyCharsError()
 
 
 async def login(request: Request):
@@ -92,11 +90,9 @@ async def recover(request: Request):
     """
     form = request.form
     recovery_session = await RecoverySession().decode(request)
-    if recovery_session.code != form.get('code'):
-        raise RecoverySession.VerificationCodeError()
-    else:
-        Account.ErrorFactory(recovery_session.account).throw()
-        RecoverySession.ErrorFactory(recovery_session).throw()
+    Account.ErrorFactory(recovery_session.account).throw()
+    RecoverySession.ErrorFactory(recovery_session).throw()
+    await recovery_session.validate_code(form.get('code'))
     recovery_session.account.password = hash_password(request.form.get('password'))
     recovery_session.valid = False
     await AuthenticationSession.filter(account=recovery_session.account, valid=True, deleted=False).update(valid=False)
@@ -111,6 +107,7 @@ async def logout(request: Request):
 
     :param request: Sanic request parameter.
     """
+
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])

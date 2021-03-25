@@ -1,10 +1,9 @@
 aiofiles==0.6.0
-aiohttp==3.7.4
+aiohttp~=3.7.3
 aiosqlite==0.16.1
 async-timeout==3.0.1
 attrs==20.3.0
 bcrypt==3.2.0
-captcha==0.3
 certifi==2020.12.5
 cffi==1.14.5
 chardet==3.0.4
@@ -15,7 +14,7 @@ httpx==0.15.4
 idna==2.10
 iso8601==0.1.14
 multidict==5.1.0
-Pillow==8.1.1
+Pillow~=8.1.0
 pycparser==2.20
 PyPika==0.44.1
 pytz==2020.5
@@ -32,3 +31,5 @@ yarl==1.6.3
 sanic-ipware==0.1.0
 PyJWT==2.0.1
 aiosmtplib==1.1.4
+setuptools~=50.3.2
+claptcha~=0.3.3

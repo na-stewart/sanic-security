@@ -35,12 +35,9 @@ async def verify_account(request: Request):
 
     :return: verification_session
     """
-
     verification_session = await VerificationSession().decode(request)
-    if verification_session.code != request.form.get('code'):
-        raise VerificationSession.VerificationCodeError()
-    else:
-        VerificationSession.ErrorFactory(verification_session).throw()
+    VerificationSession.ErrorFactory(verification_session).throw()
+    await verification_session.validate_code(request.form.get('code'))
     verification_session.valid = False
     verification_session.account.verified = True
     await verification_session.account.save(update_fields=['verified'])
@@ -71,8 +68,7 @@ async def captcha(request: Request):
     params = request.form
     captcha_session = await CaptchaSession().decode(request)
     CaptchaSession.ErrorFactory(captcha_session).throw()
-    if captcha_session.code != params.get('captcha'):
-        raise CaptchaSession.IncorrectCaptchaError()
+    await captcha_session.validate_code( params.get('captcha'))
     captcha_session.valid = False
     await captcha_session.save(update_fields=['valid'])
     return captcha_session
