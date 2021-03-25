@@ -111,9 +111,9 @@ captcha_font=source-sans-pro.semibold.ttf
 [TORTOISE]
 username=admin
 password=8KjLQtVKTCtItAi
-endpoint=amyrose.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
-schema=amyrose
-models=amyrose.core.models
+endpoint=asyncauth.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
+schema=asyncauth
+models=asyncauth.core.models
 generate=true
 
 [TWILIO]
