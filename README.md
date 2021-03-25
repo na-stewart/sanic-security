@@ -297,6 +297,8 @@ async def on_recover(request):
 
 ## Captcha
 
+You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
+
 * Request Captcha
 
 ```python
