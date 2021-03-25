@@ -17,7 +17,7 @@
 <br />
 <p align="center">
 
-  <h3 align="center">As</h3>
+  <h3 align="center">Async Auth</h3>
 
   <p align="center">
     A powerful, simple, and async authentication and authorization library for Sanic.
