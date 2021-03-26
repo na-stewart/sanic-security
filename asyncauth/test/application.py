@@ -2,13 +2,14 @@ from sanic import Sanic
 from sanic.response import text, file
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_recovery, recover
+    logout, request_account_recovery, recover_account
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
 from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession, AuthError
 from asyncauth.core.utils import text_verification_code
-from asyncauth.core.verification import verify_account, requires_captcha, request_captcha
+from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
+    request_verification
 from asyncauth.test.models import json
 
 app = Sanic('asyncauth Postman Test')
@@ -41,7 +42,7 @@ async def on_register(request):
 
 @app.post('api/test/register/verification')
 @requires_captcha()
-async def on_register_verification(request):
+async def on_register_verification(request, captcha_session):
     """
     Registration test with all built-in requirements.
     """
@@ -50,6 +51,16 @@ async def on_register_verification(request):
     response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
+
+
+@app.post('api/test/register/verify')
+@requires_verification()
+async def on_verify(request, verification_session):
+    """
+    Attempt to verify account and allow access if unverified.
+    """
+    await verify_account(verification_session)
+    return json('Verification successful!', verification_session.json())
 
 
 @app.get('api/test/captcha/img')
@@ -78,9 +89,18 @@ async def resend_verification_request(request):
     Resends verification code if somehow lost.
     """
     verification_session = await VerificationSession().decode(request)
-    VerificationSession.ErrorFactory(verification_session).throw()
     await text_verification_code(verification_session.account.phone, verification_session.code)
     return json('Verification code resend successful', verification_session.json())
+
+
+@app.post('api/test/verification/request')
+async def new_verification_request(request):
+    """
+    Creates new verification code.
+    """
+    verification_session = await request_verification(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code)
+    return json('Verification request successful', verification_session.json())
 
 
 @app.post('api/test/login')
@@ -102,15 +122,6 @@ async def on_logout(request):
     await logout(request)
     response = text('Logout successful!')
     return response
-
-
-@app.post('api/test/verify')
-async def on_verify(request):
-    """
-    Attempt to verify account and allow access if unverified.
-    """
-    verification_session = await verify_account(request)
-    return json('Verification successful!', verification_session.json())
 
 
 @app.post('api/test/role/admin')
@@ -137,17 +148,16 @@ async def on_create_admin_perm(request):
 
 @app.get('api/test/client')
 @requires_authentication()
-async def on_test_client(request):
+async def on_test_client(request, authentication_session):
     """
     Retrieves authenticated client username.
     """
-    client = await Account().get_client(request)
-    return text('Hello ' + client.username + '!')
+    return text('Hello ' + authentication_session.account.username + '!')
 
 
 @app.get('api/test/perm')
 @require_permissions('admin:update')
-async def on_test_perm(request):
+async def on_test_perm(request, authentication_session):
     """
     Tests client wildcard permissions authorization access.
     """
@@ -156,32 +166,33 @@ async def on_test_perm(request):
 
 @app.get('api/test/role')
 @require_roles('Admin', 'Mod')
-async def on_test_role(request):
+async def on_test_role(request, authentication_session):
     """
     Tests client role authorization access.
     """
     return text('Admin gained access!')
 
 
-@app.post('api/test/recovery')
+@app.post('api/test/recovery/request')
 async def on_recover_request(request):
     """
     Requests a recovery session to allow user to reset password with a code.
     """
-    recovery_session = await request_recovery(request)
-    await text_verification_code(recovery_session.account.phone, recovery_session.code)
-    response = json('Recovery request successful', recovery_session.json())
-    recovery_session.encode(response)
+    verification_session = await request_account_recovery(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code)
+    response = json('Recovery request successful', verification_session.json())
+    verification_session.encode(response)
     return response
 
 
-@app.post('api/test/recover')
-async def on_recover(request):
+@app.post('api/test/recovery')
+@requires_verification()
+async def on_recover(request, verification_session):
     """
-    Changes and recovers an account's password is code is correct and session is valid.
+    Changes and recovers an account's password.
     """
-    recovery_session = await recover(request)
-    return json('Account recovered successfully', recovery_session.account.json())
+    await recover_account(request, verification_session)
+    return json('Account recovered successfully', verification_session.account.json())
 
 
 @app.exception(AuthError)

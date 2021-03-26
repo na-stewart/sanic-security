@@ -42,7 +42,7 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
-    * [Captcha](#captcha)
+    * [Verification](#authentication)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -163,14 +163,15 @@ Key | Value |
 **email** | test@test.com 
 **phone** | +19811354186
 **password** | testpass
+**captcha** | Aj8HgD
 
 ```python
 @app.post('api/register')
 @requires_captcha()
-async def on_register(request):
+async def on_register(request, captcha_session):
     verification_session = await register(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code)
-    await email_verification_code(verification_session.account.email, verification_session.code)
+    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
+    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
     response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
@@ -194,30 +195,6 @@ async def on_register(request):
     return json('Registration Successful!', account.json())
 ```
 
-* Verify
-
-Key | Value |
---- | --- |
-**code** | GUmrRLDe
-
-```python
-@app.post('api/verify')
-async def on_verify(request):
-    verification_session = await verify_account(request)
-    return json('Verification successful!', verification_session.json())
-```
-
-* Resend Verification Code
-
-```python
-@app.post('api/verification/resend')
-async def resend_verification_request(request):
-    verification_session = await VerificationSession().decode(request)
-    VerificationSession.ErrorFactory(verification_session).throw()
-    await text_verification_code(verification_session.account.phone, verification_session.code)
-    return json('Verification code resend successful', verification_session.json())
-```
-
 * Login
 
 Key | Value |
@@ -239,63 +216,56 @@ async def on_login(request):
 ```python
 @app.post('api/logout')
 async def on_logout(request):
-    await logout(request)
-    response = text('Logout successful')
+    authentication_session = await logout(request)
+    response = json('Logout successful', authentication_session.account.json())
     return response
-```
-
-* Requires Authentication
-
-```python
-@app.get("api/profile")
-@requires_authentication()
-async def get_user_info(request):
-    return text('Sensitive user information')
 ```
 
 * Account Recovery Request
 
+Key | Value |
+--- | --- |
+**email** | test@test.com
+
 ```python
-@app.post('api/recovery')
-async def on_logout(request):
-    recovery_session = await request_recovery(request)
-    await email_verification_code(recovery_session.account.email, verification_session.code)
-    await text_verification_code(recovery_session.account.phone, recovery_session.code)
-    response = json('Account recovery request successful', recovery_session.json())
-    recovery_session.encode(response)
+@app.post('api/recovery/request')
+async def on_recovery_request(request):
+    verification_session = await request_account_recovery(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
+    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    response = json('Recovery request successful', verification_session.json())
+    verification_session.encode(response)
     return response
 ```
 
 
 * Account Recovery
 
-```python
-@app.post('api/recovery')
-async def on_logout(request):
-    recovery_session = await request_recovery(request)
-    await email_verification_code(recovery_session.account.email, verification_session.code)
-    await text_verification_code(recovery_session.account.phone, recovery_session.code)
-    response = json('Account recovery request successful', recovery_session.json())
-    recovery_session.encode(response)
-    return response
-```
-
-
-* Recover
-
 Key | Value |
 --- | --- |
-**code** | GUmrRLDe
+**code** | G8ha9nVa
 **password** | newpass
 
 ```python
-@app.post('api/recover')
-async def on_recover(request):
-    recovery_session = await recover(request)
-    return json('Account password successfully changed', recovery_session.account.json())
+@app.post('api/recovery')
+@requires_verification()
+async def on_recovery(request, verification_session):
+    await recover_account(request, verification_session)
+    return json('Account recovered successfully', verification_session.account.json())
 ```
 
-## Captcha
+* Requires Authentication
+
+```python
+@app.get('api/authentication')
+@requires_authentication()
+async def on_authentication(request, authentication_session):
+    return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
+                authentication_session.account.json())
+```
+
+
+## Verification
 
 You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
 
@@ -319,7 +289,65 @@ async def on_captcha_img(request):
     return await file(img_path)
 ```
 
+* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be invalidated)
+
+```python
+@app.post('api/verification/request')
+async def on_request_verification(request, verification_session):
+    verification_session = await request_verification(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
+    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    return json('Verification request successful', verification_session.json())
+```
+
+* Resend Verification (Does not create new verification code, simply resends the code)
+
+```python
+@app.post('api/verification/resend')
+async def on_resend_verification(request):
+    verification_session = await VerificationSession().decode(request)
+    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
+    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    return json('Verification code resend successful', verification_session.json())
+```
+
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVa
+
+```python
+@app.post('api/register/verify')
+@requires_verification()
+async def on_verify(request, verification_session):
+    await verify_account(verification_session)
+    return json('Verification successful!', verification_session.json())
+```
+
+* Requires Verification
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVa
+
+
+```python
+@app.post('api/verification')
+@requires_verification()
+async def on_verification(request, verification_session):
+    return json('Hello ' + verification_session.account.username + '! You have verified yourself!', 
+                authentication_session.account.json())
+```
+
 ## Authorization
+
+Async Auth comes with two protocols for authorization: role based and wildcard based permissions.
+
+* Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
+
+* Wildcard Permissions support the concept of multiple levels or parts. For example, you could restructure the previous simple example by granting a user the permission
+`printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
 
 Examples of wildcard permissions are:
 
@@ -340,7 +368,7 @@ absolutely recommend this library for Java developers.
 ```python
 @app.post('api/account/update')
 @require_permissions('admin:update')
-async def on_require_perms(request):
+async def on_require_perms(request, authentication_session):
     return text('Admin sucessfully updated account!')
 ```
 
@@ -349,7 +377,7 @@ async def on_require_perms(request):
 ```python
 @app.get('api/dashboard/admin')
 @require_roles('Admin', 'Moderator')
-async def on_require_roles(request):
+async def on_require_roles(request, authentication_session):
     """
     Tests client role authorization access.
     """

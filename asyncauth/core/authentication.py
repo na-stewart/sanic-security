@@ -5,11 +5,40 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, RecoverySession
+from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession
 from asyncauth.core.utils import hash_password
 from asyncauth.core.verification import request_verification
 
 session_factory = SessionFactory()
+
+
+async def recover_account(request: Request, verification_session: VerificationSession):
+    """
+    Recovers an account by setting the password to a new one passed through the method.
+
+    :param request: All request bodies are sent as form-data with the following arguments:
+    password.
+
+    :param verification_session: Verification session containing account being verified.
+    """
+    verification_session.account.password = hash_password(request.form.get('password'))
+    await AuthenticationSession.filter(account=verification_session.account, valid=True,
+                                       deleted=False).update(valid=False)
+    await verification_session.account.save(update_fields=['password'])
+
+
+async def request_account_recovery(request: Request):
+    """
+    Requests a verification session to ensure that the recovery attempt was made by the account owner.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    email.
+
+    return: verification_session
+    """
+    account = await Account.filter(email=request.form.get('email')).first()
+    verification_session = await request_verification(request, account)
+    return verification_session
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
@@ -37,6 +66,8 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         return await request_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()
+    except ValidationError:
+        raise Account.TooManyCharsError()
 
 
 async def login(request: Request):
@@ -60,47 +91,6 @@ async def login(request: Request):
         raise Account.IncorrectPasswordError()
 
 
-async def request_recovery(request: Request):
-    """
-    Creates a recovery session associated with an account.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    email.
-
-    :return: recovery_session
-    """
-    form = request.form
-    account = await Account.filter(email=form.get('email')).first()
-    Account.ErrorFactory(account).throw()
-    return await session_factory.get('recovery', request, account=account)
-
-
-async def recover(request: Request):
-    """
-    Recovers an account by updating it's password to the recovery session password.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    code, password.
-
-    :raises SessionError:
-
-    :raises AccountError:
-
-    :return: recovery_session
-    """
-    form = request.form
-    recovery_session = await RecoverySession().decode(request)
-    Account.ErrorFactory(recovery_session.account).throw()
-    RecoverySession.ErrorFactory(recovery_session).throw()
-    await recovery_session.validate_code(form.get('code'))
-    recovery_session.account.password = hash_password(request.form.get('password'))
-    recovery_session.valid = False
-    await AuthenticationSession.filter(account=recovery_session.account, valid=True, deleted=False).update(valid=False)
-    await recovery_session.account.save(update_fields=['password'])
-    await recovery_session.save(update_fields=['valid'])
-    return recovery_session
-
-
 async def logout(request: Request):
     """
     Invalidates client's authentication session.
@@ -116,38 +106,37 @@ async def logout(request: Request):
 
 async def authenticate(request: Request):
     """
-    Authenticated the client's current authentication session.
-
-    :param request: Sanic request parameter.
-
-    :raises SessionError:
+    Authenticates the client's current authentication session.
 
     :raises AccountError:
 
+    :raises SessionError:
+
     :return: authentication_session
     """
-
     authentication_session = await AuthenticationSession().decode(request)
-    await authentication_session.verify_location(request)
     AuthenticationSession.ErrorFactory(authentication_session).throw()
+    await authentication_session.verify_location(request)
     Account.ErrorFactory(authentication_session.account).throw()
     return authentication_session
 
 
 def requires_authentication():
     """
-    Has the same function as the authenticate method, but is in the form of a decorator.
+    Authenticates the client's current authentication session.
 
     :raises AccountError:
 
     :raises SessionError:
+
+    :return: func(request, authentication_session, *args, **kwargs)
     """
 
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            await authenticate(request)
-            return await func(request, *args, **kwargs)
+            authentication_session = await authenticate(request)
+            return await func(request, authentication_session, *args, **kwargs)
 
         return wrapped
 

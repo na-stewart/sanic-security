@@ -118,13 +118,12 @@ class Account(BaseModel):
     @staticmethod
     async def get_client(request: Request):
         """
-        Retrieves account information from an authentication session found within cookie.
+        Retrieves account from an authentication session found within cookie.
         :param request: Sanic request parameter.
         :return: account
         """
-
         authentication_session = await AuthenticationSession().decode(request)
-        return authentication_session.account if authentication_session else None
+        return authentication_session.account
 
     class AccountError(AuthError):
         def __init__(self, message, code):
@@ -181,9 +180,9 @@ class Session(BaseModel):
             'attempts': self.attempts
         }
 
-    async def validate_code(self, code: str):
+    async def check_code(self, code: str):
         """
-        Used to validate if code passed is equivalent to the session code.
+        Used to check if code passed is equivalent to the session code. Invalidate session if so.
 
         :param code: Code being validated.
         """
@@ -193,6 +192,9 @@ class Session(BaseModel):
             self.attempts += 1
             await self.save(update_fields=['attempts'])
             raise self.IncorrectCodeError()
+        else:
+            self.valid = False
+            await self.save(update_fields=['valid'])
 
     def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
@@ -336,19 +338,19 @@ class SessionFactory:
 
         :return:
         """
-        await self.cache_session_codes()  #
-        account = await Account.get_client(request) if None else account
+        await self.cache_session_codes()
         code = await self.get_cached_session_code()
         if session_type == 'captcha':
             await self.cache_session_challenges()
             return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
         elif session_type == 'verification':
+            verification_session = await VerificationSession().decode(request)
+            account = verification_session.account if None else account
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
+            account = await Account.get_client(request) if None else account
             return await AuthenticationSession.create(account=account, ip=request_ip(request),
                                                       expiration_date=best_by(30))
-        elif session_type == 'recovery':
-            return await RecoverySession.create(account=account, ip=request_ip(request), code=code)
         else:
             raise ValueError
 
@@ -356,13 +358,6 @@ class SessionFactory:
 class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
-    """
-    pass
-
-
-class RecoverySession(Session):
-    """
-    Verifies password recovery attempts via emailing or texting a code.
     """
     pass
 
