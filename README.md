@@ -293,7 +293,7 @@ async def on_captcha_img(request):
 
 ```python
 @app.post('api/verification/request')
-async def on_request_verification(request, verification_session):
+async def on_request_verification(request):
     verification_session = await request_verification(request)
     await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
     await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
