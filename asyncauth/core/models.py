@@ -324,13 +324,31 @@ class SessionFactory:
                     c = Claptcha(code[:6], config['AUTH']['captcha_font'], resample=Image.BICUBIC, noise=0.6)
                     c.write(session_cache_challenge_path + code[:6] + '.png')
 
+    async def _get_account(self, request: Request, session_type: str):
+        """
+        Retrieves account from a pre-created session in client cookie.
+
+        :param request: Sanic request paramater.
+
+        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
+        authentication.
+
+        :return:
+        """
+        if session_type == 'verification':
+            verification_session = await VerificationSession().decode(request)
+            account = verification_session.account
+        else:
+            account = await Account.get_client(request)
+        return account
+
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
         Creates and returns a session with all of the fulfilled requirements. Pre-cache session creation may
         be slow, but will only occur once.
 
-        :param session_type: The type of session being retrieved. Available types are: captcha, verification,
-        authentication, and recovery.
+        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
+        authentication.
 
         :param request: Sanic request parameter.
 
@@ -340,15 +358,13 @@ class SessionFactory:
         """
         await self.cache_session_codes()
         code = await self.get_cached_session_code()
+        account = await self._get_account(request, session_type) if not account else account
         if session_type == 'captcha':
             await self.cache_session_challenges()
             return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
         elif session_type == 'verification':
-            verification_session = await VerificationSession().decode(request)
-            account = verification_session.account if None else account
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
         elif session_type == 'authentication':
-            account = await Account.get_client(request) if None else account
             return await AuthenticationSession.create(account=account, ip=request_ip(request),
                                                       expiration_date=best_by(30))
         else:

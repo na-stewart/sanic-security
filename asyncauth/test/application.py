@@ -100,7 +100,9 @@ async def new_verification_request(request):
     """
     verification_session = await request_verification(request)
     await text_verification_code(verification_session.account.phone, verification_session.code)
-    return json('Verification request successful', verification_session.json())
+    response = json('Verification request successful', verification_session.json())
+    verification_session.encode(response)
+    return response
 
 
 @app.post('api/test/login')

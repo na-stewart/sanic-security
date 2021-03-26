@@ -297,7 +297,9 @@ async def on_request_verification(request, verification_session):
     verification_session = await request_verification(request)
     await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
     await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
-    return json('Verification request successful', verification_session.json())
+    response = json('Verification request successful', verification_session.json())
+    verification_session.encode(response)
+    return response
 ```
 
 * Resend Verification (Does not create new verification code, simply resends the code)
@@ -360,16 +362,13 @@ employee:delete
 employee:*
 ```
 
-A library called [Apache Shiro](https://shiro.apache.org/permissions.html) explains this concept incredibly well. I 
-absolutely recommend this library for Java developers.
-
 * Require Permissions
 
 ```python
 @app.post('api/account/update')
-@require_permissions('admin:update')
+@require_permissions('admin:update', 'employee:add')
 async def on_require_perms(request, authentication_session):
-    return text('Admin sucessfully updated account!')
+    return text('Admin successfully updated account!')
 ```
 
 * Require Roles
