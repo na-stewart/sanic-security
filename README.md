@@ -22,11 +22,11 @@
   <p align="center">
     A powerful, simple, and async authentication and authorization library for Sanic.
     <br />
-    <a href="https://github.com/sunset-developer/Amy-Rose/tree/master/examples">View Demo</a>
+    <a href="http://authdoc.sunsetdeveloper.com/">Documentation</a>
     ·
     <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
     ·
-    <a href="https://github.com/sunset-developer/Amy-Rose/issues">Request Feature</a>
+    <a href="https://github.com/sunset-developer/asyncauth/pulls">Request Feature</a>
   </p>
 </p>
 
