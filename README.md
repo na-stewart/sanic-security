@@ -351,16 +351,16 @@ Async Auth comes with two protocols for authorization: role based and wildcard b
 * Wildcard Permissions support the concept of multiple levels or parts. For example, you could restructure the previous simple example by granting a user the permission
 `printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
 
-Examples of wildcard permissions are:
+  Examples of wildcard permissions are:
 
-```
-admin:add,update,delete
-admin:add
-admin:*
-employee:add,delete
-employee:delete
-employee:*
-```
+  ```
+  admin:add,update,delete
+  admin:add
+  admin:*
+  employee:add,delete
+  employee:delete
+  employee:*
+  ```
 
 * Require Permissions
 
