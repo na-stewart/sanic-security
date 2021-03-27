@@ -85,17 +85,3 @@ def path_exists(path):
     return exists
 
 
-def async_wrapper(func):
-    """
-    Turns a sync function to async function.
-    """
-    from concurrent.futures import ThreadPoolExecutor
-    import asyncio
-    pool = ThreadPoolExecutor()
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        future = pool.submit(func, *args, **kwargs)
-        return asyncio.wrap_future(future)
-
-    return wrapper

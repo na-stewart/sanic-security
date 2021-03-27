@@ -13,7 +13,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists, wrap_future, async_wrapper
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -190,7 +190,6 @@ class SessionFactory:
         Generates up to 100 captcha challenges from codes.txt in their respective .png file. May be slow on first run.
         """
 
-        @async_wrapper
         def generate_image(code: str):
             c = Claptcha(code[:6], config['AUTH']['captcha_font'], resample=Image.BICUBIC, noise=0.6)
             c.write(session_cache_captcha_path + code[:6] + '.png')
@@ -199,8 +198,9 @@ class SessionFactory:
         if not path_exists(session_cache_captcha_path):
             async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
                 challenges = await f.read()
-                for challenge in challenges.split():
-                    await generate_image(challenge)
+                loop = asyncio.get_running_loop()
+                for code in challenges.split():
+                    await loop.run_in_executor(None, generate_image, code)
 
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
