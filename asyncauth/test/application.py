@@ -7,7 +7,6 @@ from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
 from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession, AuthError
-from asyncauth.core.utils import text_verification_code
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
 from asyncauth.test.models import json
@@ -47,7 +46,7 @@ async def on_register_verification(request, captcha_session):
     Registration test with all built-in requirements.
     """
     verification_session = await register(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code)
+    await verification_session.text_code()
     response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
@@ -89,7 +88,7 @@ async def resend_verification_request(request):
     Resends verification code if somehow lost.
     """
     verification_session = await VerificationSession().decode(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code)
+    await verification_session.text_code()
     return json('Verification code resend successful', verification_session.json())
 
 
@@ -98,8 +97,9 @@ async def new_verification_request(request):
     """
     Creates new verification code.
     """
+
     verification_session = await request_verification(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code)
+    await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
     verification_session.encode(response)
     return response
@@ -181,7 +181,7 @@ async def on_recover_request(request):
     Requests a recovery session to allow user to reset password with a code.
     """
     verification_session = await request_account_recovery(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code)
+    await verification_session.text_code()
     response = json('Recovery request successful', verification_session.json())
     verification_session.encode(response)
     return response

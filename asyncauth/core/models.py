@@ -13,6 +13,8 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from asyncauth.core.config import config
 from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
+from asyncauth.lib.smtp import send_email
+from asyncauth.lib.twilio import send_sms
 
 
 class BaseErrorFactory:
@@ -179,6 +181,24 @@ class Session(BaseModel):
             'valid': self.valid,
             'attempts': self.attempts
         }
+
+    async def text_code(self, code_prefix="Your code is: "):
+        """
+        Sends account verification code via text.
+
+        :param code_prefix: Message being sent with code, for example "Your code is: ".
+        """
+        await send_sms(self.account.phone, code_prefix + self.code)
+
+    async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
+        """
+        Sends account verification code via email.
+
+        :param code_prefix: Message being sent with code, for example "Your code is: ".
+
+        :param subject: Subject of email being sent with code.
+        """
+        await send_email(self.account.email, subject, code_prefix + self.code)
 
     async def check_code(self, code: str):
         """
@@ -385,7 +405,7 @@ class CaptchaSession(Session):
 
     async def captcha_img(self, request):
         """
-        Retrieves image path of client captcha.
+        Retrieves image path of captcha.
 
         :return: captcha_img_path
         """

@@ -170,8 +170,8 @@ Key | Value |
 @requires_captcha()
 async def on_register(request, captcha_session):
     verification_session = await register(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
-    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
     response = json('Registration successful', verification_session.account.json())
     verification_session.encode(response)
     return response
@@ -231,8 +231,8 @@ Key | Value |
 @app.post('api/recovery/request')
 async def on_recovery_request(request):
     verification_session = await request_account_recovery(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
-    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
     response = json('Recovery request successful', verification_session.json())
     verification_session.encode(response)
     return response
@@ -295,8 +295,8 @@ async def on_captcha_img(request):
 @app.post('api/verification/request')
 async def on_request_verification(request):
     verification_session = await request_verification(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
-    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
     response = json('Verification request successful', verification_session.json())
     verification_session.encode(response)
     return response
@@ -308,8 +308,8 @@ async def on_request_verification(request):
 @app.post('api/verification/resend')
 async def on_resend_verification(request):
     verification_session = await VerificationSession().decode(request)
-    await text_verification_code(verification_session.account.phone, verification_session.code) # Text verification code.
-    await email_verification_code(verification_session.account.email, verification_session.code) # Or email verification code.
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
     return json('Verification code resend successful', verification_session.json())
 ```
 

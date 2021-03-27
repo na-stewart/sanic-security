@@ -32,28 +32,6 @@ def is_expired(date_time: datetime.datetime):
     return date_time < datetime.datetime.now(datetime.timezone.utc) and date_time
 
 
-async def text_verification_code(account_phone: str, verification_code: str):
-    """
-    Sends account verification code via text.
-
-    :param account_phone: Phone number to send code too.
-    :param verification_code: Code sent to account for them to verify themselves.
-    """
-    sms_str = 'Your verification code is: ' + verification_code
-    await send_sms(account_phone, sms_str)
-
-
-async def email_verification_code(account_email: str, verification_code: str):
-    """
-    Sends account verification code via text.
-
-    :param account_email: Email number to send code too.
-    :param verification_code: Code sent to account for them to verify themselves.
-    """
-    email_str = 'Your verification code is:\n\n ' + verification_code
-    await send_email(account_email, 'Account Verification', email_str)
-
-
 def random_str(length: int = 7):
     """
     Generates a random string of letters and numbers of specific length.
