@@ -16,7 +16,7 @@ async def recover_account(request: Request, verification_session: VerificationSe
     """
     Recovers an account by setting the password to a new one passed through the method.
 
-    :param request: All request bodies are sent as form-data with the following arguments:
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     password.
 
     :param verification_session: Verification session containing account being verified.
@@ -116,7 +116,7 @@ async def authenticate(request: Request):
     """
     authentication_session = await AuthenticationSession().decode(request)
     AuthenticationSession.ErrorFactory(authentication_session).throw()
-    await authentication_session.verify_location(request)
+    await authentication_session.crosscheck_location(request)
     Account.ErrorFactory(authentication_session.account).throw()
     return authentication_session
 

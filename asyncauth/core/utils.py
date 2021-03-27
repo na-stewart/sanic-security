@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import functools
 import os
 import random
 import string
@@ -6,9 +8,6 @@ import string
 import bcrypt
 from sanic.request import Request
 from sanic_ipware import get_client_ip
-
-from asyncauth.lib.smtp import send_email
-from asyncauth.lib.twilio import send_sms
 
 
 def best_by(days: int = 1):
@@ -84,3 +83,19 @@ def path_exists(path):
     if not exists:
         os.makedirs(path)
     return exists
+
+
+def async_wrapper(func):
+    """
+    Turns a sync function to async function.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    import asyncio
+    pool = ThreadPoolExecutor()
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        future = pool.submit(func, *args, **kwargs)
+        return asyncio.wrap_future(future)
+
+    return wrapper

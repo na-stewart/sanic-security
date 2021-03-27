@@ -54,7 +54,7 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     CaptchaSession.ErrorFactory(captcha_session).throw()
-    await captcha_session.check_code(request.form.get('captcha'))
+    await captcha_session.crosscheck_code(request.form.get('captcha'))
     return captcha_session
 
 
@@ -73,7 +73,7 @@ async def verify(request: Request):
     """
     verification_session = await VerificationSession().decode(request)
     VerificationSession.ErrorFactory(verification_session).throw()
-    await verification_session.check_code(request.form.get('code'))
+    await verification_session.crosscheck_code(request.form.get('code'))
     return verification_session
 
 
