@@ -252,7 +252,7 @@ Key | Value |
 @app.post('api/recovery')
 @requires_verification()
 async def on_recovery(request, verification_session):
-    await recover_account(request, verification_session)
+    await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 ```
 

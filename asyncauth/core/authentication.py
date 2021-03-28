@@ -12,7 +12,7 @@ from asyncauth.core.verification import request_verification
 session_factory = SessionFactory()
 
 
-async def recover_account(request: Request, verification_session: VerificationSession):
+async def account_recovery(request: Request, verification_session: VerificationSession):
     """
     Recovers an account by setting the password to a new one passed through the method.
 

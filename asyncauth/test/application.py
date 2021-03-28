@@ -2,7 +2,7 @@ from sanic import Sanic
 from sanic.response import text, file
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_account_recovery, recover_account
+    logout, request_account_recovery, account_recovery
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
@@ -195,7 +195,7 @@ async def on_recover(request, verification_session):
     """
     Changes and recovers an account's password.
     """
-    await recover_account(request, verification_session)
+    await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 
 
