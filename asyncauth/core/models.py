@@ -117,16 +117,6 @@ class Account(BaseModel):
             'verified': self.verified
         }
 
-    @staticmethod
-    async def get_client(request: Request):
-        """
-        Retrieves account from an authentication session found within cookie.
-        :param request: Sanic request parameter.
-        :return: account
-        """
-        authentication_session = await AuthenticationSession().decode(request)
-        return authentication_session.account if authentication_session else None
-
     class AccountError(AuthError):
         def __init__(self, message, code):
             super().__init__(message, code)
@@ -154,64 +144,6 @@ class Account(BaseModel):
     class UnverifiedError(AccountError):
         def __init__(self):
             super().__init__('Account requires verification.', 401)
-
-
-class SessionFactory:
-    """
-    Prevents human error when creating sessions.
-    """
-
-    def __init__(self):
-        self.session_cache_path = './resources/session-cache/'
-
-    async def get_cached_session_code(self):
-        """
-        Retrieves a random cached code from a codes.txt file
-
-        :return: code
-        """
-        async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
-            codes = await f.read()
-            return random.choice(codes.split())
-
-    async def cache_session_codes(self):
-        """
-        Generates up to 100 code and image variations in the resources/session-cache directory.
-        """
-        loop = asyncio.get_running_loop()
-        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-        if not path_exists(self.session_cache_path):
-            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
-                for i in range(100):
-                    code = random_str(8)
-                    await f.write(code + ' ')
-                    await loop.run_in_executor(None, image.write, code[:6], self.session_cache_path + code[:6] + '.png')
-
-    async def get(self, session_type: str, request: Request, account: Account = None):
-        """
-        Creates and returns a session with all of the fulfilled requirements.
-
-        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
-        authentication.
-
-        :param request: Sanic request parameter.
-
-        :param account:
-
-        :return:
-        """
-        await self.cache_session_codes()
-        code = await self.get_cached_session_code()
-        account = await Account.get_client(request) if account is None else account
-        if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
-        elif session_type == 'verification':
-            return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
-        elif session_type == 'authentication':
-            return await AuthenticationSession.create(account=account, ip=request_ip(request),
-                                                      expiration_date=best_by(30))
-        else:
-            raise ValueError
 
 
 class Session(BaseModel):
@@ -361,6 +293,78 @@ class Session(BaseModel):
     class ExpiredError(SessionError):
         def __init__(self):
             super().__init__('Session has expired', 401)
+
+
+class SessionFactory:
+    """
+    Prevents human error when creating sessions.
+    """
+
+    def __init__(self):
+        self.session_cache_path = './resources/session-cache/'
+
+    async def get_cached_session_code(self):
+        """
+        Retrieves a random cached code from a codes.txt file
+
+        :return: code
+        """
+        async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
+
+    async def cache_session_codes(self):
+        """
+        Generates up to 100 code and image variations in the resources/session-cache directory.
+        """
+        loop = asyncio.get_running_loop()
+        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+        if not path_exists(self.session_cache_path):
+            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
+                for i in range(100):
+                    code = random_str(8)
+                    await f.write(code + ' ')
+                    await loop.run_in_executor(None, image.write, code[:6], self.session_cache_path + code[:6] + '.png')
+
+    async def _account_via_decoded(self, request: Request, session: Session):
+        """
+        Extracts account from decoded session. This method was created purely to prevent repetitive code.
+
+        :param request: Sanic request parameter.
+
+        :param session: Session being decoded to retrieve account from
+
+        :return: account
+        """
+        decoded_session = await session.decode(request)
+        return decoded_session.account
+
+    async def get(self, session_type: str, request: Request, account: Account = None):
+        """
+        Creates and returns a session with all of the fulfilled requirements.
+
+        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
+        authentication.
+
+        :param request: Sanic request parameter.
+
+        :param account:
+
+        :return:
+        """
+        await self.cache_session_codes()
+        code = await self.get_cached_session_code()
+        if session_type == 'captcha':
+            return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
+        elif session_type == 'verification':
+            account = account if account else await self._account_via_decoded(request, VerificationSession())
+            return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
+        elif session_type == 'authentication':
+            account = account if account else await self._account_via_decoded(request, AuthenticationSession())
+            return await AuthenticationSession.create(account=account, ip=request_ip(request),
+                                                      expiration_date=best_by(30))
+        else:
+            raise ValueError
 
 
 class VerificationSession(Session):
