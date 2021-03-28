@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as rq:
 
 setup(
     name='asyncauth',
-    version='0.8.1.1',
+    version='0.8.1.2',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/asyncauth',
     license='GNU General Public License v3.0',

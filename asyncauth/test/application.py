@@ -121,8 +121,8 @@ async def on_logout(request):
     """
     User logout, invalidates client authentication session.
     """
-    await logout(request)
-    response = text('Logout successful!')
+    authentication_session = await logout(request)
+    response = json('Logout successful!', authentication_session.account.json())
     return response
 
 

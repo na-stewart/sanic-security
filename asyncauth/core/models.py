@@ -125,7 +125,7 @@ class Account(BaseModel):
         :return: account
         """
         authentication_session = await AuthenticationSession().decode(request)
-        return authentication_session.account
+        return authentication_session.account if authentication_session else None
 
     class AccountError(AuthError):
         def __init__(self, message, code):
@@ -183,9 +183,9 @@ class SessionFactory:
         if not path_exists(self.session_cache_path):
             async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
                 for i in range(100):
-                    code = random_str(6)
+                    code = random_str(8)
                     await f.write(code + ' ')
-                    await loop.run_in_executor(None, image.write, code, self.session_cache_path + code + '.png')
+                    await loop.run_in_executor(None, image.write, code[:6], self.session_cache_path + code[:6] + '.png')
 
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
@@ -224,12 +224,12 @@ class Session(BaseModel):
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=6, null=True)
+    code = fields.CharField(max_length=8, null=True)
 
-    def __init__(self, failed_attempt_error=None, **kwargs):
+    def __init__(self, crosscheck_failed_error=None, **kwargs):
         super().__init__(**kwargs)
         self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
-        self.crosscheck_failed_error = failed_attempt_error
+        self.crosscheck_failed_error = crosscheck_failed_error
 
     def json(self):
         return {
@@ -270,7 +270,7 @@ class Session(BaseModel):
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=['attempts'])
-            raise self.crosscheck_failed_error
+            raise self.CrosscheckError()
         else:
             self.valid = False
             await self.save(update_fields=['valid'])
@@ -354,6 +354,10 @@ class Session(BaseModel):
         def __init__(self):
             super().__init__('Session is invalid.', 401)
 
+    class CrosscheckError(SessionError):
+        def __init__(self):
+            super().__init__('Session crosschecking attempt was invalid', 401)
+
     class ExpiredError(SessionError):
         def __init__(self):
             super().__init__('Session has expired', 401)
@@ -363,26 +367,14 @@ class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
     """
-
-    def __init__(self, **kwargs):
-        super(VerificationSession, self).__init__(self.VerificationCodeError, **kwargs)
-
-    class VerificationCodeError(Session.SessionError):
-        def __init__(self):
-            super().__init__('Your code does not match the verification code.', 400)
+    pass
 
 
 class CaptchaSession(Session):
     """
     Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
-
-    def __init__(self, **kwargs):
-        super(CaptchaSession, self).__init__(self.CaptchaChallengeError, **kwargs)
-
-    class CaptchaChallengeError(Session.SessionError):
-        def __init__(self):
-            super().__init__('Your captcha does not match the captcha challenge.', 400)
+    pass
 
     async def captcha_img(self, request):
         """
