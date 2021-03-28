@@ -106,7 +106,7 @@ First you have to create a configuration file called auth.ini. Below is an examp
 ```
 [ROSE]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
-captcha_font=source-sans-pro.semibold.ttf
+captcha_font=source-sans-pro.light.ttf
 
 [TORTOISE]
 username=admin
