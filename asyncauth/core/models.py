@@ -1,19 +1,18 @@
 import asyncio
-import os
 import random
 import uuid
 
 import aiofiles
 import jwt
-from PIL import Image
-from claptcha import Claptcha
+from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
+
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists, str_to_list
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -177,30 +176,16 @@ class SessionFactory:
 
     async def cache_session_codes(self):
         """
-        Generates up to 100 code variations in a codes.txt file.
+        Generates up to 100 code and image variations in the resources/session-cache directory.
         """
+        loop = asyncio.get_running_loop()
+        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
         if not path_exists(self.session_cache_path):
             async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
                 for i in range(100):
-                    code = random_str(8)
+                    code = random_str(6)
                     await f.write(code + ' ')
-
-    async def cache_captcha_challenges(self):
-        """
-        Generates up to 100 captcha challenges from codes.txt in their respective .png file. May be slow on first run.
-        """
-
-        def generate_image(code: str):
-            c = Claptcha(code[:6], config['AUTH']['captcha_font'], resample=Image.BICUBIC, noise=0.6)
-            c.write(session_cache_captcha_path + code[:6] + '.png')
-
-        session_cache_captcha_path = self.session_cache_path + 'captcha/'
-        if not path_exists(session_cache_captcha_path):
-            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
-                challenges = await f.read()
-                loop = asyncio.get_running_loop()
-                for code in challenges.split():
-                    await loop.run_in_executor(None, generate_image, code)
+                    await loop.run_in_executor(None, image.write, code, self.session_cache_path + code + '.png')
 
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
@@ -219,7 +204,6 @@ class SessionFactory:
         code = await self.get_cached_session_code()
         account = await Account.get_client(request) if account is None else account
         if session_type == 'captcha':
-            await self.cache_captcha_challenges()
             return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
         elif session_type == 'verification':
             return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
@@ -240,7 +224,7 @@ class Session(BaseModel):
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=8, null=True)
+    code = fields.CharField(max_length=6, null=True)
 
     def __init__(self, failed_attempt_error=None, **kwargs):
         super().__init__(**kwargs)
@@ -407,7 +391,7 @@ class CaptchaSession(Session):
         :return: captcha_img_path
         """
         decoded_captcha = await CaptchaSession().decode(request)
-        return './resources/session-cache/captcha/' + decoded_captcha.code + '.png'
+        return './resources/session-cache/' + decoded_captcha.code + '.png'
 
 
 class AuthenticationSession(Session):

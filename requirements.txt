@@ -32,4 +32,4 @@ sanic-ipware==0.1.0
 PyJWT==2.0.1
 aiosmtplib==1.1.4
 setuptools~=50.3.2
-claptcha~=0.3.3
+captcha==0.3
