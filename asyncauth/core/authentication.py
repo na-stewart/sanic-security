@@ -37,6 +37,7 @@ async def request_account_recovery(request: Request):
     """
 
     account = await Account.filter(email=request.args.get('email')).first()
+    Account.ErrorFactory(account).throw()
     verification_session = await request_verification(request, account)
     return verification_session
 
