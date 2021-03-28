@@ -177,7 +177,7 @@ async def on_test_role(request, authentication_session):
     return text('Admin gained access!')
 
 
-@app.post('api/test/recovery/request')
+@app.get('api/test/recovery/request')
 async def on_recover_request(request):
     """
     Requests a recovery session to allow user to reset password with a code.

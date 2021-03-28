@@ -31,12 +31,12 @@ async def request_account_recovery(request: Request):
     """
     Requests a verification session to ensure that the recovery attempt was made by the account owner.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    email.
+    :param request: Sanic request parameter. This request is sent with the following url argument: email.
 
     return: verification_session
     """
-    account = await Account.filter(email=request.form.get('email')).first()
+
+    account = await Account.filter(email=request.args.get('email')).first()
     verification_session = await request_verification(request, account)
     return verification_session
 

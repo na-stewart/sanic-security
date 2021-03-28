@@ -139,7 +139,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
-All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
+Most request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 
 ```python
 def json(message, content, status_code=200):
@@ -223,12 +223,14 @@ async def on_logout(request):
 
 * Account Recovery Request
 
+This request is sent with an url argument instead of `form-data`.
+
 Key | Value |
 --- | --- |
 **email** | test@test.com
 
 ```python
-@app.post('api/recovery/request')
+@app.get('api/recovery/request')
 async def on_recovery_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code() # Text verification code.
