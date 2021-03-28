@@ -6,7 +6,7 @@ from asyncauth.core.authentication import register, login, requires_authenticati
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
-from asyncauth.core.models import CaptchaSession, Account, Role, Permission, VerificationSession, AuthError
+from asyncauth.core.models import CaptchaSession, Role, Permission, VerificationSession, AuthError
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
 from asyncauth.test.models import json
@@ -127,22 +127,24 @@ async def on_logout(request):
 
 
 @app.post('api/test/role/admin')
-async def on_create_admin(request):
+@requires_authentication()
+async def on_create_admin(request, authentication_session):
     """
     Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
     """
-    client = await Account.get_client(request)
+    client = authentication_session.account
     await Role().create(account=client, name='Admin')
     await Role().create(account=client, name='Mod')
     return json('Roles added to your account!', client.json())
 
 
 @app.post('api/test/perms/admin')
-async def on_create_admin_perm(request):
+@requires_authentication()
+async def on_create_admin_perm(request, authentication_session):
     """
     Creates 'admin:update' and 'admin:add' permissions to be used for testing wildcard based authorization.
     """
-    client = await Account().get_client(request)
+    client = authentication_session.account
     await Permission().create(account=client, wildcard='admin:update', decription="")
     await Permission().create(account=client, wildcard='admin:add')
     return json('Permissions added to your account!', client.json())
