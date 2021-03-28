@@ -356,7 +356,7 @@ class Session(BaseModel):
 
     class CrosscheckError(SessionError):
         def __init__(self):
-            super().__init__('Session crosschecking attempt was invalid', 401)
+            super().__init__('Session crosschecking attempt was incorrect', 401)
 
     class ExpiredError(SessionError):
         def __init__(self):
