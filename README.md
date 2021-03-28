@@ -292,7 +292,7 @@ async def on_captcha_img(request):
 * Request Verification (Creates and encodes a new verification code, useful for when a verification session may be invalidated)
 
 ```python
-@app.post('api/verification/request')
+@app.get('api/verification/request')
 async def on_request_verification(request):
     verification_session = await request_verification(request)
     await verification_session.text_code() # Text verification code.
@@ -305,7 +305,7 @@ async def on_request_verification(request):
 * Resend Verification (Does not create new verification code, simply resends the code)
 
 ```python
-@app.post('api/verification/resend')
+@app.get('api/verification/resend')
 async def on_resend_verification(request):
     verification_session = await VerificationSession().decode(request)
     await verification_session.text_code() # Text verification code.
