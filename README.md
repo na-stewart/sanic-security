@@ -175,7 +175,7 @@ async def on_register(request, captcha_session):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 ```
 
@@ -209,7 +209,7 @@ Key | Value |
 async def on_login(request):
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    authentication_session.encode(response)
+    await authentication_session.encode(response)
     return response
 ```
 
@@ -238,7 +238,7 @@ async def on_recovery_request(request):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Recovery request successful', verification_session.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 ```
 
@@ -280,7 +280,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    captcha_session.encode(response)
+    await captcha_session.encode(response)
     return response
 ```
 
@@ -302,7 +302,7 @@ async def on_request_verification(request):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 ```
 

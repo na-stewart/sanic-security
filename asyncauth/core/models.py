@@ -170,24 +170,6 @@ class Session(BaseModel):
             'attempts': self.attempts
         }
 
-    async def text_code(self, code_prefix="Your code is: "):
-        """
-        Sends account verification code via text.
-
-        :param code_prefix: Message being sent with code, for example "Your code is: ".
-        """
-        await send_sms(self.account.phone, code_prefix + self.code)
-
-    async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
-        """
-        Sends account verification code via email.
-
-        :param code_prefix: Message being sent with code, for example "Your code is: ".
-
-        :param subject: Subject of email being sent with code.
-        """
-        await send_email(self.account.email, subject, code_prefix + self.code)
-
     async def crosscheck_code(self, code: str):
         """
         Used to check if code passed is equivalent to the session code.
@@ -204,7 +186,7 @@ class Session(BaseModel):
             self.valid = False
             await self.save(update_fields=['valid'])
 
-    def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
+    async def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -214,19 +196,19 @@ class Session(BaseModel):
 
         :param same_site: Allows you to declare if your cookie should be restricted to a first-party or same-site context.
         """
-
+        loop = asyncio.get_running_loop()
         payload = {
             'date_created': str(self.date_created),
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = jwt.encode(payload, config['AUTH']['secret'], algorithm='HS256')
+        encoded = await loop.run_in_executor(None,  jwt.encode, payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
         response.cookies[self.cookie]['samesite'] = same_site
 
-    def decode_raw(self, request: Request) -> dict:
+    async def decode_raw(self, request: Request):
         """
         Decodes JWT token in cookie to dict.
 
@@ -234,9 +216,10 @@ class Session(BaseModel):
 
         :return: raw
         """
+        loop = asyncio.get_running_loop()
         try:
-            session = jwt.decode(request.cookies.get(self.cookie), config['AUTH']['secret'], algorithms='HS256')
-            return session
+            return await loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
+                                              config['AUTH']['secret'], 'HS256')
         except DecodeError:
             raise Session.DecodeError()
 
@@ -248,7 +231,8 @@ class Session(BaseModel):
 
         :return: session
         """
-        decoded = self.decode_raw(request)
+
+        decoded = await self.decode_raw(request)
         return await self.filter(uid=decoded.get('uid')).prefetch_related('account').first()
 
     class Meta:
@@ -368,7 +352,24 @@ class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
     """
-    pass
+
+    async def text_code(self, code_prefix="Your code is: "):
+        """
+        Sends account verification code via text.
+
+        :param code_prefix: Message being sent with code, for example "Your code is: ".
+        """
+        await send_sms(self.account.phone, code_prefix + self.code)
+
+    async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
+        """
+        Sends account verification code via email.
+
+        :param code_prefix: Message being sent with code, for example "Your code is: ".
+
+        :param subject: Subject of email being sent with code.
+        """
+        await send_email(self.account.email, subject, code_prefix + self.code)
 
 
 class CaptchaSession(Session):

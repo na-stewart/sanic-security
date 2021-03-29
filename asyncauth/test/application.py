@@ -48,7 +48,7 @@ async def on_register_verification(request, captcha_session):
     verification_session = await register(request)
     await verification_session.text_code()
     response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 
 
@@ -78,7 +78,7 @@ async def on_request_captcha(request):
     """
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    captcha_session.encode(response)
+    await captcha_session.encode(response)
     return response
 
 
@@ -101,7 +101,7 @@ async def new_verification_request(request):
     verification_session = await request_verification(request)
     await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 
 
@@ -112,7 +112,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    authentication_session.encode(response)
+    await authentication_session.encode(response)
     return response
 
 
@@ -185,7 +185,7 @@ async def on_recover_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code()
     response = json('Recovery request successful', verification_session.json())
-    verification_session.encode(response)
+    await verification_session.encode(response)
     return response
 
 
