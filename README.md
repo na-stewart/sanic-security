@@ -74,6 +74,8 @@ This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/ahopkins.png)
 
+Documentation is auto generated and temporary until I write out fully comprehensive documentation.
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
