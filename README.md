@@ -319,7 +319,7 @@ async def on_resend_verification(request):
 
 Key | Value |
 --- | --- |
-**code** | G8ha9nVa
+**code** | G8ha9nVae
 
 ```python
 @app.post('api/register/verify')

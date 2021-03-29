@@ -2,9 +2,10 @@ import functools
 
 from sanic.request import Request
 
-from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory
+from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
 
 session_factory = SessionFactory()
+session_error_factory = Session.ErrorFactory()
 
 
 async def verify_account(verification_session: VerificationSession):
@@ -53,7 +54,7 @@ async def captcha(request: Request):
     :return: captcha_session
     """
     captcha_session = await CaptchaSession().decode(request)
-    CaptchaSession.ErrorFactory(captcha_session).throw()
+    session_error_factory.throw(captcha_session)
     await captcha_session.crosscheck_code(request.form.get('captcha'))
     return captcha_session
 
@@ -72,7 +73,7 @@ async def verify(request: Request):
     :return: verification_session
     """
     verification_session = await VerificationSession().decode(request)
-    VerificationSession.ErrorFactory(verification_session).throw()
+    session_error_factory.throw(verification_session)
     await verification_session.crosscheck_code(request.form.get('code'))
     return verification_session
 

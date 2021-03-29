@@ -5,11 +5,13 @@ import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession
+from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession, Session
 from asyncauth.core.utils import hash_password
 from asyncauth.core.verification import request_verification
 
 session_factory = SessionFactory()
+account_error_factory = Account.ErrorFactory()
+session_error_factory = Session.ErrorFactory()
 
 
 async def account_recovery(request: Request, verification_session: VerificationSession):
@@ -37,7 +39,7 @@ async def request_account_recovery(request: Request):
     """
 
     account = await Account.filter(email=request.args.get('email')).first()
-    Account.ErrorFactory(account).throw()
+    account_error_factory.throw(account)
     verification_session = await request_verification(request, account)
     return verification_session
 
@@ -84,7 +86,7 @@ async def login(request: Request):
     """
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
-    Account.ErrorFactory(account).throw()
+    account_error_factory.throw(account)
     if bcrypt.checkpw(form.get('password').encode('utf-8'), account.password):
         authentication_session = await session_factory.get('authentication', request, account=account)
         return authentication_session
@@ -116,9 +118,9 @@ async def authenticate(request: Request):
     :return: authentication_session
     """
     authentication_session = await AuthenticationSession().decode(request)
-    AuthenticationSession.ErrorFactory(authentication_session).throw()
+    session_error_factory.throw(authentication_session)
     await authentication_session.crosscheck_location(request)
-    Account.ErrorFactory(authentication_session.account).throw()
+    account_error_factory.throw(authentication_session.account)
     return authentication_session
 
 

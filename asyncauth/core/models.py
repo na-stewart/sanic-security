@@ -19,25 +19,22 @@ from asyncauth.lib.twilio import send_sms
 
 class BaseErrorFactory:
     """
-    Easily raise or retrieve errors based off of variable values.
+    Easily raise or retrieve errors based off of variable values. Validates the ability for a model to be utilized.
     """
 
-    def __init__(self, model):
-        self.model = model
-
-    def get(self):
+    def get(self, model):
         """
         Retrieves an error if certain conditions are met.
         :return: error
         """
         raise NotImplementedError()
 
-    def throw(self):
+    def throw(self, model):
         """
         Retrieves an error and raises it if certain conditions are met.
         :return: error
         """
-        error = self.get()
+        error = self.get(model)
         if error:
             raise error
 
@@ -94,15 +91,15 @@ class Account(BaseModel):
     verified = fields.BooleanField(default=False)
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self):
+        def get(self, model):
             error = None
-            if not self.model:
+            if not model:
                 error = Account.NotFoundError('This account does not exist.')
-            elif self.model.deleted:
+            elif model.deleted:
                 error = Account.DeletedError('This account has been permanently deleted.')
-            elif self.model.disabled:
+            elif model.disabled:
                 error = Account.DisabledError()
-            elif not self.model.verified:
+            elif not model.verified:
                 error = Account.UnverifiedError()
             return error
 
@@ -258,15 +255,15 @@ class Session(BaseModel):
         abstract = True
 
     class ErrorFactory(BaseErrorFactory):
-        def get(self):
+        def get(self, model):
             error = None
-            if self.model is None:
+            if model is None:
                 error = Session.NotFoundError('Session could not be found.')
-            elif not self.model.valid:
+            elif not model.valid:
                 error = Session.InvalidError()
-            elif self.model.deleted:
+            elif model.deleted:
                 error = Session.DeletedError('Session has been deleted.')
-            elif is_expired(self.model.expiration_date):
+            elif is_expired(model.expiration_date):
                 error = Session.ExpiredError()
             return error
 
