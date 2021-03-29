@@ -1,17 +1,31 @@
+import asyncio
 import functools
+import hashlib
 import re
 
-import bcrypt
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
+from asyncauth.core.config import config
 from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession, Session
-from asyncauth.core.utils import hash_password
 from asyncauth.core.verification import request_verification
 
 session_factory = SessionFactory()
 account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
+
+
+async def hash_pw(password: str):
+    """
+    Turns passed text into hashed password
+
+    :param password: Password to be hashed.
+
+    :return: hashed
+    """
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, hashlib.pbkdf2_hmac, 'sha256', password.encode('utf-8'),
+                                      config['AUTH']['SECRET'].encode('utf-8'), 100000)
 
 
 async def account_recovery(request: Request, verification_session: VerificationSession):
@@ -23,7 +37,7 @@ async def account_recovery(request: Request, verification_session: VerificationS
 
     :param verification_session: Verification session containing account being verified.
     """
-    verification_session.account.password = hash_password(request.form.get('password'))
+    verification_session.account.password = hash_pw(request.form.get('password'))
     await AuthenticationSession.filter(account=verification_session.account, valid=True,
                                        deleted=False).update(valid=False)
     await verification_session.account.save(update_fields=['password'])
@@ -64,7 +78,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         raise Account.InvalidEmailError()
     try:
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
-                                       password=hash_password(forms.get('password')),
+                                       password=await hash_pw(forms.get('password')),
                                        phone=forms.get('phone'), verified=verified, disabled=disabled)
         return await request_verification(request, account) if not verified else account
     except IntegrityError:
@@ -87,7 +101,7 @@ async def login(request: Request):
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
     account_error_factory.throw(account)
-    if bcrypt.checkpw(form.get('password').encode('utf-8'), account.password):
+    if account.password == await hash_pw(form.get('password')):
         authentication_session = await session_factory.get('authentication', request, account=account)
         return authentication_session
     else:

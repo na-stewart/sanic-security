@@ -3,7 +3,6 @@ aiohttp~=3.7.3
 aiosqlite==0.16.1
 async-timeout==3.0.1
 attrs==20.3.0
-bcrypt==3.2.0
 certifi==2020.12.5
 cffi==1.14.5
 chardet==3.0.4

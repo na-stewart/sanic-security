@@ -81,7 +81,7 @@ class BaseModel(Model):
 class Account(BaseModel):
     """
     Contains all identifiable user information such as username, email, and more. All passwords must be hashed when
-    being created in the database using the hash_password(str) method in the utils package.
+    being created in the database using the hash_pw(str) method.
     """
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
