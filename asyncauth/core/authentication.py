@@ -35,7 +35,7 @@ async def account_recovery(request: Request, verification_session: VerificationS
 
     :param verification_session: Verification session containing account being verified.
     """
-    verification_session.account.password = hash_pw(request.form.get('password'))
+    verification_session.account.password = await hash_pw(request.form.get('password'))
     await AuthenticationSession.filter(account=verification_session.account, valid=True,
                                        deleted=False).update(valid=False)
     await verification_session.account.save(update_fields=['password'])

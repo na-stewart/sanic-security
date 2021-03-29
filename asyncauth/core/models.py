@@ -194,7 +194,7 @@ class Session(BaseModel):
 
         :param code: Code being cross-checked with session code.
         """
-        if self.attempts > 5:
+        if self.attempts >= 5:
             raise self.MaximumAttemptsError
         elif self.code != code:
             self.attempts += 1
