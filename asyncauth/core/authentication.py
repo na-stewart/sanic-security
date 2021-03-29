@@ -18,13 +18,11 @@ session_error_factory = Session.ErrorFactory()
 async def hash_pw(password: str):
     """
     Turns passed text into hashed password
-
     :param password: Password to be hashed.
-
     :return: hashed
     """
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, hashlib.pbkdf2_hmac, 'sha256', password.encode('utf-8'),
+    return await loop.run_in_executor(None, hashlib.pbkdf2_hmac, 'sha512', password.encode('utf-8'),
                                       config['AUTH']['SECRET'].encode('utf-8'), 100000)
 
 
