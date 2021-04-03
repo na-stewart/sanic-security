@@ -116,6 +116,7 @@ password=8KjLQtVKTCtItAi
 endpoint=asyncauth.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
 schema=asyncauth
 models=asyncauth.core.models
+engine=mysql
 generate=true
 
 [TWILIO]
