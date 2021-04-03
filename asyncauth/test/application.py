@@ -41,7 +41,7 @@ async def on_register(request):
 
 @app.post('api/test/register/verification')
 @requires_captcha()
-async def on_register_verification(request, captcha_session):
+async def on_register_verification(request):
     """
     Registration test with all built-in requirements.
     """
@@ -178,6 +178,7 @@ async def on_test_role(request, authentication_session):
 
 
 @app.get('api/test/recovery/request')
+@requires_captcha()
 async def on_recover_request(request):
     """
     Requests a recovery session to allow user to reset password with a code.

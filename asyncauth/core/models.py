@@ -155,10 +155,10 @@ class Session(BaseModel):
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=8, null=True)
 
-    def __init__(self, crosscheck_failed_error=None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
-        self.crosscheck_failed_error = crosscheck_failed_error
+        self.loop = asyncio.get_running_loop()
 
     def json(self):
         return {
@@ -196,13 +196,13 @@ class Session(BaseModel):
 
         :param same_site: Allows you to declare if your cookie should be restricted to a first-party or same-site context.
         """
-        loop = asyncio.get_running_loop()
+
         payload = {
             'date_created': str(self.date_created),
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = await loop.run_in_executor(None,  jwt.encode, payload, config['AUTH']['secret'], 'HS256')
+        encoded = await self.loop.run_in_executor(None,  jwt.encode, payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
@@ -216,9 +216,8 @@ class Session(BaseModel):
 
         :return: raw
         """
-        loop = asyncio.get_running_loop()
         try:
-            return await loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
+            return await self.loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
                                               config['AUTH']['secret'], 'HS256')
         except DecodeError:
             raise Session.DecodeError()
