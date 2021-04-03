@@ -106,7 +106,7 @@ Once Async Auth is all setup and good to go, implementing is easy as pie.
 First you have to create a configuration file called auth.ini. Below is an example of it's contents: 
 
 ```
-[ROSE]
+[AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
