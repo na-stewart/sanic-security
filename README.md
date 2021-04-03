@@ -234,6 +234,7 @@ Key | Value |
 
 ```python
 @app.get('api/recovery/request')
+@requires_captcha()
 async def on_recovery_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code() # Text verification code.
