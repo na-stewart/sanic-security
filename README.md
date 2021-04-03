@@ -106,7 +106,7 @@ Once Async Auth is all setup and good to go, implementing is easy as pie.
 First you have to create a configuration file called auth.ini. Below is an example of it's contents: 
 
 ```
-[ROSE]
+[AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
@@ -116,6 +116,7 @@ password=8KjLQtVKTCtItAi
 endpoint=asyncauth.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
 schema=asyncauth
 models=asyncauth.core.models
+engine=mysql
 generate=true
 
 [TWILIO]
@@ -233,6 +234,7 @@ Key | Value |
 
 ```python
 @app.get('api/recovery/request')
+@requires_captcha()
 async def on_recovery_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code() # Text verification code.
