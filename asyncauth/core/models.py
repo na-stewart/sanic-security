@@ -12,7 +12,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists, str_to_list
+from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -202,7 +202,7 @@ class Session(BaseModel):
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = await self.loop.run_in_executor(None,  jwt.encode, payload, config['AUTH']['secret'], 'HS256')
+        encoded = await self.loop.run_in_executor(None, jwt.encode, payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
@@ -218,7 +218,7 @@ class Session(BaseModel):
         """
         try:
             return await self.loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
-                                              config['AUTH']['secret'], 'HS256')
+                                                   config['AUTH']['secret'], 'HS256')
         except DecodeError:
             raise Session.DecodeError()
 

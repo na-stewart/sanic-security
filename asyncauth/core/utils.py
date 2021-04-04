@@ -49,19 +49,6 @@ def request_ip(request: Request):
     return ip if ip is not None else '0.0.0.0'
 
 
-
-
-
-def str_to_list(str):
-    """
-    Turns passed string into an array
-    :param str: string to be turned into an array
-    :return: array
-    """
-    return str.replace(']', '').replace('[', '').replace(' ', '') \
-        .replace('\'', '').replace('\"', '').split(',')
-
-
 def path_exists(path):
     """
     Checks if path exists, and creates it if it doesn't.

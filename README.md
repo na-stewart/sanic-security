@@ -110,15 +110,6 @@ First you have to create a configuration file called auth.ini. Below is an examp
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
-[TORTOISE]
-username=admin
-password=8KjLQtVKTCtItAi
-endpoint=asyncauth.cbwyreqgyzf6b.us-west-1.rds.amazonaws.com
-schema=asyncauth
-models=asyncauth.core.models
-engine=mysql
-generate=true
-
 [TWILIO]
 from=+12058469963
 token=1bcioi878ygO8fi766Fb34750e82a5ab
@@ -138,7 +129,8 @@ Once you've configured Async Auth, you can initialize Sanic with the example bel
 
 ```python
 if __name__ == '__main__':
-    initialize_auth(app)
+    register_tortoise(app, db_url='mysql://username:password@rds.amazonaws.com/asyncauth',
+                      modules={"models": ['asyncauth.core.models']}, generate_schemas=True)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
