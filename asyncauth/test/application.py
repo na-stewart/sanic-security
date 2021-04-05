@@ -1,12 +1,10 @@
 from sanic import Sanic
 from sanic.response import text, file
-from tortoise.contrib.sanic import register_tortoise
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
     logout, request_account_recovery, account_recovery
 from asyncauth.core.authorization import require_permissions, require_roles
-
-from asyncauth.core.config import config
+from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
 from asyncauth.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
@@ -211,6 +209,5 @@ async def on_error(request, exception):
 
 
 if __name__ == '__main__':
-    register_tortoise(app, db_url='mysql://admin:eG3FxzjAh9d1mdD63zky@personal.cbb4vtpozf6b.us-east-1.rds.amazonaws.com/amyrose',
-                      modules={"models": ['asyncauth.core.models']}, generate_schemas=True)
+    initialize_auth(app)
     app.run(host='0.0.0.0', port=8000, debug=True)

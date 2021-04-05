@@ -4,6 +4,7 @@ import hashlib
 import re
 
 from sanic.request import Request
+from sanic_ipware import get_client_ip
 from tortoise.exceptions import IntegrityError, ValidationError
 
 from asyncauth.core.config import config

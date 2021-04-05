@@ -11,7 +11,9 @@ def xss_prevention(request, response):
 def https_redirect(request, debug=False):
     """
     :param request: Sanic request parameter.
+
     :param debug: This middleware will redirect all requests to https unless debug is True.
+
     :return: redirect_url
     """
     if request.url.startswith('http://') and not debug:

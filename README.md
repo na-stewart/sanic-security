@@ -68,6 +68,7 @@ This library comes packed with features such as:
 * Role permissions
 * Captcha
 * Password recovery
+* Proxy support
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
@@ -109,6 +110,17 @@ First you have to create a configuration file called auth.ini. Below is an examp
 [AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
+initial_account=admin, password
+initial_role=Admin
+
+[TORTOISE]
+username=admin
+password=8UVbijLUGYfUtItAi
+endpoint=asyncauth.rds.amazonaws.com
+schema=asyncauth
+models=['asyncauth.core.models']
+engine=mysql
+generate=true
 
 [TWILIO]
 from=+12058469963
@@ -129,8 +141,7 @@ Once you've configured Async Auth, you can initialize Sanic with the example bel
 
 ```python
 if __name__ == '__main__':
-    register_tortoise(app, db_url='mysql://username:password@rds.amazonaws.com/asyncauth',
-                      modules={"models": ['asyncauth.core.models']}, generate_schemas=True)
+    initialize_auth(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 

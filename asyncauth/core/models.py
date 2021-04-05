@@ -1,18 +1,17 @@
 import asyncio
-import random
+import datetime
 import uuid
 
-import aiofiles
 import jwt
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
+from sanic_ipware import get_client_ip
 from tortoise import fields, Model
 
+from asyncauth.core.cache import get_cached_session_code
 from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -132,7 +131,7 @@ class Account(BaseModel):
 
     class DisabledError(AccountError):
         def __init__(self):
-            super().__init__("This account has been disabled.", 403)
+            super().__init__("This account has been disabled.", 401)
 
     class IncorrectPasswordError(AccountError):
         def __init__(self):
@@ -149,7 +148,7 @@ class Session(BaseModel):
     in order to identify the client. All sessions should be created using the SessionFactory().
     """
 
-    expiration_date = fields.DatetimeField(default=best_by, null=True)
+    expiration_date = fields.DatetimeField( null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     attempts = fields.IntField(default=0)
@@ -159,6 +158,7 @@ class Session(BaseModel):
         super().__init__(**kwargs)
         self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
         self.loop = asyncio.get_running_loop()
+
 
     def json(self):
         return {
@@ -246,7 +246,7 @@ class Session(BaseModel):
                 error = Session.InvalidError()
             elif model.deleted:
                 error = Session.DeletedError('Session has been deleted.')
-            elif is_expired(model.expiration_date):
+            elif model.expiration_date < datetime.datetime.now(datetime.timezone.utc):
                 error = Session.ExpiredError()
             return error
 
@@ -256,11 +256,11 @@ class Session(BaseModel):
 
     class MaximumAttemptsError(SessionError):
         def __init__(self):
-            super().__init__('You\'ve reached the maximum amount of attempts.', 403)
+            super().__init__('You\'ve reached the maximum amount of attempts.', 401)
 
     class DecodeError(SessionError):
         def __init__(self):
-            super().__init__('Session is not available.', 403)
+            super().__init__('Session is not available.', 404)
 
     class InvalidError(SessionError):
         def __init__(self):
@@ -280,31 +280,28 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def __init__(self):
-        self.session_cache_path = './resources/session-cache/'
+    def get_ip(self, request: Request):
+        """
+        Retrieves the ip address of the request.
 
-    async def get_cached_session_code(self):
+        :param request: Sanic request.
         """
-        Retrieves a random cached code from a codes.txt file
+        proxies = config['AUTH']['proxies'].split(',').strip() if config.has_option('AUTH', 'proxies') else None
+        proxy_count = int(config['AUTH']['proxies']) if config.has_option('AUTH', 'proxy_count') else 0
+        ip, routable = get_client_ip(request, proxy_trusted_ips=proxies, proxy_count=proxy_count)
+        return ip if ip is not None else '0.0.0.0'
 
-        :return: code
+    def generate_expiration_date(self, days: int = 1, minutes: int = 0):
         """
-        async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
-            codes = await f.read()
-            return random.choice(codes.split())
+        Creates an expiration date. Adds days to current datetime.
 
-    async def cache_session_codes(self):
+        :param days: days to be added to current time.
+
+        :param minutes: minutes to be added to the current time.
+
+        :return: expiration_date
         """
-        Generates up to 100 code and image variations in the resources/session-cache directory.
-        """
-        loop = asyncio.get_running_loop()
-        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-        if not path_exists(self.session_cache_path):
-            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
-                for i in range(100):
-                    code = random_str(8)
-                    await f.write(code + ' ')
-                    await loop.run_in_executor(None, image.write, code[:6], self.session_cache_path + code[:6] + '.png')
+        return datetime.datetime.utcnow() + datetime.timedelta(days=days, minutes=minutes)
 
     async def _account_via_decoded(self, request: Request, session: Session):
         """
@@ -332,19 +329,20 @@ class SessionFactory:
 
         :return:
         """
-        await self.cache_session_codes()
-        code = await self.get_cached_session_code()
+        code = await get_cached_session_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
+            return await CaptchaSession.create(ip=self.get_ip(request), code=code[:6],
+                                               expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'verification':
             account = account if account else await self._account_via_decoded(request, VerificationSession())
-            return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
+            return await VerificationSession.create(code=code, ip=self.get_ip(request), account=account,
+                                                    expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'authentication':
             account = account if account else await self._account_via_decoded(request, AuthenticationSession())
-            return await AuthenticationSession.create(account=account, ip=request_ip(request),
-                                                      expiration_date=best_by(30))
+            return await AuthenticationSession.create(account=account, ip=self.get_ip(request),
+                                                      expiration_date=self.generate_expiration_date(days=30))
         else:
-            raise ValueError
+            raise ValueError('Invalid session type.')
 
 
 class VerificationSession(Session):
@@ -439,3 +437,32 @@ class Permission(BaseModel):
     class InsufficientPermissionError(AuthError):
         def __init__(self):
             super().__init__('You do not have the required permissions for this action.', 403)
+
+
+class Proxy(BaseModel):
+    ip_from = fields.SmallIntField()
+    ip_to = fields.SmallIntField()
+    proxy_type = fields.CharField(max_length=3)
+    country_code = fields.CharField(max_length=2)
+    country_name = fields.CharField(max_length=64)
+    region_name = fields.CharField(max_length=128, null=True)
+    city_name = fields.CharField(max_length=128, null=True)
+    isp = fields.CharField(max_length=256, null=True)
+    domain = fields.CharField(max_length=128, null=True)
+    usage_type = fields.CharField(max_length=11, null=True)
+    asn = fields.SmallIntField()
+    last_seen = fields.SmallIntField()
+
+    def json(self):
+        return {
+            'ip_from': self.ip_from,
+            'ip_to': self.ip_to,
+            'proxy_type': self.proxy_type,
+            'country_code': self.country_code,
+            'country_name': self.country_name
+        }
+
+    class ProhibitedProxyError(AuthError):
+        def __init__(self):
+            super().__init__('You are attempting to access a resource from a prohibited proxy.', 403)
+
