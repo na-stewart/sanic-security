@@ -10,7 +10,7 @@ ip2proxy_database = IP2Proxy()
 def ip2proxy_crosscheck(ip: str, *args: str):
     ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
     if ip2proxy_database.is_proxy(ip) != 0:
-        if not args or ip2proxy_database.get_proxy_type(ip) in args:
+        if not args or ip2proxy_database.get_proxy_type(ip) not in args:
             raise ForbiddenConnectionError('You are attempting to access a resource from a forbidden proxy.')
     ip2proxy_database.close()
 

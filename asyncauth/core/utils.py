@@ -14,8 +14,8 @@ def get_ip(request: Request):
     :param request: Sanic request.
     """
     proxies = config['AUTH']['proxies'].split(',').strip() if config.has_option('AUTH', 'proxies') else None
-    proxy_count = int(config['AUTH']['proxy_count']) if config.has_option('AUTH', 'proxy_count') else None
-    proxy_order = config['AUTH']['proxy_order']
+    proxy_count = int(config['AUTH']['proxy_count']) if config.has_option('AUTH', 'proxy_count') else -1
+    proxy_order = config['AUTH']['proxy_order'] if config.has_option('AUTH', 'proxy_order') else 'left-most'
     ip, routable = get_client_ip(request, proxy_trusted_ips=proxies, proxy_count=proxy_count, proxy_order=proxy_order)
     if ip is None:
         if config['AUTH']['debug'] == 'true':
