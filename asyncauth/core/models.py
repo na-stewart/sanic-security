@@ -47,6 +47,14 @@ class AuthError(ServerError):
         super().__init__(message, code)
 
 
+class ForbiddenConnectionError(AuthError):
+    """
+    Error used specifically for any forbidden connections such as VPNs or proxies.
+    """
+    def __init__(self, message):
+        super().__init__(message, 403)
+
+
 class BaseModel(Model):
     """
     Base asyncauth model that all other models derive from. Some important elements to take in consideration is that
@@ -148,7 +156,7 @@ class Session(BaseModel):
     in order to identify the client. All sessions should be created using the SessionFactory().
     """
 
-    expiration_date = fields.DatetimeField( null=True)
+    expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     attempts = fields.IntField(default=0)
@@ -158,7 +166,6 @@ class Session(BaseModel):
         super().__init__(**kwargs)
         self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
         self.loop = asyncio.get_running_loop()
-
 
     def json(self):
         return {
@@ -426,32 +433,3 @@ class Permission(BaseModel):
     class InsufficientPermissionError(AuthError):
         def __init__(self):
             super().__init__('You do not have the required permissions for this action.', 403)
-
-
-class Proxy(BaseModel):
-    ip_from = fields.SmallIntField()
-    ip_to = fields.SmallIntField()
-    proxy_type = fields.CharField(max_length=3)
-    country_code = fields.CharField(max_length=2)
-    country_name = fields.CharField(max_length=64)
-    region_name = fields.CharField(max_length=128, null=True)
-    city_name = fields.CharField(max_length=128, null=True)
-    isp = fields.CharField(max_length=256, null=True)
-    domain = fields.CharField(max_length=128, null=True)
-    usage_type = fields.CharField(max_length=11, null=True)
-    asn = fields.SmallIntField()
-    last_seen = fields.SmallIntField()
-
-    def json(self):
-        return {
-            'ip_from': self.ip_from,
-            'ip_to': self.ip_to,
-            'proxy_type': self.proxy_type,
-            'country_code': self.country_code,
-            'country_name': self.country_name
-        }
-
-    class ProhibitedProxyError(AuthError):
-        def __init__(self):
-            super().__init__('You are attempting to access a resource from a prohibited proxy.', 403)
-

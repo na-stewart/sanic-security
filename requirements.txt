@@ -13,12 +13,12 @@ httpx==0.15.4
 idna==2.10
 iso8601==0.1.14
 multidict==5.1.0
-Pillow~=8.1.0
+Pillow==8.2.0
 pycparser==2.20
 PyPika==0.44.1
 pytz==2020.5
 rfc3986==1.4.0
-sanic==20.12.1
+sanic==21.3.2
 six==1.15.0
 sniffio==1.2.0
 tortoise-orm==0.16.21
@@ -32,3 +32,4 @@ PyJWT==2.0.1
 aiosmtplib==1.1.4
 setuptools~=50.3.2
 captcha==0.3
+IP2Proxy==3.1.2

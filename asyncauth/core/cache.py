@@ -1,10 +1,10 @@
 import asyncio
+import random
 import string
-from random import random
 
 import aiofiles
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from captcha.image import ImageCaptcha
-
 from asyncauth.core.config import config
 from asyncauth.core.utils import path_exists
 from asyncauth.lib.ip2proxy import retrieve_ip2proxy_bin
@@ -12,19 +12,24 @@ from asyncauth.lib.ip2proxy import retrieve_ip2proxy_bin
 auth_cache_path = './resources/auth-cache/'
 
 
+async def cache_ip2proxy_database():
+    """
+    Caches a new IP2Proxy database.
+    """
+    ip2proxy_bin = await retrieve_ip2proxy_bin()
+    async with aiofiles.open(auth_cache_path + 'ip2proxy/' + 'IP2PROXY.BIN', mode="w") as f:
+        await f.write(ip2proxy_bin)
+
+
 async def initialize_ip2proxy_cache():
     """
-    Caches a new IP2Proxy database every 00:15 GMT.
+    Initializes a async cron job that runs every 00:15 GMT to refresh the IP2Proxy database.
     """
-    ip2proxy_cache_path = auth_cache_path + 'ip2proxy/'
-    while True:
-        if path_exists(ip2proxy_cache_path):
-            ip2proxy_bin = await retrieve_ip2proxy_bin()
-            async with aiofiles.open(ip2proxy_cache_path + 'IP2PROXY.BIN', mode="w") as f:
-                await f.write(ip2proxy_bin)
-        else:
-            continue
-        await asyncio.sleep(4500)
+    if not path_exists(auth_cache_path + 'ip2proxy/'):
+        await cache_ip2proxy_database()
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(cache_ip2proxy_database, 'cron', minute='15', hour='0', month='*', week='*', day='*')
+    scheduler.start()
 
 
 async def initialize_session_cache():

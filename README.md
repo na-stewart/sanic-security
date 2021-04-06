@@ -68,7 +68,8 @@ This library comes packed with features such as:
 * Role permissions
 * Captcha
 * Password recovery
-* Proxy support
+* Load balancer/proxy support
+* IP2Proxy validation
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
@@ -110,8 +111,9 @@ First you have to create a configuration file called auth.ini. Below is an examp
 [AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
-initial_account=admin, password
-initial_role=Admin
+proxy_order=left-most
+proxies=3.11.54.118, 28.134.131.134
+proxy_count=1
 
 [TORTOISE]
 username=admin
@@ -121,6 +123,10 @@ schema=asyncauth
 models=['asyncauth.core.models']
 engine=mysql
 generate=true
+
+[IP2PROXY]
+key=HGVYubjntfyoBjhbgvyrtd657ucgydtfXwjiou
+code=PX2LITE
 
 [TWILIO]
 from=+12058469963
@@ -136,6 +142,17 @@ password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
 ```
+
+If you are not using any proxies or load balancers with Sanic, you may remove the following options: `proxy_order`, 
+`proxies`, `proxy_count`
+
+If you are initialing tortoise-orm somewhere other then the provided initializer, you may deleted the `TORTOISE` section.
+
+If you are are not planning to use IP2Proxy, you may delete the `IP2PROXY` section.
+
+If you are not using SMS as a verification method, you may delete the `TWILLIO` section.
+
+If you are not using email as a verification method, you may delete the `SMTP` section.
 
 Once you've configured Async Auth, you can initialize Sanic with the example below:
 
