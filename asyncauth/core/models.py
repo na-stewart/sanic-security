@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import uuid
 
@@ -165,7 +164,6 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
-        self.loop = asyncio.get_running_loop()
 
     def json(self):
         return {
@@ -193,7 +191,7 @@ class Session(BaseModel):
             self.valid = False
             await self.save(update_fields=['valid'])
 
-    async def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
+    def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -209,13 +207,13 @@ class Session(BaseModel):
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = await self.loop.run_in_executor(None, jwt.encode, payload, config['AUTH']['secret'], 'HS256')
+        encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
         response.cookies[self.cookie]['samesite'] = same_site
 
-    async def decode_raw(self, request: Request):
+    def decode_raw(self, request: Request):
         """
         Decodes JWT token in cookie to dict.
 
@@ -224,8 +222,7 @@ class Session(BaseModel):
         :return: raw
         """
         try:
-            return await self.loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
-                                                   config['AUTH']['secret'], 'HS256')
+            return jwt.decode(request.cookies.get(self.cookie), config['AUTH']['secret'], 'HS256')
         except DecodeError:
             raise Session.DecodeError()
 
@@ -238,7 +235,7 @@ class Session(BaseModel):
         :return: session
         """
 
-        decoded = await self.decode_raw(request)
+        decoded = self.decode_raw(request)
         return await self.filter(uid=decoded.get('uid')).prefetch_related('account').first()
 
     class Meta:
