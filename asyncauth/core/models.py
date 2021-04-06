@@ -7,11 +7,11 @@ from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
-from sanic_ipware import get_client_ip
 from tortoise import fields, Model
 
 from asyncauth.core.cache import get_cached_session_code
 from asyncauth.core.config import config
+from asyncauth.core.utils import get_ip
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -280,17 +280,6 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def get_ip(self, request: Request):
-        """
-        Retrieves the ip address of the request.
-
-        :param request: Sanic request.
-        """
-        proxies = config['AUTH']['proxies'].split(',').strip() if config.has_option('AUTH', 'proxies') else None
-        proxy_count = int(config['AUTH']['proxies']) if config.has_option('AUTH', 'proxy_count') else 0
-        ip, routable = get_client_ip(request, proxy_trusted_ips=proxies, proxy_count=proxy_count)
-        return ip if ip is not None else '0.0.0.0'
-
     def generate_expiration_date(self, days: int = 1, minutes: int = 0):
         """
         Creates an expiration date. Adds days to current datetime.
@@ -331,15 +320,15 @@ class SessionFactory:
         """
         code = await get_cached_session_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=self.get_ip(request), code=code[:6],
+            return await CaptchaSession.create(ip=get_ip(request), code=code[:6],
                                                expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'verification':
             account = account if account else await self._account_via_decoded(request, VerificationSession())
-            return await VerificationSession.create(code=code, ip=self.get_ip(request), account=account,
+            return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
                                                     expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'authentication':
             account = account if account else await self._account_via_decoded(request, AuthenticationSession())
-            return await AuthenticationSession.create(account=account, ip=self.get_ip(request),
+            return await AuthenticationSession.create(account=account, ip=get_ip(request),
                                                       expiration_date=self.generate_expiration_date(days=30))
         else:
             raise ValueError('Invalid session type.')

@@ -6,7 +6,7 @@ import aiofiles
 from captcha.image import ImageCaptcha
 
 from asyncauth.core.config import config
-from asyncauth.core.utils import path_exists, random_str
+from asyncauth.core.utils import path_exists
 
 auth_cache_path = './resources/auth-cache/'
 
