@@ -60,7 +60,7 @@
 Async Auth is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library comes packed with features such as:
 
-* SMS and email verificatio
+* SMS and email verification
 * Easy login and registering
 * JWT
 * Easy database integration
