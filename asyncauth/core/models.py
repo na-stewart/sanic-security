@@ -386,7 +386,7 @@ class AuthenticationSession(Session):
         :raises UnknownLocationError:
         """
 
-        if not await AuthenticationSession.filter(ip=request_ip(request), account=self.account).exists():
+        if not await AuthenticationSession.filter(ip=get_ip(request), account=self.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
 

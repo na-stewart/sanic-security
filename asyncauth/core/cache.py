@@ -7,13 +7,29 @@ from captcha.image import ImageCaptcha
 
 from asyncauth.core.config import config
 from asyncauth.core.utils import path_exists
+from asyncauth.lib.ip2proxy import retrieve_ip2proxy_bin
 
 auth_cache_path = './resources/auth-cache/'
 
 
+async def initialize_ip2proxy_cache():
+    """
+    Caches a new IP2Proxy database every 00:15 GMT.
+    """
+    ip2proxy_cache_path = auth_cache_path + 'ip2proxy/'
+    while True:
+        if path_exists(ip2proxy_cache_path):
+            ip2proxy_bin = await retrieve_ip2proxy_bin()
+            async with aiofiles.open(ip2proxy_cache_path + 'IP2PROXY.BIN', mode="w") as f:
+                await f.write(ip2proxy_bin)
+        else:
+            continue
+        await asyncio.sleep(4500)
+
+
 async def initialize_session_cache():
     """
-    Generates up to 100 code and image variations in the resources/session-cache directory.
+    Caches up to 100 code and image variations.
     """
     loop = asyncio.get_running_loop()
     session_cache_path = auth_cache_path + 'session/'
