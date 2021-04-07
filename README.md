@@ -119,7 +119,7 @@ username=admin
 password=8UVbijLUGYfUtItAi
 endpoint=asyncauth.rds.amazonaws.com
 schema=asyncauth
-models=['asyncauth.core.models']
+models=asyncauth.core.models
 engine=mysql
 generate=true
 
