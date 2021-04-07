@@ -1,12 +1,5 @@
 import os
 
-from sanic.request import Request
-from sanic_ipware import get_client_ip
-
-from asyncauth.core.config import config
-
-
-
 
 def path_exists(path):
     """

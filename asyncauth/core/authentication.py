@@ -3,6 +3,7 @@ import hashlib
 import re
 
 from sanic.request import Request
+from sanic_ipware import get_client_ip
 from tortoise.exceptions import IntegrityError, ValidationError
 
 from asyncauth.core.config import config
@@ -29,7 +30,9 @@ def get_ip(request: Request):
 
     :param request: Sanic request.
     """
-
+    proxies = config['AUTH']['proxies'].split(',').strip() if config.has_option('AUTH', 'proxies') else None
+    proxy_count = int(config['AUTH']['proxy_count']) if config.has_option('AUTH', 'proxy_count') else None
+    ip, routable = get_client_ip(request, proxy_trusted_ips=proxies, proxy_count=proxy_count)
     return request.remote_addr
 
 

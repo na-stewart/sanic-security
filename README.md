@@ -335,7 +335,7 @@ async def on_request_verification(request):
 async def on_resend_verification(request):
     verification_session = await VerificationSession().decode(request)
     await verification_session.text_code() # Text verification code.
-    imrification_session.email_code() # Or email verification code.
+    await verification_session.email_code() # Or email verification code.
     return json('Verification code resend successful', verification_session.json())
 ```
 
