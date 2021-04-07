@@ -27,7 +27,7 @@ async def request_middleware(request):
     """
     Request middleware test.
     """
-    return https_redirect(request, True)
+    return https_redirect(request)
 
 
 @app.post('api/test/register')
@@ -48,7 +48,7 @@ async def on_register_verification(request):
     verification_session = await register(request)
     await verification_session.text_code()
     response = json('Registration successful', verification_session.account.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 
 
@@ -78,7 +78,7 @@ async def on_request_captcha(request):
     """
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    await captcha_session.encode(response)
+    captcha_session.encode(response)
     return response
 
 
@@ -101,7 +101,7 @@ async def new_verification_request(request):
     verification_session = await request_verification(request)
     await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 
 
@@ -112,7 +112,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    await authentication_session.encode(response)
+    authentication_session.encode(response)
     return response
 
 
@@ -186,7 +186,7 @@ async def on_recover_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code()
     response = json('Recovery request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 
 

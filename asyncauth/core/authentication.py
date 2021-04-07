@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import hashlib
 import re
@@ -22,6 +21,16 @@ def hash_pw(password: str):
     :return: hashed
     """
     return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
+
+
+def get_ip(request: Request):
+    """
+    Retrieves the ip address of the request.
+
+    :param request: Sanic request.
+    """
+
+    return request.remote_addr
 
 
 async def account_recovery(request: Request, verification_session: VerificationSession):
