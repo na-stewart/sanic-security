@@ -1,26 +1,16 @@
 import functools
-import hashlib
 import re
 
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.config import config
 from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession, Session
+from asyncauth.core.utils import hash_pw
 from asyncauth.core.verification import request_verification
 
 session_factory = SessionFactory()
 account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
-
-
-def hash_pw(password: str):
-    """
-    Turns passed text into hashed password
-    :param password: Password to be hashed.
-    :return: hashed
-    """
-    return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
 
 
 async def account_recovery(request: Request, verification_session: VerificationSession):

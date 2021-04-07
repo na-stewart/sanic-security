@@ -36,6 +36,7 @@ async def initialize_ip2proxy_cache():
     scheduler.add_job(cache_ip2proxy_database, 'cron', minute='15', hour='0', month='*', week='*', day='*')
     scheduler.start()
 
+
 # TODO make asynchronous
 def ip2proxy_middleware(ip: str, *args: str):
     ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
@@ -43,4 +44,3 @@ def ip2proxy_middleware(ip: str, *args: str):
         if not args or ip2proxy_database.get_proxy_type(ip) not in args:
             raise ForbiddenConnectionError('You are attempting to access a resource from a forbidden proxy.')
     ip2proxy_database.close()
-

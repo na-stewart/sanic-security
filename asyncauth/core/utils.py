@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 from sanic.request import Request
@@ -25,6 +26,16 @@ def https_redirect_middleware(request: Request):
         return redirect(url)
 
 
+def hash_pw(password: str):
+    """
+    Turns passed text into hashed password
+    :param password: Password to be hashed.
+    :return: hashed
+    """
+    return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
+
+
+# TODO get this working with proxies and error out when null.
 def get_ip(request: Request):
     """
     Retrieves the ip address of the request.
