@@ -142,16 +142,10 @@ tls=true
 start_tls=false
 ```
 
-If you are not using any proxies or load balancers with Sanic, you may remove the following options: `proxy_order`, 
-`proxies`, `proxy_count`
+If you are not using any proxies or load balancers with Sanic, you may remove the following options: `proxies`, 
+`proxy_count`
 
-If you are initialing tortoise-orm somewhere other then the provided initializer, you may deleted the `TORTOISE` section.
-
-If you are are not planning to use IP2Proxy, you may delete the `IP2PROXY` section.
-
-If you are not using SMS as a verification method, you may delete the `TWILLIO` section.
-
-If you are not using email as a verification method, you may delete the `SMTP` section.
+You may remove each section in the configuration you aren't using,
 
 Once you've configured Async Auth, you can initialize Sanic with the example below:
 

@@ -1,7 +1,12 @@
+import asyncio
 import datetime
+import random
+import string
 import uuid
 
+import aiofiles
 import jwt
+from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.exceptions import ServerError
 from sanic.request import Request
@@ -10,7 +15,7 @@ from tortoise import fields, Model
 
 from asyncauth.core.cache import get_cached_session_code
 from asyncauth.core.config import config
-from asyncauth.core.utils import get_ip
+from asyncauth.core.utils import get_ip, path_exists
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -175,6 +180,32 @@ class Session(BaseModel):
             'attempts': self.attempts
         }
 
+    @staticmethod
+    async def initialize_cache():
+        """
+        Caches up to 100 code and image variations.
+        """
+        session_cache = './resources/auth-cache/session/'
+        loop = asyncio.get_running_loop()
+        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+        if not path_exists(session_cache):
+            async with aiofiles.open(session_cache + 'codes.txt', mode="w") as f:
+                for i in range(100):
+                    code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                    await f.write(code + ' ')
+                    await loop.run_in_executor(None, image.write, code[:6], session_cache + code[:6] + '.png')
+
+    @staticmethod
+    async def get_code():
+        """
+        Retrieves a random cached code from a codes.txt file
+
+        :return: code
+        """
+        async with aiofiles.open('./resources/auth-cache/session/codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
+
     async def crosscheck_code(self, code: str):
         """
         Used to check if code passed is equivalent to the session code.
@@ -322,7 +353,7 @@ class SessionFactory:
 
         :return:
         """
-        code = await get_cached_session_code()
+        code = await Session.get_code()
         if session_type == 'captcha':
             return await CaptchaSession.create(ip=get_ip(request), code=code[:6],
                                                expiration_date=self.generate_expiration_date(minutes=1))

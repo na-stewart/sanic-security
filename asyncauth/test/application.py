@@ -2,7 +2,7 @@ from sanic import Sanic
 from sanic.response import text, file
 
 from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_account_recovery, account_recovery
+    logout, request_account_recovery, account_recovery, get_ip
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.middleware import xss_prevention, https_redirect
@@ -199,6 +199,12 @@ async def on_recover(request, verification_session):
     await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 
+@app.get('api/test/ip')
+async def on_recover(request):
+    """
+    Retreives client ip address
+    """
+    return json('Ip address retreived successfully', get_ip(request))
 
 @app.exception(AuthError)
 async def on_error(request, exception):
