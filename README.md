@@ -111,7 +111,6 @@ First you have to create a configuration file called auth.ini. Below is an examp
 [AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
-proxy_order=left-most
 proxies=3.11.54.118, 28.134.131.134
 proxy_count=1
 
