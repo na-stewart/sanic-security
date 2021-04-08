@@ -3,9 +3,9 @@ import aiofiles
 import aiohttp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from asyncauth.core.config import config
-from asyncauth.core.models import AuthError
-from asyncauth.core.utils import path_exists, get_ip
+from sanicsecurity.core.config import config
+from sanicsecurity.core.models import AuthError
+from sanicsecurity.core.utils import path_exists, get_ip
 
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
 

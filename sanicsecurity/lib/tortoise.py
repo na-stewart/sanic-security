@@ -1,7 +1,7 @@
 from sanic import Sanic
 from tortoise import Tortoise
 
-from asyncauth.core.config import config
+from sanicsecurity.core.config import config
 
 
 async def initialize_tortoise(app: Sanic):

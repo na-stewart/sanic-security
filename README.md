@@ -144,13 +144,14 @@ Once you've configured sanic-security, you can initialize Sanic with the example
 
 ```python
 if __name__ == '__main__':
-    initialize_auth(app)
+    initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
 Most request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 
 ```python
+from sanic.response import json as sanic_json
 def json(message, content, status_code=200):
     payload = {
         'message': message,
@@ -164,7 +165,7 @@ def json(message, content, status_code=200):
 
 * Registration (With all verification requirements)
 
-Phone can be null or empty.
+Phone can be null or empty. A captcha request must be made.
 
 Key | Value |
 --- | --- |
@@ -261,7 +262,7 @@ Key | Value |
 ```python
 @app.post('api/recovery')
 async def on_recovery(request):
-    await account_recovery(request)
+    verification_session = await account_recovery(request)
     return json('Account recovered successfully', verification_session.account.json())
 ```
 
@@ -300,7 +301,42 @@ async def on_captcha_img(request):
     return await file(img_path)
 ```
 
-* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be invalidated)
+* Require Captcha
+
+Key | Value |
+--- | --- |
+**captcha** | Aj8HgD
+
+```python
+@app.post('api/captcha/attempt')
+@requires_captcha()
+async def on_captcha_attempt(request, captcha_session):
+    response = json('Your captcha attempt was correct!', captcha_session.json())
+    return response
+```
+
+
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post('api/register/verify')
+async def on_verify(request):
+    verification_session = await verify_account(request)
+    return json('Verification successful!', verification_session.json())
+```
+
+
+* Dynamic Verification
+
+
+
+
+* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
+  invalid or expired.)
 
 ```python
 @app.get('api/verification/request')
@@ -313,7 +349,7 @@ async def on_request_verification(request):
     return response
 ```
 
-* Resend Verification (Does not create new verification code, simply resends the code)
+* Resend Verification (Does not create new verification code, only resends current session code.)
 
 ```python
 @app.get('api/verification/resend')
@@ -324,19 +360,7 @@ async def on_resend_verification(request):
     return json('Verification code resend successful', verification_session.json())
 ```
 
-* Verify Account
 
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post('api/register/verify')
-@requires_verification()
-async def on_verify(request, verification_session):
-    await verify_account(verification_session)
-    return json('Verification successful!', verification_session.json())
-```
 
 * Requires Verification
 

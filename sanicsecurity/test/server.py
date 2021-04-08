@@ -2,17 +2,17 @@ from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.response import text, file
 from sanic.response import json as sanic_json
-from asyncauth.core.authentication import register, login, requires_authentication, logout
-from asyncauth.core.authorization import require_permissions, require_roles
-from asyncauth.core.initializer import initialize_auth
-from asyncauth.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
-from asyncauth.core.recovery import request_account_recovery, account_recovery
-from asyncauth.core.utils import xss_prevention_middleware, https_redirect_middleware
-from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
+from sanicsecurity.core.authentication import register, login, requires_authentication, logout
+from sanicsecurity.core.authorization import require_permissions, require_roles
+from sanicsecurity.core.initializer import initialize_security
+from sanicsecurity.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
+from sanicsecurity.core.recovery import request_account_recovery, account_recovery
+from sanicsecurity.core.utils import xss_prevention_middleware, https_redirect_middleware
+from sanicsecurity.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from asyncauth.lib.ip2proxy import ip2proxy_middleware
+from sanicsecurity.lib.ip2proxy import ip2proxy_middleware
 
-app = Sanic('asyncauth Postman Server Test')
+app = Sanic('sanicsecurity Postman Server Test')
 
 
 def json(message, content, status_code=200):
@@ -225,5 +225,5 @@ async def on_error(request, exception):
 
 
 if __name__ == '__main__':
-    initialize_auth(app)
+    initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)

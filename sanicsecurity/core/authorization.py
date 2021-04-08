@@ -3,8 +3,8 @@ from fnmatch import fnmatch
 
 from sanic.request import Request
 
-from asyncauth.core.authentication import authenticate
-from asyncauth.core.models import Role, Permission
+from sanicsecurity.core.authentication import authenticate
+from sanicsecurity.core.models import Role, Permission
 
 
 async def check_permissions(request: Request, *required_permissions: str):

@@ -4,7 +4,7 @@ import os
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
 
-from asyncauth.core.config import config
+from sanicsecurity.core.config import config
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):

@@ -12,10 +12,10 @@ from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
-from asyncauth.core.config import config
-from asyncauth.core.utils import path_exists, get_ip
-from asyncauth.lib.smtp import send_email
-from asyncauth.lib.twilio import send_sms
+from sanicsecurity.core.config import config
+from sanicsecurity.core.utils import path_exists, get_ip
+from sanicsecurity.lib.smtp import send_email
+from sanicsecurity.lib.twilio import send_sms
 
 
 class BaseErrorFactory:
@@ -42,7 +42,7 @@ class BaseErrorFactory:
 
 class AuthError(ServerError):
     """
-    Base error for all asyncauth related errors.
+    Base error for all sanicsecurity related errors.
     """
 
     def __init__(self, message, code):
@@ -51,9 +51,9 @@ class AuthError(ServerError):
 
 class BaseModel(Model):
     """
-    Base asyncauth model that all other models derive from. Some important elements to take in consideration is that
+    Base sanicsecurity model that all other models derive from. Some important elements to take in consideration is that
     deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
-    the database. Retrieving asyncauth models should be done via filtering with the 'uid' variable rather then the id
+    the database. Retrieving sanicsecurity models should be done via filtering with the 'uid' variable rather then the id
     variable.
     """
 
@@ -167,6 +167,7 @@ class Session(BaseModel):
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'expiration_date': str(self.expiration_date),
+            'account': self.account.email if isinstance(self.account, Account) else None,
             'valid': self.valid,
             'attempts': self.attempts
         }
