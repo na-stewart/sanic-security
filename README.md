@@ -241,7 +241,7 @@ Key | Value |
 ```python
 @app.get('api/recovery/request')
 @requires_captcha()
-async def on_recovery_request(request):
+async def on_recovery_request(request, captcha_session):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
@@ -260,9 +260,8 @@ Key | Value |
 
 ```python
 @app.post('api/recovery')
-@requires_verification()
-async def on_recovery(request, verification_session):
-    await account_recovery(request, verification_session)
+async def on_recovery(request):
+    await account_recovery(request)
     return json('Account recovered successfully', verification_session.account.json())
 ```
 

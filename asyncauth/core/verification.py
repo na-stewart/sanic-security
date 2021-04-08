@@ -109,6 +109,7 @@ async def verify_account(request: Request):
     verification_session = await verify(request, 'account')
     verification_session.account.verified = True
     await verification_session.account.save(update_fields=['verified'])
+    return verification_session
 
 
 def requires_verification(verification_type: str = None):

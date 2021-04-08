@@ -2,11 +2,11 @@ from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.response import text, file
 from sanic.response import json as sanic_json
-from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_account_recovery, account_recovery
+from asyncauth.core.authentication import register, login, requires_authentication, logout
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
 from asyncauth.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
+from asyncauth.core.recovery import request_account_recovery, account_recovery
 from asyncauth.core.utils import xss_prevention_middleware, https_redirect_middleware
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
@@ -71,12 +71,11 @@ async def on_register_verification(request):
 
 
 @app.post('api/test/register/verify')
-@requires_verification()
-async def on_verify(request, verification_session):
+async def on_verify(request):
     """
     Attempt to verify account and allow access if unverified.
     """
-    await verify_account(verification_session)
+    verification_session = await verify_account(request)
     return json('Verification successful!', verification_session.json())
 
 
@@ -209,12 +208,11 @@ async def on_recover_request(request):
 
 
 @app.post('api/test/recovery')
-@requires_verification('recovery')
-async def on_recover(request, verification_session):
+async def on_recover(request):
     """
     Changes and recovers an account's password.
     """
-    await account_recovery(request, verification_session)
+    verification_session = await account_recovery(request)
     return json('Account recovered successfully', verification_session.account.json())
 
 

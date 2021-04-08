@@ -8,18 +8,19 @@ from asyncauth.core.verification import request_verification, verify
 
 async def account_recovery(request: Request):
     """
-    Recovers an account by setting the password to a new one passed through the method.
+    Recovers an account by setting the password to a new one.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     password.
 
-    :param verification_session: Verification session containing account being verified.
+    return: verification_session
     """
     verification_session = await verify(request, 'recovery')
     verification_session.account.password = hash_pw(request.form.get('password'))
     await AuthenticationSession.filter(account=verification_session.account, valid=True,
                                        deleted=False).update(valid=False)
     await verification_session.account.save(update_fields=['password'])
+    return verification_session
 
 
 async def request_account_recovery(request: Request):
