@@ -10,7 +10,7 @@ from asyncauth.core.models import AuthError, Permission, Role, VerificationSessi
 from asyncauth.core.utils import xss_prevention_middleware, https_redirect_middleware
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-
+from asyncauth.lib.ip2proxy import ip2proxy_middleware
 
 app = Sanic('asyncauth Postman Server Test')
 
@@ -44,6 +44,7 @@ async def request_middleware(request):
     """
     Request middleware test.
     """
+    await ip2proxy_middleware(request)
     return https_redirect_middleware(request)
 
 

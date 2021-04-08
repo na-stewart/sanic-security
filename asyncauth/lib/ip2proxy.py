@@ -1,13 +1,13 @@
+import aioIP2Proxy
 import aiofiles
 import aiohttp
-from IP2Proxy import IP2Proxy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from asyncauth.core.config import config
 from asyncauth.core.models import AuthError
-from asyncauth.core.utils import path_exists
+from asyncauth.core.utils import path_exists, get_ip
 
-ip2proxy_database = IP2Proxy()
+ip2proxy_database = aioIP2Proxy.IP2Proxy()
 
 
 class IP2ProxyError(AuthError):
@@ -23,11 +23,11 @@ async def cache_ip2proxy_database():
     async with aiohttp.ClientSession() as session:
         url = "https://www.ip2location.com/download/?token={0}&file={1}".format(key, code)
         async with session.get(url) as resp:
-            async with aiofiles.open('./resources/auth-cache/ip2proxy/IP2PROXY.BIN', mode="wb") as f:
-                response = await resp.read()
-                if response == b'NO PERMISSION':
-                    raise IP2ProxyError('Could not download IP2Proxy database due to incorrect credentials.', 500)
-                else:
+            response = await resp.read()
+            if response == b'NO PERMISSION':
+                raise IP2ProxyError('Could not download IP2Proxy database due to incorrect credentials.', 500)
+            else:
+                async with aiofiles.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin', mode="wb") as f:
                     await f.write(await resp.read())
 
 
@@ -42,10 +42,11 @@ async def initialize_ip2proxy_cache():
     scheduler.start()
 
 
-# TODO make asynchronous
-def ip2proxy_middleware(ip: str, *args: str):
-    ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
-    if ip2proxy_database.is_proxy(ip) != 0:
-        if not args or ip2proxy_database.get_proxy_type(ip) not in args:
-            raise IP2ProxyError('You are attempting to access a resource from a forbidden proxy.', 403)
-    ip2proxy_database.close()
+async def ip2proxy_middleware(request):
+    await ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
+    rec = await ip2proxy_database.is_proxy("1.0.0.8")
+    print(ip2proxy_database.get_database_version())
+    print(await ip2proxy_database.is_proxy("1.0.0.8"))
+    if await ip2proxy_database.is_proxy(get_ip(request)) > 0:
+        raise IP2ProxyError('You are attempting to access a resource from a forbidden proxy.', 403)
+    await ip2proxy_database.close()
