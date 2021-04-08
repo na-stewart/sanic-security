@@ -4,10 +4,14 @@ from IP2Proxy import IP2Proxy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from asyncauth.core.config import config
-from asyncauth.core.models import ForbiddenConnectionError
+from asyncauth.core.models import AuthError
 from asyncauth.core.utils import path_exists
 
 ip2proxy_database = IP2Proxy()
+
+
+class IP2ProxyError(AuthError):
+    pass
 
 
 async def cache_ip2proxy_database():
@@ -19,11 +23,12 @@ async def cache_ip2proxy_database():
     async with aiohttp.ClientSession() as session:
         url = "https://www.ip2location.com/download/?token={0}&file={1}".format(key, code)
         async with session.get(url) as resp:
-            if resp.status == 200:
-                async with aiofiles.open('./resources/auth-cache/ip2proxy/IP2PROXY.BIN', mode="wb") as f:
+            async with aiofiles.open('./resources/auth-cache/ip2proxy/IP2PROXY.BIN', mode="wb") as f:
+                response = await resp.read()
+                if response == b'NO PERMISSION':
+                    raise IP2ProxyError('Could not download IP2Proxy database due to incorrect credentials.', 500)
+                else:
                     await f.write(await resp.read())
-            else:
-                raise Exception("Could not download IP2Proxy database.\n" + str(await resp.read()))
 
 
 async def initialize_ip2proxy_cache():
@@ -42,5 +47,5 @@ def ip2proxy_middleware(ip: str, *args: str):
     ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
     if ip2proxy_database.is_proxy(ip) != 0:
         if not args or ip2proxy_database.get_proxy_type(ip) not in args:
-            raise ForbiddenConnectionError('You are attempting to access a resource from a forbidden proxy.')
+            raise IP2ProxyError('You are attempting to access a resource from a forbidden proxy.', 403)
     ip2proxy_database.close()

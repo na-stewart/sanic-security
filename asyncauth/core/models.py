@@ -12,10 +12,8 @@ from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
-
-from asyncauth.core.cache import get_cached_session_code
 from asyncauth.core.config import config
-from asyncauth.core.utils import get_ip, path_exists
+from asyncauth.core.utils import path_exists
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -49,14 +47,6 @@ class AuthError(ServerError):
 
     def __init__(self, message, code):
         super().__init__(message, code)
-
-
-class ForbiddenConnectionError(AuthError):
-    """
-    Error used specifically for any forbidden connections such as VPNs or proxies.
-    """
-    def __init__(self, message):
-        super().__init__(message, 403)
 
 
 class BaseModel(Model):
@@ -355,15 +345,15 @@ class SessionFactory:
         """
         code = await Session.get_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=get_ip(request), code=code[:6],
+            return await CaptchaSession.create(ip=request.remote_addr, code=code[:6],
                                                expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'verification':
             account = account if account else await self._account_via_decoded(request, VerificationSession())
-            return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
+            return await VerificationSession.create(code=code, ip=request.remote_addr, account=account,
                                                     expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'authentication':
             account = account if account else await self._account_via_decoded(request, AuthenticationSession())
-            return await AuthenticationSession.create(account=account, ip=get_ip(request),
+            return await AuthenticationSession.create(account=account, ip=request.remote_addr,
                                                       expiration_date=self.generate_expiration_date(days=30))
         else:
             raise ValueError('Invalid session type.')

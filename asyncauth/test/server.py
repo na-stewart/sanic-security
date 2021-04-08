@@ -1,17 +1,34 @@
 from sanic import Sanic
+from sanic.exceptions import ServerError
 from sanic.response import text, file
-
+from sanic.response import json as sanic_json
 from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_account_recovery, account_recovery, get_ip
+    logout, request_account_recovery, account_recovery
 from asyncauth.core.authorization import require_permissions, require_roles
 from asyncauth.core.initializer import initialize_auth
-from asyncauth.core.middleware import xss_prevention, https_redirect
 from asyncauth.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
+from asyncauth.core.utils import xss_prevention_middleware, https_redirect_middleware
 from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from asyncauth.test.models import json
 
-app = Sanic('asyncauth Postman Test')
+
+app = Sanic('asyncauth Postman Server Test')
+
+
+def json(message, content, status_code=200):
+    payload = {
+        'message': message,
+        'status_code': status_code,
+        'content': content
+    }
+    return sanic_json(payload, status=status_code)
+
+
+def check_for_empty(form, *args):
+    for key, value in form.items():
+        if value is not None:
+            if not isinstance(value[0], bool) and not value[0] and key not in args:
+                raise ServerError(key + " is empty!", 400)
 
 
 @app.middleware('response')
@@ -19,7 +36,7 @@ async def response_middleware(request, response):
     """
     Response middleware test.
     """
-    xss_prevention(request, response)
+    xss_prevention_middleware(request, response)
 
 
 @app.middleware('request')
@@ -27,7 +44,7 @@ async def request_middleware(request):
     """
     Request middleware test.
     """
-    return https_redirect(request)
+    return https_redirect_middleware(request)
 
 
 @app.post('api/test/register')
@@ -199,12 +216,14 @@ async def on_recover(request, verification_session):
     await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 
+
 @app.get('api/test/ip')
 async def on_recover(request):
     """
     Retreives client ip address
     """
-    return json('Ip address retreived successfully', get_ip(request))
+    return json('Ip address retreived successfully', 'e')
+
 
 @app.exception(AuthError)
 async def on_error(request, exception):

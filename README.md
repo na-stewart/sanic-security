@@ -105,14 +105,13 @@ Once Async Auth is all setup and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
-First you have to create a configuration file called auth.ini. Below is an example of it's contents: 
+First you have to create a configuration file called auth.ini in the project directory. Below is an example of its contents: 
 
 ```
 [AUTH]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
-proxies=3.11.54.118, 28.134.131.134
-proxy_count=1
+debug=true
 
 [TORTOISE]
 username=admin
@@ -141,9 +140,6 @@ password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
 ```
-
-If you are not using any proxies or load balancers with Sanic, you may remove the following options: `proxies`, 
-`proxy_count`
 
 You may remove each section in the configuration you aren't using,
 

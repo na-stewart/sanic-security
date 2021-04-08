@@ -35,17 +35,8 @@ def hash_pw(password: str):
     return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
 
 
-# TODO get this working with proxies and error out when null.
 def get_ip(request: Request):
-    """
-    Retrieves the ip address of the request.
-
-    :param request: Sanic request.
-    """
-    proxies = config['AUTH']['proxies'].split(',').strip() if config.has_option('AUTH', 'proxies') else None
-    proxy_count = int(config['AUTH']['proxy_count']) if config.has_option('AUTH', 'proxy_count') else None
-    ip, routable = get_client_ip(request, proxy_trusted_ips=proxies, proxy_count=proxy_count)
-    return request.remote_addr
+    return request.remote_addr if request.ip == '127.0.0.1' else request.ip
 
 
 def path_exists(path):
