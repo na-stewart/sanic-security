@@ -7,12 +7,10 @@ from asyncauth.lib.tortoise import initialize_tortoise
 
 def initialize_auth(app: Sanic):
     """
-    Initializes Async Auth.
+    Initializes sanic-security.
     :param app: Sanic object used to add tasks too.
     """
 
     app.add_task(initialize_tortoise(app))
     app.add_task(Session.initialize_cache())
-    if config.has_section('IP2PROXY'):
-        app.add_task(initialize_ip2proxy_cache())
 

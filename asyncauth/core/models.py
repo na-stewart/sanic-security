@@ -13,7 +13,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from asyncauth.core.config import config
-from asyncauth.core.utils import path_exists
+from asyncauth.core.utils import path_exists, get_ip
 from asyncauth.lib.smtp import send_email
 from asyncauth.lib.twilio import send_sms
 
@@ -158,7 +158,8 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
+        default_cookie = config['AUTH']['app'].strip() + '_' + self.__class__.__name__
+        self.cookie = default_cookie + '_' + kwargs['cookie'] if kwargs['cookie'] else default_cookie
 
     def json(self):
         return {
@@ -212,7 +213,7 @@ class Session(BaseModel):
             self.valid = False
             await self.save(update_fields=['valid'])
 
-    def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
+    def encode(self, response: HTTPResponse, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -231,7 +232,7 @@ class Session(BaseModel):
         encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
-        response.cookies[self.cookie]['secure'] = secure
+        response.cookies[self.cookie]['secure'] = config['AUTH']['debug'] == 'true'
         response.cookies[self.cookie]['samesite'] = same_site
 
     def decode_raw(self, request: Request):
@@ -330,7 +331,7 @@ class SessionFactory:
         decoded_session = await session.decode(request)
         return decoded_session.account
 
-    async def get(self, session_type: str, request: Request, account: Account = None):
+    async def get(self, session_type: str, request: Request, **kwargs):
         """
         Creates and returns a session with all of the fulfilled requirements.
 
@@ -339,21 +340,20 @@ class SessionFactory:
 
         :param request: Sanic request parameter.
 
-        :param account:
+        :param kwargs: Arguments to be applied during the creation of a session.
 
-        :return:
+        :return: session
         """
         code = await Session.get_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request.remote_addr, code=code[:6],
-                                               expiration_date=self.generate_expiration_date(minutes=1))
+            expir_date = self.generate_expiration_date(minutes=1)
+            return await CaptchaSession.create(ip=get_ip(request), code=code[:6], expiration_date=expir_date)
         elif session_type == 'verification':
-            account = account if account else await self._account_via_decoded(request, VerificationSession())
-            return await VerificationSession.create(code=code, ip=request.remote_addr, account=account,
-                                                    expiration_date=self.generate_expiration_date(minutes=1))
+            expir_date = self.generate_expiration_date(minutes=5)
+            return await VerificationSession(cookie=kwargs['verification_type']) \
+                .create(code=code, ip=get_ip(request), account=kwargs['account'], expiration_date=expir_date)
         elif session_type == 'authentication':
-            account = account if account else await self._account_via_decoded(request, AuthenticationSession())
-            return await AuthenticationSession.create(account=account, ip=request.remote_addr,
+            return await AuthenticationSession.create(account=kwargs['account'], ip=get_ip(request),
                                                       expiration_date=self.generate_expiration_date(days=30))
         else:
             raise ValueError('Invalid session type.')
@@ -363,6 +363,20 @@ class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
     """
+
+    def __init__(self, **kwargs):
+        """
+        :param kwargs: Adding a verification_type argument will prevent verification session cookie collisions.
+        Without verification_type being defined, unrelated verification sessions will override one another.
+        Case example:
+        A user is registering a new account ->
+        Request verification session to verify account ->
+        Same user also forgot password of old account ->
+        Request verification ->
+        Overwrite previous verification request ->
+        User recovers old account, but now can't verify new account without generating a new verification session.
+        """
+        super().__init__(**kwargs)
 
     async def text_code(self, code_prefix="Your code is: "):
         """

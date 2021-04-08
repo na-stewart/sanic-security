@@ -17,10 +17,10 @@
 <br />
 <p align="center">
 
-  <h3 align="center">Async Auth</h3>
+  <h3 align="center">sanic-security</h3>
 
   <p align="center">
-    A powerful, simple, and async authentication and authorization library for Sanic.
+    A powerful, simple, and async authentication, verification, and authorization library for Sanic.
     <br />
     <a href="http://authdoc.sunsetdeveloper.com/">Documentation</a>
     ·
@@ -57,7 +57,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Async Auth is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
+sanic-security is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library comes packed with features such as:
 
 * SMS and email verification
@@ -95,13 +95,13 @@ sudo apt-get install python3-pip
 
 * Install pip packages
 ```sh
-pip3 install asyncauth
+pip3 install sanic-security
 ```
 
 
 ## Usage
 
-Once Async Auth is all setup and good to go, implementing is easy as pie.
+Once sanic-security is all setup and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
@@ -109,6 +109,7 @@ First you have to create a configuration file called auth.ini in the project dir
 
 ```
 [AUTH]
+app=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 debug=true
@@ -121,10 +122,6 @@ schema=asyncauth
 models=asyncauth.core.models
 engine=mysql
 generate=true
-
-[IP2PROXY]
-key=HGVYubjntfyoBjhbgvyrtd657ucgydtfXwjiou
-code=PX2LITE
 
 [TWILIO]
 from=+12058469963
@@ -141,9 +138,9 @@ tls=true
 start_tls=false
 ```
 
-You may remove each section in the configuration you aren't using,
+You may remove each section in the configuration you aren't using.
 
-Once you've configured Async Auth, you can initialize Sanic with the example below:
+Once you've configured sanic-security, you can initialize Sanic with the example below:
 
 ```python
 if __name__ == '__main__':
@@ -359,7 +356,7 @@ async def on_verification(request, verification_session):
 
 ## Authorization
 
-Async Auth comes with two protocols for authorization: role based and wildcard based permissions.
+sanic-security comes with two protocols for authorization: role based and wildcard based permissions.
 
 * Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
 
@@ -425,7 +422,7 @@ async def request_middleware(request):
 <!-- ROADMAP -->
 ## Roadmap
 
-Keep up with Async Auth's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
+Keep up with sanic-security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 
 <!-- CONTRIBUTING -->

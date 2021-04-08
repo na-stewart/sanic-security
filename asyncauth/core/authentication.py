@@ -13,39 +13,9 @@ account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def account_recovery(request: Request, verification_session: VerificationSession):
-    """
-    Recovers an account by setting the password to a new one passed through the method.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    password.
-
-    :param verification_session: Verification session containing account being verified.
-    """
-    verification_session.account.password = hash_pw(request.form.get('password'))
-    await AuthenticationSession.filter(account=verification_session.account, valid=True,
-                                       deleted=False).update(valid=False)
-    await verification_session.account.save(update_fields=['password'])
-
-
-async def request_account_recovery(request: Request):
-    """
-    Requests a verification session to ensure that the recovery attempt was made by the account owner.
-
-    :param request: Sanic request parameter. This request is sent with the following url argument: email.
-
-    return: verification_session
-    """
-
-    account = await Account.filter(email=request.args.get('email')).first()
-    account_error_factory.throw(account)
-    verification_session = await request_verification(request, account)
-    return verification_session
-
-
 async def register(request: Request, verified: bool = False, disabled: bool = False):
     """
-    Creates a new account. This is the recommend and most secure method for registering accounts' with Async Auth.
+    Creates a new account. This is the recommend and most secure method for registering accounts' with sanic-security.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     email, username, password, phone.
@@ -63,8 +33,8 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         raise Account.InvalidEmailError()
     try:
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
-                                       password=hash_pw(forms.get('password')),
-                                       phone=forms.get('phone'), verified=verified, disabled=disabled)
+                                       password=hash_pw(forms.get('password')), phone=forms.get('phone'),
+                                       verified=verified, disabled=disabled)
         return await request_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()

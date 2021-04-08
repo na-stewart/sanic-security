@@ -18,6 +18,7 @@ async def cache_ip2proxy_database():
     """
     Caches a new IP2Proxy database.
     """
+    raise NotImplementedError('This functionality is not available due to an IP2Proxy downloading issue.')
     key = config['IP2PROXY']['key']
     code = config['IP2PROXY']['code']
     async with aiohttp.ClientSession() as session:
@@ -35,6 +36,7 @@ async def initialize_ip2proxy_cache():
     """
     Initializes a async cron job that runs every 00:15 GMT to refresh the IP2Proxy database.
     """
+    raise NotImplementedError('This functionality is not available due a to an IP2Proxy downloading issue.')
     if not path_exists('./resources/auth-cache/ip2proxy/'):
         await cache_ip2proxy_database()
     scheduler = AsyncIOScheduler()
@@ -43,10 +45,8 @@ async def initialize_ip2proxy_cache():
 
 
 async def ip2proxy_middleware(request):
+    raise NotImplementedError('This functionality is not available due to an IP2Proxy downloading issue.')
     await ip2proxy_database.open('./resources/auth-cache/ip2proxy/IP2PROXY.bin')
-    rec = await ip2proxy_database.is_proxy("1.0.0.8")
-    print(ip2proxy_database.get_database_version())
-    print(await ip2proxy_database.is_proxy("1.0.0.8"))
     if await ip2proxy_database.is_proxy(get_ip(request)) > 0:
         raise IP2ProxyError('You are attempting to access a resource from a forbidden proxy.', 403)
     await ip2proxy_database.close()

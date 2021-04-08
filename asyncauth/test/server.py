@@ -209,21 +209,13 @@ async def on_recover_request(request):
 
 
 @app.post('api/test/recovery')
-@requires_verification()
+@requires_verification('recovery')
 async def on_recover(request, verification_session):
     """
     Changes and recovers an account's password.
     """
     await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
-
-
-@app.get('api/test/ip')
-async def on_recover(request):
-    """
-    Retreives client ip address
-    """
-    return json('Ip address retreived successfully', 'e')
 
 
 @app.exception(AuthError)

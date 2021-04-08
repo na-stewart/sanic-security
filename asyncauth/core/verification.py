@@ -8,29 +8,6 @@ session_factory = SessionFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def verify_account(verification_session: VerificationSession):
-    """
-    Verifies account associated to a verification session.
-
-    :param verification_session: Verification session containing account being verified.
-    """
-    verification_session.account.verified = True
-    await verification_session.account.save(update_fields=['verified'])
-
-
-async def request_verification(request: Request, account: Account = None):
-    """
-    Creates a verification session associated with an account. Renders account unverified.
-
-    :param request: Sanic request parameter.
-
-    :param account: The account being associated with the verification session.
-
-    :return: verification_session
-    """
-    return await session_factory.get('verification', request, account)
-
-
 async def request_captcha(request: Request):
     """
     Creates a captcha session associated with an account.
@@ -59,25 +36,6 @@ async def captcha(request: Request):
     return captcha_session
 
 
-async def verify(request: Request):
-    """
-    Enforces verification.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    code.
-
-    :raises SessionError:
-
-    :raises AccountError:
-
-    :return: verification_session
-    """
-    verification_session = await VerificationSession().decode(request)
-    session_error_factory.throw(verification_session)
-    await verification_session.crosscheck_code(request.form.get('code'))
-    return verification_session
-
-
 def requires_captcha():
     """
     Enforced captcha.
@@ -100,9 +58,65 @@ def requires_captcha():
     return wrapper
 
 
-def requires_verification():
+async def request_verification(request: Request, account: Account = None, verification_type: str = None):
+    """
+    Creates a verification session associated with an account. Renders account unverified.
+
+    :param request: Sanic request parameter.
+
+    :param account: The account being associated with the verification session.
+
+    :param verification_type: Prevents verification session cookie collisions. See VerificationSession for more
+    information.
+
+    :return: verification_session
+    """
+    if account is None:
+        verification_session = await VerificationSession(verification_type=verification_type).decode(request)
+        account = verification_session.account
+    return await session_factory.get('verification', request, account=account, verification_type=verification_type)
+
+
+async def verify(request: Request, verification_type: str = None):
     """
     Enforces verification.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    code.
+
+    :param verification_type: Prevents verification session cookie collisions. See VerificationSession for more
+    information.
+
+    :raises SessionError:
+
+    :raises AccountError:
+
+    :return: verification_session
+    """
+    verification_session = await VerificationSession(verification_type=verification_type).decode(request)
+    session_error_factory.throw(verification_session)
+    await verification_session.crosscheck_code(request.form.get('code'))
+    return verification_session
+
+
+async def verify_account(request: Request):
+    """
+    Verifies account associated to a verification session.
+
+    :param request: Sanic request paramater. All request bodies are sent as form-data with the following arguments:
+    code.
+    """
+    verification_session = await verify(request, 'account')
+    verification_session.account.verified = True
+    await verification_session.account.save(update_fields=['verified'])
+
+
+def requires_verification(verification_type: str = None):
+    """
+    Enforces verification.
+
+    :param verification_type: Prevents verification session cookie collisions. See VerificationSession for more
+    information.
 
     :raises AccountError:
 
@@ -114,7 +128,7 @@ def requires_verification():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            verification_session = await verify(request)
+            verification_session = await verify(request, verification_type)
             return await func(request, verification_session, *args, **kwargs)
 
         return wrapped
