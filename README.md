@@ -42,6 +42,7 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
+    * [Recovery](#recovery)
     * [Captcha](#captcha)
     * [Verification](#verification)
     * [Authorization](#authorization)
@@ -236,6 +237,18 @@ async def on_logout(request):
     return response
 ```
 
+* Requires Authentication
+
+```python
+@app.get('api/authentication')
+@requires_authentication()
+async def on_authentication(request, authentication_session):
+    return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
+                authentication_session.account.json())
+```
+
+## Recovery
+
 * Account Recovery Request
 
 This request is sent with an url argument instead of `form-data`.
@@ -256,7 +269,6 @@ async def on_recovery_request(request, captcha_session):
     return response
 ```
 
-
 * Account Recovery
 
 Key | Value |
@@ -266,20 +278,12 @@ Key | Value |
 
 ```python
 @app.post('api/recovery')
+@requires_verification()
 async def on_recovery(request):
-    verification_session = await account_recovery(request)
+    await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 ```
 
-* Requires Authentication
-
-```python
-@app.get('api/authentication')
-@requires_authentication()
-async def on_authentication(request, authentication_session):
-    return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
-                authentication_session.account.json())
-```
 
 ## Captcha
 
@@ -321,24 +325,6 @@ async def on_captcha_attempt(request, captcha_session):
 
 ## Verification
 
-* Verify Account
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post('api/register/verify')
-async def on_verify(request):
-    verification_session = await verify_account(request)
-    return json('Verification successful!', verification_session.json())
-```
-
-
-* Dynamic Verification
-
-
-
 
 * Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
   invalid or expired.)
@@ -365,14 +351,11 @@ async def on_resend_verification(request):
     return json('Verification code resend successful', verification_session.json())
 ```
 
-
-
 * Requires Verification
 
 Key | Value |
 --- | --- |
 **code** | G8ha9nVa
-
 
 ```python
 @app.post('api/verification')
@@ -380,6 +363,19 @@ Key | Value |
 async def on_verification(request, verification_session):
     return json('Hello ' + verification_session.account.username + '! You have verified yourself!', 
                 authentication_session.account.json())
+```
+
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post('api/register/verify')
+async def on_verify(request):
+    verification_session = await verify_account(request)
+    return json('Verification successful!', verification_session.json())
 ```
 
 ## Authorization
