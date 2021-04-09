@@ -17,7 +17,7 @@
 <br />
 <p align="center">
 
-  <h3 align="center">sanic-security</h3>
+  <h3 align="center">Sanic Security</h3>
 
   <p align="center">
     A powerful, simple, and async authentication, verification, and authorization library for Sanic.
@@ -42,7 +42,8 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
-    * [Verification](#verification)
+    * [Captcha](#verification)
+    * [Verification](#captcha)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -57,8 +58,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-sanic-security is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
-This library comes packed with features such as:
+Sanic Security is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
+This library is designed to be easy, convenient, and contains a variety of features that each easy to implement:
 
 * SMS and email verification
 * Easy login and registering
@@ -68,8 +69,7 @@ This library comes packed with features such as:
 * Role permissions
 * Captcha
 * Password recovery
-* Load balancer/proxy support
-* IP2Proxy validation
+* IP2Proxy support
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
@@ -276,8 +276,7 @@ async def on_authentication(request, authentication_session):
                 authentication_session.account.json())
 ```
 
-
-## Verification
+## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
 
@@ -315,6 +314,7 @@ async def on_captcha_attempt(request, captcha_session):
     return response
 ```
 
+## Verification
 
 * Verify Account
 
