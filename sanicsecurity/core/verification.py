@@ -74,12 +74,14 @@ async def request_verification(request: Request, account: Account = None):
     return await session_factory.get('verification', request, account=account)
 
 
-async def verify(request: Request, verification_type: str = None):
+async def verify(request: Request):
     """
     Enforces verification.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     code.
+
+    :param verification_type:
 
     :raises SessionError:
 
@@ -87,20 +89,21 @@ async def verify(request: Request, verification_type: str = None):
 
     :return: verification_session
     """
-    verification_session = await VerificationSession(verification_type=verification_type).decode(request)
+    verification_session = await VerificationSession().decode(request)
     session_error_factory.throw(verification_session)
     await verification_session.crosscheck_code(request.form.get('code'))
     return verification_session
 
 
-async def verify_account(request: Request):
+async def verify_account(verification_session: VerificationSession):
     """
     Verifies account associated to a verification session.
+
+    :param verification_session: Verification session containing account being verified.
 
     :param request: Sanic request paramater. All request bodies are sent as form-data with the following arguments:
     code.
     """
-    verification_session = await verify(request, 'account')
     verification_session.account.verified = True
     await verification_session.account.save(update_fields=['verified'])
     return verification_session

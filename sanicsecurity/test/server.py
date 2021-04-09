@@ -71,11 +71,12 @@ async def on_register_verification(request):
 
 
 @app.post('api/test/register/verify')
-async def on_verify(request):
+@requires_verification()
+async def on_verify(request,verification_session):
     """
     Attempt to verify account and allow access if unverified.
     """
-    verification_session = await verify_account(request)
+    await verify_account(verification_session)
     return json('Verification successful!', verification_session.json())
 
 
@@ -208,11 +209,12 @@ async def on_recover_request(request):
 
 
 @app.post('api/test/recovery')
-async def on_recover(request):
+@requires_verification()
+async def on_recover(request, verification_session):
     """
     Changes and recovers an account's password.
     """
-    verification_session = await account_recovery(request)
+    await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 
 
