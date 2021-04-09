@@ -1,21 +1,22 @@
 from sanic.request import Request
 
 from sanicsecurity.core.authentication import account_error_factory
-from sanicsecurity.core.models import AuthenticationSession, Account
+from sanicsecurity.core.models import AuthenticationSession, Account, VerificationSession
 from sanicsecurity.core.utils import hash_pw
-from sanicsecurity.core.verification import request_verification, verify
+from sanicsecurity.core.verification import request_verification
 
 
-async def account_recovery(request: Request):
+async def account_recovery(request: Request, verification_session: VerificationSession):
     """
     Recovers an account by setting the password to a new one.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     password.
 
+    :param verification_session: Verification session containing account being recovered.
+
     return: verification_session
     """
-    verification_session = await verify(request, 'recovery')
     verification_session.account.password = hash_pw(request.form.get('password'))
     await AuthenticationSession.filter(account=verification_session.account, valid=True,
                                        deleted=False).update(valid=False)
@@ -34,5 +35,5 @@ async def request_account_recovery(request: Request):
 
     account = await Account.filter(email=request.args.get('email')).first()
     account_error_factory.throw(account)
-    verification_session = await request_verification(request, account, 'recovery')
+    verification_session = await request_verification(request, account)
     return verification_session

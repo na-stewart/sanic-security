@@ -336,7 +336,7 @@ class SessionFactory:
         decoded_session = await session.decode(request)
         return decoded_session.account
 
-    async def get(self, session_type: str, request: Request, **kwargs):
+    async def get(self, session_type: str, request: Request, account: Account = None):
         """
         Creates and returns a session with all of the fulfilled requirements.
 
@@ -345,7 +345,7 @@ class SessionFactory:
 
         :param request: Sanic request parameter.
 
-        :param kwargs: Arguments to be applied during the creation of a session.
+        :param account: Account being associated to to a session.
 
         :return: session
         """
@@ -355,10 +355,10 @@ class SessionFactory:
             return await CaptchaSession.create(ip=get_ip(request), code=code[:6], expiration_date=expir_date)
         elif session_type == 'verification':
             expir_date = self.generate_expiration_date(minutes=5)
-            return await VerificationSession(cookie=kwargs['verification_type']) \
-                .create(code=code, ip=get_ip(request), account=kwargs['account'], expiration_date=expir_date)
+            return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
+                                                    expiration_date=expir_date)
         elif session_type == 'authentication':
-            return await AuthenticationSession.create(account=kwargs['account'], ip=get_ip(request),
+            return await AuthenticationSession.create(account=account, ip=get_ip(request),
                                                       expiration_date=self.generate_expiration_date(days=30))
         else:
             raise ValueError('Invalid session type.')
@@ -368,20 +368,6 @@ class VerificationSession(Session):
     """
     Verifies an account via emailing or texting a code.
     """
-
-    def __init__(self, **kwargs):
-        """
-        :param kwargs: Adding a verification_type argument will prevent verification session cookie collisions.
-        Without verification_type being defined, unrelated verification sessions will override one another.
-        Case example:
-        A user is registering a new account ->
-        Request verification session to verify account ->
-        Same user also forgot password of old account ->
-        Request verification ->
-        Overwrite previous verification request ->
-        User recovers old account, but now can't verify new account without generating a new verification session.
-        """
-        super().__init__(**kwargs)
 
     async def text_code(self, code_prefix="Your code is: "):
         """

@@ -35,7 +35,7 @@ def hash_pw(password: str):
 
 
 def get_ip(request: Request):
-    return request.remote_addr if request.ip == '127.0.0.1' and config['AUTH']['debug'] != 'true' else request.ip
+    return request.remote_addr if request.ip == '127.0.0.1' and config['AUTH']['debug'] == 'false' else request.ip
 
 
 def path_exists(path):
