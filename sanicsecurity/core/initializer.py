@@ -11,7 +11,7 @@ def initialize_security(app: Sanic):
     :param app: Sanic object used to add tasks too.
     """
 
-    app.add_task(initialize_tortoise(app))
+    initialize_tortoise(app)
+    Session.initialize_cache(app)
     app.add_task(initialize_ip2proxy_cache())
-    app.add_task(Session.initialize_cache())
 

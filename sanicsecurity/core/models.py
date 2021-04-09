@@ -8,6 +8,7 @@ import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
@@ -173,19 +174,22 @@ class Session(BaseModel):
         }
 
     @staticmethod
-    async def initialize_cache():
+    def initialize_cache(app: Sanic):
         """
         Caches up to 100 code and image variations.
         """
-        session_cache = './resources/auth-cache/session/'
-        loop = asyncio.get_running_loop()
-        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-        if not path_exists(session_cache):
-            async with aiofiles.open(session_cache + 'codes.txt', mode="w") as f:
-                for i in range(100):
-                    code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-                    await f.write(code + ' ')
-                    await loop.run_in_executor(None, image.write, code[:6], session_cache + code[:6] + '.png')
+
+        @app.listener("before_server_start")
+        async def generate_codes(app, loop):
+            session_cache = './resources/auth-cache/session/'
+            loop = asyncio.get_running_loop()
+            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+            if not path_exists(session_cache):
+                async with aiofiles.open(session_cache + 'codes.txt', mode="w") as f:
+                    for i in range(100):
+                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                        await f.write(code + ' ')
+                        await loop.run_in_executor(None, image.write, code[:6], session_cache + code[:6] + '.png')
 
     @staticmethod
     async def get_code():

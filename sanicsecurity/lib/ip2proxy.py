@@ -1,3 +1,4 @@
+import asyncio
 import shutil
 
 import aioIP2Proxy
@@ -22,6 +23,7 @@ async def cache_ip2proxy_database():
     """
     code = config['IP2PROXY']['code']
     key = config['IP2PROXY']['key']
+    loop = asyncio.get_running_loop()
     async with aiohttp.ClientSession() as session:
         url = "https://www.ip2location.com/download/?token={0}&file={1}".format(key, code)
         async with session.get(url) as resp:
@@ -29,7 +31,7 @@ async def cache_ip2proxy_database():
             async with aiofiles.open(zip_path, mode="wb") as f:
                 try:
                     await f.write(await resp.read())
-                    shutil.unpack_archive(zip_path, './resources/auth-cache/ip2proxy')
+                    await loop.run_in_executor(None, shutil.unpack_archive, zip_path, './resources/auth-cache/ip2proxy')
                 except shutil.ReadError:
                     raise IP2ProxyError('You have reached the download limit or your credentials are incorrect.', 500)
 
