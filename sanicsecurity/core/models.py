@@ -181,7 +181,7 @@ class Session(BaseModel):
 
         @app.listener("before_server_start")
         async def generate_codes(app, loop):
-            session_cache = './resources/auth-cache/session/'
+            session_cache = './resources/security-cache/session/'
             loop = asyncio.get_running_loop()
             image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
             if not path_exists(session_cache):
@@ -198,7 +198,7 @@ class Session(BaseModel):
 
         :return: code
         """
-        async with aiofiles.open('./resources/auth-cache/session/codes.txt', mode='r') as f:
+        async with aiofiles.open('./resources/security-cache/session/codes.txt', mode='r') as f:
             codes = await f.read()
             return random.choice(codes.split())
 
