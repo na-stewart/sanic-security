@@ -42,8 +42,8 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
-    * [Captcha](#verification)
-    * [Verification](#captcha)
+    * [Captcha](#captcha)
+    * [Verification](#verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -136,6 +136,11 @@ username=test@gmail.com
 password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
+
+[IP2PROXY]
+key=iohuyg87UGYOFijoTYG8HOuhuZJsdXwjqbhuyghuiBUYG8yvo6J
+code=PX1LITEBIN
+bin=IP2PROXY-LITE-PX1.BIN
 ```
 
 You may remove each section in the configuration you aren't using.

@@ -60,7 +60,7 @@ def requires_captcha():
 
 async def request_verification(request: Request, account: Account = None):
     """
-    Creates a verification session associated with an account. Renders account unverified.
+    Creates a verification session associated with an account.
 
     :param request: Sanic request parameter.
 
@@ -76,16 +76,12 @@ async def request_verification(request: Request, account: Account = None):
 
 async def verify(request: Request):
     """
-    Enforces verification.
+    Enforces verification and validates attempts.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     code.
 
-    :param verification_type:
-
     :raises SessionError:
-
-    :raises AccountError:
 
     :return: verification_session
     """
@@ -100,9 +96,6 @@ async def verify_account(verification_session: VerificationSession):
     Verifies account associated to a verification session.
 
     :param verification_session: Verification session containing account being verified.
-
-    :param request: Sanic request paramater. All request bodies are sent as form-data with the following arguments:
-    code.
     """
     verification_session.account.verified = True
     await verification_session.account.save(update_fields=['verified'])
@@ -111,7 +104,7 @@ async def verify_account(verification_session: VerificationSession):
 
 def requires_verification():
     """
-    Enforces verification.
+     Enforces verification and validates attempts.
 
     :raises AccountError:
 
