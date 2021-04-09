@@ -419,6 +419,26 @@ async def on_require_roles(request, authentication_session):
     return text('Admin gained access!')
 ```
 
+## IP2Proxy
+
+[IP2Location](https://www.ip2location.com/)
+
+[IP2Location LITE](https://lite.ip2location.com/)
+
+IP2Proxy Proxy Detection Database contains IP addresses which are used as VPN anonymizer, open proxies, web proxies
+and Tor exits, data center, web hosting (DCH) range, search engine robots (SES) and residential proxies (RES).
+
+Anonymous proxy servers are intermediate servers meant to hide the real identity or IP address of the requestor. 
+Studies found that a large number of anonymous proxy users are generally responsible for online credit card fraud, 
+forums and blogs spamming.
+
+IP2Proxy database is based on a proprietary detection algorithm in parallel with evaluation of anonymous open proxy 
+servers which are actively in use. Then it generates an up-to-date list of anonymous proxy IP address in the download 
+area every 24 hours. 
+
+DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
+rely on IP2Proxy to be a 100% protection shield against malicious actors utilizing proxies/vpns. 
+
 ## Error Handling
 
 ```python
