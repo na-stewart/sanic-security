@@ -13,7 +13,7 @@ from sanicsecurity.core.verification import requires_captcha, request_captcha, r
     request_verification
 from sanicsecurity.lib.ip2proxy import detect_proxy
 
-app = Sanic()
+app = Sanic('Sanic Security test server')
 
 
 def json(message, content, status_code=200):
