@@ -11,7 +11,7 @@ from sanicsecurity.core.recovery import request_account_recovery, account_recove
 from sanicsecurity.core.utils import xss_prevention_middleware, https_redirect_middleware
 from sanicsecurity.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanicsecurity.lib.ip2proxy import detect_proxy
+from sanicsecurity.lib.ip2proxy import detect_proxy, proxy_detection_middleware
 
 app = Sanic('Sanic Security test server')
 
@@ -53,7 +53,7 @@ async def ip2proxy_middleware(request):
     """
     Request middleware test.
     """
-    return ip2proxy_middleware(request)
+    await proxy_detection_middleware(request)
 
 
 @app.post('api/test/register')
@@ -66,7 +66,6 @@ async def on_register(request):
 
 
 @app.post('api/test/register/verification')
-@requires_captcha()
 async def on_register_verification(request):
     """
     Registration test with all built-in requirements.
@@ -204,7 +203,6 @@ async def on_test_role(request, authentication_session):
 
 
 @app.get('api/test/recovery/request')
-@requires_captcha()
 async def on_recover_request(request):
     """
     Requests a recovery session to allow user to reset password with a code.
@@ -226,7 +224,7 @@ async def on_recover(request, verification_session):
     return json('Account recovered successfully', verification_session.account.json())
 
 
-@app.post('api/test/proxy')
+@app.get('api/test/proxy')
 @detect_proxy()
 async def on_detect_proxy(request):
     """

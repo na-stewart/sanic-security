@@ -119,14 +119,14 @@ debug=true
 [TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
-endpoint=asyncauth.cweAenuBY6b.us-north-1.rds.amazonaws.com
-schema=asyncauth
-models=asyncauth.core.models
+endpoint=website.cweAenuBY6b.us-north-1.rds.amazonaws.com
+schema=webschema
+models=sanicsecurity.core.models
 engine=mysql
 generate=true
 
 [TWILIO]
-from=+12058469963
+from=12058469963
 token=1bcioi878ygO8fi766Fb34750e82a5ab
 sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
 
@@ -178,7 +178,7 @@ Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19811354186
+**phone** | 19811354186
 **password** | testpass
 **captcha** | Aj8HgD
 
@@ -492,7 +492,7 @@ async def https_middleware(request):
 
 @app.middleware('request')
 async def ip2proxy_middleware(request):
-    return ip2proxy_middleware(request)
+    await proxy_detection_middleware(request)
 ```
 
 <!-- ROADMAP -->

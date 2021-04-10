@@ -159,8 +159,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        default_cookie = config['AUTH']['name'].strip() + '_' + self.__class__.__name__
-        self.cookie = default_cookie + '_' + kwargs['cookie'] if kwargs['cookie'] else default_cookie
+        self.cookie = config['AUTH']['name'].strip() + '_' + self.__class__.__name__
 
     def json(self):
         return {
@@ -237,7 +236,7 @@ class Session(BaseModel):
         encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
-        response.cookies[self.cookie]['secure'] = config['AUTH']['debug'] == 'true'
+        response.cookies[self.cookie]['secure'] = config['AUTH']['debug'] == 'false'
         response.cookies[self.cookie]['samesite'] = same_site
 
     def decode_raw(self, request: Request):
@@ -401,7 +400,7 @@ class CaptchaSession(Session):
         :return: captcha_img_path
         """
         decoded_captcha = await CaptchaSession().decode(request)
-        return './resources/session-cache/' + decoded_captcha.code + '.png'
+        return './resources/security-cache/session/' + decoded_captcha.code + '.png'
 
 
 class AuthenticationSession(Session):
