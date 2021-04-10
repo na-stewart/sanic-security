@@ -423,9 +423,6 @@ async def on_require_perms(request, authentication_session):
 @app.get('api/dashboard/admin')
 @require_roles('Admin', 'Moderator')
 async def on_require_roles(request, authentication_session):
-    """
-    Tests client role authorization access.
-    """
     return text('Admin gained access!')
 ```
 
@@ -451,8 +448,6 @@ rely on IP2Proxy to provide 100% protection against malicious actors utilizing p
 
 You can detect proxies within each connection by utilizing the IP2Proxy middleware demonstrated in the Middleware 
 section.
-
-You can detect proxies within certain endpoints utilizing a decorator, for example:
 
 * Detect Proxy
 ```python
@@ -481,6 +476,8 @@ async def on_error(request, exception):
 ```
 
 ## Middleware
+
+All middleware is disabled when `debug` in configuration is true.
 
 ```python
 @app.middleware('response')
