@@ -46,6 +46,7 @@
     * [Captcha](#captcha)
     * [Verification](#verification)
     * [Authorization](#authorization)
+    * [IP2Proxy](#ip2proxy)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
