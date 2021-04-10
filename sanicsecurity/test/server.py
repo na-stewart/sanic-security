@@ -1,7 +1,8 @@
 from sanic import Sanic
 from sanic.exceptions import ServerError
-from sanic.response import text, file
 from sanic.response import json as sanic_json
+from sanic.response import text, file
+
 from sanicsecurity.core.authentication import register, login, requires_authentication, logout
 from sanicsecurity.core.authorization import require_permissions, require_roles
 from sanicsecurity.core.initializer import initialize_security
@@ -10,9 +11,8 @@ from sanicsecurity.core.recovery import request_account_recovery, account_recove
 from sanicsecurity.core.utils import xss_prevention_middleware, https_redirect_middleware
 from sanicsecurity.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanicsecurity.lib.ip2proxy import ip2proxy_middleware
 
-app = Sanic('sanicsecurity Postman Server Test')
+app = Sanic()
 
 
 def json(message, content, status_code=200):
@@ -32,7 +32,7 @@ def check_for_empty(form, *args):
 
 
 @app.middleware('response')
-async def response_middleware(request, response):
+async def xxs_middleware(request, response):
     """
     Response middleware test.
     """
@@ -40,12 +40,19 @@ async def response_middleware(request, response):
 
 
 @app.middleware('request')
-async def request_middleware(request):
+async def https_middleware(request):
     """
     Request middleware test.
     """
-    await ip2proxy_middleware(request)
     return https_redirect_middleware(request)
+
+
+@app.middleware('request')
+async def ip2proxy_middleware(request):
+    """
+    Request middleware test.
+    """
+    return ip2proxy_middleware(request)
 
 
 @app.post('api/test/register')

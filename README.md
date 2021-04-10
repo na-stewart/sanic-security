@@ -110,7 +110,7 @@ First you have to create a configuration file called auth.ini in the project dir
 
 ```
 [AUTH]
-app=ExampleProject
+name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 debug=true
@@ -118,7 +118,7 @@ debug=true
 [TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
-endpoint=asyncauth.rds.amazonaws.com
+endpoint=asyncauth.cweAenuBY6b.us-north-1.rds.amazonaws.com
 schema=asyncauth
 models=asyncauth.core.models
 engine=mysql
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
-Most request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
+All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 
 ```python
 from sanic.response import json as sanic_json
@@ -289,6 +289,14 @@ async def on_recovery(request):
 
 You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
 
+[1001 Free Fonts](https://www.1001fonts.com/)
+
+[Recommended Font](https://www.1001fonts.com/source-sans-pro-font.html)
+
+Captcha with example:
+
+![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/captcha.png)
+
 * Request Captcha
 
 ```python
@@ -382,12 +390,13 @@ async def on_verify(request):
 
 sanic-security comes with two protocols for authorization: role based and wildcard based permissions.
 
-* Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
+Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
 
-* Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
+Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
+This concept was inspired by [Apache Shiro's](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
 
-  Examples of wildcard permissions are:
+Examples of wildcard permissions are:
 
   ```
   admin:add,update,delete
@@ -437,7 +446,27 @@ servers which are actively in use. Then it generates an up-to-date list of anony
 area every 24 hours. 
 
 DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
-rely on IP2Proxy to be a 100% protection shield against malicious actors utilizing proxies/vpns. 
+rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns. 
+
+You can detect proxies within each connection by utilizing the IP2Proxy middleware demonstrated in the Middleware 
+section.
+
+You can detect proxies within certain endpoints utilizing a decorator, for example:
+
+* Detect Proxy
+```python
+@app.get('api/recovery/request')
+@detect_proxy()
+@requires_captcha()
+async def on_recovery_request(request, captcha_session):
+    verification_session = await request_account_recovery(request)
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
+    response = json('Recovery request successful', verification_session.json())
+    verification_session.encode(response)
+    return response
+```
+
 
 ## Error Handling
 
@@ -454,13 +483,18 @@ async def on_error(request, exception):
 
 ```python
 @app.middleware('response')
-async def response_middleware(request, response):
-    xss_prevention(request, response)
+async def xxs_middleware(request, response):
+    xss_prevention_middleware(request, response)
 
 
 @app.middleware('request')
-async def request_middleware(request):
-    return https_redirect(request)
+async def https_middleware(request):
+    return https_redirect_middleware(request)
+
+
+@app.middleware('request')
+async def ip2proxy_middleware(request):
+    return ip2proxy_middleware(request)
 ```
 
 <!-- ROADMAP -->

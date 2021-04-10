@@ -159,7 +159,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        default_cookie = config['AUTH']['app'].strip() + '_' + self.__class__.__name__
+        default_cookie = config['AUTH']['name'].strip() + '_' + self.__class__.__name__
         self.cookie = default_cookie + '_' + kwargs['cookie'] if kwargs['cookie'] else default_cookie
 
     def json(self):
@@ -436,7 +436,7 @@ class Role(BaseModel):
 
     class InsufficientRoleError(AuthError):
         def __init__(self):
-            super().__init__('You do not have the required role for this action.', 403)
+            super().__init__('Insufficient roles required for this action.', 403)
 
 
 class Permission(BaseModel):
@@ -455,4 +455,4 @@ class Permission(BaseModel):
 
     class InsufficientPermissionError(AuthError):
         def __init__(self):
-            super().__init__('You do not have the required permissions for this action.', 403)
+            super().__init__('Insufficient permissions required for this action.', 403)

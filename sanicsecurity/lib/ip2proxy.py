@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import shutil
 
 import aioIP2Proxy
@@ -13,12 +14,9 @@ from sanicsecurity.core.utils import path_exists, get_ip
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
 
 
-class IP2ProxyError(AuthError):
-    pass
-
-
-class IsAProxyError(AuthError):
-    pass
+class ProxyDetectedError(AuthError):
+    def __init__(self):
+        super(ProxyDetectedError, self).__init__('Attempting to access a resource from a forbidden proxy.', 403)
 
 
 async def cache_ip2proxy_database():
@@ -38,10 +36,10 @@ async def cache_ip2proxy_database():
                     await loop.run_in_executor(None, shutil.unpack_archive, zip_path,
                                                './resources/security-cache/ip2proxy')
                 except shutil.ReadError:
-                    raise IP2ProxyError('You have reached the download limit or your credentials are incorrect.', 500)
+                    raise shutil.ReadError('Unzipping has failed due to the download limit or incorrect credentials.')
 
 
-async def initialize_ip2proxy_cache():
+async def initialize_ip2proxy():
     """
     Initializes a async cron job that runs every 00:15 GMT to refresh the IP2Proxy database.
     """
@@ -52,12 +50,34 @@ async def initialize_ip2proxy_cache():
     scheduler.start()
 
 
-async def check_ip(ip: str):
+async def proxy_detection(ip: str):
     await ip2proxy_database.open('./resources/security-cache/ip2proxy/' + config['IP2PROXY']['bin'])
     if await ip2proxy_database.is_proxy(ip) > 0:
-        raise IP2ProxyError('You are attempting to access a resource from a forbidden proxy.', 403)
+        raise ProxyDetectedError()
     await ip2proxy_database.close()
 
 
-async def ip2proxy_middleware(request):
-    await check_ip(get_ip(request))
+def detect_proxy():
+    """
+    Authenticates the client's current authentication session.
+
+    :raises AccountError:
+
+    :raises SessionError:
+
+    :return: func(request, authentication_session, *args, **kwargs)
+    """
+
+    def wrapper(func):
+        @functools.wraps(func)
+        async def wrapped(request, *args, **kwargs):
+            await proxy_detection_middleware(request)
+            return await func(request, *args, **kwargs)
+
+        return wrapped
+
+    return wrapper
+
+
+async def proxy_detection_middleware(request):
+    await proxy_detection(get_ip(request))
