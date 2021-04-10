@@ -32,3 +32,4 @@ aiosmtplib==1.1.4
 setuptools~=50.3.2
 captcha==0.3
 aioIP2Proxy==1.1.1
+APScheduler==3.7.0

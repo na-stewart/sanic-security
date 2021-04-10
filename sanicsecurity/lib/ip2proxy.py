@@ -6,17 +6,13 @@ import aioIP2Proxy
 import aiofiles
 import aiohttp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sanic.request import Request
 
 from sanicsecurity.core.config import config
-from sanicsecurity.core.models import AuthError
+from sanicsecurity.core.models import ProxyDetectedError
 from sanicsecurity.core.utils import path_exists, get_ip
 
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
-
-
-class ProxyDetectedError(AuthError):
-    def __init__(self):
-        super(ProxyDetectedError, self).__init__('Attempting to access a resource from a forbidden proxy.', 403)
 
 
 async def cache_ip2proxy_database():
@@ -51,6 +47,12 @@ async def initialize_ip2proxy():
 
 
 async def proxy_detection(ip: str):
+    """
+    Reads local database file and crosschecks passed ip address to determine if it is a known proxy.
+
+    :param ip: Ip address being crosschecked.
+
+    """
     await ip2proxy_database.open('./resources/security-cache/ip2proxy/' + config['IP2PROXY']['bin'])
     if await ip2proxy_database.is_proxy(ip) > 0:
         raise ProxyDetectedError()
@@ -59,7 +61,7 @@ async def proxy_detection(ip: str):
 
 def detect_proxy():
     """
-    Authenticates the client's current authentication session.
+    Reads local database file and crosschecks passed ip address to determine if it is a known proxy.
 
     :raises AccountError:
 
@@ -79,5 +81,11 @@ def detect_proxy():
     return wrapper
 
 
-async def proxy_detection_middleware(request):
-    await proxy_detection(get_ip(request))
+async def proxy_detection_middleware(request: Request):
+    """
+    Reads local database file and crosschecks passed ip address to determine if it is a known proxy.
+
+    :param request: Sanic request parameter.
+    """
+    if config['AUTH']['debug'] == 'false':
+        await proxy_detection(get_ip(request))

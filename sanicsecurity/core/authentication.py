@@ -69,7 +69,6 @@ async def logout(request: Request):
 
     :param request: Sanic request parameter.
     """
-
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])

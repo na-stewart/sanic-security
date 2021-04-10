@@ -11,6 +11,7 @@ from sanicsecurity.core.recovery import request_account_recovery, account_recove
 from sanicsecurity.core.utils import xss_prevention_middleware, https_redirect_middleware
 from sanicsecurity.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
+from sanicsecurity.lib.ip2proxy import detect_proxy
 
 app = Sanic()
 
@@ -79,7 +80,7 @@ async def on_register_verification(request):
 
 @app.post('api/test/register/verify')
 @requires_verification()
-async def on_verify(request,verification_session):
+async def on_verify(request, verification_session):
     """
     Attempt to verify account and allow access if unverified.
     """
@@ -223,6 +224,15 @@ async def on_recover(request, verification_session):
     """
     await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
+
+
+@app.post('api/test/proxy')
+@detect_proxy()
+async def on_detect_proxy(request):
+    """
+    Detects if ip address in request is a proxy.
+    """
+    return json('Request ip address is valid.', None)
 
 
 @app.exception(AuthError)

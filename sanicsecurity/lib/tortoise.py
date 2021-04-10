@@ -6,6 +6,9 @@ from sanicsecurity.core.config import config
 
 
 def initialize_tortoise(app: Sanic):
+    """
+    Initializes tortoise-orm.
+    """
 
     @app.listener("before_server_start")
     async def init_orm(app, loop):

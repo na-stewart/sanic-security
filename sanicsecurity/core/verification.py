@@ -40,8 +40,6 @@ def requires_captcha():
     """
     Enforced captcha.
 
-    :raises AccountError:
-
     :raises SessionError:
 
     :return: await func(request, captcha_session, *args, **kwargs)
@@ -104,9 +102,7 @@ async def verify_account(verification_session: VerificationSession):
 
 def requires_verification():
     """
-     Enforces verification and validates attempts.
-
-    :raises AccountError:
+    Enforces verification and validates attempts.
 
     :raises SessionError:
 

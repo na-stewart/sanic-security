@@ -456,3 +456,8 @@ class Permission(BaseModel):
     class InsufficientPermissionError(AuthError):
         def __init__(self):
             super().__init__('Insufficient permissions required for this action.', 403)
+
+
+class ProxyDetectedError(AuthError):
+    def __init__(self):
+        super(ProxyDetectedError, self).__init__('Attempting to access a resource from a forbidden proxy.', 403)
