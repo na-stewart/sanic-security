@@ -350,12 +350,11 @@ class SessionFactory:
         """
         code = await Session.get_code()
         if session_type == 'captcha':
-            expir_date = self.generate_expiration_date(minutes=1)
-            return await CaptchaSession.create(ip=get_ip(request), code=code[:6], expiration_date=expir_date)
+            return await CaptchaSession.create(ip=get_ip(request), code=code[:6],
+                                               expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'verification':
-            expir_date = self.generate_expiration_date(minutes=5)
             return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
-                                                    expiration_date=expir_date)
+                                                    expiration_date=self.generate_expiration_date(minutes=5))
         elif session_type == 'authentication':
             return await AuthenticationSession.create(account=account, ip=get_ip(request),
                                                       expiration_date=self.generate_expiration_date(days=30))
