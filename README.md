@@ -298,7 +298,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 
 [Recommended Font](https://www.1001fonts.com/source-sans-pro-font.html)
 
-Captcha with example:
+Captcha challenge example:
 
 ![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/captcha.png)
 
