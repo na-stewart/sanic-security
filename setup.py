@@ -15,7 +15,7 @@ setup(
     license='GNU General Public License v3.0',
     author='sunset-developer',
     author_email='aidanstewart@sunsetdeveloper.com',
-    description='A powerful, simple and async security library for Sanic.',
+    description='A powerful, simple, and async security library for Sanic.',
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=requirements
