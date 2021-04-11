@@ -370,10 +370,10 @@ Key | Value |
 **code** | G8ha9nVa
 
 ```python
-@app.post('api/verification')
+@app.post('api/client')
 @requires_verification()
-async def on_verification(request, verification_session):
-    return json('Hello ' + verification_session.account.username + '! You have verified yourself!', 
+async def on_verified(request, verification_session):
+    return json('Hello ' + verification_session.account.username + '! You have verified yourself and may continue. ', 
                 authentication_session.account.json())
 ```
 
@@ -385,8 +385,9 @@ Key | Value |
 
 ```python
 @app.post('api/register/verify')
-async def on_verify(request):
-    verification_session = await verify_account(request)
+@requires_verification()
+async def on_verify(request, verification_session):
+    await verify_account(verification_session)
     return json('Verification successful!', verification_session.json())
 ```
 
