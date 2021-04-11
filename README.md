@@ -20,7 +20,7 @@
   <h3 align="center">Sanic Security</h3>
 
   <p align="center">
-    A powerful, simple, and async authentication, verification, and authorization library for Sanic.
+   A powerful, simple and async security library for Sanic.
     <br />
     <a href="http://authdoc.sunsetdeveloper.com/">Documentation</a>
     ·
