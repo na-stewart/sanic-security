@@ -11,7 +11,7 @@ from sanic_security.core.recovery import request_account_recovery, account_recov
 from sanic_security.core.utils import xss_prevention_middleware, https_redirect_middleware, get_ip
 from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware
+from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware, proxy_detection
 
 app = Sanic('Sanic Security test server')
 
@@ -74,7 +74,7 @@ async def on_register_verification(request, captcha_session):
     verification_session = await register(request)
     await verification_session.text_code()
     response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -104,7 +104,7 @@ async def on_request_captcha(request):
     """
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    captcha_session.encode(response)
+    captcha_session.encode(response, secure=False)
     return response
 
 
@@ -127,7 +127,7 @@ async def new_verification_request(request):
     verification_session = await request_verification(request)
     await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -138,7 +138,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    authentication_session.encode(response)
+    authentication_session.encode(response, secure=False)
     return response
 
 
@@ -212,7 +212,7 @@ async def on_recover_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code()
     response = json('Recovery request successful', verification_session.json())
-    verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -226,16 +226,6 @@ async def on_recover(request, verification_session):
     return json('Account recovered successfully', verification_session.account.json())
 
 
-@app.get('api/test/ip')
-async def on_recover(request):
-    """
-    Changes and recovers an account's password.
-    """
-    return json('Account recovered successfully', {
-        'ip': request.ip,
-        'remote': request.remote_addr
-    })
-
 @app.exception(AuthError)
 async def on_error(request, exception):
     return json('An error has occurred!', {
@@ -244,3 +234,6 @@ async def on_error(request, exception):
     }, status_code=exception.status_code)
 
 
+if __name__ == '__main__':
+    initialize_security(app)
+    app.run(host='0.0.0.0', port=8000, debug=True, workers=4)

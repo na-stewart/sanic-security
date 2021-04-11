@@ -9,10 +9,20 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sanic.request import Request
 
 from sanic_security.core.config import config
-from sanic_security.core.models import ProxyDetectedError
+from sanic_security.core.models import AuthError
 from sanic_security.core.utils import path_exists, get_ip
 
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
+
+
+class IP2ProxyError(AuthError):
+    pass
+
+
+class ProxyDetectedError(IP2ProxyError):
+    def __init__(self):
+        super(ProxyDetectedError, self).__init__('An attempt was made to access a resource utilizing a forbidden '
+                                                 'proxy.', 403)
 
 
 async def cache_ip2proxy_database():
@@ -32,7 +42,7 @@ async def cache_ip2proxy_database():
                     await loop.run_in_executor(None, shutil.unpack_archive, zip_path,
                                                './resources/security-cache/ip2proxy')
                 except shutil.ReadError:
-                    raise shutil.ReadError('Unzipping has failed due to the download limit or incorrect credentials.')
+                    raise IP2ProxyError('Unzipping has failed due to the download limit or incorrect credentials.', 500)
 
 
 async def initialize_ip2proxy():
@@ -88,4 +98,3 @@ async def proxy_detection_middleware(request: Request):
     :param request: Sanic request parameter.
     """
     await proxy_detection(get_ip(request))
-

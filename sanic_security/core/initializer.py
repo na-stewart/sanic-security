@@ -14,5 +14,5 @@ def initialize_security(app: Sanic):
     """
     if config.has_section('IP2PROXY'):
         app.add_task(initialize_ip2proxy())
-    initialize_tortoise(app)
     Session.initialize_cache(app)
+    initialize_tortoise(app)

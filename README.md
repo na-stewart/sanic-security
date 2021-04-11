@@ -60,25 +60,24 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
-This library is designed to be easy, convenient, and contains a variety of features that each easy to implement:
+Sanic Security is an authentication and authorization library made easy, designed for use with [Sanic](https://github.com/huge-success/sanic).
+This library is intended to be easy, convenient, and contains a variety of easy to implement features:
 
-* SMS and email verification
+
 * Easy login and registering
+* Captcha
+* SMS and email verification
 * JWT
-* Easy database integration
+* Password recovery
 * Wildcard permissions
 * Role permissions
-* Captcha
-* Password recovery
 * IP2Proxy support
+* Easy database integration
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/ahopkins.png)
-
-Documentation is currently auto generated. This is a placeholder until I write out better documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -103,11 +102,14 @@ pip3 install sanic-security
 
 ## Usage
 
-Once sanic-security is all setup and good to go, implementing is easy as pie.
+Once Sanic Security is configured and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
-First you have to create a configuration file called auth.ini in the project directory. Below is an example of its contents: 
+First you have to create a configuration file called auth.ini in the project directory. Make sure Python's 
+working directory is the project directory. Below is an example of its contents: 
+
+WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
 ```
 [AUTH]
@@ -146,13 +148,16 @@ bin=IP2PROXY-LITE-PX1.BIN
 
 You may remove each section in the configuration you aren't using.
 
-Once you've configured sanic-security, you can initialize Sanic with the example below:
+Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
 ```python
 if __name__ == '__main__':
     initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
+
+WARNING: When you use a reverse proxy server (e.g. nginx), the value of ip address may contain the IP of a proxy, 
+typically 127.0.0.1. Almost always, this is not what you will want. [Click here for more information!](https://sanicframework.org/en/guide/advanced/proxy-headers.html)
 
 All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 
@@ -201,7 +206,7 @@ Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19811354186
+**phone** | 19811354186
 **password** | testpass
 
 ```python
@@ -240,9 +245,9 @@ async def on_logout(request):
 * Requires Authentication
 
 ```python
-@app.get('api/authentication')
+@app.get('api/client')
 @requires_authentication()
-async def on_authentication(request, authentication_session):
+async def on_authenticated(request, authentication_session):
     return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
                 authentication_session.account.json())
 ```
@@ -333,7 +338,6 @@ async def on_captcha_attempt(request, captcha_session):
 
 ## Verification
 
-
 * Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
   invalid or expired.)
 
@@ -388,7 +392,7 @@ async def on_verify(request):
 
 ## Authorization
 
-sanic-security comes with two protocols for authorization: role based and wildcard based permissions.
+Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
 
 Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
 
@@ -440,10 +444,7 @@ forums and blogs spamming.
 
 IP2Proxy database is based on a proprietary detection algorithm in parallel with evaluation of anonymous open proxy 
 servers which are actively in use. Then it generates an up-to-date list of anonymous proxy IP address in the download 
-area every 24 hours. 
-
-You can detect proxies within each connection by utilizing the IP2Proxy middleware demonstrated in the Middleware 
-section.
+area every 24 hours.
 
 DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
 rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns.
@@ -495,7 +496,7 @@ async def ip2proxy_middleware(request):
 <!-- ROADMAP -->
 ## Roadmap
 
-Keep up with sanic-security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
+Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 
 <!-- CONTRIBUTING -->
@@ -515,15 +516,6 @@ Contributions are what make the open source community such an amazing place to b
 ## License
 
 Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
-
-
-
-<!-- CONTACT -->
-## Contact
-
-Aidan Stewart - aidanstewart@sunsetdeveloper.com
-
-Project Link: [https://github.com/sunset-developer/Amy-Rose](https://github.com/sunset-developer/Amy-Rose)
 
 
 <!-- ACKNOWLEDGEMENTS -->
