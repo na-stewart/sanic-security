@@ -1,7 +1,7 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from aiosmtplib import send
-from sanicsecurity.core.config import config
+from sanic_security.core.config import config
 
 
 async def send_email(to, subj, msg, text_type="plain"):

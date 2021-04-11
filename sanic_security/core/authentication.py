@@ -4,9 +4,9 @@ import re
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from sanicsecurity.core.models import Account, SessionFactory, AuthenticationSession, Session
-from sanicsecurity.core.utils import hash_pw
-from sanicsecurity.core.verification import request_verification
+from sanic_security.core.models import Account, SessionFactory, AuthenticationSession, Session
+from sanic_security.core.utils import hash_pw
+from sanic_security.core.verification import request_verification
 
 session_factory = SessionFactory()
 account_error_factory = Account.ErrorFactory()

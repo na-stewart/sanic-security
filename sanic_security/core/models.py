@@ -13,10 +13,10 @@ from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
-from sanicsecurity.core.config import config
-from sanicsecurity.core.utils import path_exists, get_ip
-from sanicsecurity.lib.smtp import send_email
-from sanicsecurity.lib.twilio import send_sms
+from sanic_security.core.config import config
+from sanic_security.core.utils import path_exists, get_ip
+from sanic_security.lib.smtp import send_email
+from sanic_security.lib.twilio import send_sms
 
 
 class BaseErrorFactory:
@@ -43,7 +43,7 @@ class BaseErrorFactory:
 
 class AuthError(ServerError):
     """
-    Base error for all sanicsecurity related errors.
+    Base error for all sanic_security related errors.
     """
 
     def __init__(self, message, code):
@@ -52,9 +52,9 @@ class AuthError(ServerError):
 
 class BaseModel(Model):
     """
-    Base sanicsecurity model that all other models derive from. Some important elements to take in consideration is that
+    Base sanic_security model that all other models derive from. Some important elements to take in consideration is that
     deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
-    the database. Retrieving sanicsecurity models should be done via filtering with the 'uid' variable rather then the id
+    the database. Retrieving sanic_security models should be done via filtering with the 'uid' variable rather then the id
     variable.
     """
 
@@ -217,7 +217,7 @@ class Session(BaseModel):
             self.valid = False
             await self.save(update_fields=['valid'])
 
-    def encode(self, response: HTTPResponse, same_site: str = 'lax'):
+    def encode(self, response: HTTPResponse, secure=True, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -236,7 +236,7 @@ class Session(BaseModel):
         encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
-        response.cookies[self.cookie]['secure'] = config['AUTH']['debug'] == 'false'
+        response.cookies[self.cookie]['secure'] = secure
         response.cookies[self.cookie]['samesite'] = same_site
 
     def decode_raw(self, request: Request):
@@ -286,7 +286,7 @@ class Session(BaseModel):
 
     class MaximumAttemptsError(SessionError):
         def __init__(self):
-            super().__init__('You\'ve reached the maximum amount of attempts.', 401)
+            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
 
     class DecodeError(SessionError):
         def __init__(self):

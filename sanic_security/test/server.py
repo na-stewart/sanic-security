@@ -3,15 +3,15 @@ from sanic.exceptions import ServerError
 from sanic.response import json as sanic_json
 from sanic.response import text, file
 
-from sanicsecurity.core.authentication import register, login, requires_authentication, logout
-from sanicsecurity.core.authorization import require_permissions, require_roles
-from sanicsecurity.core.initializer import initialize_security
-from sanicsecurity.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
-from sanicsecurity.core.recovery import request_account_recovery, account_recovery
-from sanicsecurity.core.utils import xss_prevention_middleware, https_redirect_middleware
-from sanicsecurity.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
+from sanic_security.core.authentication import register, login, requires_authentication, logout
+from sanic_security.core.authorization import require_permissions, require_roles
+from sanic_security.core.initializer import initialize_security
+from sanic_security.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
+from sanic_security.core.recovery import request_account_recovery, account_recovery
+from sanic_security.core.utils import xss_prevention_middleware, https_redirect_middleware, get_ip
+from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanicsecurity.lib.ip2proxy import detect_proxy, proxy_detection_middleware
+from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware
 
 app = Sanic('Sanic Security test server')
 
@@ -66,7 +66,8 @@ async def on_register(request):
 
 
 @app.post('api/test/register/verification')
-async def on_register_verification(request):
+@requires_captcha()
+async def on_register_verification(request, captcha_session):
     """
     Registration test with all built-in requirements.
     """
@@ -176,6 +177,7 @@ async def on_create_admin_perm(request, authentication_session):
 
 
 @app.get('api/test/client')
+@detect_proxy()
 @requires_authentication()
 async def on_test_client(request, authentication_session):
     """
@@ -224,14 +226,15 @@ async def on_recover(request, verification_session):
     return json('Account recovered successfully', verification_session.account.json())
 
 
-@app.get('api/test/proxy')
-@detect_proxy()
-async def on_detect_proxy(request):
+@app.get('api/test/ip')
+async def on_recover(request):
     """
-    Detects if ip address in request is a proxy.
+    Changes and recovers an account's password.
     """
-    return json('Request ip address is valid.', None)
-
+    return json('Account recovered successfully', {
+        'ip': request.ip,
+        'remote': request.remote_addr
+    })
 
 @app.exception(AuthError)
 async def on_error(request, exception):
@@ -241,6 +244,3 @@ async def on_error(request, exception):
     }, status_code=exception.status_code)
 
 
-if __name__ == '__main__':
-    initialize_security(app)
-    app.run(host='0.0.0.0', port=8000, debug=True, workers=1)

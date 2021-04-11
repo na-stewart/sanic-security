@@ -1,9 +1,9 @@
 from sanic.request import Request
 
-from sanicsecurity.core.authentication import account_error_factory
-from sanicsecurity.core.models import AuthenticationSession, Account, VerificationSession
-from sanicsecurity.core.utils import hash_pw
-from sanicsecurity.core.verification import request_verification
+from sanic_security.core.authentication import account_error_factory
+from sanic_security.core.models import AuthenticationSession, Account, VerificationSession
+from sanic_security.core.utils import hash_pw
+from sanic_security.core.verification import request_verification
 
 
 async def account_recovery(request: Request, verification_session: VerificationSession):

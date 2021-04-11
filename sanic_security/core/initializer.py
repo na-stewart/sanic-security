@@ -1,9 +1,9 @@
 from sanic import Sanic
 
-from sanicsecurity.core.config import config
-from sanicsecurity.core.models import Session
-from sanicsecurity.lib.ip2proxy import initialize_ip2proxy
-from sanicsecurity.lib.tortoise import initialize_tortoise
+from sanic_security.core.config import config
+from sanic_security.core.models import Session
+from sanic_security.lib.ip2proxy import initialize_ip2proxy
+from sanic_security.lib.tortoise import initialize_tortoise
 
 
 def initialize_security(app: Sanic):

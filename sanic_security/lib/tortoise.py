@@ -2,7 +2,7 @@ from sanic import Sanic
 from tortoise import Tortoise
 from tortoise.contrib.sanic import register_tortoise
 
-from sanicsecurity.core.config import config
+from sanic_security.core.config import config
 
 
 def initialize_tortoise(app: Sanic):
@@ -17,7 +17,7 @@ def initialize_tortoise(app: Sanic):
         endpoint = config['TORTOISE']['endpoint']
         schema = config['TORTOISE']['schema']
         engine = config['TORTOISE']['engine']
-        models = config['TORTOISE']['models'].split(',')
+        models = config['TORTOISE']['models'].strip().split(',')
         url = engine + '://{0}:{1}@{2}/{3}'.format(username, password, endpoint, schema)
         await Tortoise.init(db_url=url, modules={"models": models})
         if config['TORTOISE']['generate'] == 'true':

@@ -4,7 +4,7 @@ import os
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
 
-from sanicsecurity.core.config import config
+from sanic_security.core.config import config
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
@@ -26,7 +26,7 @@ def https_redirect_middleware(request: Request):
 
     :return: redirect_url
     """
-    if request.url.startswith('http://') and config['AUTH']['debug'] == 'false':
+    if request.url.startswith('http://'):
         url = request.url.replace('http://', 'https://', 1)
         return redirect(url)
 
@@ -50,7 +50,7 @@ def get_ip(request: Request):
 
     :return: ip
     """
-    return request.remote_addr if request.ip == '127.0.0.1' and config['AUTH']['debug'] == 'false' else request.ip
+    return request.remote_addr if request.remote_addr else request.ip
 
 
 def path_exists(path):

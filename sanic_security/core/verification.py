@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanicsecurity.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
+from sanic_security.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
 
 session_factory = SessionFactory()
 session_error_factory = Session.ErrorFactory()

@@ -114,7 +114,6 @@ First you have to create a configuration file called auth.ini in the project dir
 name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
-debug=true
 
 [TORTOISE]
 username=admin
@@ -443,11 +442,11 @@ IP2Proxy database is based on a proprietary detection algorithm in parallel with
 servers which are actively in use. Then it generates an up-to-date list of anonymous proxy IP address in the download 
 area every 24 hours. 
 
-DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
-rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns. 
-
 You can detect proxies within each connection by utilizing the IP2Proxy middleware demonstrated in the Middleware 
 section.
+
+DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
+rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns.
 
 * Detect Proxy
 ```python
@@ -476,8 +475,6 @@ async def on_error(request, exception):
 ```
 
 ## Middleware
-
-All middleware is disabled when `debug` in configuration is true.
 
 ```python
 @app.middleware('response')

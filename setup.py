@@ -8,8 +8,8 @@ with open("requirements.txt", "r") as rq:
     requirements = [r.strip() for r in rq.readlines()]
 
 setup(
-    name='sanicsecurity',
-    version='0.8.2.0',
+    name='sanic-security-test',
+    version='0.8.2.1',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/asyncauth',
     license='GNU General Public License v3.0',

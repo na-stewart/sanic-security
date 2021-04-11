@@ -8,9 +8,9 @@ import aiohttp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sanic.request import Request
 
-from sanicsecurity.core.config import config
-from sanicsecurity.core.models import ProxyDetectedError
-from sanicsecurity.core.utils import path_exists, get_ip
+from sanic_security.core.config import config
+from sanic_security.core.models import ProxyDetectedError
+from sanic_security.core.utils import path_exists, get_ip
 
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
 
@@ -87,5 +87,5 @@ async def proxy_detection_middleware(request: Request):
 
     :param request: Sanic request parameter.
     """
-    if config['AUTH']['debug'] == 'false':
-        await proxy_detection(get_ip(request))
+    await proxy_detection(get_ip(request))
+
