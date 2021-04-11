@@ -122,7 +122,7 @@ username=admin
 password=8UVbijLUGYfUtItAi
 endpoint=website.cweAenuBY6b.us-north-1.rds.amazonaws.com
 schema=webschema
-models=sanicsecurity.core.models
+models=sanic_security.core.models
 engine=mysql
 generate=true
 
