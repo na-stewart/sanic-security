@@ -55,13 +55,14 @@ def get_ip(request: Request):
 
 def path_exists(path):
     """
-    Checks if path exists and isn't empty, and creates it if it doesn't.
+    Checks if path exists and isn't empty, and creates it if it doesn't. Returns whether the directory contains anything.
 
     :param path: Path being checked.
 
-    :return: exists
+    :return: path_is_empty
     """
     exists = os.path.exists(path)
     if not exists:
         os.makedirs(path)
-    return exists and os.listdir(path)
+    path_is_empty = bool(os.listdir(path))
+    return path_is_empty
