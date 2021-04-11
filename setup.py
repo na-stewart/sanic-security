@@ -5,7 +5,7 @@ with open("README.md", "r") as rm:
     long_description = rm.read()
 
 with open("requirements.txt", "r") as rq:
-    requirements = [r.strip() for r in rq.readlines()]
+    requirements = [r.strip() for r in rq]
 
 setup(
     name='sanic-security',
