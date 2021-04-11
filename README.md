@@ -22,7 +22,7 @@
   <p align="center">
    A powerful, simple and async security library for Sanic.
     <br />
-    <a href="http://authdoc.sunsetdeveloper.com/">Documentation</a>
+    <a href="http://security.sunsetdeveloper.com/">Documentation</a>
     ·
     <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
     ·
