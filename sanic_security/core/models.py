@@ -269,7 +269,6 @@ class Session(BaseModel):
 
     class ErrorFactory(BaseErrorFactory):
         def get(self, model):
-            error = None
             if model is None:
                 error = Session.NotFoundError('Session could not be found.')
             elif not model.valid:
@@ -278,6 +277,8 @@ class Session(BaseModel):
                 error = Session.DeletedError('Session has been deleted.')
             elif model.expiration_date < datetime.datetime.now(datetime.timezone.utc):
                 error = Session.ExpiredError()
+            else:
+                error = None
             return error
 
     class SessionError(AuthError):
@@ -357,8 +358,9 @@ class SessionFactory:
             return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
                                                     expiration_date=expir_date)
         elif session_type == 'authentication':
+            expir_date = self.generate_expiration_date(days=30)
             return await AuthenticationSession.create(account=account, ip=get_ip(request),
-                                                      expiration_date=self.generate_expiration_date(days=30))
+                                                      expiration_date=expir_date)
         else:
             raise ValueError('Invalid session type.')
 
