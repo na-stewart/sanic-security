@@ -2,33 +2,10 @@ import functools
 
 from sanic.request import Request
 
-from asyncauth.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
+from sanic_security.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
 
 session_factory = SessionFactory()
 session_error_factory = Session.ErrorFactory()
-
-
-async def verify_account(verification_session: VerificationSession):
-    """
-    Verifies account associated to a verification session.
-
-    :param verification_session: Verification session containing account being verified.
-    """
-    verification_session.account.verified = True
-    await verification_session.account.save(update_fields=['verified'])
-
-
-async def request_verification(request: Request, account: Account = None):
-    """
-    Creates a verification session associated with an account. Renders account unverified.
-
-    :param request: Sanic request parameter.
-
-    :param account: The account being associated with the verification session.
-
-    :return: verification_session
-    """
-    return await session_factory.get('verification', request, account)
 
 
 async def request_captcha(request: Request):
@@ -59,30 +36,9 @@ async def captcha(request: Request):
     return captcha_session
 
 
-async def verify(request: Request):
-    """
-    Enforces verification.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    code.
-
-    :raises SessionError:
-
-    :raises AccountError:
-
-    :return: verification_session
-    """
-    verification_session = await VerificationSession().decode(request)
-    session_error_factory.throw(verification_session)
-    await verification_session.crosscheck_code(request.form.get('code'))
-    return verification_session
-
-
 def requires_captcha():
     """
     Enforced captcha.
-
-    :raises AccountError:
 
     :raises SessionError:
 
@@ -100,11 +56,53 @@ def requires_captcha():
     return wrapper
 
 
+async def request_verification(request: Request, account: Account = None):
+    """
+    Creates a verification session associated with an account.
+
+    :param request: Sanic request parameter.
+
+    :param account: The account being associated with the verification session.
+
+    :return: verification_session
+    """
+    if account is None:
+        verification_session = await VerificationSession().decode(request)
+        account = verification_session.account
+    return await session_factory.get('verification', request, account=account)
+
+
+async def verify(request: Request):
+    """
+    Enforces verification and validates attempts.
+
+    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+    code.
+
+    :raises SessionError:
+
+    :return: verification_session
+    """
+    verification_session = await VerificationSession().decode(request)
+    session_error_factory.throw(verification_session)
+    await verification_session.crosscheck_code(request.form.get('code'))
+    return verification_session
+
+
+async def verify_account(verification_session: VerificationSession):
+    """
+    Verifies account associated to a verification session.
+
+    :param verification_session: Verification session containing account being verified.
+    """
+    verification_session.account.verified = True
+    await verification_session.account.save(update_fields=['verified'])
+    return verification_session
+
+
 def requires_verification():
     """
-    Enforces verification.
-
-    :raises AccountError:
+    Enforces verification and validates attempts.
 
     :raises SessionError:
 

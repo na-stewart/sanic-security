@@ -17,10 +17,10 @@
 <br />
 <p align="center">
 
-  <h3 align="center">Async Auth</h3>
+  <h3 align="center">Sanic Security</h3>
 
   <p align="center">
-    A powerful, simple, and async authentication and authorization library for Sanic.
+   A powerful, simple and async security library for Sanic.
     <br />
     <a href="http://authdoc.sunsetdeveloper.com/">Documentation</a>
     ·
@@ -42,8 +42,11 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
+    * [Recovery](#recovery)
+    * [Captcha](#captcha)
     * [Verification](#verification)
     * [Authorization](#authorization)
+    * [IP2Proxy](#ip2proxy)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
@@ -57,24 +60,24 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Async Auth is an authentication and authorization library made easy. Specifically designed for use with [Sanic](https://github.com/huge-success/sanic).
-This library comes packed with features such as:
+Sanic Security is an authentication and authorization library made easy, designed for use with [Sanic](https://github.com/huge-success/sanic).
+This library is intended to be easy, convenient, and contains a variety of easy to implement features:
 
-* SMS and email verification
+
 * Easy login and registering
+* Captcha
+* SMS and email verification
 * JWT
-* Easy database integration
+* Password recovery
 * Wildcard permissions
 * Role permissions
-* Captcha
-* Password recovery
+* IP2Proxy support
+* Easy database integration
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
 
 ![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/ahopkins.png)
-
-Documentation is currently auto generated. This is a placeholder until I write out better documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -93,25 +96,38 @@ sudo apt-get install python3-pip
 
 * Install pip packages
 ```sh
-pip3 install asyncauth
+pip3 install sanic-security
 ```
 
 
 ## Usage
 
-Once Async Auth is all setup and good to go, implementing is easy as pie.
+Once Sanic Security is configured and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
-First you have to create a configuration file called auth.ini. Below is an example of it's contents: 
+First you have to create a configuration file called auth.ini in the project directory. Make sure Python's 
+working directory is the project directory. Below is an example of its contents: 
+
+WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
 ```
 [AUTH]
+name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
+[TORTOISE]
+username=admin
+password=8UVbijLUGYfUtItAi
+endpoint=website.cweAenuBY6b.us-north-1.rds.amazonaws.com
+schema=webschema
+models=sanicsecurity.core.models
+engine=mysql
+generate=true
+
 [TWILIO]
-from=+12058469963
+from=12058469963
 token=1bcioi878ygO8fi766Fb34750e82a5ab
 sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
 
@@ -123,20 +139,30 @@ username=test@gmail.com
 password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
+
+[IP2PROXY]
+key=iohuyg87UGYOFijoTYG8HOuhuZJsdXwjqbhuyghuiBUYG8yvo6J
+code=PX1LITEBIN
+bin=IP2PROXY-LITE-PX1.BIN
 ```
 
-Once you've configured Async Auth, you can initialize Sanic with the example below:
+You may remove each section in the configuration you aren't using.
+
+Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
 ```python
 if __name__ == '__main__':
-    register_tortoise(app, db_url='mysql://username:password@rds.amazonaws.com/asyncauth',
-                      modules={"models": ['asyncauth.core.models']}, generate_schemas=True)
+    initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ``` 
 
-Most request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
+WARNING: When you use a reverse proxy server (e.g. nginx), the value of ip address may contain the IP of a proxy, 
+typically 127.0.0.1. Almost always, this is not what you will want. [Click here for more information!](https://sanicframework.org/en/guide/advanced/proxy-headers.html)
+
+All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 
 ```python
+from sanic.response import json as sanic_json
 def json(message, content, status_code=200):
     payload = {
         'message': message,
@@ -150,13 +176,13 @@ def json(message, content, status_code=200):
 
 * Registration (With all verification requirements)
 
-Phone can be null or empty.
+Phone can be null or empty. A captcha request must be made.
 
 Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19811354186
+**phone** | 19811354186
 **password** | testpass
 **captcha** | Aj8HgD
 
@@ -168,7 +194,7 @@ async def on_register(request, captcha_session):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Registration successful', verification_session.account.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 ```
 
@@ -180,7 +206,7 @@ Key | Value |
 --- | --- |
 **username** | test 
 **email** | test@test.com 
-**phone** | +19811354186
+**phone** | 19811354186
 **password** | testpass
 
 ```python
@@ -202,7 +228,7 @@ Key | Value |
 async def on_login(request):
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    await authentication_session.encode(response)
+    authentication_session.encode(response)
     return response
 ```
 
@@ -216,6 +242,18 @@ async def on_logout(request):
     return response
 ```
 
+* Requires Authentication
+
+```python
+@app.get('api/client')
+@requires_authentication()
+async def on_authenticated(request, authentication_session):
+    return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
+                authentication_session.account.json())
+```
+
+## Recovery
+
 * Account Recovery Request
 
 This request is sent with an url argument instead of `form-data`.
@@ -227,15 +265,14 @@ Key | Value |
 ```python
 @app.get('api/recovery/request')
 @requires_captcha()
-async def on_recovery_request(request):
+async def on_recovery_request(request, captcha_session):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Recovery request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 ```
-
 
 * Account Recovery
 
@@ -247,25 +284,23 @@ Key | Value |
 ```python
 @app.post('api/recovery')
 @requires_verification()
-async def on_recovery(request, verification_session):
+async def on_recovery(request):
     await account_recovery(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 ```
 
-* Requires Authentication
 
-```python
-@app.get('api/authentication')
-@requires_authentication()
-async def on_authentication(request, authentication_session):
-    return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
-                authentication_session.account.json())
-```
-
-
-## Verification
+## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
+
+[1001 Free Fonts](https://www.1001fonts.com/)
+
+[Recommended Font](https://www.1001fonts.com/source-sans-pro-font.html)
+
+Captcha with example:
+
+![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/captcha.png)
 
 * Request Captcha
 
@@ -274,7 +309,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    await captcha_session.encode(response)
+    captcha_session.encode(response)
     return response
 ```
 
@@ -287,7 +322,24 @@ async def on_captcha_img(request):
     return await file(img_path)
 ```
 
-* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be invalidated)
+* Require Captcha
+
+Key | Value |
+--- | --- |
+**captcha** | Aj8HgD
+
+```python
+@app.post('api/captcha/attempt')
+@requires_captcha()
+async def on_captcha_attempt(request, captcha_session):
+    response = json('Your captcha attempt was correct!', captcha_session.json())
+    return response
+```
+
+## Verification
+
+* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
+  invalid or expired.)
 
 ```python
 @app.get('api/verification/request')
@@ -296,11 +348,11 @@ async def on_request_verification(request):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     response = json('Verification request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response)
     return response
 ```
 
-* Resend Verification (Does not create new verification code, simply resends the code)
+* Resend Verification (Does not create new verification code, only resends current session code.)
 
 ```python
 @app.get('api/verification/resend')
@@ -309,6 +361,20 @@ async def on_resend_verification(request):
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
     return json('Verification code resend successful', verification_session.json())
+```
+
+* Requires Verification
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVa
+
+```python
+@app.post('api/client')
+@requires_verification()
+async def on_verified(request, verification_session):
+    return json('Hello ' + verification_session.account.username + '! You have verified yourself and may continue. ', 
+                authentication_session.account.json())
 ```
 
 * Verify Account
@@ -325,31 +391,17 @@ async def on_verify(request, verification_session):
     return json('Verification successful!', verification_session.json())
 ```
 
-* Requires Verification
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVa
-
-
-```python
-@app.post('api/verification')
-@requires_verification()
-async def on_verification(request, verification_session):
-    return json('Hello ' + verification_session.account.username + '! You have verified yourself!', 
-                authentication_session.account.json())
-```
-
 ## Authorization
 
-Async Auth comes with two protocols for authorization: role based and wildcard based permissions.
+Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
 
-* Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
+Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
 
-* Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
+Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
+This concept was inspired by [Apache Shiro's](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
 
-  Examples of wildcard permissions are:
+Examples of wildcard permissions are:
 
   ```
   admin:add,update,delete
@@ -375,11 +427,43 @@ async def on_require_perms(request, authentication_session):
 @app.get('api/dashboard/admin')
 @require_roles('Admin', 'Moderator')
 async def on_require_roles(request, authentication_session):
-    """
-    Tests client role authorization access.
-    """
     return text('Admin gained access!')
 ```
+
+## IP2Proxy
+
+[IP2Location](https://www.ip2location.com/)
+
+[IP2Location LITE](https://lite.ip2location.com/)
+
+IP2Proxy Proxy Detection Database contains IP addresses which are used as VPN anonymizer, open proxies, web proxies
+and Tor exits, data center, web hosting (DCH) range, search engine robots (SES) and residential proxies (RES).
+
+Anonymous proxy servers are intermediate servers meant to hide the real identity or IP address of the requestor. 
+Studies found that a large number of anonymous proxy users are generally responsible for online credit card fraud, 
+forums and blogs spamming.
+
+IP2Proxy database is based on a proprietary detection algorithm in parallel with evaluation of anonymous open proxy 
+servers which are actively in use. Then it generates an up-to-date list of anonymous proxy IP address in the download 
+area every 24 hours.
+
+DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
+rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns.
+
+* Detect Proxy
+```python
+@app.get('api/recovery/request')
+@detect_proxy()
+@requires_captcha()
+async def on_recovery_request(request, captcha_session):
+    verification_session = await request_account_recovery(request)
+    await verification_session.text_code() # Text verification code.
+    await verification_session.email_code() # Or email verification code.
+    response = json('Recovery request successful', verification_session.json())
+    verification_session.encode(response)
+    return response
+```
+
 
 ## Error Handling
 
@@ -396,19 +480,24 @@ async def on_error(request, exception):
 
 ```python
 @app.middleware('response')
-async def response_middleware(request, response):
-    xss_prevention(request, response)
+async def xxs_middleware(request, response):
+    xss_prevention_middleware(request, response)
 
 
 @app.middleware('request')
-async def request_middleware(request):
-    return https_redirect(request)
+async def https_middleware(request):
+    return https_redirect_middleware(request)
+
+
+@app.middleware('request')
+async def ip2proxy_middleware(request):
+    await proxy_detection_middleware(request)
 ```
 
 <!-- ROADMAP -->
 ## Roadmap
 
-Keep up with Async Auth's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
+Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 
 <!-- CONTRIBUTING -->
@@ -428,15 +517,6 @@ Contributions are what make the open source community such an amazing place to b
 ## License
 
 Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
-
-
-
-<!-- CONTACT -->
-## Contact
-
-Aidan Stewart - aidanstewart@sunsetdeveloper.com
-
-Project Link: [https://github.com/sunset-developer/Amy-Rose](https://github.com/sunset-developer/Amy-Rose)
 
 
 <!-- ACKNOWLEDGEMENTS -->

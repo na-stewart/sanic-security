@@ -1,64 +1,21 @@
-import asyncio
 import functools
-import hashlib
 import re
 
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from asyncauth.core.config import config
-from asyncauth.core.models import Account, SessionFactory, AuthenticationSession, VerificationSession, Session
-from asyncauth.core.verification import request_verification
+from sanic_security.core.models import Account, SessionFactory, AuthenticationSession, Session
+from sanic_security.core.utils import hash_pw
+from sanic_security.core.verification import request_verification
 
 session_factory = SessionFactory()
 account_error_factory = Account.ErrorFactory()
 session_error_factory = Session.ErrorFactory()
 
 
-async def hash_pw(password: str):
-    """
-    Turns passed text into hashed password
-    :param password: Password to be hashed.
-    :return: hashed
-    """
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, hashlib.pbkdf2_hmac, 'sha512', password.encode('utf-8'),
-                                      config['AUTH']['SECRET'].encode('utf-8'), 100000)
-
-
-async def account_recovery(request: Request, verification_session: VerificationSession):
-    """
-    Recovers an account by setting the password to a new one passed through the method.
-
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    password.
-
-    :param verification_session: Verification session containing account being verified.
-    """
-    verification_session.account.password = await hash_pw(request.form.get('password'))
-    await AuthenticationSession.filter(account=verification_session.account, valid=True,
-                                       deleted=False).update(valid=False)
-    await verification_session.account.save(update_fields=['password'])
-
-
-async def request_account_recovery(request: Request):
-    """
-    Requests a verification session to ensure that the recovery attempt was made by the account owner.
-
-    :param request: Sanic request parameter. This request is sent with the following url argument: email.
-
-    return: verification_session
-    """
-
-    account = await Account.filter(email=request.args.get('email')).first()
-    account_error_factory.throw(account)
-    verification_session = await request_verification(request, account)
-    return verification_session
-
-
 async def register(request: Request, verified: bool = False, disabled: bool = False):
     """
-    Creates a new account. This is the recommend and most secure method for registering accounts' with Async Auth.
+    Creates a new account. This is the recommend and most secure method for registering accounts' with sanic-security.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     email, username, password, phone.
@@ -76,8 +33,8 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         raise Account.InvalidEmailError()
     try:
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
-                                       password=await hash_pw(forms.get('password')),
-                                       phone=forms.get('phone'), verified=verified, disabled=disabled)
+                                       password=hash_pw(forms.get('password')), phone=forms.get('phone'),
+                                       verified=verified, disabled=disabled)
         return await request_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()
@@ -99,7 +56,7 @@ async def login(request: Request):
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
     account_error_factory.throw(account)
-    if account.password == await hash_pw(form.get('password')):
+    if account.password == hash_pw(form.get('password')):
         authentication_session = await session_factory.get('authentication', request, account=account)
         return authentication_session
     else:
@@ -112,7 +69,6 @@ async def logout(request: Request):
 
     :param request: Sanic request parameter.
     """
-
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=['valid'])

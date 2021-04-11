@@ -1,35 +1,59 @@
 from sanic import Sanic
+from sanic.exceptions import ServerError
+from sanic.response import json as sanic_json
 from sanic.response import text, file
-from tortoise.contrib.sanic import register_tortoise
 
-from asyncauth.core.authentication import register, login, requires_authentication, \
-    logout, request_account_recovery, account_recovery
-from asyncauth.core.authorization import require_permissions, require_roles
-
-from asyncauth.core.config import config
-from asyncauth.core.middleware import xss_prevention, https_redirect
-from asyncauth.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
-from asyncauth.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
+from sanic_security.core.authentication import register, login, requires_authentication, logout
+from sanic_security.core.authorization import require_permissions, require_roles
+from sanic_security.core.initializer import initialize_security
+from sanic_security.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
+from sanic_security.core.recovery import request_account_recovery, account_recovery
+from sanic_security.core.utils import xss_prevention_middleware, https_redirect_middleware, get_ip
+from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from asyncauth.test.models import json
+from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware, proxy_detection
 
-app = Sanic('asyncauth Postman Test')
+app = Sanic('Sanic Security test server')
+
+
+def json(message, content, status_code=200):
+    payload = {
+        'message': message,
+        'status_code': status_code,
+        'content': content
+    }
+    return sanic_json(payload, status=status_code)
+
+
+def check_for_empty(form, *args):
+    for key, value in form.items():
+        if value is not None:
+            if not isinstance(value[0], bool) and not value[0] and key not in args:
+                raise ServerError(key + " is empty!", 400)
 
 
 @app.middleware('response')
-async def response_middleware(request, response):
+async def xxs_middleware(request, response):
     """
     Response middleware test.
     """
-    xss_prevention(request, response)
+    xss_prevention_middleware(request, response)
 
 
 @app.middleware('request')
-async def request_middleware(request):
+async def https_middleware(request):
     """
     Request middleware test.
     """
-    return https_redirect(request, True)
+    return https_redirect_middleware(request)
+
+
+@app.middleware('request')
+async def ip2proxy_middleware(request):
+    """
+    Request middleware test.
+    """
+    await proxy_detection_middleware(request)
 
 
 @app.post('api/test/register')
@@ -43,14 +67,14 @@ async def on_register(request):
 
 @app.post('api/test/register/verification')
 @requires_captcha()
-async def on_register_verification(request):
+async def on_register_verification(request, captcha_session):
     """
     Registration test with all built-in requirements.
     """
     verification_session = await register(request)
     await verification_session.text_code()
     response = json('Registration successful', verification_session.account.json())
-    await verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -80,7 +104,7 @@ async def on_request_captcha(request):
     """
     captcha_session = await request_captcha(request)
     response = json('Captcha request successful!', captcha_session.json())
-    await captcha_session.encode(response)
+    captcha_session.encode(response, secure=False)
     return response
 
 
@@ -103,7 +127,7 @@ async def new_verification_request(request):
     verification_session = await request_verification(request)
     await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -114,7 +138,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json('Login successful!', authentication_session.account.json())
-    await authentication_session.encode(response)
+    authentication_session.encode(response, secure=False)
     return response
 
 
@@ -153,6 +177,7 @@ async def on_create_admin_perm(request, authentication_session):
 
 
 @app.get('api/test/client')
+@detect_proxy()
 @requires_authentication()
 async def on_test_client(request, authentication_session):
     """
@@ -180,7 +205,6 @@ async def on_test_role(request, authentication_session):
 
 
 @app.get('api/test/recovery/request')
-@requires_captcha()
 async def on_recover_request(request):
     """
     Requests a recovery session to allow user to reset password with a code.
@@ -188,7 +212,7 @@ async def on_recover_request(request):
     verification_session = await request_account_recovery(request)
     await verification_session.text_code()
     response = json('Recovery request successful', verification_session.json())
-    await verification_session.encode(response)
+    verification_session.encode(response, secure=False)
     return response
 
 
@@ -211,6 +235,5 @@ async def on_error(request, exception):
 
 
 if __name__ == '__main__':
-    register_tortoise(app, db_url='mysql://admin:eG3FxzjAh9d1mdD63zky@personal.cbb4vtpozf6b.us-east-1.rds.amazonaws.com/amyrose',
-                      modules={"models": ['asyncauth.core.models']}, generate_schemas=True)
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    initialize_security(app)
+    app.run(host='0.0.0.0', port=8000, debug=True, workers=4)

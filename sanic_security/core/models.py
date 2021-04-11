@@ -1,20 +1,22 @@
 import asyncio
+import datetime
 import random
+import string
 import uuid
 
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from sanic import Sanic
 from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
-
-from asyncauth.core.config import config
-from asyncauth.core.utils import is_expired, best_by, request_ip, random_str, path_exists
-from asyncauth.lib.smtp import send_email
-from asyncauth.lib.twilio import send_sms
+from sanic_security.core.config import config
+from sanic_security.core.utils import path_exists, get_ip
+from sanic_security.lib.smtp import send_email
+from sanic_security.lib.twilio import send_sms
 
 
 class BaseErrorFactory:
@@ -41,7 +43,7 @@ class BaseErrorFactory:
 
 class AuthError(ServerError):
     """
-    Base error for all asyncauth related errors.
+    Base error for all sanic_security related errors.
     """
 
     def __init__(self, message, code):
@@ -50,9 +52,9 @@ class AuthError(ServerError):
 
 class BaseModel(Model):
     """
-    Base asyncauth model that all other models derive from. Some important elements to take in consideration is that
+    Base sanic_security model that all other models derive from. Some important elements to take in consideration is that
     deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
-    the database. Retrieving asyncauth models should be done via filtering with the 'uid' variable rather then the id
+    the database. Retrieving sanic_security models should be done via filtering with the 'uid' variable rather then the id
     variable.
     """
 
@@ -132,7 +134,7 @@ class Account(BaseModel):
 
     class DisabledError(AccountError):
         def __init__(self):
-            super().__init__("This account has been disabled.", 403)
+            super().__init__("This account has been disabled.", 401)
 
     class IncorrectPasswordError(AccountError):
         def __init__(self):
@@ -149,7 +151,7 @@ class Session(BaseModel):
     in order to identify the client. All sessions should be created using the SessionFactory().
     """
 
-    expiration_date = fields.DatetimeField(default=best_by, null=True)
+    expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     attempts = fields.IntField(default=0)
@@ -157,8 +159,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = self.__class__.__name__[:4].lower() + 'tkn'
-        self.loop = asyncio.get_running_loop()
+        self.cookie = config['AUTH']['name'].strip() + '_' + self.__class__.__name__
 
     def json(self):
         return {
@@ -166,9 +167,39 @@ class Session(BaseModel):
             'date_created': str(self.date_created),
             'date_updated': str(self.date_updated),
             'expiration_date': str(self.expiration_date),
+            'account': self.account.email if isinstance(self.account, Account) else None,
             'valid': self.valid,
             'attempts': self.attempts
         }
+
+    @staticmethod
+    def initialize_cache(app: Sanic):
+        """
+        Caches up to 100 code and image variations.
+        """
+
+        @app.listener("before_server_start")
+        async def generate_codes(app, loop):
+            session_cache = './resources/security-cache/session/'
+            loop = asyncio.get_running_loop()
+            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+            if not path_exists(session_cache):
+                async with aiofiles.open(session_cache + 'codes.txt', mode="w") as f:
+                    for i in range(100):
+                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                        await f.write(code + ' ')
+                        await loop.run_in_executor(None, image.write, code[:6], session_cache + code[:6] + '.png')
+
+    @staticmethod
+    async def get_code():
+        """
+        Retrieves a random cached code from a codes.txt file
+
+        :return: code
+        """
+        async with aiofiles.open('./resources/security-cache/session/codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
 
     async def crosscheck_code(self, code: str):
         """
@@ -186,7 +217,7 @@ class Session(BaseModel):
             self.valid = False
             await self.save(update_fields=['valid'])
 
-    async def encode(self, response: HTTPResponse, secure: bool = False, same_site: str = 'lax'):
+    def encode(self, response: HTTPResponse, secure=True, same_site: str = 'lax'):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -202,13 +233,13 @@ class Session(BaseModel):
             'uid': str(self.uid),
             'ip': self.ip
         }
-        encoded = await self.loop.run_in_executor(None, jwt.encode, payload, config['AUTH']['secret'], 'HS256')
+        encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
         response.cookies[self.cookie]['samesite'] = same_site
 
-    async def decode_raw(self, request: Request):
+    def decode_raw(self, request: Request):
         """
         Decodes JWT token in cookie to dict.
 
@@ -217,8 +248,7 @@ class Session(BaseModel):
         :return: raw
         """
         try:
-            return await self.loop.run_in_executor(None, jwt.decode, request.cookies.get(self.cookie),
-                                                   config['AUTH']['secret'], 'HS256')
+            return jwt.decode(request.cookies.get(self.cookie), config['AUTH']['secret'], 'HS256')
         except DecodeError:
             raise Session.DecodeError()
 
@@ -231,7 +261,7 @@ class Session(BaseModel):
         :return: session
         """
 
-        decoded = await self.decode_raw(request)
+        decoded = self.decode_raw(request)
         return await self.filter(uid=decoded.get('uid')).prefetch_related('account').first()
 
     class Meta:
@@ -246,7 +276,7 @@ class Session(BaseModel):
                 error = Session.InvalidError()
             elif model.deleted:
                 error = Session.DeletedError('Session has been deleted.')
-            elif is_expired(model.expiration_date):
+            elif model.expiration_date < datetime.datetime.now(datetime.timezone.utc):
                 error = Session.ExpiredError()
             return error
 
@@ -256,11 +286,11 @@ class Session(BaseModel):
 
     class MaximumAttemptsError(SessionError):
         def __init__(self):
-            super().__init__('You\'ve reached the maximum amount of attempts.', 403)
+            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
 
     class DecodeError(SessionError):
         def __init__(self):
-            super().__init__('Session is not available.', 403)
+            super().__init__('Session is not available.', 400)
 
     class InvalidError(SessionError):
         def __init__(self):
@@ -280,31 +310,17 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def __init__(self):
-        self.session_cache_path = './resources/session-cache/'
+    def generate_expiration_date(self, days: int = 1, minutes: int = 0):
+        """
+        Creates an expiration date. Adds days to current datetime.
 
-    async def get_cached_session_code(self):
-        """
-        Retrieves a random cached code from a codes.txt file
+        :param days: days to be added to current time.
 
-        :return: code
-        """
-        async with aiofiles.open(self.session_cache_path + 'codes.txt', mode='r') as f:
-            codes = await f.read()
-            return random.choice(codes.split())
+        :param minutes: minutes to be added to the current time.
 
-    async def cache_session_codes(self):
+        :return: expiration_date
         """
-        Generates up to 100 code and image variations in the resources/session-cache directory.
-        """
-        loop = asyncio.get_running_loop()
-        image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-        if not path_exists(self.session_cache_path):
-            async with aiofiles.open(self.session_cache_path + 'codes.txt', mode="w") as f:
-                for i in range(100):
-                    code = random_str(8)
-                    await f.write(code + ' ')
-                    await loop.run_in_executor(None, image.write, code[:6], self.session_cache_path + code[:6] + '.png')
+        return datetime.datetime.utcnow() + datetime.timedelta(days=days, minutes=minutes)
 
     async def _account_via_decoded(self, request: Request, session: Session):
         """
@@ -328,23 +344,23 @@ class SessionFactory:
 
         :param request: Sanic request parameter.
 
-        :param account:
+        :param account: Account being associated to to a session.
 
-        :return:
+        :return: session
         """
-        await self.cache_session_codes()
-        code = await self.get_cached_session_code()
+        code = await Session.get_code()
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=request_ip(request), code=code[:6])
+            expir_date = self.generate_expiration_date(minutes=1)
+            return await CaptchaSession.create(ip=get_ip(request), code=code[:6], expiration_date=expir_date)
         elif session_type == 'verification':
-            account = account if account else await self._account_via_decoded(request, VerificationSession())
-            return await VerificationSession.create(code=code, ip=request_ip(request), account=account)
+            expir_date = self.generate_expiration_date(minutes=5)
+            return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
+                                                    expiration_date=expir_date)
         elif session_type == 'authentication':
-            account = account if account else await self._account_via_decoded(request, AuthenticationSession())
-            return await AuthenticationSession.create(account=account, ip=request_ip(request),
-                                                      expiration_date=best_by(30))
+            return await AuthenticationSession.create(account=account, ip=get_ip(request),
+                                                      expiration_date=self.generate_expiration_date(days=30))
         else:
-            raise ValueError
+            raise ValueError('Invalid session type.')
 
 
 class VerificationSession(Session):
@@ -384,7 +400,7 @@ class CaptchaSession(Session):
         :return: captcha_img_path
         """
         decoded_captcha = await CaptchaSession().decode(request)
-        return './resources/session-cache/' + decoded_captcha.code + '.png'
+        return './resources/security-cache/session/' + decoded_captcha.code + '.png'
 
 
 class AuthenticationSession(Session):
@@ -399,7 +415,7 @@ class AuthenticationSession(Session):
         :raises UnknownLocationError:
         """
 
-        if not await AuthenticationSession.filter(ip=request_ip(request), account=self.account).exists():
+        if not await AuthenticationSession.filter(ip=get_ip(request), account=self.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
 
@@ -419,7 +435,7 @@ class Role(BaseModel):
 
     class InsufficientRoleError(AuthError):
         def __init__(self):
-            super().__init__('You do not have the required role for this action.', 403)
+            super().__init__('Insufficient roles required for this action.', 403)
 
 
 class Permission(BaseModel):
@@ -438,4 +454,4 @@ class Permission(BaseModel):
 
     class InsufficientPermissionError(AuthError):
         def __init__(self):
-            super().__init__('You do not have the required permissions for this action.', 403)
+            super().__init__('Insufficient permissions required for this action.', 403)
