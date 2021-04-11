@@ -21,7 +21,7 @@ class IP2ProxyError(AuthError):
 
 class ProxyDetectedError(IP2ProxyError):
     def __init__(self):
-        super(ProxyDetectedError, self).__init__('An attempt was made to access a resource utilizing a forbidden '
+        super().__init__('An attempt was made to access a resource utilizing a forbidden '
                                                  'proxy.', 403)
 
 
