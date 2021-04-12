@@ -7,7 +7,12 @@ APScheduler==3.7.0
 async-timeout==3.0.1
 attrs==20.3.0
 captcha==0.3
+certifi==2020.12.5
 chardet==4.0.0
+h11==0.9.0
+httpcore==0.11.1
+httptools==0.1.1
+httpx==0.15.4
 idna==3.1
 iso8601==0.1.14
 multidict==5.1.0
@@ -15,8 +20,14 @@ Pillow==8.2.0
 PyJWT==2.0.1
 pypika-tortoise==0.1.0
 pytz==2020.5
+rfc3986==1.4.0
+sanic>=20.12.3
 six==1.15.0
+sniffio==1.2.0
 tortoise-orm==0.17.2
 typing-extensions==3.7.4.3
 tzlocal==2.1
+ujson==4.0.2
+uvloop==0.14.0
+websockets==8.1
 yarl==1.6.3
