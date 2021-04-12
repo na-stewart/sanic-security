@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
 WARNING: First time initialization may take up to a minute. 
 
-All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
+All request bodies must be sent as `form-data`. For my below examples, I use my own custom json method:
 
 ```python
 from sanic.response import json as sanic_json
