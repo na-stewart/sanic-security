@@ -319,7 +319,7 @@ async def on_request_captcha(request):
 ```python
 @app.get('api/captcha/img')
 async def on_captcha_img(request):
-    img_path = await CaptchaSession().captcha_img(request)
+    img_path = await CaptchaSession.captcha_img(request)
     return await file(img_path)
 ```
 
