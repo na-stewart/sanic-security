@@ -45,15 +45,18 @@ async def cache_ip2proxy_database():
                     raise IP2ProxyError('Unzipping has failed due to the download limit or incorrect credentials.', 500)
 
 
-async def initialize_ip2proxy():
+def initialize_ip2proxy(app):
     """
     Initializes a async cron job that runs every 00:15 GMT to refresh the IP2Proxy database.
     """
-    if not path_exists('./resources/security-cache/ip2proxy'):
-        await cache_ip2proxy_database()
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(cache_ip2proxy_database, 'cron', minute='15', hour='0', month='*', week='*', day='*')
-    scheduler.start()
+    @app.listener("before_server_start")
+    async def init_ip2proxy_cron(app, loop):
+        if not path_exists('./resources/security-cache/ip2proxy'):
+            await cache_ip2proxy_database()
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(cache_ip2proxy_database, 'cron', minute='15', hour='0', month='*', week='*', day='*')
+        scheduler.start()
+
 
 
 async def proxy_detection(ip: str):
