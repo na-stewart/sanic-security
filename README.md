@@ -261,6 +261,7 @@ This request is sent with an url argument instead of `form-data`.
 Key | Value |
 --- | --- |
 **email** | test@test.com
+**captcha** | Aj8HgD
 
 ```python
 @app.get('api/recovery/request')
