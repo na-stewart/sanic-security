@@ -86,7 +86,7 @@ async def on_captcha_img(request):
     """
     Retrieves captcha image from captcha session.
     """
-    img_path = await CaptchaSession().captcha_img(request)
+    img_path = await CaptchaSession().get_image(request)
     return await file(img_path)
 
 
