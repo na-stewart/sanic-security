@@ -45,8 +45,7 @@ async def ip2proxy_middleware(request):
     """
     Request middleware test.
     """
-    pass
-    #await proxy_detection_middleware(request)
+    await proxy_detection_middleware(request)
 
 
 @app.post('api/test/register')
@@ -86,7 +85,7 @@ async def on_captcha_img(request):
     """
     Retrieves captcha image from captcha session.
     """
-    img_path = await CaptchaSession().captcha_img(request)
+    img_path = await CaptchaSession.captcha_img(request)
     return await file(img_path)
 
 
