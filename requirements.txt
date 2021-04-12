@@ -23,6 +23,6 @@ tortoise-orm==0.17.2
 typing-extensions==3.7.4.3
 tzlocal==2.1
 ujson==4.0.2
-uvloop==0.15.1
+uvloop==0.15.2
 websockets==8.1
 yarl==1.6.3
