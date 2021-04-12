@@ -8,7 +8,6 @@ async-timeout==3.0.1
 attrs==20.3.0
 captcha==0.3
 chardet==4.0.0
-httptools==0.1.1
 idna==3.1
 iso8601==0.1.14
 multidict==5.1.0
@@ -16,13 +15,8 @@ Pillow==8.2.0
 PyJWT==2.0.1
 pypika-tortoise==0.1.0
 pytz==2020.5
-sanic==21.3.2
-sanic-routing==0.5.2
 six==1.15.0
 tortoise-orm==0.17.2
 typing-extensions==3.7.4.3
 tzlocal==2.1
-ujson==4.0.2
-uvloop==0.15.2
-websockets==8.1
 yarl==1.6.3
