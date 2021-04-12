@@ -343,7 +343,7 @@ async def on_captcha_attempt(request, captcha_session):
   invalid or expired.)
 
 ```python
-@app.get('api/verification/request')
+@app.post('api/verification/request')
 async def on_request_verification(request):
     verification_session = await request_verification(request)
     await verification_session.text_code() # Text verification code.
@@ -356,7 +356,7 @@ async def on_request_verification(request):
 * Resend Verification (Does not create new verification code, only resends current session code.)
 
 ```python
-@app.get('api/verification/resend')
+@app.post('api/verification/resend')
 async def on_resend_verification(request):
     verification_session = await VerificationSession().decode(request)
     await verification_session.text_code() # Text verification code.
