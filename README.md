@@ -264,7 +264,7 @@ Key | Value |
 **captcha** | Aj8HgD
 
 ```python
-@app.post('api/recovery/attempt')
+@app.post('api/recovery/request')
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
     verification_session = await request_account_recovery(request)
