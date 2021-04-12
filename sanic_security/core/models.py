@@ -390,8 +390,8 @@ class CaptchaSession(Session):
     """
     Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
-    pass
 
+    @staticmethod
     async def captcha_img(self, request):
         """
         Retrieves image path of captcha.
