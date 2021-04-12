@@ -3,7 +3,6 @@ import datetime
 import random
 import string
 import uuid
-
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
@@ -41,21 +40,18 @@ class BaseErrorFactory:
             raise error
 
 
-class AuthError(ServerError):
+class SecurityError(ServerError):
     """
-    Base error for all sanic_security related errors.
+    Base error for all Sanic Security related errors.
     """
 
-    def __init__(self, message, code):
+    def __init__(self, message, code=None):
         super().__init__(message, code)
 
 
 class BaseModel(Model):
     """
-    Base sanic_security model that all other models derive from. Some important elements to take in consideration is that
-    deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
-    the database. Retrieving sanic_security models should be done via filtering with the 'uid' variable rather then the id
-    variable.
+    Base Sanic Security model that all other models derive from.
     """
 
     id = fields.IntField(pk=True)
@@ -71,11 +67,11 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    class NotFoundError(AuthError):
+    class NotFoundError(SecurityError):
         def __init__(self, message):
             super().__init__(message, 404)
 
-    class DeletedError(AuthError):
+    class DeletedError(SecurityError):
         def __init__(self, message):
             super().__init__(message, 404)
 
@@ -116,7 +112,7 @@ class Account(BaseModel):
             'verified': self.verified
         }
 
-    class AccountError(AuthError):
+    class AccountError(SecurityError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -235,7 +231,6 @@ class Session(BaseModel):
         }
         encoded = jwt.encode(payload, config['AUTH']['secret'], 'HS256')
         response.cookies[self.cookie] = encoded
-        response.cookies[self.cookie]['expires'] = self.expiration_date
         response.cookies[self.cookie]['secure'] = secure
         response.cookies[self.cookie]['samesite'] = same_site
 
@@ -285,7 +280,7 @@ class Session(BaseModel):
                 error = Session.ExpiredError()
             return error
 
-    class SessionError(AuthError):
+    class SessionError(SecurityError):
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -437,7 +432,7 @@ class Role(BaseModel):
             'name': self.name,
         }
 
-    class InsufficientRoleError(AuthError):
+    class InsufficientRoleError(SecurityError):
         def __init__(self):
             super().__init__('Insufficient roles required for this action.', 403)
 
@@ -456,6 +451,6 @@ class Permission(BaseModel):
             'wildcard': self.wildcard,
         }
 
-    class InsufficientPermissionError(AuthError):
+    class InsufficientPermissionError(SecurityError):
         def __init__(self):
             super().__init__('Insufficient permissions required for this action.', 403)

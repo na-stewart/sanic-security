@@ -6,9 +6,10 @@ from sanic_security.core.utils import hash_pw
 from sanic_security.core.verification import request_verification
 
 
-async def account_recovery(request: Request, verification_session: VerificationSession):
+async def fulfill_recovery_attempt(request: Request, verification_session: VerificationSession):
     """
-    Recovers an account by setting the password to a new one.
+    Recovers an account by setting the password to a new one once recovery attempt was determined to be made
+    by the account owner.
 
     :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
     password.
@@ -21,7 +22,7 @@ async def account_recovery(request: Request, verification_session: VerificationS
     await verification_session.account.save(update_fields=['password'])
 
 
-async def request_account_recovery(request: Request):
+async def attempt_recovery(request: Request):
     """
     Requests a verification session to ensure that the recovery attempt was made by the account owner.
 
@@ -32,5 +33,4 @@ async def request_account_recovery(request: Request):
 
     account = await Account.filter(email=request.form.get('email')).first()
     account_error_factory.throw(account)
-    verification_session = await request_verification(request, account)
-    return verification_session
+    return await request_verification(request, account)

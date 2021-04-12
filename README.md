@@ -149,7 +149,8 @@ code=PX1LITEBIN
 bin=IP2PROXY-LITE-PX1.BIN
 ```
 
-You may remove each section in the configuration you aren't using.
+You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
+delete the TWILLIO section.
 
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
@@ -159,7 +160,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
 ```
 
-WARNING: First time initialization may take up to a minute. 
 
 All request bodies must be sent as `form-data`. For my below examples, I use my own custom json method:
 
@@ -247,7 +247,7 @@ async def on_logout(request):
 * Requires Authentication
 
 ```python
-@app.get('api/client')
+@app.get('api/client/authenticate')
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
     return json('Hello ' + authentication_session.account.username + '! You are now authenticated.', 
@@ -256,7 +256,7 @@ async def on_authenticated(request, authentication_session):
 
 ## Recovery
 
-* Account Recovery Request
+* Recovery Attempt
 
 Key | Value |
 --- | --- |
@@ -264,18 +264,18 @@ Key | Value |
 **captcha** | Aj8HgD
 
 ```python
-@app.post('api/recovery/request')
+@app.post('api/recovery/attempt')
 @requires_captcha()
-async def on_recovery_request(request, captcha_session):
-    verification_session = await request_account_recovery(request)
+async def on_recovery_attempt(request, captcha_session):
+    verification_session = await attempt_recovery(request)
     await verification_session.text_code() # Text verification code.
     await verification_session.email_code() # Or email verification code.
-    response = json('Recovery request successful', verification_session.json())
+    response = json('A recovery attempt has been made, please verify account ownership.', verification_session.json())
     verification_session.encode(response)
     return response
 ```
 
-* Account Recovery
+* Recovery Fulfill
 
 Key | Value |
 --- | --- |
@@ -283,11 +283,11 @@ Key | Value |
 **password** | newpass
 
 ```python
-@app.post('api/recovery')
+@app.post('api/recovery/fulfill')
 @requires_verification()
-async def on_recovery(request):
-    await account_recovery(request, verification_session)
-    return json('Account recovered successfully', verification_session.account.json())
+async def on_recovery_fulfill(request):
+    await fulfill_recovery_attempt(request, verification_session)
+    return json('Account recovered successfully.', verification_session.account.json())
 ```
 
 
@@ -343,7 +343,7 @@ async def on_captcha_attempt(request, captcha_session):
   invalid or expired.)
 
 ```python
-@app.post('api/verification/request')
+@app.get('api/verification/request')
 async def on_request_verification(request):
     verification_session = await request_verification(request)
     await verification_session.text_code() # Text verification code.
@@ -371,7 +371,7 @@ Key | Value |
 **code** | G8ha9nVa
 
 ```python
-@app.post('api/client')
+@app.get('api/client/verify')
 @requires_verification()
 async def on_verified(request, verification_session):
     return json('Hello ' + verification_session.account.username + '! You have verified yourself and may continue. ', 
@@ -385,7 +385,7 @@ Key | Value |
 **code** | G8ha9nVae
 
 ```python
-@app.post('api/register/verify')
+@app.post('api/verification/account')
 @requires_verification()
 async def on_verify(request, verification_session):
     await verify_account(verification_session)
@@ -451,25 +451,23 @@ area every 24 hours.
 DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
 rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns.
 
+WARNING: Utilizing IP2Proxy may cause first time initialization to take up to thirty seconds or more.
+
 * Detect Proxy
 ```python
-@app.get('api/recovery/request')
+@app.get('api/client/proxy')
 @detect_proxy()
-@requires_captcha()
-async def on_recovery_request(request, captcha_session):
-    verification_session = await request_account_recovery(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('Recovery request successful', verification_session.json())
-    verification_session.encode(response)
-    return response
+@requires_authentication()
+async def on_detect_proxy(request, authentication_session):
+    return json('Hello ' + authentication_session.account.username + '! You are not using a proxy! ', 
+                authentication_session.account.json())
 ```
 
 
 ## Error Handling
 
 ```python
-@app.exception(AuthError)
+@app.exception(SecurityError)
 async def on_error(request, exception):
     return json('An error has occurred!', {
         'error': type(exception).__name__,

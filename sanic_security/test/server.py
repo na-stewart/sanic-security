@@ -6,12 +6,12 @@ from sanic.response import text, file
 from sanic_security.core.authentication import register, login, requires_authentication, logout
 from sanic_security.core.authorization import require_permissions, require_roles
 from sanic_security.core.initializer import initialize_security
-from sanic_security.core.models import AuthError, Permission, Role, VerificationSession, CaptchaSession
-from sanic_security.core.recovery import request_account_recovery, account_recovery
-from sanic_security.core.utils import xss_prevention_middleware, https_redirect_middleware, get_ip
+from sanic_security.core.models import SecurityError, Permission, Role, VerificationSession, CaptchaSession
+from sanic_security.core.recovery import attempt_recovery, fulfill_recovery_attempt
+from sanic_security.core.utils import xss_prevention_middleware
 from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware, proxy_detection
+from sanic_security.lib.ip2proxy import detect_proxy
 
 app = Sanic('Sanic Security test server')
 
@@ -199,28 +199,29 @@ async def on_test_role(request, authentication_session):
 
 @app.post('api/test/recovery/attempt')
 @requires_captcha()
-async def on_recover_request(request, captcha_session):
+async def on_recovery_attempt(request, captcha_session):
     """
-    Requests a recovery session to allow user to reset password with a code.
+    Attempts to recover account via changing password, requests verification to ensure the recovery attempt was made
+    by account owner.
     """
-    verification_session = await request_account_recovery(request)
+    verification_session = await attempt_recovery(request)
     await verification_session.text_code()
-    response = json('Recovery request successful', verification_session.json())
+    response = json('A recovery attempt has been made, please verify account ownership.', verification_session.json())
     verification_session.encode(response, secure=False)
     return response
 
 
-@app.post('api/test/recovery')
+@app.post('api/test/recovery/fulfill')
 @requires_verification()
-async def on_recover(request, verification_session):
+async def on_recovery_fulfill(request, verification_session):
     """
-    Changes and recovers an account's password.
+    Changes and recovers an account's password once recovery attempt was determined to have been made by account owner.
     """
-    await account_recovery(request, verification_session)
+    await fulfill_recovery_attempt(request, verification_session)
     return json('Account recovered successfully', verification_session.account.json())
 
 
-@app.exception(AuthError)
+@app.exception(SecurityError)
 async def on_error(request, exception):
     return json('An error has occurred!', {
         'error': type(exception).__name__,

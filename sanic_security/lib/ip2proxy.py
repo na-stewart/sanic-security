@@ -9,13 +9,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sanic.request import Request
 
 from sanic_security.core.config import config
-from sanic_security.core.models import AuthError
+from sanic_security.core.models import SecurityError
 from sanic_security.core.utils import path_exists, get_ip
 
 ip2proxy_database = aioIP2Proxy.IP2Proxy()
 
 
-class IP2ProxyError(AuthError):
+class IP2ProxyError(SecurityError):
     pass
 
 
@@ -42,7 +42,7 @@ async def cache_ip2proxy_database():
                     await loop.run_in_executor(None, shutil.unpack_archive, zip_path,
                                                './resources/security-cache/ip2proxy')
                 except shutil.ReadError:
-                    raise IP2ProxyError('Unzipping has failed due to the download limit or incorrect credentials.', 500)
+                    raise IP2ProxyError('Unzipping has failed due to the download rate limit or incorrect credentials.')
 
 
 def initialize_ip2proxy(app):
