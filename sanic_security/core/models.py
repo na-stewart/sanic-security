@@ -247,10 +247,14 @@ class Session(BaseModel):
 
         :return: raw
         """
+        cookie = request.cookies.get(self.cookie)
         try:
-            return jwt.decode(request.cookies.get(self.cookie), config['AUTH']['secret'], 'HS256')
-        except DecodeError:
-            raise Session.DecodeError()
+            if not cookie:
+                raise DecodeError('Token can not be null.')
+            else:
+                return jwt.decode(cookie, config['AUTH']['secret'], 'HS256')
+        except DecodeError as e:
+            raise Session.DecodeError(e)
 
     async def decode(self, request: Request):
         """
@@ -270,13 +274,14 @@ class Session(BaseModel):
     class ErrorFactory(BaseErrorFactory):
         def get(self, model):
             error = None
+
             if model is None:
                 error = Session.NotFoundError('Session could not be found.')
             elif not model.valid:
                 error = Session.InvalidError()
             elif model.deleted:
                 error = Session.DeletedError('Session has been deleted.')
-            elif model.expiration_date < datetime.datetime.now(datetime.timezone.utc):
+            elif datetime.datetime.now(datetime.timezone.utc) >= model.expiration_date:
                 error = Session.ExpiredError()
             return error
 
@@ -289,8 +294,8 @@ class Session(BaseModel):
             super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
 
     class DecodeError(SessionError):
-        def __init__(self):
-            super().__init__('Session is not available.', 400)
+        def __init__(self, exception):
+            super().__init__('Session cookie could not be decoded. ' + str(exception), 400)
 
     class InvalidError(SessionError):
         def __init__(self):
@@ -310,7 +315,7 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def generate_expiration_date(self, days: int = 1, minutes: int = 0):
+    def generate_expiration_date(self, days: int = 0, minutes: int = 0):
         """
         Creates an expiration date. Adds days to current datetime.
 

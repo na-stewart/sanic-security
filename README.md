@@ -106,6 +106,9 @@ Once Sanic Security is configured and good to go, implementing is easy as pie.
 
 ### Initial Setup
 
+Familiarity with [Sanic](https://github.com/huge-success/sanic) and [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html)
+is recommended.
+
 First you have to create a configuration file called auth.ini in the project directory. Make sure Python's 
 working directory is the project directory. Below is an example of its contents: 
 
@@ -154,10 +157,9 @@ Once you've configured Sanic Security, you can initialize Sanic with the example
 if __name__ == '__main__':
     initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
-``` 
+```
 
-WARNING: When you use a reverse proxy server (e.g. nginx), the value of ip address may contain the IP of a proxy, 
-typically 127.0.0.1. Almost always, this is not what you will want. [Click here for more information!](https://sanicframework.org/en/guide/advanced/proxy-headers.html)
+WARNING: First time initialization may take up to a minute. 
 
 All request bodies should be sent as `form-data`. For my below examples, I use my own custom json method:
 

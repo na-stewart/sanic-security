@@ -41,19 +41,12 @@ async def xxs_middleware(request, response):
 
 
 @app.middleware('request')
-async def https_middleware(request):
-    """
-    Request middleware test.
-    """
-    return https_redirect_middleware(request)
-
-
-@app.middleware('request')
 async def ip2proxy_middleware(request):
     """
     Request middleware test.
     """
-    await proxy_detection_middleware(request)
+    pass
+    #await proxy_detection_middleware(request)
 
 
 @app.post('api/test/register')

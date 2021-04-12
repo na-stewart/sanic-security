@@ -12,7 +12,8 @@ def initialize_security(app: Sanic):
 
     :param app: Sanic object used to add tasks too.
     """
+    initialize_tortoise(app)
+    Session.initialize_cache(app)
     if config.has_section('IP2PROXY'):
         initialize_ip2proxy(app)
-    Session.initialize_cache(app)
-    initialize_tortoise(app)
+
