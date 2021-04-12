@@ -392,7 +392,7 @@ class CaptchaSession(Session):
     """
 
     @staticmethod
-    async def captcha_img(self, request):
+    async def captcha_img(request):
         """
         Retrieves image path of captcha.
 
