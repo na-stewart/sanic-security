@@ -364,12 +364,13 @@ class SessionFactory:
 
 class VerificationSession(Session):
     """
-    Verifies an account via emailing or texting a code.
+    Used to verify an account's email or mobile. Can be used in order to validate the person utilizing
+    an account is the actual owner.
     """
 
     async def text_code(self, code_prefix="Your code is: "):
         """
-        Sends account verification code via text.
+        Sends verification code via text.
 
         :param code_prefix: Message being sent with code, for example "Your code is: ".
         """
@@ -377,7 +378,7 @@ class VerificationSession(Session):
 
     async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
         """
-        Sends account verification code via email.
+        Sends verification code via email.
 
         :param code_prefix: Message being sent with code, for example "Your code is: ".
 
@@ -388,7 +389,7 @@ class VerificationSession(Session):
 
 class CaptchaSession(Session):
     """
-    Validates an client as human by forcing a user to correctly enter a captcha challenge.
+    Validates a client as human by correctly entering a captcha challenge.
     """
 
     @staticmethod
