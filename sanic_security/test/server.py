@@ -11,7 +11,7 @@ from sanic_security.core.recovery import attempt_recovery, fulfill_recovery_atte
 from sanic_security.core.utils import xss_prevention_middleware
 from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
     request_verification
-from sanic_security.lib.ip2proxy import detect_proxy, proxy_detection_middleware
+from sanic_security.lib.ip2proxy import detect_proxy
 
 app = Sanic('Sanic Security test server')
 
@@ -38,15 +38,6 @@ async def xxs_middleware(request, response):
     Response middleware test.
     """
     xss_prevention_middleware(request, response)
-
-
-@app.middleware('request')
-async def ip2proxy_middleware(request):
-    """
-    Request middleware test.
-    """
-    pass
-    #await proxy_detection_middleware(request)
 
 
 @app.post('api/test/register')

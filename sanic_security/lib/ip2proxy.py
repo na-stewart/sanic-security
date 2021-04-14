@@ -6,7 +6,6 @@ import aioIP2Proxy
 import aiofiles
 import aiohttp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sanic.request import Request
 
 from sanic_security.core.config import config
 from sanic_security.core.models import SecurityError
@@ -90,7 +89,7 @@ def detect_proxy():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            await proxy_detection_middleware(request)
+            await proxy_detection(get_ip(request))
             return await func(request, *args, **kwargs)
 
         return wrapped
@@ -98,10 +97,3 @@ def detect_proxy():
     return wrapper
 
 
-async def proxy_detection_middleware(request: Request):
-    """
-    Reads local database file and crosschecks passed ip address to determine if it is a known proxy.
-
-    :param request: Sanic request parameter.
-    """
-    await proxy_detection(get_ip(request))
