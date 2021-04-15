@@ -114,7 +114,7 @@ working directory is the project directory. Below is an example of its contents:
 
 WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
-```
+```ini
 [AUTH]
 name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
