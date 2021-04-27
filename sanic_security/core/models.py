@@ -276,7 +276,7 @@ class VerificationSession(Session):
             if not path_exists(cache_path):
                 async with aiofiles.open(cache_path+ 'codes.txt', mode="w") as f:
                     for i in range(100):
-                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                        code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=8))
                         await f.write(code + ' ')
                         await loop.run_in_executor(None, image.write, code[:6], cache_path + code[:6] + '.png')
 
