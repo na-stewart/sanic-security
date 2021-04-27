@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 import random
 import string
 import uuid
@@ -14,7 +15,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from sanic_security.core.config import config
-from sanic_security.core.utils import path_exists, get_ip
+from sanic_security.core.utils import get_ip
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 
@@ -255,7 +256,7 @@ class Session(BaseModel):
 
 class VerificationSession(Session):
     """
-    Verifies an account via emailing or texting a code.
+
     """
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=8, null=True)
@@ -269,12 +270,12 @@ class VerificationSession(Session):
 
         @app.listener("before_server_start")
         async def generate_codes(app, loop):
-
             loop = asyncio.get_running_loop()
             image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
             cache_path = VerificationSession.cache_path
-            if not path_exists(cache_path):
-                async with aiofiles.open(cache_path+ 'codes.txt', mode="w") as f:
+            if not os.path.exists(cache_path):
+                os.makedirs(cache_path)
+                async with aiofiles.open(cache_path + 'codes.txt', mode="w") as f:
                     for i in range(100):
                         code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=8))
                         await f.write(code + ' ')
@@ -293,9 +294,9 @@ class VerificationSession(Session):
 
     async def crosscheck(self, code: str):
         """
-        Used to check if code passed is equivalent to the session code.
+        Used to check if code passed is equivalent to the verification session code.
 
-        :param code: Code being cross-checked with session code.
+        :param code: Code being cross-checked with verification session code.
         """
         if self.attempts >= 5:
             raise self.MaximumAttemptsError
@@ -307,9 +308,25 @@ class VerificationSession(Session):
             self.valid = False
             await self.save(update_fields=['valid'])
 
+    class Meta:
+        abstract = True
+
+    class CrosscheckError(Session.SessionError):
+        def __init__(self):
+            super().__init__('Session crosschecking attempt was incorrect', 401)
+
+    class MaximumAttemptsError(Session.SessionError):
+        def __init__(self):
+            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
+
+
+class TwoFactorSession(VerificationSession):
+    """
+
+    """
     async def text_code(self, code_prefix="Your code is: "):
         """
-        Sends account verification code via text.
+        Sends account 2DA code via text.
 
         :param code_prefix: Message being sent with code, for example "Your code is: ".
         """
@@ -324,14 +341,6 @@ class VerificationSession(Session):
         :param subject: Subject of email being sent with code.
         """
         await send_email(self.account.email, subject, code_prefix + self.code)
-
-    class CrosscheckError(Session.SessionError):
-        def __init__(self):
-            super().__init__('Session crosschecking attempt was incorrect', 401)
-
-    class MaximumAttemptsError(Session.SessionError):
-        def __init__(self):
-            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
 
 
 class CaptchaSession(VerificationSession):
@@ -377,6 +386,7 @@ class AuthenticationSession(Session):
         if not await AuthenticationSession.filter(ip=get_ip(request), account=self.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
+
 class SessionFactory:
     """
     Prevents human error when creating sessions.
@@ -420,6 +430,7 @@ class SessionFactory:
                                                       expiration_date=self.generate_expiration_date(days=30))
         else:
             raise ValueError('Invalid session type.')
+
 
 class Role(BaseModel):
     """
