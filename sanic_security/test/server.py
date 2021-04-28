@@ -9,8 +9,8 @@ from sanic_security.core.initializer import initialize_security
 from sanic_security.core.models import SecurityError, Permission, Role, VerificationSession, CaptchaSession
 from sanic_security.core.recovery import attempt_recovery, fulfill_recovery_attempt
 from sanic_security.core.utils import xss_prevention_middleware
-from sanic_security.core.verification import requires_captcha, request_captcha, requires_verification, verify_account, \
-    request_verification
+from sanic_security.core.verification import requires_captcha, request_captcha, requires_two_step_verification, verify_account, \
+    request_two_step_verification
 from sanic_security.lib.ip2proxy import detect_proxy
 
 app = Sanic('Sanic Security test server')
@@ -72,7 +72,7 @@ async def on_register_verification(request, captcha_session):
 
 
 @app.post('api/test/register/verify')
-@requires_verification()
+@requires_two_step_verification()
 async def on_verify(request, verification_session):
     """
     Attempt to verify account and allow access if unverified.
@@ -117,7 +117,7 @@ async def new_verification_request(request):
     Creates new verification code.
     """
 
-    verification_session = await request_verification(request)
+    verification_session = await request_two_step_verification(request)
     await verification_session.text_code()
     response = json('Verification request successful', verification_session.json())
     verification_session.encode(response, secure=False)
@@ -212,7 +212,7 @@ async def on_recovery_attempt(request, captcha_session):
 
 
 @app.post('api/test/recovery/fulfill')
-@requires_verification()
+@requires_two_step_verification()
 async def on_recovery_fulfill(request, verification_session):
     """
     Changes and recovers an account's password once recovery attempt was determined to have been made by account owner.

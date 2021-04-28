@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.core.models import Account, VerificationSession, CaptchaSession, SessionFactory, Session
+from sanic_security.core.models import Account, TwoStepSession, CaptchaSession, SessionFactory, Session
 
 session_factory = SessionFactory()
 session_error_factory = Session.ErrorFactory()
@@ -56,7 +56,7 @@ def requires_captcha():
     return wrapper
 
 
-async def request_verification(request: Request, account: Account = None):
+async def request_two_step_verification(request: Request, account: Account = None):
     """
     Creates a verification session associated with an account.
 
@@ -67,12 +67,12 @@ async def request_verification(request: Request, account: Account = None):
     :return: verification_session
     """
     if account is None:
-        verification_session = await VerificationSession().decode(request)
+        verification_session = await TwoStepSession().decode(request)
         account = verification_session.account
-    return await session_factory.get('verification', request, account=account)
+    return await session_factory.get('twostep', request, account=account)
 
 
-async def verify(request: Request):
+async def verify_two_step_session(request: Request):
     """
     Enforces verification and validates attempts.
 
@@ -83,13 +83,13 @@ async def verify(request: Request):
 
     :return: verification_session
     """
-    verification_session = await VerificationSession().decode(request)
+    verification_session = await TwoStepSession().decode(request)
     session_error_factory.throw(verification_session)
     await verification_session.crosscheck_code(request.form.get('code'))
     return verification_session
 
 
-async def verify_account(verification_session: VerificationSession):
+async def verify_account(verification_session: TwoStepSession):
     """
     Verifies account associated to a verification session.
 
@@ -100,7 +100,7 @@ async def verify_account(verification_session: VerificationSession):
     return verification_session
 
 
-def requires_verification():
+def requires_two_step_verification():
     """
     Enforces verification and validates attempts.
 
@@ -112,7 +112,7 @@ def requires_verification():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            verification_session = await verify(request)
+            verification_session = await verify_two_step_session(request)
             return await func(request, verification_session, *args, **kwargs)
 
         return wrapped

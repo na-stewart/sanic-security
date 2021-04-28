@@ -3,7 +3,7 @@ from sanic.request import Request
 from sanic_security.core.authentication import account_error_factory
 from sanic_security.core.models import AuthenticationSession, Account, VerificationSession
 from sanic_security.core.utils import hash_pw
-from sanic_security.core.verification import request_verification
+from sanic_security.core.verification import request_two_step_verification
 
 
 async def fulfill_recovery_attempt(request: Request, verification_session: VerificationSession):
@@ -33,4 +33,4 @@ async def attempt_recovery(request: Request):
 
     account = await Account.filter(email=request.form.get('email')).first()
     account_error_factory.throw(account)
-    return await request_verification(request, account)
+    return await request_two_step_verification(request, account)

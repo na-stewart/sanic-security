@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import os
 import random
-import string
 import uuid
 
 import aiofiles
@@ -14,6 +13,7 @@ from sanic.exceptions import ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
+
 from sanic_security.core.config import config
 from sanic_security.core.utils import get_ip
 from sanic_security.lib.smtp import send_email
@@ -320,10 +320,11 @@ class VerificationSession(Session):
             super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
 
 
-class TwoFactorSession(VerificationSession):
+class TwoStepSession(VerificationSession):
     """
 
     """
+
     async def text_code(self, code_prefix="Your code is: "):
         """
         Sends account 2DA code via text.
@@ -347,14 +348,6 @@ class CaptchaSession(VerificationSession):
     """
     Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
-
-    @property
-    async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
-        raise AttributeError("'CaptchaSession' object has no attribute 'email_code'")
-
-    @property
-    async def text_code(self, code_prefix="Your code is: "):
-        raise AttributeError("'CaptchaSession' object has no attribute 'text_code'")
 
     @staticmethod
     async def get_challenge():
@@ -421,10 +414,10 @@ class SessionFactory:
         if session_type == 'captcha':
             return await CaptchaSession.create(ip=get_ip(request), code=await CaptchaSession.get_challenge(),
                                                expiration_date=self.generate_expiration_date(minutes=1))
-        elif session_type == 'verification':
-            return await VerificationSession.create(code=VerificationSession.get_challenge(),
-                                                    ip=get_ip(request), account=account,
-                                                    expiration_date=self.generate_expiration_date(minutes=5))
+        elif session_type == 'twostep':
+            return await TwoStepSession.create(code=VerificationSession.get_challenge(),
+                                               ip=get_ip(request), account=account,
+                                               expiration_date=self.generate_expiration_date(minutes=5))
         elif session_type == 'authentication':
             return await AuthenticationSession.create(account=account, ip=get_ip(request),
                                                       expiration_date=self.generate_expiration_date(days=30))

@@ -6,7 +6,7 @@ from tortoise.exceptions import IntegrityError, ValidationError
 
 from sanic_security.core.models import Account, SessionFactory, AuthenticationSession, Session
 from sanic_security.core.utils import hash_pw
-from sanic_security.core.verification import request_verification
+from sanic_security.core.verification import request_two_step_verification
 
 session_factory = SessionFactory()
 account_error_factory = Account.ErrorFactory()
@@ -37,7 +37,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         account = await Account.create(email=forms.get('email'), username=forms.get('username'),
                                        password=hash_pw(forms.get('password')), phone=forms.get('phone'),
                                        verified=verified, disabled=disabled)
-        return await request_verification(request, account) if not verified else account
+        return await request_two_step_verification(request, account) if not verified else account
     except IntegrityError:
         raise Account.ExistsError()
     except ValidationError:
