@@ -11,10 +11,12 @@ async def fulfill_account_recovery_attempt(request: Request, two_step_session: T
     Recovers an account by setting the password to a new one once recovery attempt was determined to be made
     by the account owner.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    password.
+     Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+        password.
+        two_step_session (TwoStepSession): : Two step session retrieved from the @requires_two_step_verification decorator used on your
+        recovery request endpoint.
 
-    :param two_step_session: Verification session containing account being recovered.
     """
     two_step_session.account.password = hash_pw(request.form.get('password'))
     await AuthenticationSession.filter(account=two_step_session.account, valid=True,
@@ -24,11 +26,15 @@ async def fulfill_account_recovery_attempt(request: Request, two_step_session: T
 
 async def attempt_account_recovery(request: Request):
     """
-    Requests a verification session to ensure that the recovery attempt was made by the account owner.
+    Requests a two step session to ensure that the recovery attempt was made by the account owner.
 
-    :param request: Sanic request parameter. This request is sent with the following url argument: email.
+     Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments:
+        email.
 
-    return: verification_session
+    Returns:
+        two_step_session: A new two step session for the client is created with all identifying information
+        on request and requires encoding.
     """
 
     account = await Account.filter(email=request.form.get('email')).first()

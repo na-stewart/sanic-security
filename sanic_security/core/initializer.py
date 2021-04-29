@@ -6,9 +6,10 @@ from sanic_security.lib.tortoise import initialize_tortoise
 
 def initialize_security(app: Sanic):
     """
-    Initializes sanic-security and related processes.
+    Starts all initial Sanic Security processes such as initializing tortoise and caches.
 
-    :param app: Sanic object used to add tasks too.
+    Args:
+        app (Sanic): Sanic Framework app.
     """
     initialize_tortoise(app)
     TwoStepSession.initialize_cache(app)

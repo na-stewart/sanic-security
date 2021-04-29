@@ -14,18 +14,18 @@ session_error_factory = Session.ErrorFactory()
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
-    """Account registration.
-
-    Creates a new account. This is the recommend and most secure method for registering accounts' with Sanic Security.
+    """
+    Creates a new account. This is the recommend method for creating accounts' with Sanic Security.
 
     Args:
-        request: Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone.
-        verified: If false, account being registered must be verified before use.
-        disabled: If true, account being registered must be enabled before use.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone.
+        verified (bool): If false, account being registered must be verified before use.
+        disabled (bool): If true, account being registered must be enabled before use.
 
     Returns:
-        A verification session if the verified parameter is false and an account if true. No reason to return a
-        verification session if the account is registered verified.
+        account: An account is returned if the verified parameter is true.
+        two_step_session: A two step session is returned if the verified parameter is false. A new two step session for
+        the client is created with all identifying information and requires encoding.
 
     Raises:
         AccountError
@@ -45,19 +45,18 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
 
 
 async def login(request: Request):
-    """ Account login.
-
-    Creates an authentication session that will be used to authenticate the account requiring authentication.
+    """
+    Used to login to accounts registered with Sanic Security.
 
     Args:
-        request: Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
 
     Returns:
-        AuthenticationSession
+        authentication_session: A new authentication session for the client is created with all identifying information
+        on login and requires encoding.
 
     Raises:
         AccountError
-
     """
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
@@ -71,9 +70,13 @@ async def login(request: Request):
 
 async def logout(request: Request):
     """
-    Invalidates client's authentication session.
+    Invalidates client's authentication session and revokes access.
 
-    :param request: Sanic request parameter.
+    Args:
+        request: Sanic request parameter.
+
+    Returns:
+        authentication_session
     """
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
@@ -83,13 +86,17 @@ async def logout(request: Request):
 
 async def authenticate(request: Request):
     """
-    Authenticates the client's current authentication session.
+    Used to determine if the client is authenticated.
 
-    :raises AccountError:
+    Args:
+        request: Sanic request parameter.
 
-    :raises SessionError:
+    Returns:
+        authentication_session
 
-    :return: authentication_session
+    Raises:
+        AccountError
+        SessionError
     """
     authentication_session = await AuthenticationSession().decode(request)
     session_error_factory.throw(authentication_session)
@@ -100,15 +107,20 @@ async def authenticate(request: Request):
 
 def requires_authentication():
     """
-    Authenticates the client's current authentication session.
+    Used to determine if the client is authenticated.
 
-    :raises AccountError:
+    Example:
+        This method is not called directly and instead used as a decorator:
 
-    :raises SessionError:
+            @app.post('api/authenticate')
+            @requires_authentication()
+            async def on_authenticate(request, authentication_session):
+                return text('User is authenticated!')
 
-    :return: func(request, authentication_session, *args, **kwargs)
+    Raises:
+        AccountError
+        SessionError
     """
-
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
