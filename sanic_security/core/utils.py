@@ -6,6 +6,8 @@ from sanic.response import HTTPResponse, redirect
 
 from sanic_security.core.config import config
 
+security_cache_path = './resources/security-cache'
+
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
     """

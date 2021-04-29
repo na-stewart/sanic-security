@@ -64,11 +64,11 @@ async def request_two_step_verification(request: Request, account: Account = Non
 
     :param account: The account being associated with the verification session.
 
-    :return: verification_session
+    :return: two_step_session
     """
     if account is None:
-        verification_session = await TwoStepSession().decode(request)
-        account = verification_session.account
+        two_step_session = await TwoStepSession().decode(request)
+        account = two_step_session.account
     return await session_factory.get('twostep', request, account=account)
 
 
@@ -81,23 +81,23 @@ async def verify_two_step_session(request: Request):
 
     :raises SessionError:
 
-    :return: verification_session
+    :return: two_step_session
     """
-    verification_session = await TwoStepSession().decode(request)
-    session_error_factory.throw(verification_session)
-    await verification_session.crosscheck_code(request.form.get('code'))
-    return verification_session
+    two_step_session = await TwoStepSession().decode(request)
+    session_error_factory.throw(two_step_session)
+    await two_step_session.crosscheck_code(request.form.get('code'))
+    return two_step_session
 
 
-async def verify_account(verification_session: TwoStepSession):
+async def verify_account(two_step_session: TwoStepSession):
     """
-    Verifies account associated to a verification session.
+    Verifies account associated to a two step session.
 
-    :param verification_session: Verification session containing account being verified.
+    :param two_step_session: Verification session containing account being verified.
     """
-    verification_session.account.verified = True
-    await verification_session.account.save(update_fields=['verified'])
-    return verification_session
+    two_step_session.account.verified = True
+    await two_step_session.account.save(update_fields=['verified'])
+    return two_step_session
 
 
 def requires_two_step_verification():
@@ -106,14 +106,14 @@ def requires_two_step_verification():
 
     :raises SessionError:
 
-    :return: func(request, verification_session, *args, **kwargs)
+    :return: func(request, two_step_session, *args, **kwargs)
     """
 
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            verification_session = await verify_two_step_session(request)
-            return await func(request, verification_session, *args, **kwargs)
+            two_step_session = await verify_two_step_session(request)
+            return await func(request, two_step_session, *args, **kwargs)
 
         return wrapped
 

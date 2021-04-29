@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import os
 import random
+import string
 import uuid
 
 import aiofiles
@@ -15,7 +16,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from sanic_security.core.config import config
-from sanic_security.core.utils import get_ip
+from sanic_security.core.utils import get_ip, security_cache_path
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 
@@ -155,6 +156,7 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    cache_path = './resources/security-cache/session/'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -255,42 +257,17 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
-    """
-
-    """
-    attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=8, null=True)
-    cache_path = './resources/security-cache/session/'
 
     @staticmethod
     def initialize_cache(app: Sanic):
-        """
-        Caches up to 100 code and image variations.
-        """
-
-        @app.listener("before_server_start")
-        async def generate_codes(app, loop):
-            loop = asyncio.get_running_loop()
-            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-            cache_path = VerificationSession.cache_path
-            if not os.path.exists(cache_path):
-                os.makedirs(cache_path)
-                async with aiofiles.open(cache_path + 'codes.txt', mode="w") as f:
-                    for i in range(100):
-                        code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=8))
-                        await f.write(code + ' ')
-                        await loop.run_in_executor(None, image.write, code[:6], cache_path + code[:6] + '.png')
+        raise NotImplementedError()
 
     @staticmethod
-    async def get_challenge():
-        """
-        Retrieves a random cached code from a codes.txt file
+    def get_random_cached_code():
+        raise NotImplementedError()
 
-        :return: code
-        """
-        async with aiofiles.open(VerificationSession.cache_path + 'codes.txt', mode='r') as f:
-            codes = await f.read()
-            return random.choice(codes.split())
+    attempts = fields.IntField(default=0)
+    code = fields.CharField(max_length=8, null=True)
 
     async def crosscheck(self, code: str):
         """
@@ -321,9 +298,21 @@ class VerificationSession(Session):
 
 
 class TwoStepSession(VerificationSession):
-    """
 
-    """
+    @staticmethod
+    def get_random_cached_code():
+        async with aiofiles.open(f'{security_cache_path}/verification/codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
+
+    @staticmethod
+    def initialize_cache(app: Sanic):
+        @app.listener("before_server_start")
+        async def generate_codes(app, loop):
+            async with aiofiles.open(f'{security_cache_path}/verification/codes.txt', mode="w") as f:
+                for i in range(100):
+                    code = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+                    await f.write(code + ' ')
 
     async def text_code(self, code_prefix="Your code is: "):
         """
@@ -350,18 +339,26 @@ class CaptchaSession(VerificationSession):
     """
 
     @staticmethod
-    async def get_challenge():
-        return await VerificationSession.get_challenge()[:6]
+    def initialize_cache(app: Sanic):
+        @app.listener("before_server_start")
+        async def generate_codes(app, loop):
+            loop = asyncio.get_running_loop()
+            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+            for i in range(100):
+                code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=6))
+                await loop.run_in_executor(None, image.write, code, f'{security_cache_path}/captcha/{code}.png')
 
     @staticmethod
-    async def get_image(self, request):
+    def get_random_cached_code():
+        return random.choice(os.listdir(f'{security_cache_path}/captcha')).split('.')[0]
+
+    async def get_image(self):
         """
         Retrieves image path of captcha.
 
         :return: captcha_img_path
         """
-        decoded_captcha = await CaptchaSession().decode(request)
-        return './resources/security-cache/session/' + decoded_captcha.code + '.png'
+        return f'{security_cache_path}/captcha/{self.code}.png'
 
 
 class AuthenticationSession(Session):
