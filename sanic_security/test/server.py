@@ -6,14 +6,13 @@ from sanic.response import text, file
 from sanic_security.core.authentication import register, login, requires_authentication, logout
 from sanic_security.core.authorization import require_permissions, require_roles
 from sanic_security.core.initializer import initialize_security
-from sanic_security.core.models import SecurityError, Permission, Role, VerificationSession, CaptchaSession
-from sanic_security.core.recovery import attempt_recovery, fulfill_recovery_attempt
+from sanic_security.core.models import SecurityError, Permission, Role, CaptchaSession, TwoStepSession
+from sanic_security.core.recovery import attempt_account_recovery, fulfill_account_recovery_attempt
 from sanic_security.core.utils import xss_prevention_middleware
 from sanic_security.core.verification import requires_captcha, request_captcha, requires_two_step_verification, verify_account, \
     request_two_step_verification
-from sanic_security.lib.ip2proxy import detect_proxy
 
-app = Sanic('Sanic Security test server')
+app = Sanic('Sanic Security Test Server')
 
 
 def json(message, content, status_code=200):
@@ -40,15 +39,6 @@ async def xxs_middleware(request, response):
     xss_prevention_middleware(request, response)
 
 
-@app.middleware('request')
-async def ip2proxy_middleware(request):
-    """
-    Request middleware test.
-    """
-    pass
-    #await proxy_detection_middleware(request)
-
-
 @app.post('api/test/register')
 async def on_register(request):
     """
@@ -64,21 +54,21 @@ async def on_register_verification(request, captcha_session):
     """
     Registration test with all built-in requirements.
     """
-    verification_session = await register(request)
-    await verification_session.text_code()
-    response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response, secure=False)
+    two_step_session = await register(request)
+    await two_step_session.text_code()
+    response = json('Registration successful', two_step_session.account.json())
+    two_step_session.encode(response, secure=False)
     return response
 
 
 @app.post('api/test/register/verify')
 @requires_two_step_verification()
-async def on_verify(request, verification_session):
+async def on_verify(request, two_step_session):
     """
     Attempt to verify account and allow access if unverified.
     """
-    await verify_account(verification_session)
-    return json('Verification successful!', verification_session.json())
+    await verify_account(two_step_session)
+    return json('Verification successful!', two_step_session.json())
 
 
 @app.get('api/test/captcha/img')
@@ -86,8 +76,8 @@ async def on_captcha_img(request):
     """
     Retrieves captcha image from captcha session.
     """
-    img_path = await CaptchaSession().get_image(request)
-    return await file(img_path)
+    captcha_session = await CaptchaSession().decode(request)
+    return await file(captcha_session.get_image())
 
 
 @app.get('api/test/captcha')
@@ -106,9 +96,9 @@ async def resend_verification_request(request):
     """
     Resends verification code if somehow lost.
     """
-    verification_session = await VerificationSession().decode(request)
-    await verification_session.text_code()
-    return json('Verification code resend successful', verification_session.json())
+    two_step_session = await TwoStepSession().decode(request)
+    await two_step_session.text_code()
+    return json('Verification code resend successful', two_step_session.json())
 
 
 @app.post('api/test/verification/request')
@@ -117,10 +107,10 @@ async def new_verification_request(request):
     Creates new verification code.
     """
 
-    verification_session = await request_two_step_verification(request)
-    await verification_session.text_code()
-    response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response, secure=False)
+    two_step_session = await request_two_step_verification(request)
+    await two_step_session.text_code()
+    response = json('Verification request successful', two_step_session.json())
+    two_step_session.encode(response, secure=False)
     return response
 
 
@@ -170,7 +160,6 @@ async def on_create_admin_perm(request, authentication_session):
 
 
 @app.get('api/test/client')
-@detect_proxy()
 @requires_authentication()
 async def on_test_client(request, authentication_session):
     """
@@ -204,21 +193,21 @@ async def on_recovery_attempt(request, captcha_session):
     Attempts to recover account via changing password, requests verification to ensure the recovery attempt was made
     by account owner.
     """
-    verification_session = await attempt_recovery(request)
-    await verification_session.text_code()
-    response = json('A recovery attempt has been made, please verify account ownership.', verification_session.json())
-    verification_session.encode(response, secure=False)
+    two_step_session = await attempt_account_recovery(captcha_session)
+    await two_step_session.text_code()
+    response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
+    two_step_session.encode(response, secure=False)
     return response
 
 
 @app.post('api/test/recovery/fulfill')
 @requires_two_step_verification()
-async def on_recovery_fulfill(request, verification_session):
+async def on_recovery_fulfill(request, two_step_session):
     """
     Changes and recovers an account's password once recovery attempt was determined to have been made by account owner.
     """
-    await fulfill_recovery_attempt(request, verification_session)
-    return json('Account recovered successfully', verification_session.account.json())
+    await fulfill_account_recovery_attempt(request, two_step_session)
+    return json('Account recovered successfully', two_step_session.account.json())
 
 
 @app.exception(SecurityError)

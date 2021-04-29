@@ -16,7 +16,7 @@ from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
 from sanic_security.core.config import config
-from sanic_security.core.utils import get_ip, security_cache_path
+from sanic_security.core.utils import get_ip, security_cache_path, dir_exists
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 
@@ -138,9 +138,9 @@ class Account(BaseModel):
         def __init__(self):
             super().__init__("This account has been disabled.", 401)
 
-    class IncorrectPasswordError(AccountError):
+    class PasswordMismatchError(AccountError):
         def __init__(self):
-            super().__init__('The password provided is incorrect.', 401)
+            super().__init__('The password provided does not match account password.', 401)
 
     class UnverifiedError(AccountError):
         def __init__(self):
@@ -263,7 +263,7 @@ class VerificationSession(Session):
         raise NotImplementedError()
 
     @staticmethod
-    def get_random_cached_code():
+    async def get_random_cached_code():
         raise NotImplementedError()
 
     attempts = fields.IntField(default=0)
@@ -300,7 +300,7 @@ class VerificationSession(Session):
 class TwoStepSession(VerificationSession):
 
     @staticmethod
-    def get_random_cached_code():
+    async def get_random_cached_code():
         async with aiofiles.open(f'{security_cache_path}/verification/codes.txt', mode='r') as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -309,10 +309,11 @@ class TwoStepSession(VerificationSession):
     def initialize_cache(app: Sanic):
         @app.listener("before_server_start")
         async def generate_codes(app, loop):
-            async with aiofiles.open(f'{security_cache_path}/verification/codes.txt', mode="w") as f:
-                for i in range(100):
-                    code = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                    await f.write(code + ' ')
+            if not dir_exists(f'{security_cache_path}/verification'):
+                async with aiofiles.open(f'{security_cache_path}/verification/codes.txt', mode="w") as f:
+                    for i in range(100):
+                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+                        await f.write(code + ' ')
 
     async def text_code(self, code_prefix="Your code is: "):
         """
@@ -342,17 +343,18 @@ class CaptchaSession(VerificationSession):
     def initialize_cache(app: Sanic):
         @app.listener("before_server_start")
         async def generate_codes(app, loop):
-            loop = asyncio.get_running_loop()
-            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-            for i in range(100):
-                code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=6))
-                await loop.run_in_executor(None, image.write, code, f'{security_cache_path}/captcha/{code}.png')
+            if not dir_exists(f'{security_cache_path}/captcha'):
+                loop = asyncio.get_running_loop()
+                image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+                for i in range(100):
+                    code = ''.join(random.choices('123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN', k=6))
+                    await loop.run_in_executor(None, image.write, code, f'{security_cache_path}/captcha/{code}.png')
 
     @staticmethod
     def get_random_cached_code():
         return random.choice(os.listdir(f'{security_cache_path}/captcha')).split('.')[0]
 
-    async def get_image(self):
+    def get_image(self):
         """
         Retrieves image path of captcha.
 
@@ -409,10 +411,10 @@ class SessionFactory:
         """
 
         if session_type == 'captcha':
-            return await CaptchaSession.create(ip=get_ip(request), code=await CaptchaSession.get_challenge(),
+            return await CaptchaSession.create(ip=get_ip(request), code=CaptchaSession.get_random_cached_code(),
                                                expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'twostep':
-            return await TwoStepSession.create(code=VerificationSession.get_challenge(),
+            return await TwoStepSession.create(code=await VerificationSession.get_random_cached_code(),
                                                ip=get_ip(request), account=account,
                                                expiration_date=self.generate_expiration_date(minutes=5))
         elif session_type == 'authentication':

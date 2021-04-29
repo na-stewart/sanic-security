@@ -53,3 +53,19 @@ def get_ip(request: Request):
     :return: ip
     """
     return request.remote_addr if request.remote_addr else request.ip
+
+
+def dir_exists(path):
+    """
+    Checks if path exists and isn't empty, and creates it if it doesn't.
+    :param path: Path being checked.
+    :return: exists
+    """
+    try:
+        os.makedirs(path)
+        exists = False
+    except FileExistsError:
+        exists = os.listdir(path)
+    return exists
+
+

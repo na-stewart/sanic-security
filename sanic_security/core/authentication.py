@@ -53,7 +53,7 @@ async def login(request: Request):
         request: Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
 
     Returns:
-        AuthenticationSession used to
+        AuthenticationSession
 
     Raises:
         AccountError
@@ -66,7 +66,7 @@ async def login(request: Request):
         authentication_session = await session_factory.get('authentication', request, account=account)
         return authentication_session
     else:
-        raise Account.IncorrectPasswordError()
+        raise Account.PasswordMismatchError()
 
 
 async def logout(request: Request):
