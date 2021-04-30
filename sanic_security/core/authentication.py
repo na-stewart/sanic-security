@@ -105,7 +105,7 @@ async def authenticate(request: Request):
 
 def requires_authentication():
     """
-    Used to determine if the client is authenticated.
+    Enforces authentication to continue execution.
 
     Example:
         This method is not called directly and instead used as a decorator:

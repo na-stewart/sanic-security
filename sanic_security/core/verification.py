@@ -12,23 +12,27 @@ async def request_captcha(request: Request):
     """
     Creates a captcha session associated with an account.
 
-    :param request: Sanic request parameter.
+    Args:
+        request (Request): Sanic request parameter.
 
-    :return: captcha_session
+    Returns:
+        captcha_session
     """
     return await session_factory.get('captcha', request)
 
 
 async def captcha(request: Request):
     """
-    Enforces captcha.
+    Enforces A captcha to continue execution.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    captcha.
+    Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
 
-    :raises SessionError:
+    Raises:
+        SessionError
 
-    :return: captcha_session
+    Returns:
+        captcha_session
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
@@ -38,13 +42,19 @@ async def captcha(request: Request):
 
 def requires_captcha():
     """
-    Enforced captcha.
+    Enforces A captcha to continue execution.
 
-    :raises SessionError:
+    Example:
+        This method is not called directly and instead used as a decorator:
 
-    :return: await func(request, captcha_session, *args, **kwargs)
+            @app.post('api/captcha')
+            @requires_captcha()
+            async def on_captcha_successful(request, captcha_session):
+                return text('User has successfully completed captcha challenge!')
+
+    Raises:
+        SessionError
     """
-
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
@@ -60,11 +70,12 @@ async def request_two_step_verification(request: Request, account: Account = Non
     """
     Creates a verification session associated with an account.
 
-    :param request: Sanic request parameter.
+    Args:
+        request (Request): Sanic request parameter.
+        account (Account): The account being associated with the verification session.
 
-    :param account: The account being associated with the verification session.
-
-    :return: two_step_session
+    Returns:
+         two_step_session
     """
     if account is None:
         two_step_session = await TwoStepSession().decode(request)
