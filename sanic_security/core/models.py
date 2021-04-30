@@ -55,7 +55,7 @@ class BaseErrorFactory:
 
 class SecurityError(ServerError):
     """
-    Base error for all Sanic Security related errors.
+    Sanic Security related error.
 
     Args:
         message (str): Human readable error message.
@@ -399,9 +399,10 @@ class VerificationSession(Session):
 
 class TwoStepSession(VerificationSession):
     """
-    A client verification session which an account is granted access to a website or application only after
-    successfully presenting two or more pieces of evidence. Knowledge (something only the user knows) and
-    possession (something only the user has).
+    An account is granted access to a website or application only after successfully presenting two or more pieces of
+    evidence. Knowledge (something only the user knows) and possession (something only the user has). For example, in
+    order to successfully perform an action requiring TwoStepVerification, a client must supply the correct code associated
+    with this session that can be found in an email or a text.
     """
 
     @staticmethod
@@ -442,8 +443,7 @@ class TwoStepSession(VerificationSession):
 
 class CaptchaSession(VerificationSession):
     """
-    A client verification session which validates an client as human by forcing a user to correctly enter a captcha
-    challenge.
+    Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
     @staticmethod
     def initialize_cache(app: Sanic):
@@ -471,6 +471,10 @@ class CaptchaSession(VerificationSession):
 
 
 class AuthenticationSession(Session):
+    """
+    Used to authenticate a client and provide access to a user's account.
+    """
+
     class UnknownLocationError(Session.SessionError):
         def __init__(self):
             super().__init__('Session in an unknown location.', 401)
@@ -479,7 +483,8 @@ class AuthenticationSession(Session):
         """
         Checks if client using session is in a known location (ip address). Prevents cookie jacking.
 
-        :raises UnknownLocationError:
+        Raises:
+            UnknownLocationError:
         """
 
         if not await AuthenticationSession.filter(ip=get_ip(request), account=self.account).exists():
@@ -495,28 +500,30 @@ class SessionFactory:
         """
         Creates an expiration date. Adds days to current datetime.
 
-        :param days: days to be added to current time.
+        Args:
+            days (int):  Days to be added to current time.
+            minutes (int): Minutes to be added to the current time.
 
-        :param minutes: minutes to be added to the current time.
-
-        :return: expiration_date
+        Returns:
+            expiration_date
         """
         return datetime.datetime.utcnow() + datetime.timedelta(days=days, minutes=minutes)
 
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
-        Creates and returns a session with all of the fulfilled requirements.
+         Creates and returns a session with all of the fulfilled requirements.
 
-        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
-        authentication.
+        Args:
+            session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication
+            request (Request):  Sanic request paramater.
+            account (Account): Account being associated to a session.
 
-        :param request: Sanic request parameter.
+        Returns:
+            session
 
-        :param account: Account being associated to to a session.
-
-        :return: session
+        Raises:
+            ValueError
         """
-
         if session_type == 'captcha':
             return await CaptchaSession.create(ip=get_ip(request), code=CaptchaSession.get_random_cached_code(),
                                                expiration_date=self.generate_expiration_date(minutes=1))
@@ -534,6 +541,9 @@ class SessionFactory:
 class Role(BaseModel):
     """
     Assigned to an account to authorize an action. Used for role based authorization.
+
+    Attributes:
+        name (str): Name of the role.
     """
     name = fields.CharField(max_length=45)
 
@@ -553,6 +563,9 @@ class Role(BaseModel):
 class Permission(BaseModel):
     """
     Assigned to an account to authorize an action. Used for wildcard based authorization.
+
+    Attributes:
+        wildcard (str): The wildcard for this permission.
     """
     wildcard = fields.CharField(max_length=45)
 

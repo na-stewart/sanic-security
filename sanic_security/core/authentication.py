@@ -24,8 +24,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
 
     Returns:
         account: An account is returned if the verified parameter is true.
-        two_step_session: A two step session is returned if the verified parameter is false. A new two step session for
-        the client is created with all identifying information and requires encoding.
+        two_step_session: A two step session is returned if the verified parameter is false.
 
     Raises:
         AccountError
@@ -52,8 +51,7 @@ async def login(request: Request):
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
 
     Returns:
-        authentication_session: A new authentication session for the client is created with all identifying information
-        on login and requires encoding.
+        authentication_session
 
     Raises:
         AccountError
