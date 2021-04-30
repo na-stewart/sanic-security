@@ -68,7 +68,7 @@ def requires_captcha():
 
 async def request_two_step_verification(request: Request, account: Account = None):
     """
-    Creates a verification session associated with an account.
+    Creates a two step session associated with an account.
 
     Args:
         request (Request): Sanic request parameter.
@@ -87,12 +87,14 @@ async def verify_two_step_session(request: Request):
     """
     Enforces verification and validates attempts.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    code.
+    Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
 
-    :raises SessionError:
+    Raises:
+        SessionError
 
-    :return: two_step_session
+    Returns:
+         two_step_session
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
@@ -104,7 +106,14 @@ async def verify_account(two_step_session: TwoStepSession):
     """
     Verifies account associated to a two step session.
 
-    :param two_step_session: Verification session containing account being verified.
+    Args:
+        two_step_session (TwoStepSession): Two step session containing account being verified.
+
+    Raises:
+        SessionError
+
+    Returns:
+         two_step_session
     """
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=['verified'])
