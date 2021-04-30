@@ -73,7 +73,7 @@ async def logout(request: Request):
     Invalidates client's authentication session and revokes access.
 
     Args:
-        request: Sanic request parameter.
+        request (Request): Sanic request parameter.
 
     Returns:
         authentication_session
@@ -89,7 +89,7 @@ async def authenticate(request: Request):
     Used to determine if the client is authenticated.
 
     Args:
-        request: Sanic request parameter.
+        request (Request): Sanic request parameter.
 
     Returns:
         authentication_session

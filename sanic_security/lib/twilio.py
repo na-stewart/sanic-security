@@ -1,6 +1,6 @@
 import aiohttp
 
-from sanic_security.core.config import config
+from sanic_security.core.utils import config
 
 
 async def send_sms(to, msg):

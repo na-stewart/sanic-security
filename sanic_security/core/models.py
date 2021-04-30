@@ -15,28 +15,38 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
-from sanic_security.core.config import config
-from sanic_security.core.utils import get_ip, security_cache_path, dir_exists
+
+from sanic_security.core.utils import get_ip, security_cache_path, dir_exists, config
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 
 
 class BaseErrorFactory:
     """
-    Easily raise or retrieve errors based off of variable values. Validates the ability for a model to be utilized.
+    Easily raise or retrieve errors based off of model variable values. Validates the ability for a model to be utilized.
     """
 
     def get(self, model):
         """
-        Retrieves an error if certain conditions are met.
-        :return: error
+        Retrieves an error based off of defined variable conditions.
+
+        Args:
+            model: Model being used to check for validation.
+
+        Raises:
+            SecurityError
         """
         raise NotImplementedError()
 
     def throw(self, model):
         """
-        Retrieves an error and raises it if certain conditions are met.
-        :return: error
+        Raises an error that was retrieved in the get method.
+
+        Args:
+            model (BaseModel): Model being used to check for validation.
+
+        Raises:
+            SecurityError
         """
         error = self.get(model)
         if error:
@@ -45,7 +55,11 @@ class BaseErrorFactory:
 
 class SecurityError(ServerError):
     """
-    Base error for all sanic_security related errors.
+    Base error for all Sanic Security related errors.
+
+    Args:
+        message (str): Human readable error message.
+        code (int): HTTP Error code.
     """
 
     def __init__(self, message, code):
@@ -54,38 +68,81 @@ class SecurityError(ServerError):
 
 class BaseModel(Model):
     """
-    Base sanic_security model that all other models derive from. Some important elements to take in consideration is that
-    deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
-    the database. Retrieving sanic_security models should be done via filtering with the 'uid' variable rather then the id
-    variable.
+    Base Sanic Security model that all other models derive from.
+
+    Attributes:
+        id (int): Primary key of model.
+        uid (bytes): Recommended identifier to be used for filtering or retrieval.
+        account (Account): Parent account associated with this model.
+        date_created (datetime): Time this model was created in the database.
+        date_updated (datetime): Time this model was updated in the database.
+        deleted (bool): This attribute allows you to mark a model as deleted and filter it from queries without fully
+        removing it from the database.
     """
 
     id = fields.IntField(pk=True)
-    account = fields.ForeignKeyField('models.Account', null=True)
     uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
+    account = fields.ForeignKeyField('models.Account', null=True)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
     def json(self):
+        """
+        Retrieve a JSON serializable dict to be used in a HTTP request or response.
+
+        Example:
+            Below is an example of this method returning a dict to be used for JSON serialization.
+
+                def json(self):
+                    return {
+                        'uid': str(self.uid),
+                        'date_created': str(self.date_created),
+                        'date_updated': str(self.date_updated),
+                        'email': self.email,
+                        'username': self.username,
+                        'disabled': self.disabled,
+                        'verified': self.verified
+                    }
+
+        """
         raise NotImplementedError()
 
     class Meta:
         abstract = True
 
     class NotFoundError(SecurityError):
+        """
+        Raised when a model can't be found in the database.
+
+        Args:
+            message (str): Human readable error message.
+        """
         def __init__(self, message):
             super().__init__(message, 404)
 
     class DeletedError(SecurityError):
+        """
+        Raised when a model in the database has been marked deleted.
+
+        Args:
+            message (str): Human readable error message.
+        """
         def __init__(self, message):
             super().__init__(message, 404)
 
 
 class Account(BaseModel):
     """
-    Contains all identifiable user information such as username, email, and more. All passwords must be hashed when
-    being created in the database using the hash_pw(str) method.
+    Contains all identifiable user information.
+
+    Attributes:
+        username (str): Not used for any authentication or verification processes. May be displayed publicly.
+        email (str): Used for authentication and verification processes (login and 2SV). Should not be displayed publicly.
+        phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them. Should not be displayed publicly.
+        password (bytes): Must be created using the hash_pw() method found in utils.py.
+        disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
+        verified (bool): Determines if an account has been through the two step verification process before being allowed use.
     """
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
@@ -119,6 +176,13 @@ class Account(BaseModel):
         }
 
     class AccountError(SecurityError):
+        """
+        An account related error.
+
+        Args:
+            message (str): Human readable error message.
+            code (int): HTTP Error code.
+        """
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -149,10 +213,14 @@ class Account(BaseModel):
 
 class Session(BaseModel):
     """
-    Used specifically for client side tracking. For example, an authentication session is stored on the client's browser
-    in order to identify the client. All sessions should be created using the SessionFactory().
-    """
+    Used for client identification and validation. Base session model that all session models derive from.
 
+    Attributes:
+        expiration_date (datetime): Time the session expires and can no longer be used.
+        valid (bool): Used to determine if a session can be utilized or not.
+        ip (str): IP address of client creating session.
+        cache_path (str): Session cache path.
+    """
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
@@ -176,15 +244,14 @@ class Session(BaseModel):
         """
         Transforms session into jwt and then is stored in a cookie.
 
-        :param response: Response used to store cookie.
-
-        :param secure: If true, connections must be SSL encrypted (aka https).
-
-        :param same_site: Allows you to declare if your cookie should be restricted to a first-party or same-site context.
+        Args:
+            secure (bool): If true, connections must be SSL encrypted (aka https).
+            response (HTTPResponse): Sanic response object used to store JWT into a cookie on the client.
+            same_site (bool): : Allows you to declare if your cookie should be restricted to a first-party or same-site context.
         """
-
         payload = {
             'date_created': str(self.date_created),
+            'expiration_date': str(self.expiration_date),
             'uid': str(self.uid),
             'ip': self.ip
         }
@@ -195,11 +262,14 @@ class Session(BaseModel):
 
     def decode_raw(self, request: Request):
         """
-        Decodes JWT token in cookie to dict.
+        Decodes JWT token from client cookie into a python dict.
 
-        :param request: Sanic request parameter.
+        Args:
+            request (Request): Sanic request parameter.
 
-        :return: raw
+        Returns:
+            session_dict
+
         """
         cookie = request.cookies.get(self.cookie)
         try:
@@ -212,13 +282,17 @@ class Session(BaseModel):
 
     async def decode(self, request: Request):
         """
-        Decodes JWT token in cookie and transforms into session.
+        Decodes JWT token from client cookie to a Sanic Security session.
 
-        :param request: Sanic request parameter.
+        Args:
+            request (Request): Sanic request parameter.
 
-        :return: session
+        Returns:
+            session
+
+        Raises:
+            DecodeError
         """
-
         decoded = self.decode_raw(request)
         return await self.filter(uid=decoded.get('uid')).prefetch_related('account').first()
 
@@ -228,7 +302,6 @@ class Session(BaseModel):
     class ErrorFactory(BaseErrorFactory):
         def get(self, model):
             error = None
-
             if model is None:
                 error = Session.NotFoundError('Session could not be found.')
             elif not model.valid:
@@ -240,6 +313,13 @@ class Session(BaseModel):
             return error
 
     class SessionError(SecurityError):
+        """
+        A session related error.
+
+        Args:
+            message (str): Human readable error message.
+            code (int): HTTP Error code.
+        """
         def __init__(self, message, code):
             super().__init__(message, code)
 
@@ -257,23 +337,43 @@ class Session(BaseModel):
 
 
 class VerificationSession(Session):
+    """
+    Used for a client verification method that requires some form of code, challenge, or key. Base verification session model that all verification session models derive from.
+
+    Attributes:
+        attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
+        code (str): Used as a secret key that would be sent or provided in a way that makes it difficult for malicious actors to obtain.
+    """
+
+    attempts = fields.IntField(default=0)
+    code = fields.CharField(max_length=8, null=True)
 
     @staticmethod
     def initialize_cache(app: Sanic):
+        """
+        Creates session cache directory and generates required files.
+
+        Args:
+            app (Sanic): Sanic Framework app.
+        """
         raise NotImplementedError()
 
     @staticmethod
     async def get_random_cached_code():
+        """
+        Retrieves a random cached verification session code.
+        """
         raise NotImplementedError()
-
-    attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=8, null=True)
 
     async def crosscheck(self, code: str):
         """
         Used to check if code passed is equivalent to the verification session code.
 
-        :param code: Code being cross-checked with verification session code.
+        Args:
+            code (str): Code being cross-checked with verification session code.
+
+        Raises:
+            CrossCheckError
         """
         if self.attempts >= 5:
             raise self.MaximumAttemptsError
@@ -298,6 +398,11 @@ class VerificationSession(Session):
 
 
 class TwoStepSession(VerificationSession):
+    """
+    A client verification session which an account is granted access to a website or application only after
+    successfully presenting two or more pieces of evidence. Knowledge (something only the user knows) and
+    possession (something only the user has).
+    """
 
     @staticmethod
     async def get_random_cached_code():
@@ -317,28 +422,29 @@ class TwoStepSession(VerificationSession):
 
     async def text_code(self, code_prefix="Your code is: "):
         """
-        Sends account 2DA code via text.
+        Sends account associated with this session the code via text.
 
-        :param code_prefix: Message being sent with code, for example "Your code is: ".
+        Args:
+            code_prefix (str): Message being sent with code, for example "Your code is: ".
         """
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
         """
-        Sends account verification code via email.
+        Sends account associated with this session the code via email.
 
-        :param code_prefix: Message being sent with code, for example "Your code is: ".
-
-        :param subject: Subject of email being sent with code.
+        Args:
+            code_prefix (str): Message being sent with code, for example "Your code is: ".
+            subject (str): Subject of email being sent with code.
         """
         await send_email(self.account.email, subject, code_prefix + self.code)
 
 
 class CaptchaSession(VerificationSession):
     """
-    Validates an client as human by forcing a user to correctly enter a captcha challenge.
+    A client verification session which validates an client as human by forcing a user to correctly enter a captcha
+    challenge.
     """
-
     @staticmethod
     def initialize_cache(app: Sanic):
         @app.listener("before_server_start")
@@ -356,9 +462,10 @@ class CaptchaSession(VerificationSession):
 
     def get_image(self):
         """
-        Retrieves image path of captcha.
+        Retrieves cached captcha image challange path.
 
-        :return: captcha_img_path
+        Returns:
+            captcha_image_path
         """
         return f'{security_cache_path}/captcha/{self.code}.png'
 

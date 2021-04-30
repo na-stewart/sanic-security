@@ -1,8 +1,7 @@
 from sanic import Sanic
 from tortoise import Tortoise
-from tortoise.contrib.sanic import register_tortoise
 
-from sanic_security.core.config import config
+from sanic_security.core.utils import config
 
 
 def initialize_tortoise(app: Sanic):

@@ -1,12 +1,12 @@
 import hashlib
 import os
-
+from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
 
-from sanic_security.core.config import config
-
 security_cache_path = './resources/security-cache'
+config = ConfigParser()
+config.read('./auth.ini')
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
@@ -67,5 +67,3 @@ def dir_exists(path):
     except FileExistsError:
         exists = os.listdir(path)
     return exists
-
-
