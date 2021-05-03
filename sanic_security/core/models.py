@@ -338,7 +338,7 @@ class Session(BaseModel):
 
 class VerificationSession(Session):
     """
-    Used for a client verification method that requires some form of code, challenge, or key. Base verification session model that all verification session models derive from.
+    Used for a client verification method that requires some form of code, challenge, or key.
 
     Attributes:
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.

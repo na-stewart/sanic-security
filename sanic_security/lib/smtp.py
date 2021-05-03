@@ -8,11 +8,13 @@ from sanic_security.core.utils import config
 async def send_email(to, subj, msg, text_type="plain"):
     """
     Sends an email using SMTP.
+    Used to determine if the client is authenticated.
 
-    :param to: To email.
-    :param subj: Email subject.
-    :param msg: Email message.
-    :param text_type: Can be html or plain.
+    Args:
+        to (str): Email being sent too address.
+        subj (str): Email subject.
+        msg (str): Email body.
+        text_type (str): Can be html or plain.
     """
     message = MIMEMultipart("alternative")
     message["From"] = config['SMTP']['from']

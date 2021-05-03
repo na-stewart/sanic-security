@@ -49,7 +49,7 @@ def requires_captcha():
 
             @app.post('api/captcha')
             @requires_captcha()
-            async def on_captcha_successful(request, captcha_session):
+            async def on_captcha(request, captcha_session):
                 return text('User has successfully completed captcha challenge!')
 
     Raises:
@@ -83,9 +83,9 @@ async def request_two_step_verification(request: Request, account: Account = Non
     return await session_factory.get('twostep', request, account=account)
 
 
-async def verify_two_step_session(request: Request):
+async def verify_two_step_verification(request: Request):
     """
-    Enforces verification and validates attempts.
+    Enforces two step verification to continue action.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
@@ -122,17 +122,23 @@ async def verify_account(two_step_session: TwoStepSession):
 
 def requires_two_step_verification():
     """
-    Enforces verification and validates attempts.
+    Enforces two step verification to continue action.
 
-    :raises SessionError:
+    Example:
+        This method is not called directly and instead used as a decorator:
 
-    :return: func(request, two_step_session, *args, **kwargs)
+            @app.post('api/captcha')
+            @requires_two_step_verification()
+            async def on_two_step_verification(request, two_step_session):
+                return text('User has successfully provided the correct verification code from email/sms!')
+
+    Raises:
+        SessionError
     """
-
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            two_step_session = await verify_two_step_session(request)
+            two_step_session = await verify_two_step_verification(request)
             return await func(request, two_step_session, *args, **kwargs)
 
         return wrapped
