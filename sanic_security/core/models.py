@@ -346,7 +346,7 @@ class VerificationSession(Session):
     """
 
     attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=8, null=True)
+    code = fields.CharField(max_length=10, null=True)
 
     @staticmethod
     def initialize_cache(app: Sanic):
@@ -528,7 +528,7 @@ class SessionFactory:
             return await CaptchaSession.create(ip=get_ip(request), code=CaptchaSession.get_random_cached_code(),
                                                expiration_date=self.generate_expiration_date(minutes=1))
         elif session_type == 'twostep':
-            return await TwoStepSession.create(code=await VerificationSession.get_random_cached_code(),
+            return await TwoStepSession.create(code=await TwoStepSession.get_random_cached_code(),
                                                ip=get_ip(request), account=account,
                                                expiration_date=self.generate_expiration_date(minutes=5))
         elif session_type == 'authentication':

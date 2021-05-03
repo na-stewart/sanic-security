@@ -193,7 +193,7 @@ async def on_recovery_attempt(request, captcha_session):
     Attempts to recover account via changing password, requests verification to ensure the recovery attempt was made
     by account owner.
     """
-    two_step_session = await attempt_account_recovery(captcha_session)
+    two_step_session = await attempt_account_recovery(request)
     await two_step_session.text_code()
     response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
     two_step_session.encode(response, secure=False)

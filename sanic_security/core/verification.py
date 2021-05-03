@@ -36,7 +36,7 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
-    await captcha_session.crosscheck_code(request.form.get('captcha'))
+    await captcha_session.crosscheck(request.form.get('captcha'))
     return captcha_session
 
 
@@ -98,7 +98,7 @@ async def verify_two_step_verification(request: Request):
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
-    await two_step_session.crosscheck_code(request.form.get('code'))
+    await two_step_session.crosscheck(request.form.get('code'))
     return two_step_session
 
 
