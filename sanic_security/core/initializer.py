@@ -14,4 +14,3 @@ def initialize_security(app: Sanic):
     initialize_tortoise(app)
     TwoStepSession.initialize_cache(app)
     CaptchaSession.initialize_cache(app)
-

@@ -4,9 +4,9 @@ from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
 
-security_cache_path = './resources/security-cache'
+security_cache_path = "./resources/security-cache"
 config = ConfigParser()
-config.read('./auth.ini')
+config.read("./auth.ini")
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
@@ -16,7 +16,7 @@ def xss_prevention_middleware(request: Request, response: HTTPResponse):
     Args:
         response (HTTPResponse): Sanic response parameter.
     """
-    response.headers['x-xss-protection'] = '1; mode=block'
+    response.headers["x-xss-protection"] = "1; mode=block"
 
 
 def https_redirect_middleware(request: Request):
@@ -26,8 +26,8 @@ def https_redirect_middleware(request: Request):
     Args:
         request (Request): Sanic request parameter.
     """
-    if request.url.startswith('http://'):
-        url = request.url.replace('http://', 'https://', 1)
+    if request.url.startswith("http://"):
+        url = request.url.replace("http://", "https://", 1)
         return redirect(url)
 
 
@@ -41,7 +41,12 @@ def hash_pw(password: str):
     Returns:
         hashed_password
     """
-    return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
+    return hashlib.pbkdf2_hmac(
+        "sha512",
+        password.encode("utf-8"),
+        config["AUTH"]["SECRET"].encode("utf-8"),
+        100000,
+    )
 
 
 def get_ip(request: Request):

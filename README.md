@@ -24,7 +24,7 @@
     <br />
     <a href="http://security.sunsetdeveloper.com/">Documentation</a>
     ·
-    <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
+    <a href="https://github.com/sunset-developer/sanic-security/issues">Report Bug</a>
     ·
     <a href="https://github.com/sunset-developer/asyncauth/pulls">Request Feature</a>
   </p>
@@ -481,13 +481,13 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/sunset-developer/Amy-Rose.svg?style=flat-square
-[contributors-url]: https://github.com/sunset-developer/Amy-Rose/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/sunset-developer/Amy-Rose.svg?style=flat-square
-[forks-url]: https://github.com/sunset-developer/Amy-Rose/network/members
-[stars-shield]: https://img.shields.io/github/stars/sunset-developer/Amy-Rose.svg?style=flat-square
-[stars-url]: https://github.com/sunset-developer/Amy-Rose/stargazers
-[issues-shield]: https://img.shields.io/github/issues/sunset-developer/Amy-Rose.svg?style=flat-square
-[issues-url]: https://github.com/sunset-developer/Amy-Rose/issues
-[license-shield]: https://img.shields.io/github/license/sunset-developer/Amy-Rose.svg?style=flat-square
-[license-url]: https://github.com/sunset-developer/Amy-Rose/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/sunset-developer/sanic-security.svg?style=flat-square
+[contributors-url]: https://github.com/sunset-developer/sanic-security/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/sunset-developer/sanic-security.svg?style=flat-square
+[forks-url]: https://github.com/sunset-developer/sanic-security/network/members
+[stars-shield]: https://img.shields.io/github/stars/sunset-developer/sanic-security.svg?style=flat-square
+[stars-url]: https://github.com/sunset-developer/sanic-security/stargazers
+[issues-shield]: https://img.shields.io/github/issues/sunset-developer/sanic-security.svg?style=flat-square
+[issues-url]: https://github.com/sunset-developer/sanic-security/issues
+[license-shield]: https://img.shields.io/github/license/sunset-developer/sanic-security.svg?style=flat-square
+[license-url]: https://github.com/sunset-developer/sanic-security/blob/master/LICENSE

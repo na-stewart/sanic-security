@@ -4,7 +4,12 @@ import re
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from sanic_security.core.models import Account, SessionFactory, AuthenticationSession, Session
+from sanic_security.core.models import (
+    Account,
+    SessionFactory,
+    AuthenticationSession,
+    Session,
+)
 from sanic_security.core.utils import hash_pw
 from sanic_security.core.verification import request_two_step_verification
 
@@ -30,13 +35,22 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         AccountError
     """
     forms = request.form
-    if not re.search('[^@]+@[^@]+.[^@]+', forms.get('email')):
+    if not re.search("[^@]+@[^@]+.[^@]+", forms.get("email")):
         raise Account.InvalidEmailError()
     try:
-        account = await Account.create(email=forms.get('email'), username=forms.get('username'),
-                                       password=hash_pw(forms.get('password')), phone=forms.get('phone'),
-                                       verified=verified, disabled=disabled)
-        return await request_two_step_verification(request, account) if not verified else account
+        account = await Account.create(
+            email=forms.get("email"),
+            username=forms.get("username"),
+            password=hash_pw(forms.get("password")),
+            phone=forms.get("phone"),
+            verified=verified,
+            disabled=disabled,
+        )
+        return (
+            await request_two_step_verification(request, account)
+            if not verified
+            else account
+        )
     except IntegrityError:
         raise Account.ExistsError()
     except ValidationError:
@@ -57,10 +71,12 @@ async def login(request: Request):
         AccountError
     """
     form = request.form
-    account = await Account.filter(email=form.get('email')).first()
+    account = await Account.filter(email=form.get("email")).first()
     account_error_factory.throw(account)
-    if account.password == hash_pw(form.get('password')):
-        authentication_session = await session_factory.get('authentication', request, account=account)
+    if account.password == hash_pw(form.get("password")):
+        authentication_session = await session_factory.get(
+            "authentication", request, account=account
+        )
         return authentication_session
     else:
         raise Account.PasswordMismatchError()
@@ -78,7 +94,7 @@ async def logout(request: Request):
     """
     authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
-    await authentication_session.save(update_fields=['valid'])
+    await authentication_session.save(update_fields=["valid"])
     return authentication_session
 
 
@@ -119,6 +135,7 @@ def requires_authentication():
         AccountError
         SessionError
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):

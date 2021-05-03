@@ -2,7 +2,13 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.core.models import Account, TwoStepSession, CaptchaSession, SessionFactory, Session
+from sanic_security.core.models import (
+    Account,
+    TwoStepSession,
+    CaptchaSession,
+    SessionFactory,
+    Session,
+)
 
 session_factory = SessionFactory()
 session_error_factory = Session.ErrorFactory()
@@ -18,7 +24,7 @@ async def request_captcha(request: Request):
     Returns:
         captcha_session
     """
-    return await session_factory.get('captcha', request)
+    return await session_factory.get("captcha", request)
 
 
 async def captcha(request: Request):
@@ -36,7 +42,7 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
-    await captcha_session.crosscheck(request.form.get('captcha'))
+    await captcha_session.crosscheck(request.form.get("captcha"))
     return captcha_session
 
 
@@ -55,6 +61,7 @@ def requires_captcha():
     Raises:
         SessionError
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
@@ -80,7 +87,7 @@ async def request_two_step_verification(request: Request, account: Account = Non
     if account is None:
         two_step_session = await TwoStepSession().decode(request)
         account = two_step_session.account
-    return await session_factory.get('twostep', request, account=account)
+    return await session_factory.get("twostep", request, account=account)
 
 
 async def verify_two_step_verification(request: Request):
@@ -98,7 +105,7 @@ async def verify_two_step_verification(request: Request):
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
-    await two_step_session.crosscheck(request.form.get('code'))
+    await two_step_session.crosscheck(request.form.get("code"))
     return two_step_session
 
 
@@ -116,7 +123,7 @@ async def verify_account(two_step_session: TwoStepSession):
          two_step_session
     """
     two_step_session.account.verified = True
-    await two_step_session.account.save(update_fields=['verified'])
+    await two_step_session.account.save(update_fields=["verified"])
     return two_step_session
 
 
@@ -135,6 +142,7 @@ def requires_two_step_verification():
     Raises:
         SessionError
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
