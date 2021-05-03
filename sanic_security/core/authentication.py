@@ -72,8 +72,8 @@ async def login(request: Request):
     """
     form = request.form
     account = await Account.filter(email=form.get("email")).first()
-    account_error_factory.throw(account)
     if account.password == hash_pw(form.get("password")):
+        account_error_factory.throw(account)
         authentication_session = await session_factory.get(
             "authentication", request, account=account
         )
