@@ -1,6 +1,6 @@
 # Project exclude paths
 /venv/
-/auth.ini
+/security.ini
 /amyrose.egg-info/
 /build/
 /dist/
@@ -9,3 +9,4 @@
 /html/
 /sanic_security_test.egg-info/
 /sanic_security.egg-info/
+.idea

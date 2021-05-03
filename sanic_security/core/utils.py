@@ -6,7 +6,7 @@ from sanic.response import HTTPResponse, redirect
 
 security_cache_path = "./resources/security-cache"
 config = ConfigParser()
-config.read("./auth.ini")
+config.read("./security.ini")
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
