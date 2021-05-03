@@ -17,7 +17,7 @@ def initialize_tortoise(app: Sanic):
         endpoint = config['TORTOISE']['endpoint']
         schema = config['TORTOISE']['schema']
         engine = config['TORTOISE']['engine']
-        models = config['TORTOISE']['models'].replace(' ', '').split(',')
+        models = config['TORTOISE']['models'].replaceAll("\\s", "").split(',')
         url = engine + '://{0}:{1}@{2}/{3}'.format(username, password, endpoint, schema)
         await Tortoise.init(db_url=url, modules={"models": models})
         if config['TORTOISE']['generate'] == 'true':

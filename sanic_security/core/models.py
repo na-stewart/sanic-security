@@ -3,6 +3,7 @@ import datetime
 import random
 import string
 import uuid
+
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
@@ -42,16 +43,19 @@ class BaseErrorFactory:
 
 class SecurityError(ServerError):
     """
-    Base error for all Sanic Security related errors.
+    Base error for all sanic_security related errors.
     """
 
-    def __init__(self, message, code=None):
+    def __init__(self, message, code):
         super().__init__(message, code)
 
 
 class BaseModel(Model):
     """
-    Base Sanic Security model that all other models derive from.
+    Base sanic_security model that all other models derive from. Some important elements to take in consideration is that
+    deletion should be done via the 'deleted' variable and filtering it out rather than completely removing it from
+    the database. Retrieving sanic_security models should be done via filtering with the 'uid' variable rather then the id
+    variable.
     """
 
     id = fields.IntField(pk=True)
@@ -150,8 +154,6 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-    attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=8, null=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -164,54 +166,8 @@ class Session(BaseModel):
             'date_updated': str(self.date_updated),
             'expiration_date': str(self.expiration_date),
             'account': self.account.email if isinstance(self.account, Account) else None,
-            'valid': self.valid,
-            'attempts': self.attempts
+            'valid': self.valid
         }
-
-    @staticmethod
-    def initialize_cache(app: Sanic):
-        """
-        Caches up to 100 code and image variations.
-        """
-
-        @app.listener("before_server_start")
-        async def generate_codes(app, loop):
-            session_cache = './resources/security-cache/session/'
-            loop = asyncio.get_running_loop()
-            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
-            if not path_exists(session_cache):
-                async with aiofiles.open(session_cache + 'codes.txt', mode="w") as f:
-                    for i in range(100):
-                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-                        await f.write(code + ' ')
-                        await loop.run_in_executor(None, image.write, code[:6], session_cache + code[:6] + '.png')
-
-    @staticmethod
-    async def get_code():
-        """
-        Retrieves a random cached code from a codes.txt file
-
-        :return: code
-        """
-        async with aiofiles.open('./resources/security-cache/session/codes.txt', mode='r') as f:
-            codes = await f.read()
-            return random.choice(codes.split())
-
-    async def crosscheck_code(self, code: str):
-        """
-        Used to check if code passed is equivalent to the session code.
-
-        :param code: Code being cross-checked with session code.
-        """
-        if self.attempts >= 5:
-            raise self.MaximumAttemptsError
-        elif self.code != code:
-            self.attempts += 1
-            await self.save(update_fields=['attempts'])
-            raise self.CrosscheckError()
-        else:
-            self.valid = False
-            await self.save(update_fields=['valid'])
 
     def encode(self, response: HTTPResponse, secure=True, same_site: str = 'lax'):
         """
@@ -284,10 +240,6 @@ class Session(BaseModel):
         def __init__(self, message, code):
             super().__init__(message, code)
 
-    class MaximumAttemptsError(SessionError):
-        def __init__(self):
-            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
-
     class DecodeError(SessionError):
         def __init__(self, exception):
             super().__init__('Session cookie could not be decoded. ' + str(exception), 400)
@@ -296,81 +248,68 @@ class Session(BaseModel):
         def __init__(self):
             super().__init__('Session is invalid.', 401)
 
-    class CrosscheckError(SessionError):
-        def __init__(self):
-            super().__init__('Session crosschecking attempt was incorrect', 401)
-
     class ExpiredError(SessionError):
         def __init__(self):
             super().__init__('Session has expired', 401)
 
 
-class SessionFactory:
-    """
-    Prevents human error when creating sessions.
-    """
-
-    def generate_expiration_date(self, days: int = 0, minutes: int = 0):
-        """
-        Creates an expiration date. Adds days to current datetime.
-
-        :param days: days to be added to current time.
-
-        :param minutes: minutes to be added to the current time.
-
-        :return: expiration_date
-        """
-        return datetime.datetime.utcnow() + datetime.timedelta(days=days, minutes=minutes)
-
-    async def _account_via_decoded(self, request: Request, session: Session):
-        """
-        Extracts account from decoded session. This method was created purely to prevent repetitive code.
-
-        :param request: Sanic request parameter.
-
-        :param session: Session being decoded to retrieve account from
-
-        :return: account
-        """
-        decoded_session = await session.decode(request)
-        return decoded_session.account
-
-    async def get(self, session_type: str, request: Request, account: Account = None):
-        """
-        Creates and returns a session with all of the fulfilled requirements.
-
-        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
-        authentication.
-
-        :param request: Sanic request parameter.
-
-        :param account: Account being associated to to a session.
-
-        :return: session
-        """
-        code = await Session.get_code()
-        if session_type == 'captcha':
-            return await CaptchaSession.create(ip=get_ip(request), code=code[:6],
-                                               expiration_date=self.generate_expiration_date(minutes=1))
-        elif session_type == 'verification':
-            return await VerificationSession.create(code=code, ip=get_ip(request), account=account,
-                                                    expiration_date=self.generate_expiration_date(minutes=5))
-        elif session_type == 'authentication':
-            return await AuthenticationSession.create(account=account, ip=get_ip(request),
-                                                      expiration_date=self.generate_expiration_date(days=30))
-        else:
-            raise ValueError('Invalid session type.')
-
-
 class VerificationSession(Session):
     """
-    Used to verify an account's email or mobile. Can be used in order to validate the person utilizing
-    an account is the actual owner.
+    Verifies an account via emailing or texting a code.
     """
+    attempts = fields.IntField(default=0)
+    code = fields.CharField(max_length=8, null=True)
+    cache_path = './resources/security-cache/session/'
+
+    @staticmethod
+    def initialize_cache(app: Sanic):
+        """
+        Caches up to 100 code and image variations.
+        """
+
+        @app.listener("before_server_start")
+        async def generate_codes(app, loop):
+
+            loop = asyncio.get_running_loop()
+            image = ImageCaptcha(190, 90, fonts=[config['AUTH']['captcha_font']])
+            cache_path = VerificationSession.cache_path
+            if not path_exists(cache_path):
+                async with aiofiles.open(cache_path+ 'codes.txt', mode="w") as f:
+                    for i in range(100):
+                        code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                        await f.write(code + ' ')
+                        await loop.run_in_executor(None, image.write, code[:6], cache_path + code[:6] + '.png')
+
+    @staticmethod
+    async def get_challenge():
+        """
+        Retrieves a random cached code from a codes.txt file
+
+        :return: code
+        """
+        async with aiofiles.open(VerificationSession.cache_path + 'codes.txt', mode='r') as f:
+            codes = await f.read()
+            return random.choice(codes.split())
+
+    async def crosscheck(self, code: str):
+        """
+        Used to check if code passed is equivalent to the session code.
+
+        :param code: Code being cross-checked with session code.
+        """
+        if self.attempts >= 5:
+            raise self.MaximumAttemptsError
+        elif self.code != code:
+            self.attempts += 1
+            await self.save(update_fields=['attempts'])
+            raise self.CrosscheckError()
+        else:
+            self.valid = False
+            await self.save(update_fields=['valid'])
 
     async def text_code(self, code_prefix="Your code is: "):
         """
-        Sends verification code via text.
+        Sends account verification code via text.
 
         :param code_prefix: Message being sent with code, for example "Your code is: ".
         """
@@ -378,7 +317,7 @@ class VerificationSession(Session):
 
     async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
         """
-        Sends verification code via email.
+        Sends account verification code via email.
 
         :param code_prefix: Message being sent with code, for example "Your code is: ".
 
@@ -386,14 +325,34 @@ class VerificationSession(Session):
         """
         await send_email(self.account.email, subject, code_prefix + self.code)
 
+    class CrosscheckError(Session.SessionError):
+        def __init__(self):
+            super().__init__('Session crosschecking attempt was incorrect', 401)
 
-class CaptchaSession(Session):
+    class MaximumAttemptsError(Session.SessionError):
+        def __init__(self):
+            super().__init__('You\'ve reached the maximum amount of attempts for this session.', 401)
+
+
+class CaptchaSession(VerificationSession):
     """
-    Validates a client as human by correctly entering a captcha challenge.
+    Validates an client as human by forcing a user to correctly enter a captcha challenge.
     """
+
+    @property
+    async def email_code(self, subject="Session Code", code_prefix='Your code is:\n\n '):
+        raise AttributeError("'CaptchaSession' object has no attribute 'email_code'")
+
+    @property
+    async def text_code(self, code_prefix="Your code is: "):
+        raise AttributeError("'CaptchaSession' object has no attribute 'text_code'")
 
     @staticmethod
-    async def captcha_img(request):
+    async def get_challenge():
+        return await VerificationSession.get_challenge()[:6]
+
+    @staticmethod
+    async def get_image(self, request):
         """
         Retrieves image path of captcha.
 
@@ -418,6 +377,49 @@ class AuthenticationSession(Session):
         if not await AuthenticationSession.filter(ip=get_ip(request), account=self.account).exists():
             raise AuthenticationSession.UnknownLocationError()
 
+class SessionFactory:
+    """
+    Prevents human error when creating sessions.
+    """
+
+    def generate_expiration_date(self, days: int = 0, minutes: int = 0):
+        """
+        Creates an expiration date. Adds days to current datetime.
+
+        :param days: days to be added to current time.
+
+        :param minutes: minutes to be added to the current time.
+
+        :return: expiration_date
+        """
+        return datetime.datetime.utcnow() + datetime.timedelta(days=days, minutes=minutes)
+
+    async def get(self, session_type: str, request: Request, account: Account = None):
+        """
+        Creates and returns a session with all of the fulfilled requirements.
+
+        :param session_type: The type of session being retrieved. Available types are: captcha, verification, and
+        authentication.
+
+        :param request: Sanic request parameter.
+
+        :param account: Account being associated to to a session.
+
+        :return: session
+        """
+
+        if session_type == 'captcha':
+            return await CaptchaSession.create(ip=get_ip(request), code=await CaptchaSession.get_challenge(),
+                                               expiration_date=self.generate_expiration_date(minutes=1))
+        elif session_type == 'verification':
+            return await VerificationSession.create(code=VerificationSession.get_challenge(),
+                                                    ip=get_ip(request), account=account,
+                                                    expiration_date=self.generate_expiration_date(minutes=5))
+        elif session_type == 'authentication':
+            return await AuthenticationSession.create(account=account, ip=get_ip(request),
+                                                      expiration_date=self.generate_expiration_date(days=30))
+        else:
+            raise ValueError('Invalid session type.')
 
 class Role(BaseModel):
     """

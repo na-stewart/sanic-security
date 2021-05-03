@@ -114,7 +114,7 @@ working directory is the project directory. Below is an example of its contents:
 
 WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
-```ini
+```
 [AUTH]
 name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
@@ -123,8 +123,8 @@ captcha_font=source-sans-pro.light.ttf
 [TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
-endpoint=websitedb.cweAenuBY6b.us-north-1.rds.amazonaws.com
-schema=websiteschema
+endpoint=website.cweAenuBY6b.us-north-1.rds.amazonaws.com
+schema=webschema
 models=sanic_security.core.models
 engine=mysql
 generate=true
@@ -319,8 +319,8 @@ async def on_request_captcha(request):
 ```python
 @app.get('api/captcha/img')
 async def on_captcha_img(request):
-    img_path = await CaptchaSession.captcha_img(request)
-    return await file(img_path)
+  img_path = await CaptchaSession().get_image(request)
+  return await file(img_path)
 ```
 
 * Require Captcha
@@ -486,6 +486,11 @@ async def xxs_middleware(request, response):
 @app.middleware('request')
 async def https_middleware(request):
     return https_redirect_middleware(request)
+
+
+@app.middleware('request')
+async def ip2proxy_middleware(request):
+    await proxy_detection_middleware(request)
 ```
 
 <!-- ROADMAP -->

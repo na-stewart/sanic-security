@@ -14,19 +14,21 @@ session_error_factory = Session.ErrorFactory()
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
-    """
-    Creates a new account. This is the recommend and most secure method for registering accounts' with sanic-security.
+    """Account registration.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    email, username, password, phone.
+    Creates a new account. This is the recommend and most secure method for registering accounts' with Sanic Security.
 
-    :param verified: If false, account being registered must be verified before use.
+    Args:
+        request: Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone.
+        verified: If false, account being registered must be verified before use.
+        disabled: If true, account being registered must be enabled before use.
 
-    :param disabled: If true, account being registered must be enabled before use.
+    Returns:
+        A verification session if the verified parameter is false and an account if true. No reason to return a
+        verification session if the account is registered verified.
 
-    :raises AccountError:
-
-    :return: account if verified or verification_session if not verified
+    Raises:
+        AccountError
     """
     forms = request.form
     if not re.search('[^@]+@[^@]+.[^@]+', forms.get('email')):
@@ -43,15 +45,19 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
 
 
 async def login(request: Request):
-    """
-    Creates an authentication session that is used to verify the account making requests requiring authentication.
+    """ Account login.
 
-    :param request: Sanic request parameter. All request bodies are sent as form-data with the following arguments:
-    email, password.
+    Creates an authentication session that will be used to authenticate the account requiring authentication.
 
-    :raises AccountError:
+    Args:
+        request: Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
 
-    :return: authentication_session
+    Returns:
+        AuthenticationSession used to
+
+    Raises:
+        AccountError
+
     """
     form = request.form
     account = await Account.filter(email=form.get('email')).first()
