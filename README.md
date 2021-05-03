@@ -43,7 +43,7 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
-    * [Recovery](#recovery)
+    * [Recovery](#account-recovery)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
@@ -148,8 +148,8 @@ delete the TWILLIO section.
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
 ```python
+initialize_security(app)
 if __name__ == '__main__':
-    initialize_security(app)
     app.run(host='0.0.0.0', port=8000, debug=True)
 ```
 
@@ -247,7 +247,7 @@ async def on_authenticated(request, authentication_session):
                 authentication_session.account.json())
 ```
 
-## Recovery
+## Account Recovery
 
 * Recovery Attempt
 
@@ -382,7 +382,7 @@ Key | Value |
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     await verify_account(two_step_session)
-    return json('Account verification successful!', two_step_session.json())
+    return json('You have verified your account and may login!', two_step_session.json())
 ```
 
 ## Authorization
