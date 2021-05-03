@@ -121,8 +121,8 @@ captcha_font=source-sans-pro.light.ttf
 [TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
-endpoint=website.cweAenuBY6b.us-north-1.rds.amazonaws.com
-schema=webschema
+endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
+schema=exampleschema
 models=sanic_security.core.models, example.core.models
 engine=mysql
 generate=true
