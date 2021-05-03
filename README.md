@@ -46,7 +46,6 @@
     * [Captcha](#captcha)
     * [Verification](#verification)
     * [Authorization](#authorization)
-    * [IP2Proxy](#ip2proxy)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
@@ -71,7 +70,6 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Password recovery
 * Wildcard permissions
 * Role permissions
-* IP2Proxy support
 * Easy database integration
 * Completely async
 
@@ -142,11 +140,6 @@ username=test@gmail.com
 password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
-
-[IP2PROXY]
-key=iohuyg87UGYOFijoTYG8HOuhuZJsdXwjqbhuyghuiBUYG8yvo6J
-code=PX1LITEBIN
-bin=IP2PROXY-LITE-PX1.BIN
 ```
 
 You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
@@ -192,11 +185,11 @@ Key | Value |
 @app.post('api/register')
 @requires_captcha()
 async def on_register(request, captcha_session):
-    verification_session = await register(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response)
+    two_step_session = await register(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('Registration successful', two_step_session.account.json())
+    two_step_session.encode(response)
     return response
 ```
 
@@ -267,11 +260,11 @@ Key | Value |
 @app.post('api/recovery/attempt')
 @requires_captcha()
 async def on_recovery_attempt(request, captcha_session):
-    verification_session = await attempt_recovery(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('A recovery attempt has been made, please verify account ownership.', verification_session.json())
-    verification_session.encode(response)
+    two_step_session = await attempt_recovery(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
+    two_step_session.encode(response)
     return response
 ```
 
@@ -284,10 +277,10 @@ Key | Value |
 
 ```python
 @app.post('api/recovery/fulfill')
-@requires_verification()
+@requires_two_step_verification()
 async def on_recovery_fulfill(request):
-    await fulfill_recovery_attempt(request, verification_session)
-    return json('Account recovered successfully.', verification_session.account.json())
+    await fulfill_recovery_attempt(request, two_step_session)
+    return json('Account recovered successfully.', two_step_session.account.json())
 ```
 
 
@@ -345,11 +338,11 @@ async def on_captcha_attempt(request, captcha_session):
 ```python
 @app.get('api/verification/request')
 async def on_request_verification(request):
-    verification_session = await request_verification(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response)
+    two_step_session = await request_verification(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('Verification request successful', two_step_session.json())
+    two_step_session.encode(response)
     return response
 ```
 
@@ -358,10 +351,10 @@ async def on_request_verification(request):
 ```python
 @app.post('api/verification/resend')
 async def on_resend_verification(request):
-    verification_session = await VerificationSession().decode(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    return json('Verification code resend successful', verification_session.json())
+    two_step_session = await VerificationSession().decode(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    return json('Verification code resend successful', two_step_session.json())
 ```
 
 * Requires Verification
@@ -372,9 +365,9 @@ Key | Value |
 
 ```python
 @app.get('api/client/verify')
-@requires_verification()
-async def on_verified(request, verification_session):
-    return json('Hello ' + verification_session.account.username + '! You have verified yourself and may continue. ', 
+@requires_two_step_verification()
+async def on_verified(request, two_step_session):
+    return json('Hello ' + two_step_session.account.username + '! You have verified yourself and may continue. ', 
                 authentication_session.account.json())
 ```
 
@@ -386,10 +379,10 @@ Key | Value |
 
 ```python
 @app.post('api/verification/account')
-@requires_verification()
-async def on_verify(request, verification_session):
-    await verify_account(verification_session)
-    return json('Verification successful!', verification_session.json())
+@requires_two_step_verification()
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json('Verification successful!', two_step_session.json())
 ```
 
 ## Authorization
