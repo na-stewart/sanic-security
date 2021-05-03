@@ -107,7 +107,7 @@ Once Sanic Security is configured and good to go, implementing is easy as pie.
 Familiarity with [Sanic](https://github.com/huge-success/sanic) and [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html)
 is recommended.
 
-First you have to create a configuration file called auth.ini in the project directory. Make sure Python's 
+First you have to create a configuration file called security.ini in the project directory. Make sure Python's 
 working directory is the project directory. Below is an example of its contents: 
 
 WARNING: You must set a custom secret, or you will compromise your encoded sessions.
@@ -286,7 +286,7 @@ async def on_recovery_fulfill(request, two_step_session):
 
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file's path in auth.ini.
+You must download a .ttf font for captcha challenges and define the file's path in security.ini.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
