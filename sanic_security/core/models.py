@@ -144,7 +144,7 @@ class Account(BaseModel):
         phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them. Should not be displayed publicly.
         password (bytes): Must be created using the hash_pw() method found in utils.py.
         disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
-        verified (bool): Determines if an account has been through the two step verification process before being allowed use.
+        verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
     """
 
     username = fields.CharField(max_length=45)

@@ -29,7 +29,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
 
     Returns:
         account: An account is returned if the verified parameter is true.
-        two_step_session: A two step session is returned if the verified parameter is false.
+        two_step_session: A two-step session is returned if the verified parameter is false.
 
     Raises:
         AccountError

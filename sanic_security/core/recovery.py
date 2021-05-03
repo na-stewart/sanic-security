@@ -16,7 +16,7 @@ async def fulfill_account_recovery_attempt(
      Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments:
         password.
-        two_step_session (TwoStepSession): : Two step session retrieved from the @requires_two_step_verification decorator used on your
+        two_step_session (TwoStepSession): : Two-step session retrieved from the @requires_two_step_verification decorator used on your
         recovery request endpoint.
 
     """
@@ -29,14 +29,14 @@ async def fulfill_account_recovery_attempt(
 
 async def attempt_account_recovery(request: Request):
     """
-    Requests a two step session to ensure that the recovery attempt was made by the account owner.
+    Requests a two-step session to ensure that the recovery attempt was made by the account owner.
 
      Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments:
         email.
 
     Returns:
-        two_step_session: A new two step session for the client is created with all identifying information
+        two_step_session: A new two-step session for the client is created with all identifying information
         on request and requires encoding.
     """
 

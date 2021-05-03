@@ -75,7 +75,7 @@ def requires_captcha():
 
 async def request_two_step_verification(request: Request, account: Account = None):
     """
-    Creates a two step session associated with an account.
+    Creates a two-step session associated with an account.
 
     Args:
         request (Request): Sanic request parameter.
@@ -92,7 +92,7 @@ async def request_two_step_verification(request: Request, account: Account = Non
 
 async def verify_two_step_verification(request: Request):
     """
-    Enforces two step verification to continue action.
+    Enforces two-step verification to continue action.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
@@ -111,10 +111,10 @@ async def verify_two_step_verification(request: Request):
 
 async def verify_account(two_step_session: TwoStepSession):
     """
-    Verifies account associated to a two step session.
+    Verifies account associated to a two-step session.
 
     Args:
-        two_step_session (TwoStepSession): Two step session containing account being verified.
+        two_step_session (TwoStepSession): Two-step session containing account being verified.
 
     Raises:
         SessionError
@@ -129,7 +129,7 @@ async def verify_account(two_step_session: TwoStepSession):
 
 def requires_two_step_verification():
     """
-    Enforces two step verification to continue action.
+    Enforces two-step verification to continue action.
 
     Example:
         This method is not called directly and instead used as a decorator:
