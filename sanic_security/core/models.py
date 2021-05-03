@@ -514,7 +514,7 @@ class SessionFactory:
          Creates and returns a session with all of the fulfilled requirements.
 
         Args:
-            session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication
+            session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
             request (Request):  Sanic request paramater.
             account (Account): Account being associated to a session.
 
