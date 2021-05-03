@@ -44,7 +44,7 @@
     * [Authentication](#authentication)
     * [Recovery](#recovery)
     * [Captcha](#captcha)
-    * [Verification](#verification)
+    * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -260,7 +260,7 @@ Key | Value |
 @app.post('api/recovery/attempt')
 @requires_captcha()
 async def on_recovery_attempt(request, captcha_session):
-    two_step_session = await attempt_recovery(request)
+    two_step_session = await attempt_account_recovery(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
@@ -279,7 +279,7 @@ Key | Value |
 @app.post('api/recovery/fulfill')
 @requires_two_step_verification()
 async def on_recovery_fulfill(request):
-    await fulfill_recovery_attempt(request, two_step_session)
+    await fulfill_account_recovery_attempt(request, two_step_session)
     return json('Account recovered successfully.', two_step_session.account.json())
 ```
 
@@ -330,15 +330,15 @@ async def on_captcha_attempt(request, captcha_session):
     return response
 ```
 
-## Verification
+## Two-Step Verification
 
-* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
+* Request 2SV (Creates and encodes a new verification code, useful for when a verification session may be 
   invalid or expired.)
 
 ```python
 @app.get('api/verification/request')
 async def on_request_verification(request):
-    two_step_session = await request_verification(request)
+    two_step_session =  await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json('Verification request successful', two_step_session.json())
@@ -346,12 +346,12 @@ async def on_request_verification(request):
     return response
 ```
 
-* Resend Verification (Does not create new verification code, only resends current session code.)
+* Resend 2SV Code (Does not create new verification code, only resends current session code.)
 
 ```python
 @app.post('api/verification/resend')
 async def on_resend_verification(request):
-    two_step_session = await VerificationSession().decode(request)
+    two_step_session = await TwoStepSession().decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     return json('Verification code resend successful', two_step_session.json())
@@ -382,7 +382,7 @@ Key | Value |
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     await verify_account(two_step_session)
-    return json('Verification successful!', two_step_session.json())
+    return json('Account verification successful!', two_step_session.json())
 ```
 
 ## Authorization
