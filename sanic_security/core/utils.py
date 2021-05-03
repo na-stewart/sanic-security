@@ -1,67 +1,80 @@
 import hashlib
 import os
-
+from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
 
-from sanic_security.core.config import config
+security_cache_path = "./resources/security-cache"
+config = ConfigParser()
+config.read("./auth.ini")
 
 
 def xss_prevention_middleware(request: Request, response: HTTPResponse):
     """
     Adds a header to all responses that prevents cross site scripting.
 
-    :param request: Sanic request parameter.
-
-    :param response: Sanic http response parameter.
+    Args:
+        response (HTTPResponse): Sanic response parameter.
     """
-    response.headers['x-xss-protection'] = '1; mode=block'
+    response.headers["x-xss-protection"] = "1; mode=block"
 
 
 def https_redirect_middleware(request: Request):
     """
     Redirects all http requests to https.
 
-    :param request: Sanic request parameter.
-
-    :return: redirect_url
+    Args:
+        request (Request): Sanic request parameter.
     """
-    if request.url.startswith('http://'):
-        url = request.url.replace('http://', 'https://', 1)
+    if request.url.startswith("http://"):
+        url = request.url.replace("http://", "https://", 1)
         return redirect(url)
 
 
 def hash_pw(password: str):
     """
-    Turns passed text into hashed password
+    Redirects all http requests to https.
 
-    :param password: Password to be hashed.
+    Args:
+        password (str): Password to be hashed.
 
-    :return: hashed_password
+    Returns:
+        hashed_password
     """
-    return hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'), config['AUTH']['SECRET'].encode('utf-8'), 100000)
+    return hashlib.pbkdf2_hmac(
+        "sha512",
+        password.encode("utf-8"),
+        config["AUTH"]["SECRET"].encode("utf-8"),
+        100000,
+    )
 
 
 def get_ip(request: Request):
     """
     Retrieves ip address from request.
 
-    :param request: Sanic request parameter.
+    Args:
+        request (Request): Sanic request parameter.
 
-    :return: ip
+    Returns:
+        ip
     """
     return request.remote_addr if request.remote_addr else request.ip
 
 
-def path_exists(path):
+def dir_exists(path):
     """
     Checks if path exists and isn't empty, and creates it if it doesn't.
 
-    :param path: Path being checked.
+    Args:
+         path: Path being checked.
 
-    :return: exists
+    Returns:
+        exists
     """
-    exists = os.path.exists(path)
-    if not exists:
+    try:
         os.makedirs(path)
-    return exists and os.listdir(path)
+        exists = False
+    except FileExistsError:
+        exists = os.listdir(path)
+    return exists

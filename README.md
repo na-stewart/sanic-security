@@ -10,6 +10,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
 
@@ -24,7 +25,7 @@
     <br />
     <a href="http://security.sunsetdeveloper.com/">Documentation</a>
     ·
-    <a href="https://github.com/sunset-developer/Amy-Rose/issues">Report Bug</a>
+    <a href="https://github.com/sunset-developer/sanic-security/issues">Report Bug</a>
     ·
     <a href="https://github.com/sunset-developer/asyncauth/pulls">Request Feature</a>
   </p>
@@ -44,15 +45,13 @@
     * [Authentication](#authentication)
     * [Recovery](#recovery)
     * [Captcha](#captcha)
-    * [Verification](#verification)
+    * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [IP2Proxy](#ip2proxy)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
-* [Contact](#contact)
 * [Acknowledgements](#acknowledgements)
 
 
@@ -71,7 +70,6 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Password recovery
 * Wildcard permissions
 * Role permissions
-* IP2Proxy support
 * Easy database integration
 * Completely async
 
@@ -114,7 +112,7 @@ working directory is the project directory. Below is an example of its contents:
 
 WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
-```
+```ini
 [AUTH]
 name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
@@ -142,11 +140,6 @@ username=test@gmail.com
 password=wfrfouwiurhwlnj
 tls=true
 start_tls=false
-
-[IP2PROXY]
-key=iohuyg87UGYOFijoTYG8HOuhuZJsdXwjqbhuyghuiBUYG8yvo6J
-code=PX1LITEBIN
-bin=IP2PROXY-LITE-PX1.BIN
 ```
 
 You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
@@ -192,11 +185,11 @@ Key | Value |
 @app.post('api/register')
 @requires_captcha()
 async def on_register(request, captcha_session):
-    verification_session = await register(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('Registration successful', verification_session.account.json())
-    verification_session.encode(response)
+    two_step_session = await register(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('Registration successful', two_step_session.account.json())
+    two_step_session.encode(response)
     return response
 ```
 
@@ -267,11 +260,11 @@ Key | Value |
 @app.post('api/recovery/attempt')
 @requires_captcha()
 async def on_recovery_attempt(request, captcha_session):
-    verification_session = await attempt_recovery(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('A recovery attempt has been made, please verify account ownership.', verification_session.json())
-    verification_session.encode(response)
+    two_step_session = await attempt_account_recovery(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
+    two_step_session.encode(response)
     return response
 ```
 
@@ -284,10 +277,10 @@ Key | Value |
 
 ```python
 @app.post('api/recovery/fulfill')
-@requires_verification()
-async def on_recovery_fulfill(request):
-    await fulfill_recovery_attempt(request, verification_session)
-    return json('Account recovered successfully.', verification_session.account.json())
+@requires_two_step_verification()
+async def on_recovery_fulfill(request, two_step_session):
+    await fulfill_account_recovery_attempt(request, two_step_session)
+    return json('Account recovered successfully.', two_step_session.account.json())
 ```
 
 
@@ -319,11 +312,11 @@ async def on_request_captcha(request):
 ```python
 @app.get('api/captcha/img')
 async def on_captcha_img(request):
-  img_path = await CaptchaSession().get_image(request)
-  return await file(img_path)
+    captcha_session = await CaptchaSession().decode(request)
+    return await file(captcha_session.get_image())
 ```
 
-* Require Captcha
+* Requires Captcha
 
 Key | Value |
 --- | --- |
@@ -337,34 +330,34 @@ async def on_captcha_attempt(request, captcha_session):
     return response
 ```
 
-## Verification
+## Two-Step Verification
 
-* Request Verification (Creates and encodes a new verification code, useful for when a verification session may be 
+* Request 2SV (Creates and encodes a code, useful for when a two-step session may be 
   invalid or expired.)
 
 ```python
 @app.get('api/verification/request')
 async def on_request_verification(request):
-    verification_session = await request_verification(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    response = json('Verification request successful', verification_session.json())
-    verification_session.encode(response)
+    two_step_session =  await request_two_step_verification(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('Verification request successful', two_step_session.json())
+    two_step_session.encode(response)
     return response
 ```
 
-* Resend Verification (Does not create new verification code, only resends current session code.)
+* Resend 2SV Code (Does not create new code, only resends encoded session code.)
 
 ```python
 @app.post('api/verification/resend')
 async def on_resend_verification(request):
-    verification_session = await VerificationSession().decode(request)
-    await verification_session.text_code() # Text verification code.
-    await verification_session.email_code() # Or email verification code.
-    return json('Verification code resend successful', verification_session.json())
+    two_step_session = await TwoStepSession().decode(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    return json('Verification code resend successful', two_step_session.json())
 ```
 
-* Requires Verification
+* Requires Two-Step Verification
 
 Key | Value |
 --- | --- |
@@ -372,9 +365,9 @@ Key | Value |
 
 ```python
 @app.get('api/client/verify')
-@requires_verification()
-async def on_verified(request, verification_session):
-    return json('Hello ' + verification_session.account.username + '! You have verified yourself and may continue. ', 
+@requires_two_step_verification()
+async def on_verified(request, two_step_session):
+    return json('Hello ' + two_step_session.account.username + '! You have verified yourself and may continue. ', 
                 authentication_session.account.json())
 ```
 
@@ -386,10 +379,10 @@ Key | Value |
 
 ```python
 @app.post('api/verification/account')
-@requires_verification()
-async def on_verify(request, verification_session):
-    await verify_account(verification_session)
-    return json('Verification successful!', verification_session.json())
+@requires_two_step_verification()
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json('Account verification successful!', two_step_session.json())
 ```
 
 ## Authorization
@@ -431,39 +424,6 @@ async def on_require_roles(request, authentication_session):
     return text('Admin gained access!')
 ```
 
-## IP2Proxy
-
-[IP2Location](https://www.ip2location.com/)
-
-[IP2Location LITE](https://lite.ip2location.com/)
-
-IP2Proxy Proxy Detection Database contains IP addresses which are used as VPN anonymizer, open proxies, web proxies
-and Tor exits, data center, web hosting (DCH) range, search engine robots (SES) and residential proxies (RES).
-
-Anonymous proxy servers are intermediate servers meant to hide the real identity or IP address of the requestor. 
-Studies found that a large number of anonymous proxy users are generally responsible for online credit card fraud, 
-forums and blogs spamming.
-
-IP2Proxy database is based on a proprietary detection algorithm in parallel with evaluation of anonymous open proxy 
-servers which are actively in use. Then it generates an up-to-date list of anonymous proxy IP address in the download 
-area every 24 hours.
-
-DISCLAIMER: There is no real good “out-of-the-box” solution against fake IP addresses, aka “IP Address Spoofing”. Do not
-rely on IP2Proxy to provide 100% protection against malicious actors utilizing proxies/vpns.
-
-WARNING: Utilizing IP2Proxy may cause first time initialization to take up to thirty seconds or more.
-
-* Detect Proxy
-```python
-@app.get('api/client/proxy')
-@detect_proxy()
-@requires_authentication()
-async def on_detect_proxy(request, authentication_session):
-    return json('Hello ' + authentication_session.account.username + '! You are not using a proxy! ', 
-                authentication_session.account.json())
-```
-
-
 ## Error Handling
 
 ```python
@@ -486,11 +446,6 @@ async def xxs_middleware(request, response):
 @app.middleware('request')
 async def https_middleware(request):
     return https_redirect_middleware(request)
-
-
-@app.middleware('request')
-async def ip2proxy_middleware(request):
-    await proxy_detection_middleware(request)
 ```
 
 <!-- ROADMAP -->
@@ -511,7 +466,6 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a Pull Request
 
 
-
 <!-- LICENSE -->
 ## License
 
@@ -526,13 +480,13 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/sunset-developer/Amy-Rose.svg?style=flat-square
-[contributors-url]: https://github.com/sunset-developer/Amy-Rose/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/sunset-developer/Amy-Rose.svg?style=flat-square
-[forks-url]: https://github.com/sunset-developer/Amy-Rose/network/members
-[stars-shield]: https://img.shields.io/github/stars/sunset-developer/Amy-Rose.svg?style=flat-square
-[stars-url]: https://github.com/sunset-developer/Amy-Rose/stargazers
-[issues-shield]: https://img.shields.io/github/issues/sunset-developer/Amy-Rose.svg?style=flat-square
-[issues-url]: https://github.com/sunset-developer/Amy-Rose/issues
-[license-shield]: https://img.shields.io/github/license/sunset-developer/Amy-Rose.svg?style=flat-square
-[license-url]: https://github.com/sunset-developer/Amy-Rose/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/sunset-developer/sanic-security.svg?style=flat-square
+[contributors-url]: https://github.com/sunset-developer/sanic-security/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/sunset-developer/sanic-security.svg?style=flat-square
+[forks-url]: https://github.com/sunset-developer/sanic-security/network/members
+[stars-shield]: https://img.shields.io/github/stars/sunset-developer/sanic-security.svg?style=flat-square
+[stars-url]: https://github.com/sunset-developer/sanic-security/stargazers
+[issues-shield]: https://img.shields.io/github/issues/sunset-developer/sanic-security.svg?style=flat-square
+[issues-url]: https://github.com/sunset-developer/sanic-security/issues
+[license-shield]: https://img.shields.io/github/license/sunset-developer/sanic-security.svg?style=flat-square
+[license-url]: https://github.com/sunset-developer/sanic-security/blob/master/LICENSE
