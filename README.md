@@ -52,7 +52,6 @@
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
-* [Contact](#contact)
 * [Acknowledgements](#acknowledgements)
 
 
@@ -113,7 +112,7 @@ working directory is the project directory. Below is an example of its contents:
 
 WARNING: You must set a custom secret, or you will compromise your encoded sessions.
 
-```
+```ini
 [AUTH]
 name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
@@ -279,7 +278,7 @@ Key | Value |
 ```python
 @app.post('api/recovery/fulfill')
 @requires_two_step_verification()
-async def on_recovery_fulfill(request):
+async def on_recovery_fulfill(request, two_step_session):
     await fulfill_account_recovery_attempt(request, two_step_session)
     return json('Account recovered successfully.', two_step_session.account.json())
 ```
@@ -313,11 +312,11 @@ async def on_request_captcha(request):
 ```python
 @app.get('api/captcha/img')
 async def on_captcha_img(request):
-  img_path = await CaptchaSession().get_image(request)
-  return await file(img_path)
+    captcha_session = await CaptchaSession().decode(request)
+    return await file(captcha_session.get_image())
 ```
 
-* Require Captcha
+* Requires Captcha
 
 Key | Value |
 --- | --- |
@@ -333,7 +332,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 ## Two-Step Verification
 
-* Request 2SV (Creates and encodes a new verification code, useful for when a verification session may be 
+* Request 2SV (Creates and encodes a code, useful for when a two-step session may be 
   invalid or expired.)
 
 ```python
@@ -347,7 +346,7 @@ async def on_request_verification(request):
     return response
 ```
 
-* Resend 2SV Code (Does not create new verification code, only resends current session code.)
+* Resend 2SV Code (Does not create new code, only resends encoded session code.)
 
 ```python
 @app.post('api/verification/resend')
@@ -358,7 +357,7 @@ async def on_resend_verification(request):
     return json('Verification code resend successful', two_step_session.json())
 ```
 
-* Requires Verification
+* Requires Two-Step Verification
 
 Key | Value |
 --- | --- |
@@ -465,7 +464,6 @@ Contributions are what make the open source community such an amazing place to b
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
 
 
 <!-- LICENSE -->
