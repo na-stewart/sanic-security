@@ -29,4 +29,3 @@ ujson==4.0.2
 uvloop==0.14.0
 websockets==8.1
 yarl==1.6.3
-jwt==1.2.0
