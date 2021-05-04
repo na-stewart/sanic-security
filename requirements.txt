@@ -1,7 +1,6 @@
 aiofiles==0.6.0
 aiosmtplib==1.1.4
 aiosqlite==0.16.1
-APScheduler==3.7.0
 async-timeout==3.0.1
 attrs==20.3.0
 captcha==0.3
