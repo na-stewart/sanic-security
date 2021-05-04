@@ -31,7 +31,7 @@ def https_redirect_middleware(request: Request):
         return redirect(url)
 
 
-def hash_pw(password: str):
+def password_hash(password: str):
     """
     Redirects all http requests to https.
 

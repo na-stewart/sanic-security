@@ -2,7 +2,7 @@ from sanic.request import Request
 
 from sanic_security.core.authentication import account_error_factory
 from sanic_security.core.models import AuthenticationSession, Account, TwoStepSession
-from sanic_security.core.utils import hash_pw
+from sanic_security.core.utils import password_hash
 from sanic_security.core.verification import request_two_step_verification
 
 
@@ -20,7 +20,7 @@ async def fulfill_account_recovery_attempt(
         recovery request endpoint.
 
     """
-    two_step_session.account.password = hash_pw(request.form.get("password"))
+    two_step_session.account.password = password_hash(request.form.get("password"))
     await AuthenticationSession.filter(
         account=two_step_session.account, valid=True, deleted=False
     ).update(valid=False)
