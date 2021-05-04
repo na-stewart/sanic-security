@@ -31,9 +31,9 @@ def https_redirect_middleware(request: Request):
         return redirect(url)
 
 
-def password_hash(password: str):
+def hash_password(password: str):
     """
-    Redirects all http requests to https.
+    Securely hashes passed password to be stored. The function provides PKCS#5 password-based key derivation function 2. It uses HMAC as pseudorandom function.
 
     Args:
         password (str): Password to be hashed.

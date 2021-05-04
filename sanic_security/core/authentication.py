@@ -10,7 +10,7 @@ from sanic_security.core.models import (
     AuthenticationSession,
     Session,
 )
-from sanic_security.core.utils import password_hash
+from sanic_security.core.utils import hash_password
 from sanic_security.core.verification import request_two_step_verification
 
 session_factory = SessionFactory()
@@ -41,7 +41,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         account = await Account.create(
             email=forms.get("email"),
             username=forms.get("username"),
-            password=password_hash(forms.get("password")),
+            password=hash_password(forms.get("password")),
             phone=forms.get("phone"),
             verified=verified,
             disabled=disabled,
@@ -72,7 +72,7 @@ async def login(request: Request):
     """
     form = request.form
     account = await Account.filter(email=form.get("email")).first()
-    if account.password == password_hash(form.get("password")):
+    if account.password == hash_password(form.get("password")):
         account_error_factory.throw(account)
         authentication_session = await session_factory.get(
             "authentication", request, account=account
