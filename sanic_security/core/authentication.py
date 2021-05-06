@@ -57,12 +57,13 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         raise Account.TooManyCharsError()
 
 
-async def login(request: Request):
+async def login(request: Request, account: Account = None):
     """
     Used to login to accounts registered with Sanic Security.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
+        account (Account): Account being logged into.
 
     Returns:
         authentication_session
@@ -71,7 +72,7 @@ async def login(request: Request):
         AccountError
     """
     form = request.form
-    account = await Account.filter(email=form.get("email")).first()
+    account = await Account.filter(email=form.get("email")).first() if account is None else account
     if account.password == hash_password(form.get("password")):
         account_error_factory.throw(account)
         authentication_session = await session_factory.get(
