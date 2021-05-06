@@ -37,7 +37,7 @@ async def check_permissions(request: Request, *required_permissions: str):
 
 async def check_roles(request: Request, *required_roles: str):
     """
-    Used to determine if the client has sufficient permissions for an action.
+    Used to determine if the client has sufficient roles for an action.
 
     Args:
         request (Request): Sanic request parameter.
@@ -66,7 +66,7 @@ def require_permissions(*required_permissions: str):
     Used to determine if the client has sufficient permissions for an action.
 
     Args:
-        *required_permissions (Tuple):  The permissions required to authorize an action.
+        *required_permissions (Tuple[str, ...]):  The permissions required to authorize an action.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -99,7 +99,7 @@ def require_roles(*required_roles: str):
     Used to determine if the client has sufficient roles for an action.
 
     Args:
-        *required_roles (Tuple):  The roles required to authorize an action.
+        *required_roles (Tuple[str, ...]):  The roles required to authorize an action.
 
     Example:
         This method is not called directly and instead used as a decorator:

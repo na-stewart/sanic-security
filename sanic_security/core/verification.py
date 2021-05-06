@@ -29,7 +29,7 @@ async def request_captcha(request: Request):
 
 async def captcha(request: Request):
     """
-    Enforces A captcha to continue execution.
+    Enforces a captcha to continue execution.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
@@ -42,13 +42,13 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
-    await captcha_session.crosscheck(request.form.get("captcha"))
+    await captcha_session.crosscheck_code(request.form.get("captcha"))
     return captcha_session
 
 
 def requires_captcha():
     """
-    Enforces A captcha to continue execution.
+    Enforces a captcha to continue execution.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -79,7 +79,7 @@ async def request_two_step_verification(request: Request, account: Account = Non
 
     Args:
         request (Request): Sanic request parameter.
-        account (Account): The account being associated with the verification session.
+        account (Account): The account being associated with the verification session. If None, will retrieve account from client Two-Step Session cookie.
 
     Returns:
          two_step_session
@@ -105,7 +105,7 @@ async def verify_two_step_verification(request: Request):
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
-    await two_step_session.crosscheck(request.form.get("code"))
+    await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
 
 

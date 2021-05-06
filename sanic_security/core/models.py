@@ -10,11 +10,10 @@ import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic import Sanic
-from sanic.exceptions import ServerError
+from sanic.exceptions import SanicException
 from sanic.request import Request
-from sanic.response import HTTPResponse
+from sanic.response import HTTPResponse, json
 from tortoise import fields, Model
-
 
 from sanic_security.core.utils import get_ip, security_cache_path, dir_exists, config
 from sanic_security.lib.smtp import send_email
@@ -23,7 +22,7 @@ from sanic_security.lib.twilio import send_sms
 
 class BaseErrorFactory:
     """
-    Easily raise or retrieve errors based off of model variable values. Validates the ability for a model to be utilized.
+    Easily raise or retrieve errors based off of model variable values.
     """
 
     def get(self, model):
@@ -53,16 +52,26 @@ class BaseErrorFactory:
             raise error
 
 
-class SecurityError(ServerError):
+class SecurityError(SanicException):
     """
     Sanic Security related error.
+
+    Attributes:
+        response (HTTPResponse): Security Error json response.
 
     Args:
         message (str): Human readable error message.
         code (int): HTTP Error code.
     """
 
-    def __init__(self, message, code):
+    def __init__(self, message: str, code: int):
+        self.response = json(
+            {
+                "message": "An error has occurred!",
+                "error_code": code,
+                "data": {"error": self.__class__.__name__, "summary": message},
+            }
+        )
         super().__init__(message, code)
 
 
@@ -76,8 +85,7 @@ class BaseModel(Model):
         account (Account): Parent account associated with this model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): This attribute allows you to mark a model as deleted and filter it from queries without fully
-        removing it from the database.
+        deleted (bool): This attribute allows you to mark a model as deleted and filter it from queries without removing it from the database.
     """
 
     id = fields.IntField(pk=True)
@@ -373,7 +381,7 @@ class VerificationSession(Session):
     @staticmethod
     def initialize_cache(app: Sanic):
         """
-        Creates session cache directory and generates required files.
+        Creates verification session cache and generates required files.
 
         Args:
             app (Sanic): Sanic Framework app.
@@ -387,7 +395,7 @@ class VerificationSession(Session):
         """
         raise NotImplementedError()
 
-    async def crosscheck(self, code: str):
+    async def crosscheck_code(self, code: str):
         """
         Used to check if code passed is equivalent to the verification session code.
 
@@ -423,10 +431,7 @@ class VerificationSession(Session):
 
 class TwoStepSession(VerificationSession):
     """
-    An account is granted access to a website or application only after successfully presenting two or more pieces of
-    evidence. Knowledge (something only the user knows) and possession (something only the user has). For example, in
-    order to successfully perform an action requiring TwoStepVerification, a client must supply the correct code associated
-    with this session that can be found in an email or a text.
+    Validates a client using a code sent via email or text.
     """
 
     @staticmethod
@@ -475,7 +480,7 @@ class TwoStepSession(VerificationSession):
 
 class CaptchaSession(VerificationSession):
     """
-    Validates an client as human by forcing a user to correctly enter a captcha challenge.
+    Validates a client as human with a captcha challenge.
     """
 
     @staticmethod

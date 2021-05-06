@@ -429,10 +429,7 @@ async def on_require_roles(request, authentication_session):
 ```python
 @app.exception(SecurityError)
 async def on_error(request, exception):
-    return json('An error has occurred!', {
-        'error': type(exception).__name__,
-        'summary': str(exception)
-    }, status_code=exception.status_code)
+    return exception.response
 ```
 
 ## Middleware

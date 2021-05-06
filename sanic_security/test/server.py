@@ -17,6 +17,7 @@ from sanic_security.core.models import (
     Role,
     CaptchaSession,
     TwoStepSession,
+    Account,
 )
 from sanic_security.core.recovery import (
     attempt_account_recovery,
@@ -34,8 +35,8 @@ from sanic_security.core.verification import (
 app = Sanic("Sanic Security Test Server")
 
 
-def json(message, content, status_code=200):
-    payload = {"message": message, "status_code": status_code, "content": content}
+def json(message, data, status_code=200):
+    payload = {"message": message, "status_code": status_code, "data": data}
     return sanic_json(payload, status=status_code)
 
 
@@ -230,11 +231,7 @@ async def on_recovery_fulfill(request, two_step_session):
 
 @app.exception(SecurityError)
 async def on_error(request, exception):
-    return json(
-        "An error has occurred!",
-        {"error": type(exception).__name__, "summary": str(exception)},
-        status_code=exception.status_code,
-    )
+    return exception.response
 
 
 if __name__ == "__main__":

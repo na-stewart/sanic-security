@@ -62,12 +62,12 @@ def get_ip(request: Request):
     return request.remote_addr if request.remote_addr else request.ip
 
 
-def dir_exists(path):
+def dir_exists(path: str):
     """
     Checks if path exists and isn't empty, and creates it if it doesn't.
 
     Args:
-         path: Path being checked.
+         path (str): Path being checked.
 
     Returns:
         exists

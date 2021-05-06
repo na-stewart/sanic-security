@@ -15,7 +15,7 @@ async def fulfill_account_recovery_attempt(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: password.
-        two_step_session (TwoStepSession): Two-step session retrieved from the @requires_two_step_verification decorator used on your recovery request endpoint.
+        two_step_session (TwoStepSession): Two-step session containing account being recovered.
 
     """
     two_step_session.account.password = hash_password(request.form.get("password"))
