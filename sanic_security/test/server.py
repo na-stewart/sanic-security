@@ -17,7 +17,6 @@ from sanic_security.core.models import (
     Role,
     CaptchaSession,
     TwoStepSession,
-    Account,
 )
 from sanic_security.core.recovery import (
     attempt_account_recovery,
