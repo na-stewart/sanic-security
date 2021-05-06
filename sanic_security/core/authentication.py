@@ -72,7 +72,8 @@ async def login(request: Request, account: Account = None):
         AccountError
     """
     form = request.form
-    account = await Account.filter(email=form.get("email")).first() if account is None else account
+    if not account:
+        account = await Account.filter(email=form.get("email")).first()
     if account.password == hash_password(form.get("password")):
         account_error_factory.throw(account)
         authentication_session = await session_factory.get(
