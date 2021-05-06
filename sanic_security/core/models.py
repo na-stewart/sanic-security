@@ -70,7 +70,7 @@ class SecurityError(SanicException):
                 "message": "An error has occurred!",
                 "error_code": code,
                 "data": {"error": self.__class__.__name__, "summary": message},
-            }
+            }, status=code
         )
         super().__init__(message, code)
 
