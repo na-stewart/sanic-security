@@ -10,11 +10,11 @@ import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic import Sanic
-from sanic.exceptions import SanicException
 from sanic.request import Request
-from sanic.response import HTTPResponse, json
+from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
+from sanic_security.core.exceptions import *
 from sanic_security.core.utils import get_ip, security_cache_path, dir_exists, config
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
@@ -50,30 +50,6 @@ class BaseErrorFactory:
         error = self.get(model)
         if error:
             raise error
-
-
-class SecurityError(SanicException):
-    """
-    Sanic Security related error.
-
-    Attributes:
-        response (HTTPResponse): Security Error json response.
-
-    Args:
-        message (str): Human readable error message.
-        code (int): HTTP Error code.
-    """
-
-    def __init__(self, message: str, code: int):
-        self.response = json(
-            {
-                "message": "An error has occurred!",
-                "error_code": code,
-                "data": {"error": self.__class__.__name__, "summary": message},
-            },
-            status=code,
-        )
-        super().__init__(message, code)
 
 
 class BaseModel(Model):
@@ -120,28 +96,6 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    class NotFoundError(SecurityError):
-        """
-        Raised when a model can't be found in the database.
-
-        Args:
-            message (str): Human readable error message.
-        """
-
-        def __init__(self, message):
-            super().__init__(message, 404)
-
-    class DeletedError(SecurityError):
-        """
-        Raised when a model in the database has been marked deleted.
-
-        Args:
-            message (str): Human readable error message.
-        """
-
-        def __init__(self, message):
-            super().__init__(message, 404)
-
 
 class Account(BaseModel):
     """
@@ -163,21 +117,6 @@ class Account(BaseModel):
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
 
-    class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
-            error = None
-            if not model:
-                error = Account.NotFoundError("This account does not exist.")
-            elif model.deleted:
-                error = Account.DeletedError(
-                    "This account has been permanently deleted."
-                )
-            elif model.disabled:
-                error = Account.DisabledError()
-            elif not model.verified:
-                error = Account.UnverifiedError()
-            return error
-
     def json(self):
         return {
             "uid": str(self.uid),
@@ -189,47 +128,33 @@ class Account(BaseModel):
             "verified": self.verified,
         }
 
-    class AccountError(SecurityError):
+    @staticmethod
+    async def get_via_email(email: str):
         """
-        An account related error.
+        Retrieve an account with an email.
 
         Args:
-            message (str): Human readable error message.
-            code (int): HTTP Error code.
+            email (str): Email associated to account being retrieved.
+
+        Returns:
+            account
         """
+        account = await Account.filter(email=email).first()
+        return account
 
-        def __init__(self, message, code):
-            super().__init__(message, code)
 
-    class ExistsError(AccountError):
-        def __init__(self):
-            super().__init__(
-                "Account with this email or phone number already exists.", 409
-            )
-
-    class TooManyCharsError(AccountError):
-        def __init__(self):
-            super().__init__("Email, username, or phone number is too long.", 400)
-
-    class InvalidEmailError(AccountError):
-        def __init__(self):
-            super().__init__(
-                "Please use a valid email format such as you@mail.com.", 400
-            )
-
-    class DisabledError(AccountError):
-        def __init__(self):
-            super().__init__("This account has been disabled.", 401)
-
-    class PasswordMismatchError(AccountError):
-        def __init__(self):
-            super().__init__(
-                "The password provided does not match account password.", 401
-            )
-
-    class UnverifiedError(AccountError):
-        def __init__(self):
-            super().__init__("Account requires verification.", 401)
+class AccountErrorFactory(BaseErrorFactory):
+    def get(self, model):
+        error = None
+        if not model:
+            error = NotFoundError("This account does not exist.")
+        elif model.deleted:
+            error = DeletedError("This account has been permanently deleted.")
+        elif model.disabled:
+            error = DisabledError()
+        elif not model.verified:
+            error = UnverifiedError()
+        return error
 
 
 class Session(BaseModel):
@@ -298,11 +223,11 @@ class Session(BaseModel):
         cookie = request.cookies.get(self.cookie)
         try:
             if not cookie:
-                raise DecodeError("Token can not be null.")
+                raise DecodingError("Token can not be null.")
             else:
                 return jwt.decode(cookie, config["AUTH"]["secret"], "HS256")
         except DecodeError as e:
-            raise Session.DecodeError(e)
+            raise DecodingError(e)
 
     async def decode(self, request: Request):
         """
@@ -320,51 +245,26 @@ class Session(BaseModel):
         decoded = self.decode_raw(request)
         return (
             await self.filter(uid=decoded.get("uid"))
-            .prefetch_related("account")
-            .first()
+                .prefetch_related("account")
+                .first()
         )
 
     class Meta:
         abstract = True
 
-    class ErrorFactory(BaseErrorFactory):
-        def get(self, model):
-            error = None
-            if model is None:
-                error = Session.NotFoundError("Session could not be found.")
-            elif not model.valid:
-                error = Session.InvalidError()
-            elif model.deleted:
-                error = Session.DeletedError("Session has been deleted.")
-            elif datetime.datetime.now(datetime.timezone.utc) >= model.expiration_date:
-                error = Session.ExpiredError()
-            return error
 
-    class SessionError(SecurityError):
-        """
-        A session related error.
-
-        Args:
-            message (str): Human readable error message.
-            code (int): HTTP Error code.
-        """
-
-        def __init__(self, message, code):
-            super().__init__(message, code)
-
-    class DecodeError(SessionError):
-        def __init__(self, exception):
-            super().__init__(
-                "Session cookie could not be decoded. " + str(exception), 400
-            )
-
-    class InvalidError(SessionError):
-        def __init__(self):
-            super().__init__("Session is invalid.", 401)
-
-    class ExpiredError(SessionError):
-        def __init__(self):
-            super().__init__("Session has expired", 401)
+class SessionErrorFactory(BaseErrorFactory):
+    def get(self, model):
+        error = None
+        if model is None:
+            error = NotFoundError("Session could not be found.")
+        elif not model.valid:
+            error = InvalidError()
+        elif model.deleted:
+            error = DeletedError("Session has been deleted.")
+        elif datetime.datetime.now(datetime.timezone.utc) >= model.expiration_date:
+            error = ExpiredError()
+        return error
 
 
 class VerificationSession(Session):
@@ -407,27 +307,17 @@ class VerificationSession(Session):
             CrossCheckError
         """
         if self.attempts >= 5:
-            raise self.MaximumAttemptsError
+            raise MaximumAttemptsError()
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=["attempts"])
-            raise self.CrosscheckError()
+            raise CrosscheckError()
         else:
             self.valid = False
             await self.save(update_fields=["valid"])
 
     class Meta:
         abstract = True
-
-    class CrosscheckError(Session.SessionError):
-        def __init__(self):
-            super().__init__("Session crosschecking attempt was incorrect", 401)
-
-    class MaximumAttemptsError(Session.SessionError):
-        def __init__(self):
-            super().__init__(
-                "You've reached the maximum amount of attempts for this session.", 401
-            )
 
 
 class TwoStepSession(VerificationSession):
@@ -438,7 +328,7 @@ class TwoStepSession(VerificationSession):
     @staticmethod
     async def get_random_cached_code():
         async with aiofiles.open(
-            f"{security_cache_path}/verification/codes.txt", mode="r"
+                f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -449,7 +339,7 @@ class TwoStepSession(VerificationSession):
         async def generate_codes(app, loop):
             if not dir_exists(f"{security_cache_path}/verification"):
                 async with aiofiles.open(
-                    f"{security_cache_path}/verification/codes.txt", mode="w"
+                        f"{security_cache_path}/verification/codes.txt", mode="w"
                 ) as f:
                     for i in range(100):
                         code = "".join(
@@ -467,7 +357,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-        self, subject="Session Code", code_prefix="Your code is:\n\n "
+            self, subject="Session Code", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.
@@ -523,10 +413,6 @@ class AuthenticationSession(Session):
     Used to authenticate a client and provide access to a user's account.
     """
 
-    class UnknownLocationError(Session.SessionError):
-        def __init__(self):
-            super().__init__("Session in an unknown location.", 401)
-
     async def crosscheck_location(self, request):
         """
         Checks if client using session is in a known location (ip address). Prevents cookie jacking.
@@ -536,9 +422,9 @@ class AuthenticationSession(Session):
         """
 
         if not await AuthenticationSession.filter(
-            ip=get_ip(request), account=self.account
+                ip=get_ip(request), account=self.account
         ).exists():
-            raise AuthenticationSession.UnknownLocationError()
+            raise UnknownLocationError()
 
 
 class SessionFactory:
@@ -617,10 +503,6 @@ class Role(BaseModel):
             "name": self.name,
         }
 
-    class InsufficientRoleError(SecurityError):
-        def __init__(self):
-            super().__init__("Insufficient roles required for this action.", 403)
-
 
 class Permission(BaseModel):
     """
@@ -639,7 +521,3 @@ class Permission(BaseModel):
             "date_updated": str(self.date_updated),
             "wildcard": self.wildcard,
         }
-
-    class InsufficientPermissionError(SecurityError):
-        def __init__(self):
-            super().__init__("Insufficient permissions required for this action.", 403)

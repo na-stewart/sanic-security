@@ -4,6 +4,10 @@ from fnmatch import fnmatch
 from sanic.request import Request
 
 from sanic_security.core.authentication import authenticate
+from sanic_security.core.exceptions import (
+    InsufficientPermissionError,
+    InsufficientRoleError,
+)
 from sanic_security.core.models import Role, Permission
 
 
@@ -31,7 +35,7 @@ async def check_permissions(request: Request, *required_permissions: str):
             if fnmatch(required_permission, client_permission.wildcard):
                 break
         else:
-            raise Permission.InsufficientPermissionError()
+            raise InsufficientPermissionError()
     return authentication_session
 
 
@@ -57,7 +61,7 @@ async def check_roles(request: Request, *required_roles: str):
         ).exists():
             break
     else:
-        raise Role.InsufficientRoleError()
+        raise InsufficientRoleError()
     return authentication_session
 
 

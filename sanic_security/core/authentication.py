@@ -4,18 +4,25 @@ import re
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
+from sanic_security.core.exceptions import (
+    PasswordMismatchError,
+    InvalidEmailError,
+    ExistsError,
+    TooManyCharsError,
+)
 from sanic_security.core.models import (
     Account,
     SessionFactory,
     AuthenticationSession,
-    Session,
+    AccountErrorFactory,
+    SessionErrorFactory,
 )
 from sanic_security.core.utils import hash_password
 from sanic_security.core.verification import request_two_step_verification
 
 session_factory = SessionFactory()
-account_error_factory = Account.ErrorFactory()
-session_error_factory = Session.ErrorFactory()
+account_error_factory = AccountErrorFactory()
+session_error_factory = SessionErrorFactory()
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
@@ -36,7 +43,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     """
     forms = request.form
     if not re.search("[^@]+@[^@]+.[^@]+", forms.get("email")):
-        raise Account.InvalidEmailError()
+        raise InvalidEmailError()
     try:
         account = await Account.create(
             email=forms.get("email"),
@@ -52,9 +59,9 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             else account
         )
     except IntegrityError:
-        raise Account.ExistsError()
+        raise ExistsError()
     except ValidationError:
-        raise Account.TooManyCharsError()
+        raise TooManyCharsError()
 
 
 async def login(request: Request, account: Account = None):
@@ -73,7 +80,7 @@ async def login(request: Request, account: Account = None):
     """
     form = request.form
     if not account:
-        account = await Account.filter(email=form.get("email")).first()
+        account = await Account.get_via_email(form.get('email'))
     if account.password == hash_password(form.get("password")):
         account_error_factory.throw(account)
         authentication_session = await session_factory.get(
@@ -81,7 +88,7 @@ async def login(request: Request, account: Account = None):
         )
         return authentication_session
     else:
-        raise Account.PasswordMismatchError()
+        raise PasswordMismatchError()
 
 
 async def logout(request: Request):

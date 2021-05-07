@@ -1,9 +1,15 @@
 from sanic.request import Request
 
-from sanic_security.core.authentication import account_error_factory
-from sanic_security.core.models import AuthenticationSession, Account, TwoStepSession
+from sanic_security.core.models import (
+    AuthenticationSession,
+    Account,
+    TwoStepSession,
+    AccountErrorFactory,
+)
 from sanic_security.core.utils import hash_password
 from sanic_security.core.verification import request_two_step_verification
+
+account_error_factory = AccountErrorFactory()
 
 
 async def fulfill_account_recovery_attempt(
@@ -37,6 +43,6 @@ async def attempt_account_recovery(request: Request):
         on request and requires encoding.
     """
 
-    account = await Account.filter(email=request.form.get("email")).first()
+    account = await Account.get_via_email(request.form.get("email"))
     account_error_factory.throw(account)
     return await request_two_step_verification(request, account)

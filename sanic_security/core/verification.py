@@ -7,11 +7,11 @@ from sanic_security.core.models import (
     TwoStepSession,
     CaptchaSession,
     SessionFactory,
-    Session,
+    SessionErrorFactory,
 )
 
 session_factory = SessionFactory()
-session_error_factory = Session.ErrorFactory()
+session_error_factory = SessionErrorFactory()
 
 
 async def request_captcha(request: Request):
