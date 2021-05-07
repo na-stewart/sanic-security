@@ -151,7 +151,7 @@ class Account(BaseModel):
         username (str): Not used for any authentication or verification processes. May be displayed publicly.
         email (str): Used for authentication and verification processes (login and 2SV). Should not be displayed publicly.
         phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them. Should not be displayed publicly.
-        password (bytes): Must be created using the password_hash() method found in utils.py.
+        password (bytes): Must be created using the hash_password method found in the utils module.
         disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
         verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
     """
