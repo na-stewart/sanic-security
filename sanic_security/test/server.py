@@ -117,7 +117,8 @@ async def resend_verification_request(request):
 
 
 @app.post("api/test/verification/request")
-async def new_verification_request(request):
+@requires_captcha()
+async def new_verification_request(request, captcha_session):
     """
     Creates new verification code.
     """

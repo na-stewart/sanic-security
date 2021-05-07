@@ -337,7 +337,8 @@ async def on_captcha_attempt(request, captcha_session):
 
 ```python
 @app.get('api/verification/request')
-async def on_request_verification(request):
+@requires_captcha()
+async def on_request_verification(request, captcha_session):
     two_step_session =  await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.

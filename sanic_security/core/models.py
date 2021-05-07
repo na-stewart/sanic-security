@@ -249,6 +249,19 @@ class Session(BaseModel):
             .first()
         )
 
+    async def crosscheck_location(self, request):
+        """
+        Checks if client using session is in a known location (ip address). Prevents cookie jacking.
+
+        Raises:
+            UnknownLocationError:
+        """
+
+        if not await self.filter(
+            ip=get_ip(request), account=self.account
+        ).exists():
+            raise UnknownLocationError()
+
     class Meta:
         abstract = True
 
@@ -412,19 +425,9 @@ class AuthenticationSession(Session):
     """
     Used to authenticate a client and provide access to a user's account.
     """
+    pass
 
-    async def crosscheck_location(self, request):
-        """
-        Checks if client using session is in a known location (ip address). Prevents cookie jacking.
 
-        Raises:
-            UnknownLocationError:
-        """
-
-        if not await AuthenticationSession.filter(
-            ip=get_ip(request), account=self.account
-        ).exists():
-            raise UnknownLocationError()
 
 
 class SessionFactory:

@@ -105,6 +105,7 @@ async def verify_two_step_verification(request: Request):
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
+    await two_step_session.crosscheck_location(request)
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
 
