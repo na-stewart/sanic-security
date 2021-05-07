@@ -80,7 +80,7 @@ async def login(request: Request, account: Account = None):
     """
     form = request.form
     if not account:
-        account = await Account.get_via_email(form.get('email'))
+        account = await Account.get_via_email(form.get("email"))
     if account.password == hash_password(form.get("password")):
         account_error_factory.throw(account)
         authentication_session = await session_factory.get(

@@ -245,8 +245,8 @@ class Session(BaseModel):
         decoded = self.decode_raw(request)
         return (
             await self.filter(uid=decoded.get("uid"))
-                .prefetch_related("account")
-                .first()
+            .prefetch_related("account")
+            .first()
         )
 
     class Meta:
@@ -328,7 +328,7 @@ class TwoStepSession(VerificationSession):
     @staticmethod
     async def get_random_cached_code():
         async with aiofiles.open(
-                f"{security_cache_path}/verification/codes.txt", mode="r"
+            f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -339,7 +339,7 @@ class TwoStepSession(VerificationSession):
         async def generate_codes(app, loop):
             if not dir_exists(f"{security_cache_path}/verification"):
                 async with aiofiles.open(
-                        f"{security_cache_path}/verification/codes.txt", mode="w"
+                    f"{security_cache_path}/verification/codes.txt", mode="w"
                 ) as f:
                     for i in range(100):
                         code = "".join(
@@ -357,7 +357,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-            self, subject="Session Code", code_prefix="Your code is:\n\n "
+        self, subject="Session Code", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.
@@ -422,7 +422,7 @@ class AuthenticationSession(Session):
         """
 
         if not await AuthenticationSession.filter(
-                ip=get_ip(request), account=self.account
+            ip=get_ip(request), account=self.account
         ).exists():
             raise UnknownLocationError()
 
