@@ -44,7 +44,7 @@ def hash_password(password: str):
     return hashlib.pbkdf2_hmac(
         "sha512",
         password.encode("utf-8"),
-        config["AUTH"]["SECRET"].encode("utf-8"),
+        config["SECURITY"]["SECRET"].encode("utf-8"),
         100000,
     )
 

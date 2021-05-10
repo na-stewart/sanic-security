@@ -175,7 +175,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = config["AUTH"]["name"].strip() + "_" + self.__class__.__name__
+        self.cookie = config["SECURITY"]["name"].strip() + "_" + self.__class__.__name__
 
     def json(self):
         return {
@@ -204,7 +204,7 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
-        encoded = jwt.encode(payload, config["AUTH"]["secret"], "HS256")
+        encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]["secure"] = secure
         response.cookies[self.cookie]["samesite"] = same_site
@@ -225,7 +225,7 @@ class Session(BaseModel):
             if not cookie:
                 raise DecodingError("Token can not be null.")
             else:
-                return jwt.decode(cookie, config["AUTH"]["secret"], "HS256")
+                return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
         except DecodeError as e:
             raise DecodingError(e)
 
@@ -393,7 +393,7 @@ class CaptchaSession(VerificationSession):
         async def generate_codes(app, loop):
             if not dir_exists(f"{security_cache_path}/captcha"):
                 loop = asyncio.get_running_loop()
-                image = ImageCaptcha(190, 90, fonts=[config["AUTH"]["captcha_font"]])
+                image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
                 for i in range(100):
                     code = "".join(
                         random.choices(
