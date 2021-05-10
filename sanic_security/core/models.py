@@ -257,9 +257,7 @@ class Session(BaseModel):
             UnknownLocationError:
         """
 
-        if not await self.filter(
-            ip=get_ip(request), account=self.account
-        ).exists():
+        if not await self.filter(ip=get_ip(request), account=self.account).exists():
             raise UnknownLocationError()
 
     class Meta:
@@ -393,7 +391,9 @@ class CaptchaSession(VerificationSession):
         async def generate_codes(app, loop):
             if not dir_exists(f"{security_cache_path}/captcha"):
                 loop = asyncio.get_running_loop()
-                image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
+                image = ImageCaptcha(
+                    190, 90, fonts=[config["SECURITY"]["captcha_font"]]
+                )
                 for i in range(100):
                     code = "".join(
                         random.choices(
@@ -425,9 +425,8 @@ class AuthenticationSession(Session):
     """
     Used to authenticate a client and provide access to a user's account.
     """
+
     pass
-
-
 
 
 class SessionFactory:

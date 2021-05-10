@@ -9,6 +9,7 @@ from sanic_security.core.exceptions import (
     InvalidEmailError,
     ExistsError,
     TooManyCharsError,
+    NotFoundError,
 )
 from sanic_security.core.models import (
     Account,
@@ -79,16 +80,18 @@ async def login(request: Request, account: Account = None):
         AccountError
     """
     form = request.form
-    if not account:
-        account = await Account.get_via_email(form.get("email"))
-    if account.password == hash_password(form.get("password")):
-        account_error_factory.throw(account)
-        authentication_session = await session_factory.get(
-            "authentication", request, account=account
-        )
-        return authentication_session
+    account = await Account.get_via_email(form.get("email")) if not account else account
+    if account:
+        if account.password == hash_password(form.get("password")):
+            account_error_factory.throw(account)
+            authentication_session = await session_factory.get(
+                "authentication", request, account=account
+            )
+            return authentication_session
+        else:
+            raise PasswordMismatchError()
     else:
-        raise PasswordMismatchError()
+        raise NotFoundError("This account does not exist.")
 
 
 async def logout(request: Request):
