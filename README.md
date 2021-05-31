@@ -110,7 +110,7 @@ is recommended.
 First you have to create a configuration file called security.ini in the project directory. Make sure Python's 
 working directory is the project directory. Below is an example of its contents: 
 
-WARNING: You must set a custom secret, or you will compromise your encoded sessions.
+WARNING: You must set a custom secret or you will compromise your encoded sessions.
 
 ```ini
 [SECURITY]
