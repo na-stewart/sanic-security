@@ -17,7 +17,7 @@ async def check_permissions(request: Request, *required_permissions: str):
 
     Args:
         request (Request): Sanic request parameter.
-        *required_permissions (Tuple):  The permissions required to authorize an action.
+        *required_permissions (Tuple[str, ...]):  The permissions required to authorize an action.
 
     Returns:
         authentication_session
@@ -45,7 +45,7 @@ async def check_roles(request: Request, *required_roles: str):
 
     Args:
         request (Request): Sanic request parameter.
-        *required_roles (Tuple):  The roles required to authorize an action.
+        *required_roles (Tuple[str, ...]):  The roles required to authorize an action.
 
     Returns:
         authentication_session
