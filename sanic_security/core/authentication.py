@@ -91,7 +91,7 @@ async def login(request: Request, account: Account = None):
         else:
             raise PasswordMismatchError()
     else:
-        raise NotFoundError("This account does not exist.")
+        raise NotFoundError("An account with this email does not exist.")
 
 
 async def logout(request: Request):

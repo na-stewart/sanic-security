@@ -122,7 +122,6 @@ async def new_verification_request(request, captcha_session):
     """
     Creates new verification code.
     """
-
     two_step_session = await request_two_step_verification(request)
     await two_step_session.text_code()
     response = json("Verification request successful", two_step_session.json())
