@@ -1,0 +1,6 @@
+include *.md
+include Makefile
+include LICENSE
+include setup.py
+include requirements.txt
+recursive-include sanic-security *.py
