@@ -1,5 +1,5 @@
 sanic==21.3.4
-tortoise-orm==0.17.3
+tortoise-orm==0.17.4
 aiofiles==0.7.0
 pyjwt==2.1.0
 captcha==0.3
