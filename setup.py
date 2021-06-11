@@ -8,14 +8,13 @@ with open("requirements.txt", "r") as rq:
     requirements = [r.strip() for r in rq.readlines()]
 
 setup(
-    name='sanic-security',
+    name='sanic-security-test',
     version='0.9.13.2',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/sanic-security',
     license='GNU General Public License v3.0',
     author='sunset-developer',
     author_email='aidanstewart@sunsetdeveloper.com',
-    include_package_data=True,
     description='A powerful, simple, and async security library for Sanic.',
     long_description=long_description,
     long_description_content_type="text/markdown",
