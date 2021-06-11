@@ -369,7 +369,7 @@ Key | Value |
 @requires_two_step_verification()
 async def on_verified(request, two_step_session):
     return json('Hello ' + two_step_session.account.username + '! You have verified yourself and may continue. ', 
-                authentication_session.account.json())
+                two_step_session.account.json())
 ```
 
 * Verify Account
@@ -471,9 +471,9 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 
 <!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
+## Acknowledgements 
 
-* [Be the first! Submit a pull request.](https://github.com/sunset-developer/PyBus3/pulls)
+* [thewchan](https://github.com/thewchan) added a MANIFEST.in to make packaging to conda-forge possible.
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
