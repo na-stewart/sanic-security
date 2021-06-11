@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as rq:
     requirements = [r.strip() for r in rq.readlines()]
 
 setup(
-    name='sanic-security-test',
+    name='sanic-security',
     version='0.9.13.3',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/sanic-security',
