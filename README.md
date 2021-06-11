@@ -471,9 +471,9 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 
 <!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
+## Acknowledgements 
 
-* [Be the first! Submit a pull request.](https://github.com/sunset-developer/PyBus3/pulls)
+* [thewchan](https://github.com/thewchan) added a MANIFEST.in so packaging conda-forge is possible.
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
