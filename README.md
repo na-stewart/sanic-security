@@ -369,7 +369,7 @@ Key | Value |
 @requires_two_step_verification()
 async def on_verified(request, two_step_session):
     return json('Hello ' + two_step_session.account.username + '! You have verified yourself and may continue. ', 
-                authentication_session.account.json())
+                two_step_session.account.json())
 ```
 
 * Verify Account
