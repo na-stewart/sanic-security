@@ -473,7 +473,7 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements 
 
-* [thewchan](https://github.com/thewchan) added a MANIFEST.in so packaging to conda-forge is possible.
+* [thewchan](https://github.com/thewchan) added a MANIFEST.in to make packaging to conda-forge possible.
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
