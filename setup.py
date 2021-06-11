@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as rq:
 
 setup(
     name='sanic-security-test',
-    version='0.9.13.2',
+    version='0.9.13.3',
     packages=setuptools.find_packages(),
     url='https://github.com/sunset-developer/sanic-security',
     license='GNU General Public License v3.0',
