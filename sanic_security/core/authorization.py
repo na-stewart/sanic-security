@@ -55,10 +55,9 @@ async def check_roles(request: Request, *required_roles: str):
         SessionError
     """
     authentication_session = await authenticate(request)
-    for role in required_roles:
-        if await Role.filter(
-            account=authentication_session.account, name=role
-        ).exists():
+    client_roles = await Role.filter(account=authentication_session.account).all()
+    for role in client_roles:
+        if role in client_roles:
             break
     else:
         raise InsufficientRoleError()
@@ -115,7 +114,7 @@ def require_roles(*required_roles: str):
 
     Raises:
             AccountError
-        SessionError
+            SessionError
     """
 
     def wrapper(func):

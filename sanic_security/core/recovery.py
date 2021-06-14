@@ -25,9 +25,7 @@ async def fulfill_account_recovery_attempt(
 
     """
     two_step_session.account.password = hash_password(request.form.get("password"))
-    await AuthenticationSession.filter(
-        account=two_step_session.account, valid=True, deleted=False
-    ).update(valid=False)
+    await AuthenticationSession.filter(account=two_step_session.account, valid=True, deleted=False).update(valid=False)
     await two_step_session.account.save(update_fields=["password"])
 
 
@@ -39,8 +37,7 @@ async def attempt_account_recovery(request: Request):
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
 
     Returns:
-        two_step_session: A new two-step session for the client is created with all identifying information
-        on request and requires encoding.
+        two_step_session: A new two-step session for the client is created with all identifying information on request and requires encoding.
     """
 
     account = await Account.get_via_email(request.form.get("email"))

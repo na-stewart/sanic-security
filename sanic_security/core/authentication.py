@@ -71,7 +71,7 @@ async def login(request: Request, account: Account = None):
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
-        account (Account): Account being logged into.
+        account (Account): Account being logged into. Will retrieve account via email if no account is passed.
 
     Returns:
         authentication_session
@@ -80,7 +80,8 @@ async def login(request: Request, account: Account = None):
         AccountError
     """
     form = request.form
-    account = await Account.get_via_email(form.get("email")) if not account else account
+    if not account:
+        account = await Account.get_via_email(form.get("email"))
     if account:
         if account.password == hash_password(form.get("password")):
             account_error_factory.throw(account)
@@ -133,7 +134,7 @@ async def authenticate(request: Request):
 
 def requires_authentication():
     """
-    Enforces authentication to continue execution.
+    Used to determine if the client is authenticated.
 
     Example:
         This method is not called directly and instead used as a decorator:

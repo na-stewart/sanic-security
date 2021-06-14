@@ -175,7 +175,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = config["SECURITY"]["name"].strip() + "_" + self.__class__.__name__
+        self.cookie = f"SanicSecurity_{self.__class__.__name__}"
 
     def json(self):
         return {

@@ -29,10 +29,10 @@ async def request_captcha(request: Request):
 
 async def captcha(request: Request):
     """
-    Enforces a captcha to continue execution.
+    Verifies a captcha challenge attempt.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
 
     Raises:
         SessionError
@@ -42,13 +42,13 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
-    await captcha_session.crosscheck_code(request.form.get("captcha"))
+    await captcha_session.crosscheck_code(request.form.get("code"))
     return captcha_session
 
 
 def requires_captcha():
     """
-    Enforces a captcha to continue execution.
+    Verifies a captcha challenge attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -56,7 +56,7 @@ def requires_captcha():
             @app.post('api/captcha')
             @requires_captcha()
             async def on_captcha(request, captcha_session):
-                return text('User has successfully completed captcha challenge!')
+                return text('User has successfully completed the captcha challenge!')
 
     Raises:
         SessionError
@@ -79,20 +79,35 @@ async def request_two_step_verification(request: Request, account: Account = Non
 
     Args:
         request (Request): Sanic request parameter.
-        account (Account): The account being associated with the verification session. If None, will retrieve account from client Two-Step Session cookie.
+        account (Account): The account being associated with the verification session.
 
     Returns:
          two_step_session
     """
-    if account is None:
-        two_step_session = await TwoStepSession().decode(request)
-        account = two_step_session.account
     return await session_factory.get("twostep", request, account=account)
+
+
+async def verify_account(two_step_session: TwoStepSession):
+    """
+    Used to verify an account associated to an existing two-step session.
+
+    Args:
+        two_step_session (TwoStepSession): Two-step session containing account being verified.
+
+    Raises:
+        SessionError
+
+    Returns:
+         two_step_session
+    """
+    two_step_session.account.verified = True
+    await two_step_session.account.save(update_fields=["verified"])
+    return two_step_session
 
 
 async def verify_two_step_verification(request: Request):
     """
-    Enforces two-step verification to continue action.
+    Verifies a two-step challenge attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
@@ -109,28 +124,9 @@ async def verify_two_step_verification(request: Request):
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
 
-
-async def verify_account(two_step_session: TwoStepSession):
-    """
-    Verifies account associated to a two-step session.
-
-    Args:
-        two_step_session (TwoStepSession): Two-step session containing account being verified.
-
-    Raises:
-        SessionError
-
-    Returns:
-         two_step_session
-    """
-    two_step_session.account.verified = True
-    await two_step_session.account.save(update_fields=["verified"])
-    return two_step_session
-
-
 def requires_two_step_verification():
     """
-    Enforces two-step verification to continue action.
+    Verifies a two-step challenge attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:
