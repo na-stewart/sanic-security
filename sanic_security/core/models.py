@@ -4,7 +4,7 @@ import os
 import random
 import string
 import uuid
-
+from sanic.response import json as sanic_json
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
@@ -175,7 +175,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = f"SanicSecurity_{self.__class__.__name__}"
+        self.cookie = f"{config['SECURITY']['name'].strip()}_{ self.__class__.__name__}"
 
     def json(self):
         return {
@@ -397,7 +397,7 @@ class CaptchaSession(VerificationSession):
                 for i in range(100):
                     code = "".join(
                         random.choices(
-                            "123456789qQeErRtTyYuUiIpPaAdDfFgGhHkKlLbBnN", k=6
+                            "123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6
                         )
                     )
                     await loop.run_in_executor(
@@ -523,3 +523,12 @@ class Permission(BaseModel):
             "date_updated": str(self.date_updated),
             "wildcard": self.wildcard,
         }
+
+
+def json(message, content, status_code=200):
+    payload = {
+        'message': message,
+        'code': status_code,
+        'data': content
+    }
+    return sanic_json(payload, status=status_code)

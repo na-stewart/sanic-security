@@ -8,10 +8,10 @@ from sanic_security.core.recovery import attempt_account_recovery, fulfill_accou
 from sanic_security.core.verification import request_two_step_verification, requires_captcha, \
     requires_two_step_verification, verify_account, request_captcha
 
-security = Blueprint("security_blueprint")
+security_blueprint = Blueprint("security_blueprint")
 
 
-@security.post('api/auth/register')
+@security_blueprint.post('api/auth/register')
 @requires_captcha()
 async def on_register(request, captcha_session):
     two_step_session = await register(request)
@@ -21,7 +21,7 @@ async def on_register(request, captcha_session):
     return response
 
 
-@security.post('api/auth/login')
+@security_blueprint.post('api/auth/login')
 async def on_login(request):
     account = await Account.get_via_email(request.form.get('email'))
     try:
@@ -37,21 +37,21 @@ async def on_login(request):
     return response
 
 
-@security.post('api/auth/verify')
+@security_blueprint.post('api/auth/verify')
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     await verify_account(two_step_session)
     return json('Account verification successful!', two_step_session.account.json())
 
 
-@security.post('api/auth/logout')
+@security_blueprint.post('api/auth/logout')
 async def on_logout(request):
     authentication_session = await logout(request)
     response = json('Logout successful!', authentication_session.account.json())
     return response
 
 
-@security.post('api/verification/resend')
+@security_blueprint.post('api/verification/resend')
 async def on_resend_verification(request):
     two_step_session = await VerificationSession().decode(request)
     await two_step_session.email_code()
@@ -59,7 +59,7 @@ async def on_resend_verification(request):
     return response
 
 
-@security.post("api/verification/request")
+@security_blueprint.post("api/verification/request")
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
@@ -69,7 +69,7 @@ async def on_request_verification(request, captcha_session):
     return response
 
 
-@security.post('api/recovery/request')
+@security_blueprint.post('api/recovery/request')
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
     two_step_session = await attempt_account_recovery(request)
@@ -79,7 +79,7 @@ async def on_recovery_request(request, captcha_session):
     return response
 
 
-@security.post("api/recovery/fulfill")
+@security_blueprint.post("api/recovery/fulfill")
 @requires_two_step_verification()
 async def on_recovery_fulfill(request, two_step_session):
     """
@@ -89,7 +89,7 @@ async def on_recovery_fulfill(request, two_step_session):
     return json("Account recovered successfully", two_step_session.account.json())
 
 
-@security.get("api/captcha/request")
+@security_blueprint.get("api/captcha/request")
 async def on_request_captcha(request):
     """
     Requests captcha session for client.
@@ -100,7 +100,7 @@ async def on_request_captcha(request):
     return response
 
 
-@security.get("api/captcha/img")
+@security_blueprint.get("api/captcha/img")
 async def on_captcha_img(request):
     """
     Retrieves captcha image from captcha session.
