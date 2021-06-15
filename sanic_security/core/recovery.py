@@ -25,7 +25,9 @@ async def fulfill_account_recovery_attempt(
 
     """
     two_step_session.account.password = hash_password(request.form.get("password"))
-    await AuthenticationSession.filter(account=two_step_session.account, valid=True, deleted=False).update(valid=False)
+    await AuthenticationSession.filter(
+        account=two_step_session.account, valid=True, deleted=False
+    ).update(valid=False)
     await two_step_session.account.save(update_fields=["password"])
 
 

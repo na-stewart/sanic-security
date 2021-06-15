@@ -124,6 +124,7 @@ async def verify_two_step_verification(request: Request):
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
 
+
 def requires_two_step_verification():
     """
     Verifies a two-step challenge attempt.

@@ -218,7 +218,6 @@ class Session(BaseModel):
 
         Returns:
             session_dict
-
         """
         cookie = request.cookies.get(self.cookie)
         try:
@@ -368,7 +367,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-        self, subject="Session Code", code_prefix="Your code is:\n\n "
+        self, subject="Verification", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.
@@ -396,9 +395,7 @@ class CaptchaSession(VerificationSession):
                 )
                 for i in range(100):
                     code = "".join(
-                        random.choices(
-                            "123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6
-                        )
+                        random.choices("123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6)
                     )
                     await loop.run_in_executor(
                         None,
@@ -526,9 +523,5 @@ class Permission(BaseModel):
 
 
 def json(message, content, status_code=200):
-    payload = {
-        'message': message,
-        'code': status_code,
-        'data': content
-    }
+    payload = {"message": message, "code": status_code, "data": content}
     return sanic_json(payload, status=status_code)
