@@ -9,6 +9,7 @@ from sanic_security.core.models import (
     SessionFactory,
     SessionErrorFactory,
 )
+from sanic_security.core.utils import config
 
 session_factory = SessionFactory()
 session_error_factory = SessionErrorFactory()
@@ -32,7 +33,7 @@ async def captcha(request: Request):
     Verifies a captcha challenge attempt.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
 
     Raises:
         SessionError
@@ -42,13 +43,13 @@ async def captcha(request: Request):
     """
     captcha_session = await CaptchaSession().decode(request)
     session_error_factory.throw(captcha_session)
-    await captcha_session.crosscheck_code(request.form.get("code"))
+    await captcha_session.crosscheck_code(request.form.get("captcha"))
     return captcha_session
 
 
 def requires_captcha():
     """
-    Verifies a captcha challenge attempt.
+    Verifies a captcha attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -73,7 +74,7 @@ def requires_captcha():
     return wrapper
 
 
-async def request_two_step_verification(request: Request, account: Account = None):
+async def request_two_step_verification(request: Request, account):
     """
     Creates a two-step session associated with an account.
 
@@ -105,9 +106,9 @@ async def verify_account(two_step_session: TwoStepSession):
     return two_step_session
 
 
-async def verify_two_step_verification(request: Request):
+async def two_step_verification(request: Request):
     """
-    Verifies a two-step challenge attempt.
+    Verifies a two-step verification attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
@@ -144,7 +145,7 @@ def requires_two_step_verification():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            two_step_session = await verify_two_step_verification(request)
+            two_step_session = await two_step_verification(request)
             return await func(request, two_step_session, *args, **kwargs)
 
         return wrapped

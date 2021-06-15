@@ -222,7 +222,7 @@ class Session(BaseModel):
         cookie = request.cookies.get(self.cookie)
         try:
             if not cookie:
-                raise DecodingError("Token can not be null.")
+                raise DecodingError("No session provided by client.")
             else:
                 return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
         except DecodeError as e:

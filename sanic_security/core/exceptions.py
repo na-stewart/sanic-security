@@ -106,7 +106,7 @@ class SessionError(SecurityError):
 
 class DecodingError(SessionError):
     def __init__(self, exception):
-        super().__init__("Session cookie could not be decoded. " + str(exception), 400)
+        super().__init__("Session could not be decoded. " + str(exception), 400)
 
 
 class InvalidError(SessionError):
