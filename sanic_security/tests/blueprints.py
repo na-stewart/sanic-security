@@ -1,26 +1,28 @@
 from sanic import Blueprint
-from sanic.response import file
+from sanic.response import file, text
 
-from sanic_security.core.authentication import login, logout, register
+from sanic_security.core.authentication import login, logout, register, requires_authentication
+from sanic_security.core.authorization import require_roles, require_permissions
 from sanic_security.core.exceptions import UnverifiedError
-from sanic_security.core.models import Account, VerificationSession, CaptchaSession, TwoStepSession, json
+from sanic_security.core.models import Account, VerificationSession, CaptchaSession, TwoStepSession, json, Permission, \
+    Role
 from sanic_security.core.recovery import (
     attempt_account_recovery,
     fulfill_account_recovery_attempt,
 )
 from sanic_security.core.verification import (
     request_two_step_verification,
-    requires_captcha,
     requires_two_step_verification,
     verify_account,
-    request_captcha,
+    request_captcha, requires_captcha,
 )
 
-authentication = Blueprint("authentication_blueprint")
-verification = Blueprint("verification_blueprint")
-recovery = Blueprint("recovery_blueprint")
-captcha = Blueprint("captcha_blueprint")
-security = Blueprint.group(authentication, verification, recovery, captcha)
+authentication = Blueprint("test_authentication_blueprint")
+authorization = Blueprint("test_authorization_blueprint")
+verification = Blueprint("test_verification_blueprint")
+recovery = Blueprint("test_recovery_blueprint")
+captcha = Blueprint("test_captcha_blueprint")
+security = Blueprint.group(authentication, authorization, verification, recovery, captcha)
 
 
 @authentication.post("api/auth/register")
@@ -31,7 +33,7 @@ async def on_register(request):
     two_step_session = await register(request)
     await two_step_session.email_code()
     response = json("Registration successful!", two_step_session.account.json())
-    two_step_session.encode(response)
+    two_step_session.encode(response, secure=False)
     return response
 
 
@@ -49,7 +51,7 @@ async def on_login(request):
         two_step_session.encode(e.response)
         return e.response
     response = json("Login successful!", authentication_session.account.json())
-    authentication_session.encode(response)
+    authentication_session.encode(response, secure=False)
     return response
 
 
@@ -85,8 +87,7 @@ async def on_resend_verification(request):
 
 
 @verification.post("api/verif/request")
-@requires_captcha()
-async def on_request_verification(request, captcha_session):
+async def on_request_verification(request):
     """
     Request new verification session and send email with code if existing session is invalid or expired.
     """
@@ -99,15 +100,14 @@ async def on_request_verification(request, captcha_session):
 
 
 @recovery.post("api/recov/request")
-@requires_captcha()
-async def on_recovery_request(request, captcha_session):
+async def on_recovery_request(request):
     """
     Requests new verification session to ensure current recovery attempt is being made by account owner.
     """
     two_step_session = await attempt_account_recovery(request)
     await two_step_session.email_code()
     response = json("Recovery request successful!", two_step_session.account.json())
-    two_step_session.encode(response)
+    two_step_session.encode(response, secure=False)
     return response
 
 
@@ -128,8 +128,17 @@ async def on_request_captcha(request):
     """
     captcha_session = await request_captcha(request)
     response = json("Captcha request successful!", captcha_session.json())
-    captcha_session.encode(response)
+    captcha_session.encode(response, secure=False)
     return response
+
+
+@captcha.post("api/capt/fulfill")
+@requires_captcha()
+async def on_captcha_fulfill(request, captcha_session):
+    """
+    Data retrieval with captcha based verification.
+    """
+    return text("User who is confirmed not a robot has now gained access!")
 
 
 @captcha.get("api/capt/img")
@@ -139,3 +148,43 @@ async def on_captcha_img_request(request):
     """
     captcha_session = await CaptchaSession().decode(request)
     return await file(captcha_session.get_image())
+
+
+@authorization.get("api/auth/perms")
+@require_permissions("admin:update")
+async def on_require_perm(request, authentication_session):
+    """
+    Data retrieval with wildcard based authorization access.
+    """
+    return text("Admin who can only update gained access!")
+
+
+@authorization.get("api/auth/roles")
+@require_roles("Admin", "Mod")
+async def on_require_role(request, authentication_session):
+    """
+    Data retrieval with role based authorization access.
+    """
+    return text("Admin or mod gained access!")
+
+
+@authorization.post("api/auth/perms")
+@requires_authentication()
+async def on_create_admin_perms(request, authentication_session):
+    """
+    Creates 'admin:update' and 'admin:add' permissions to be used for testing wildcard based authorization.
+    """
+    await Permission().create(account=authentication_session.account, wildcard="admin:update", decription="")
+    await Permission().create(account=authentication_session.account, wildcard="admin:add")
+    return json("Permissions added to your account!", authentication_session.account.json())
+
+
+@authorization.post("api/auth/roles")
+@requires_authentication()
+async def on_create_admin_roles(request, authentication_session):
+    """
+    Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
+    """
+    await Role().create(account=authentication_session.account, name="Admin")
+    await Role().create(account=authentication_session.account, name="Mod")
+    return json("Roles added to your account!", authentication_session.account.json())
