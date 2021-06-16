@@ -300,7 +300,7 @@ class VerificationSession(Session):
         raise NotImplementedError()
 
     @classmethod
-    async def get_random_cached_code(cls):
+    async def get_random_code(cls):
         """
         Retrieves a random cached verification session code.
         """
@@ -348,7 +348,7 @@ class TwoStepSession(VerificationSession):
                     await f.write(code + " ")
 
     @classmethod
-    async def get_random_cached_code(cls):
+    async def get_random_code(cls):
         await cls.initialize_cache()
         async with aiofiles.open(
             f"{security_cache_path}/verification/codes.txt", mode="r"
@@ -400,7 +400,7 @@ class CaptchaSession(VerificationSession):
                 )
 
     @classmethod
-    async def get_random_cached_code(cls):
+    async def get_random_code(cls):
         await cls.initialize_cache()
         return random.choice(os.listdir(f"{security_cache_path}/captcha")).split(".")[0]
 
@@ -460,12 +460,12 @@ class SessionFactory:
         if session_type == "captcha":
             return await CaptchaSession.create(
                 ip=get_ip(request),
-                code=await CaptchaSession.get_random_cached_code(),
+                code=await CaptchaSession.get_random_code(),
                 expiration_date=self.generate_expiration_date(minutes=1),
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
-                code=await TwoStepSession.get_random_cached_code(),
+                code=await TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
                 expiration_date=self.generate_expiration_date(minutes=5),
