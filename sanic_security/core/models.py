@@ -518,5 +518,13 @@ class Permission(BaseModel):
         }
 
 
-def json(message, data, status_code=200):
+def json(message: str, data, status_code: int = 200):
+    """
+    A preformatted Sanic json response.
+
+    Args:
+        message (int): Message describing data or relaying human readable information.
+        data (Any): Raw information to be used by client.
+        status_code (int): HTTP response code.
+    """
     return sanic_json({"message": message, "code": status_code, "data": data}, status=status_code)
