@@ -518,6 +518,5 @@ class Permission(BaseModel):
         }
 
 
-def json(message, content, status_code=200):
-    payload = {"message": message, "code": status_code, "data": content}
-    return sanic_json(payload, status=status_code)
+def json(message, data, status_code=200):
+    return sanic_json({"message": message, "code": status_code, "data": data}, status=status_code)

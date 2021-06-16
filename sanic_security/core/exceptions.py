@@ -1,5 +1,6 @@
 from sanic.exceptions import SanicException
-from sanic.response import json
+
+from sanic_security.core.models import json
 
 
 class SecurityError(SanicException):
@@ -15,14 +16,7 @@ class SecurityError(SanicException):
     """
 
     def __init__(self, message: str, code: int):
-        self.response = json(
-            {
-                "message": "An error has occurred!",
-                "error_code": code,
-                "data": {"error": self.__class__.__name__, "summary": message},
-            },
-            status=code,
-        )
+        self.response = json(message, self.__class__.__name__, code)
         super().__init__(message, code)
 
 
@@ -101,7 +95,7 @@ class SessionError(SecurityError):
 
 class DecodingError(SessionError):
     def __init__(self, exception):
-        super().__init__("Session could not be decoded. " + str(exception), 400)
+        super().__init__(f"Session could not be decoded. {exception}", 400)
 
 
 class InvalidError(SessionError):
