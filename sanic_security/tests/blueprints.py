@@ -40,7 +40,7 @@ security = Blueprint.group(
 )
 
 
-@authentication.post("api/auth/register")
+@authentication.post("api/test/auth/register")
 async def on_register(request):
     """
     Register an account with an email, username, and password. Once account is created successfully, a two-step session is requested and the code is emailed.
@@ -52,7 +52,7 @@ async def on_register(request):
     return response
 
 
-@authentication.post("api/auth/login")
+@authentication.post("api/test/test/auth/login")
 async def on_login(request):
     """
     Login with an email and password. If the account is unverified, request a two-step session and email code.
@@ -70,7 +70,7 @@ async def on_login(request):
     return response
 
 
-@authentication.post("api/auth/verify")
+@authentication.post("api/test/auth/verify")
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     """
@@ -80,7 +80,7 @@ async def on_verify(request, two_step_session):
     return json("Account verification successful!", two_step_session.account.json())
 
 
-@authentication.post("api/auth/logout")
+@authentication.post("api/test/auth/logout")
 async def on_logout(request):
     """
     Logout logged in account.
@@ -90,7 +90,7 @@ async def on_logout(request):
     return response
 
 
-@verification.post("api/verif/resend")
+@verification.post("api/test/verif/resend")
 async def on_resend_verification(request):
     """
     Resend existing two-step session code if lost.
@@ -101,7 +101,7 @@ async def on_resend_verification(request):
     return response
 
 
-@verification.post("api/verif/request")
+@verification.post("api/test/verif/request")
 async def on_request_verification(request):
     """
     Request new two-step session and send email with code if existing session is invalid or expired.
@@ -116,7 +116,7 @@ async def on_request_verification(request):
     return response
 
 
-@recovery.post("api/recov/request")
+@recovery.post("api/test/recov/request")
 async def on_recovery_request(request):
     """
     Requests new two-step session to ensure current recovery attempt is being made by account owner.
@@ -128,7 +128,7 @@ async def on_recovery_request(request):
     return response
 
 
-@recovery.post("api/recov/fulfill")
+@recovery.post("api/test/recov/fulfill")
 @requires_two_step_verification()
 async def on_recovery_fulfill(request, two_step_session):
     """
@@ -138,7 +138,7 @@ async def on_recovery_fulfill(request, two_step_session):
     return json("Account recovered successfully", two_step_session.account.json())
 
 
-@captcha.post("api/capt/request")
+@captcha.post("api/test/capt/request")
 async def on_request_captcha(request):
     """
     Requests new captcha session.
@@ -149,7 +149,7 @@ async def on_request_captcha(request):
     return response
 
 
-@captcha.post("api/capt/fulfill")
+@captcha.post("api/test/capt/fulfill")
 @requires_captcha()
 async def on_captcha_fulfill(request, captcha_session):
     """
@@ -158,7 +158,7 @@ async def on_captcha_fulfill(request, captcha_session):
     return text("User who is confirmed not a robot has now gained access!")
 
 
-@captcha.get("api/capt/img")
+@captcha.get("api/test/capt/img")
 async def on_captcha_img_request(request):
     """
     Requests captcha image from existing captcha session.
@@ -167,7 +167,7 @@ async def on_captcha_img_request(request):
     return await file(captcha_session.get_image())
 
 
-@authorization.get("api/auth/perms")
+@authorization.get("api/test/auth/perms")
 @require_permissions("admin:update")
 async def on_require_perm(request, authentication_session):
     """
@@ -176,7 +176,7 @@ async def on_require_perm(request, authentication_session):
     return text("Admin who can only update gained access!")
 
 
-@authorization.get("api/auth/roles")
+@authorization.get("api/test/auth/roles")
 @require_roles("Admin", "Mod")
 async def on_require_role(request, authentication_session):
     """
@@ -185,7 +185,7 @@ async def on_require_role(request, authentication_session):
     return text("Admin or mod gained access!")
 
 
-@authorization.post("api/auth/perms")
+@authorization.post("api/test/auth/perms")
 @requires_authentication()
 async def on_create_admin_perms(request, authentication_session):
     """
@@ -202,7 +202,7 @@ async def on_create_admin_perms(request, authentication_session):
     )
 
 
-@authorization.post("api/auth/roles")
+@authorization.post("api/test/auth/roles")
 @requires_authentication()
 async def on_create_admin_roles(request, authentication_session):
     """
