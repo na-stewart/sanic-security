@@ -5,7 +5,7 @@ from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
 from sanic_security.core.exceptions import (
-    PasswordMismatchError,
+    PasswordIncorrectError,
     ExistsError,
     InvalidIdentifierError,
     NotFoundError,
@@ -43,9 +43,17 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     """
     form = request.form
     if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
-        raise InvalidIdentifierError("Please use a valid email format such as you@mail.com.")
-    if form.get("phone") and not form.get("phone").isdigit() or len(form.get("phone")) < 11:
-        raise InvalidIdentifierError("Please use a valid phone format such as 15621435489 or 19498963648018.")
+        raise InvalidIdentifierError(
+            "Please use a valid email format such as you@mail.com."
+        )
+    if (
+        form.get("phone")
+        and not form.get("phone").isdigit()
+        or len(form.get("phone")) < 11
+    ):
+        raise InvalidIdentifierError(
+            "Please use a valid phone format such as 15621435489 or 19498963648018."
+        )
     try:
         account = await Account.create(
             email=form.get("email"),
@@ -66,7 +74,9 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         else:
             raise ie
     except ValidationError:
-        raise InvalidIdentifierError("Email, username, or phone number is too long or invalid.")
+        raise InvalidIdentifierError(
+            "Email, username, or phone number is too long or invalid."
+        )
 
 
 async def login(request: Request, account: Account = None):
@@ -94,7 +104,7 @@ async def login(request: Request, account: Account = None):
             )
             return authentication_session
         else:
-            raise PasswordMismatchError()
+            raise PasswordIncorrectError()
     else:
         raise NotFoundError("An account with this email does not exist.")
 

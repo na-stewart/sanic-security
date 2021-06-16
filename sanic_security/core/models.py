@@ -102,9 +102,9 @@ class Account(BaseModel):
     Contains all identifiable user information.
 
     Attributes:
-        username (str): Not used for any authentication or verification processes.
-        email (str): Used for authentication and verification processes (login and 2SV).
-        phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them.
+        username (str): Public identifier.
+        email (str): Private identifier and can be used for verification.
+        phone (str): Mobile phone number with country code included and can be used for verification.
         password (bytes): Must be created using the hash_password method found in the utils module.
         disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
         verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
@@ -175,7 +175,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = f"{config['SECURITY']['name'].strip()}_{ self.__class__.__name__}"
+        self.cookie = f"{config['SECURITY']['name'].strip()}_{self.__class__.__name__}"
 
     def json(self):
         return {
@@ -290,7 +290,7 @@ class VerificationSession(Session):
     code = fields.CharField(max_length=10, null=True)
 
     @staticmethod
-    def initialize_cache(app: Sanic):
+    async def initialize_cache():
         """
         Creates verification session cache and generates required files.
 
@@ -299,8 +299,8 @@ class VerificationSession(Session):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    async def get_random_cached_code():
+    @classmethod
+    async def get_random_cached_code(cls):
         """
         Retrieves a random cached verification session code.
         """
@@ -321,7 +321,7 @@ class VerificationSession(Session):
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=["attempts"])
-            raise CrosscheckError()
+            raise IncorrectCodeError()
         else:
             self.valid = False
             await self.save(update_fields=["valid"])
@@ -336,26 +336,25 @@ class TwoStepSession(VerificationSession):
     """
 
     @staticmethod
-    async def get_random_cached_code():
+    async def initialize_cache():
+        if not dir_exists(f"{security_cache_path}/verification"):
+            async with aiofiles.open(
+                f"{security_cache_path}/verification/codes.txt", mode="w"
+            ) as f:
+                for i in range(100):
+                    code = "".join(
+                        random.choices(string.ascii_letters + string.digits, k=10)
+                    )
+                    await f.write(code + " ")
+
+    @classmethod
+    async def get_random_cached_code(cls):
+        await cls.initialize_cache()
         async with aiofiles.open(
             f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
-
-    @staticmethod
-    def initialize_cache(app: Sanic):
-        @app.listener("before_server_start")
-        async def generate_codes(app, loop):
-            if not dir_exists(f"{security_cache_path}/verification"):
-                async with aiofiles.open(
-                    f"{security_cache_path}/verification/codes.txt", mode="w"
-                ) as f:
-                    for i in range(100):
-                        code = "".join(
-                            random.choices(string.ascii_letters + string.digits, k=10)
-                        )
-                        await f.write(code + " ")
 
     async def text_code(self, code_prefix="Your code is: "):
         """
@@ -385,27 +384,24 @@ class CaptchaSession(VerificationSession):
     """
 
     @staticmethod
-    def initialize_cache(app: Sanic):
-        @app.listener("before_server_start")
-        async def generate_codes(app, loop):
-            if not dir_exists(f"{security_cache_path}/captcha"):
-                loop = asyncio.get_running_loop()
-                image = ImageCaptcha(
-                    190, 90, fonts=[config["SECURITY"]["captcha_font"]]
+    async def initialize_cache():
+        if not dir_exists(f"{security_cache_path}/captcha"):
+            loop = asyncio.get_running_loop()
+            image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
+            for i in range(100):
+                code = "".join(
+                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6)
                 )
-                for i in range(100):
-                    code = "".join(
-                        random.choices("123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6)
-                    )
-                    await loop.run_in_executor(
-                        None,
-                        image.write,
-                        code,
-                        f"{security_cache_path}/captcha/{code}.png",
-                    )
+                await loop.run_in_executor(
+                    None,
+                    image.write,
+                    code,
+                    f"{security_cache_path}/captcha/{code}.png",
+                )
 
-    @staticmethod
-    def get_random_cached_code():
+    @classmethod
+    async def get_random_cached_code(cls):
+        await cls.initialize_cache()
         return random.choice(os.listdir(f"{security_cache_path}/captcha")).split(".")[0]
 
     def get_image(self):
@@ -464,7 +460,7 @@ class SessionFactory:
         if session_type == "captcha":
             return await CaptchaSession.create(
                 ip=get_ip(request),
-                code=CaptchaSession.get_random_cached_code(),
+                code=await CaptchaSession.get_random_cached_code(),
                 expiration_date=self.generate_expiration_date(minutes=1),
             )
         elif session_type == "twostep":

@@ -76,9 +76,9 @@ class DisabledError(AccountError):
         super().__init__("This account has been disabled.", 401)
 
 
-class PasswordMismatchError(AccountError):
+class PasswordIncorrectError(AccountError):
     def __init__(self):
-        super().__init__("The password provided does not match account password.", 401)
+        super().__init__("The password provided is incorrect.", 401)
 
 
 class UnverifiedError(AccountError):
@@ -114,9 +114,9 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired", 401)
 
 
-class CrosscheckError(SessionError):
+class IncorrectCodeError(SessionError):
     def __init__(self):
-        super().__init__("Session crosschecking attempt was incorrect", 401)
+        super().__init__("The code provided is incorrect.", 401)
 
 
 class MaximumAttemptsError(SessionError):

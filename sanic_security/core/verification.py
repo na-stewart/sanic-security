@@ -9,7 +9,6 @@ from sanic_security.core.models import (
     SessionFactory,
     SessionErrorFactory,
 )
-from sanic_security.core.utils import config
 
 session_factory = SessionFactory()
 session_error_factory = SessionErrorFactory()

@@ -12,9 +12,7 @@ from sanic_security.core.verification import request_two_step_verification
 account_error_factory = AccountErrorFactory()
 
 
-async def fulfill_account_recovery_attempt(
-    request: Request, two_step_session: TwoStepSession
-):
+async def fulfill_recovery_attempt(request: Request, two_step_session: TwoStepSession):
     """
     Recovers an account by setting the password to a new one once recovery attempt was determined to be made
     by the account owner.
@@ -31,7 +29,7 @@ async def fulfill_account_recovery_attempt(
     await two_step_session.account.save(update_fields=["password"])
 
 
-async def attempt_account_recovery(request: Request):
+async def attempt_recovery(request: Request):
     """
     Requests a two-step session to ensure that the recovery attempt was made by the account owner.
 

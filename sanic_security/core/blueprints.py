@@ -3,10 +3,16 @@ from sanic.response import file
 
 from sanic_security.core.authentication import login, logout, register
 from sanic_security.core.exceptions import UnverifiedError
-from sanic_security.core.models import Account, VerificationSession, CaptchaSession, TwoStepSession, json
+from sanic_security.core.models import (
+    Account,
+    VerificationSession,
+    CaptchaSession,
+    TwoStepSession,
+    json,
+)
 from sanic_security.core.recovery import (
-    attempt_account_recovery,
-    fulfill_account_recovery_attempt,
+    attempt_recovery,
+    fulfill_recovery_attempt,
 )
 from sanic_security.core.verification import (
     request_two_step_verification,
@@ -26,7 +32,7 @@ security = Blueprint.group(authentication, verification, recovery, captcha)
 @authentication.post("api/auth/register")
 async def on_register(request):
     """
-    Register an account with an email, username, and password. Once account is created successfully, a verification session is requested and the code is emailed.
+    Register an account with an email, username, and password. Once account is created successfully, a two-step session is requested and the code is emailed.
     """
     two_step_session = await register(request)
     await two_step_session.email_code()
@@ -38,7 +44,7 @@ async def on_register(request):
 @authentication.post("api/auth/login")
 async def on_login(request):
     """
-    Login with an email and password. If the account is unverified, request a verification session and email code.
+    Login with an email and password. If the account is unverified, request a two-step session and email code.
     """
     account = await Account.get_via_email(request.form.get("email"))
     try:
@@ -57,7 +63,7 @@ async def on_login(request):
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     """
-    Verify account with a verification code found in email.
+    Verify account with a two-step session code found in email.
     """
     await verify_account(two_step_session)
     return json("Account verification successful!", two_step_session.account.json())
@@ -76,7 +82,7 @@ async def on_logout(request):
 @verification.post("api/verif/resend")
 async def on_resend_verification(request):
     """
-    Resend existing verification session code if lost.
+    Resend existing two-step session code if lost.
     """
     two_step_session = await VerificationSession().decode(request)
     await two_step_session.email_code()
@@ -88,10 +94,12 @@ async def on_resend_verification(request):
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     """
-    Request new verification session and send email with code if existing session is invalid or expired.
+    Request new two-step session and send email with code if existing session is invalid or expired.
     """
     existing_two_step_session = await TwoStepSession().decode(request)
-    two_step_session = await request_two_step_verification(request, existing_two_step_session.account)
+    two_step_session = await request_two_step_verification(
+        request, existing_two_step_session.account
+    )
     await two_step_session.email_code()
     response = json("Verification request successful!", two_step_session.json())
     two_step_session.encode(response, secure=False)
@@ -102,9 +110,9 @@ async def on_request_verification(request, captcha_session):
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
     """
-    Requests new verification session to ensure current recovery attempt is being made by account owner.
+    Requests new two-step session to ensure current recovery attempt is being made by account owner.
     """
-    two_step_session = await attempt_account_recovery(request)
+    two_step_session = await attempt_recovery(request)
     await two_step_session.email_code()
     response = json("Recovery request successful!", two_step_session.account.json())
     two_step_session.encode(response)
@@ -115,9 +123,9 @@ async def on_recovery_request(request, captcha_session):
 @requires_two_step_verification()
 async def on_recovery_fulfill(request, two_step_session):
     """
-    Changes and recovers an account's password once recovery attempt was determined to have been made by account owner with verification code found in email.
+    Changes and recovers an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
     """
-    await fulfill_account_recovery_attempt(request, two_step_session)
+    await fulfill_recovery_attempt(request, two_step_session)
     return json("Account recovered successfully", two_step_session.account.json())
 
 

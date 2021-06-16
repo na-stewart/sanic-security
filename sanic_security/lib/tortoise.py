@@ -4,7 +4,7 @@ from tortoise import Tortoise
 from sanic_security.core.utils import config
 
 
-def initialize_tortoise(app: Sanic):
+def initialize_security_orm(app: Sanic):
     """
     Initializes tortoise-orm.
 
