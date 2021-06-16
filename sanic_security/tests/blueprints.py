@@ -48,7 +48,7 @@ async def on_login(request):
     except UnverifiedError as e:
         two_step_session = await request_two_step_verification(request, account)
         await two_step_session.email_code()
-        two_step_session.encode(e.response)
+        two_step_session.encode(e.response, secure=False)
         return e.response
     response = json("Login successful!", authentication_session.account.json())
     authentication_session.encode(response, secure=False)

@@ -66,14 +66,9 @@ class ExistsError(AccountError):
         super().__init__("Account with this email or phone number already exists.", 409)
 
 
-class TooManyCharsError(AccountError):
-    def __init__(self):
-        super().__init__("Email, username, or phone number is too long.", 400)
-
-
-class InvalidEmailError(AccountError):
-    def __init__(self):
-        super().__init__("Please use a valid email format such as you@mail.com.", 400)
+class InvalidIdentifierError(AccountError):
+    def __init__(self, message):
+        super().__init__(message, 400)
 
 
 class DisabledError(AccountError):

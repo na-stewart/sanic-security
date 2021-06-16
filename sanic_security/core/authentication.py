@@ -6,9 +6,8 @@ from tortoise.exceptions import IntegrityError, ValidationError
 
 from sanic_security.core.exceptions import (
     PasswordMismatchError,
-    InvalidEmailError,
     ExistsError,
-    TooManyCharsError,
+    InvalidIdentifierError,
     NotFoundError,
 )
 from sanic_security.core.models import (
@@ -31,7 +30,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     Creates a new account. This is the recommend method for creating accounts' with Sanic Security.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
         verified (bool): If false, account being registered must be verified before use.
         disabled (bool): If true, account being registered must be enabled before use.
 
@@ -42,15 +41,17 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     Raises:
         AccountError
     """
-    forms = request.form
-    if not re.search("[^@]+@[^@]+.[^@]+", forms.get("email")):
-        raise InvalidEmailError()
+    form = request.form
+    if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
+        raise InvalidIdentifierError("Please use a valid email format such as you@mail.com.")
+    if form.get("phone") and not form.get("phone").isdigit() or len(form.get("phone")) < 11:
+        raise InvalidIdentifierError("Please use a valid phone format such as 15621435489 or 19498963648018.")
     try:
         account = await Account.create(
-            email=forms.get("email"),
-            username=forms.get("username"),
-            password=hash_password(forms.get("password")),
-            phone=forms.get("phone"),
+            email=form.get("email"),
+            username=form.get("username"),
+            password=hash_password(form.get("password")),
+            phone=form.get("phone"),
             verified=verified,
             disabled=disabled,
         )
@@ -59,10 +60,13 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             if not verified
             else account
         )
-    except IntegrityError:
-        raise ExistsError()
+    except IntegrityError as ie:
+        if ie.args[0].args[0] == 1062:
+            raise ExistsError()
+        else:
+            raise ie
     except ValidationError:
-        raise TooManyCharsError()
+        raise InvalidIdentifierError("Email, username, or phone number is too long or invalid.")
 
 
 async def login(request: Request, account: Account = None):

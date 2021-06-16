@@ -102,9 +102,9 @@ class Account(BaseModel):
     Contains all identifiable user information.
 
     Attributes:
-        username (str): Not used for any authentication or verification processes. May be displayed publicly.
-        email (str): Used for authentication and verification processes (login and 2SV). Should not be displayed publicly.
-        phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them. Should not be displayed publicly.
+        username (str): Not used for any authentication or verification processes.
+        email (str): Used for authentication and verification processes (login and 2SV).
+        phone (str): Used for verification processes (2SV). Accounts do not have to have a mobile phone associated to them.
         password (bytes): Must be created using the hash_password method found in the utils module.
         disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
         verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
@@ -112,7 +112,7 @@ class Account(BaseModel):
 
     username = fields.CharField(max_length=45)
     email = fields.CharField(unique=True, max_length=45)
-    phone = fields.CharField(unique=True, max_length=20, null=True)
+    phone = fields.CharField(unique=True, max_length=14, null=True)
     password = fields.BinaryField()
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
