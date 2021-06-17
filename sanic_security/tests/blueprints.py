@@ -8,6 +8,7 @@ from sanic_security.authentication import (
     requires_authentication,
 )
 from sanic_security.authorization import require_roles, require_permissions
+from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.models import (
     CaptchaSession,
     TwoStepSession,
@@ -16,15 +17,13 @@ from sanic_security.models import (
     Role,
 )
 from sanic_security.recovery import (
-    attempt_recovery,
-    fulfill_recovery_attempt,
+    request_password_recovery,
+    recover_password,
 )
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
     verify_account,
-    request_captcha,
-    requires_captcha,
 )
 
 authentication = Blueprint("test_authentication_blueprint")
@@ -74,7 +73,7 @@ async def on_verify(request, two_step_session):
 @authentication.post("api/test/auth/logout")
 async def on_logout(request):
     """
-    Logout logged in account.
+    Logout of logged in account.
     """
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.account.json())
@@ -95,7 +94,7 @@ async def on_resend_verification(request):
 @verification.post("api/test/verif/request")
 async def on_request_verification(request):
     """
-    Request new two-step session and send email with code if existing session is invalid or expired.
+    Request new two-step session and send email with code. Used if existing session is invalid or expired.
     """
     existing_two_step_session = await TwoStepSession().decode(request)
     two_step_session = await request_two_step_verification(
@@ -112,7 +111,7 @@ async def on_recovery_request(request):
     """
     Requests new two-step session to ensure current recovery attempt is being made by account owner.
     """
-    two_step_session = await attempt_recovery(request)
+    two_step_session = await request_password_recovery(request)
     await two_step_session.email_code()
     response = json("Recovery request successful!", two_step_session.account.json())
     two_step_session.encode(response, secure=False)
@@ -125,7 +124,7 @@ async def on_recovery_fulfill(request, two_step_session):
     """
     Changes and recovers an account's password once recovery attempt was determined to have been made by account owner with two-step session code found in email.
     """
-    await fulfill_recovery_attempt(request, two_step_session)
+    await recover_password(request, two_step_session)
     return json("Account recovered successfully", two_step_session.account.json())
 
 

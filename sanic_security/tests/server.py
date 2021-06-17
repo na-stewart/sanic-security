@@ -1,5 +1,6 @@
 from sanic import Sanic, text
 
+from sanic_security.blueprints import authentication
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
@@ -52,5 +53,7 @@ async def on_error(request, exception):
 
 initialize_security_orm(app)
 app.blueprint(security)
+app.blueprint(authentication)
+app.blueprint(verification)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True, workers=4)

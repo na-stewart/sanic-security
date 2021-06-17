@@ -49,6 +49,8 @@
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
+    * [Blueprints](#Blueprints)
+    * [Testing](#Testing)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -71,6 +73,7 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Wildcard permissions
 * Role permissions
 * Easy database integration
+* Blueprints
 * Completely async
 
 This repository has been starred by Sanic's core maintainer:
@@ -445,6 +448,66 @@ async def xxs_middleware(request, response):
 async def https_middleware(request):
     return https_redirect_middleware(request)
 ```
+
+## Blueprints
+
+Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
+single line of code.
+
+Blueprints are available for production and testing purposes.
+
+* Implementation
+
+You can either implement all endpoints at once or a specific group of endpoints. For example:
+
+```python
+app.blueprint(security)
+
+# Or
+
+app.blueprint(authentication)
+app.blueprint(authorization) #Testing only.
+app.blueprint(verification)
+app.blueprint(captcha)
+app.blueprint(recovery)
+```
+
+* Live Endpoints
+
+Method | Endpoint | Info |
+--- | --- | --- |
+POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
+POST | api/auth/login | Login with an email and password.
+POST | api/auth/verify | Verify account with a two-step session code found in email.
+POST | api/auth/logout | Logout of logged in account.
+POST | api/verif/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
+POST | api/verif/resend | Resend existing two-step session code if lost.
+POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
+POST | api/recov/fulfill | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
+POST | api/capt/request | Requests new captcha session.
+GET | api/capt/img | Retrieves captcha image from existing captcha session.
+
+* Testing Endpoints
+
+Method | Endpoint | Info |
+--- | --- | --- |
+POST | api/test/auth/register | Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
+POST | api/test/auth/login | Login with an email and password.
+POST | api/test/auth/verify | Verify account with a two-step session code found in email.
+POST | api/test/auth/logout | Logout of logged in account.
+POST | api/test/verif/request | Request new two-step session and send email with code. Used if existing session is invalid or expired.
+POST | api/test/verif/resend | Resend existing two-step session code if lost.
+POST | api/test/recov/request | Requests new two-step session to ensure current recovery attempt is being made by account owner.
+POST | api/test/recov/fulfill | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
+POST | api/test/capt/request | Requests new captcha session.
+POST | api/test/capt/img | Retrieves captcha image from existing captcha session.
+POST | api/test/capt/fulfill | Data retrieval example with captcha verification.
+GET | api/test/capt/img | Retrieves captcha image from existing captcha session.
+POST | api/test/auth/roles |  Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
+GET | api/test/auth/roles |  Data retrieval example with role authorization access.
+POST | api/test/auth/perms |  Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
+GET | api/test/auth/perms |  Data retrieval example with wildcard authorization access.
+
 
 <!-- ROADMAP -->
 ## Roadmap
