@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.core.models import (
+from sanic_security.models import (
     Account,
     TwoStepSession,
     CaptchaSession,

@@ -1,13 +1,13 @@
 from sanic.request import Request
 
-from sanic_security.core.models import (
+from sanic_security.models import (
     AuthenticationSession,
     Account,
     TwoStepSession,
     AccountErrorFactory,
 )
-from sanic_security.core.utils import hash_password
-from sanic_security.core.verification import request_two_step_verification
+from sanic_security.utils import hash_password
+from sanic_security.verification import request_two_step_verification
 
 account_error_factory = AccountErrorFactory()
 

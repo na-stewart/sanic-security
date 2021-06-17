@@ -1,7 +1,9 @@
-from sanic import Sanic
+from sanic import Sanic, text
 
-from sanic_security.core.exceptions import SecurityError
-from sanic_security.core.utils import xss_prevention_middleware, https_redirect_middleware
+from sanic_security.exceptions import SecurityError
+from sanic_security.lib.smtp import send_email
+from sanic_security.lib.twilio import send_sms
+from sanic_security.utils import xss_prevention_middleware
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.tests.blueprints import security
 
@@ -23,6 +25,24 @@ async def https_middleware(request):
     """
     # return https_redirect_middleware(request)
     pass
+
+
+@app.post("api/test/text")
+async def on_text(request):
+    """
+    Sends test message text to phone number.
+    """
+    await send_sms(request.form.get('to'), 'Test message')
+    return text("Text message sent.")
+
+
+@app.post("api/test/email")
+async def on_email(request):
+    """
+    Sends test message to email address.
+    """
+    await send_email(request.form.get('to'), 'test', 'Test message')
+    return text("Text message sent.")
 
 
 @app.exception(SecurityError)

@@ -4,21 +4,21 @@ import re
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from sanic_security.core.exceptions import (
+from sanic_security.exceptions import (
     PasswordIncorrectError,
     ExistsError,
     InvalidIdentifierError,
     NotFoundError,
 )
-from sanic_security.core.models import (
+from sanic_security.models import (
     Account,
     SessionFactory,
     AuthenticationSession,
     AccountErrorFactory,
     SessionErrorFactory,
 )
-from sanic_security.core.utils import hash_password
-from sanic_security.core.verification import request_two_step_verification
+from sanic_security.utils import hash_password
+from sanic_security.verification import request_two_step_verification
 
 session_factory = SessionFactory()
 account_error_factory = AccountErrorFactory()

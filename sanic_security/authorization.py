@@ -3,12 +3,12 @@ from fnmatch import fnmatch
 
 from sanic.request import Request
 
-from sanic_security.core.authentication import authenticate
-from sanic_security.core.exceptions import (
+from sanic_security.authentication import authenticate
+from sanic_security.exceptions import (
     InsufficientPermissionError,
     InsufficientRoleError,
 )
-from sanic_security.core.models import Role, Permission
+from sanic_security.models import Role, Permission
 
 
 async def check_permissions(request: Request, *required_permissions: str):

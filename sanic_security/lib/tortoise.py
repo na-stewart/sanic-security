@@ -1,7 +1,7 @@
 from sanic import Sanic
 from tortoise import Tortoise
 
-from sanic_security.core.utils import config
+from sanic_security.utils import config
 
 
 def initialize_security_orm(app: Sanic):

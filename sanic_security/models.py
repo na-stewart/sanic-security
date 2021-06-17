@@ -13,8 +13,8 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 
-from sanic_security.core.exceptions import *
-from sanic_security.core.utils import get_ip, security_cache_path, dir_exists, config
+from sanic_security.exceptions import *
+from sanic_security.utils import get_ip, security_cache_path, dir_exists, config
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 

@@ -1,19 +1,17 @@
 from sanic import Blueprint
 from sanic.response import file
 
-from sanic_security.core.authentication import login, logout, register
-from sanic_security.core.exceptions import UnverifiedError
-from sanic_security.core.models import (
-    Account,
+from sanic_security.authentication import login, logout, register
+from sanic_security.models import (
     CaptchaSession,
     TwoStepSession,
     json,
 )
-from sanic_security.core.recovery import (
+from sanic_security.recovery import (
     attempt_recovery,
     fulfill_recovery_attempt,
 )
-from sanic_security.core.verification import (
+from sanic_security.verification import (
     request_two_step_verification,
     requires_captcha,
     requires_two_step_verification,
@@ -45,16 +43,9 @@ async def on_login(request):
     """
     Login with an email and password. If the account is unverified, request a two-step session and email code.
     """
-    account = await Account.get_via_email(request.form.get("email"))
-    try:
-        authentication_session = await login(request, account)
-    except UnverifiedError as e:
-        two_step_session = await request_two_step_verification(request, account)
-        await two_step_session.email_code()
-        two_step_session.encode(e.response)
-        return e.response
+    authentication_session = await login(request)
     response = json("Login successful!", authentication_session.account.json())
-    authentication_session.encode(response)
+    authentication_session.encode(response, secure=False)
     return response
 
 

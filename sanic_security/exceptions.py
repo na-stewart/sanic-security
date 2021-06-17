@@ -1,6 +1,6 @@
 from sanic.exceptions import SanicException
 
-from sanic_security.core.utils import json
+from sanic_security.utils import json
 
 
 class SecurityError(SanicException):
@@ -133,3 +133,6 @@ class InsufficientRoleError(SecurityError):
 class InsufficientPermissionError(SecurityError):
     def __init__(self):
         super().__init__("Insufficient permissions required for this action.", 403)
+
+class TwillioError(SanicException):
+    pass
