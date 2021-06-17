@@ -4,7 +4,6 @@ import os
 import random
 import string
 import uuid
-from sanic.response import json as sanic_json
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
@@ -175,7 +174,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = f"{config['SECURITY']['name'].strip()}_{self.__class__.__name__}"
+        self.cookie = f"auth_{self.__class__.__name__}"
 
     def json(self):
         return {
@@ -516,15 +515,3 @@ class Permission(BaseModel):
             "date_updated": str(self.date_updated),
             "wildcard": self.wildcard,
         }
-
-
-def json(message: str, data, status_code: int = 200):
-    """
-    A preformatted Sanic json response.
-
-    Args:
-        message (int): Message describing data or relaying human readable information.
-        data (Any): Raw information to be used by client.
-        status_code (int): HTTP response code.
-    """
-    return sanic_json({"message": message, "code": status_code, "data": data}, status=status_code)

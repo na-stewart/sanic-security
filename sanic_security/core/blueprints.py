@@ -5,7 +5,6 @@ from sanic_security.core.authentication import login, logout, register
 from sanic_security.core.exceptions import UnverifiedError
 from sanic_security.core.models import (
     Account,
-    VerificationSession,
     CaptchaSession,
     TwoStepSession,
     json,
@@ -84,7 +83,7 @@ async def on_resend_verification(request):
     """
     Resend existing two-step session code if lost.
     """
-    two_step_session = await VerificationSession().decode(request)
+    two_step_session = await TwoStepSession().decode(request)
     await two_step_session.email_code()
     response = json("Verification resend successful!", two_step_session.account.json())
     return response

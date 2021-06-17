@@ -3,6 +3,7 @@ import os
 from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
+from sanic.response import json as sanic_json
 
 security_cache_path = "./resources/security-cache"
 config = ConfigParser()
@@ -78,3 +79,15 @@ def dir_exists(path: str):
     except FileExistsError:
         exists = os.listdir(path)
     return exists
+
+
+def json(message: str, data, status_code: int = 200):
+    """
+    A preformatted Sanic json response.
+
+    Args:
+        message (int): Message describing data or relaying human readable information.
+        data (Any): Raw information to be used by client.
+        status_code (int): HTTP response code.
+    """
+    return sanic_json({"message": message, "code": status_code, "data": data}, status=status_code)

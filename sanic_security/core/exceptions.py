@@ -1,6 +1,6 @@
 from sanic.exceptions import SanicException
 
-from sanic_security.core.models import json
+from sanic_security.core.utils import json
 
 
 class SecurityError(SanicException):

@@ -11,7 +11,6 @@ from sanic_security.core.authorization import require_roles, require_permissions
 from sanic_security.core.exceptions import UnverifiedError
 from sanic_security.core.models import (
     Account,
-    VerificationSession,
     CaptchaSession,
     TwoStepSession,
     json,
@@ -47,12 +46,13 @@ async def on_register(request):
     """
     two_step_session = await register(request)
     await two_step_session.email_code()
+    await two_step_session.text_code()
     response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response, secure=False)
     return response
 
 
-@authentication.post("api/test/test/auth/login")
+@authentication.post("api/test/auth/login")
 async def on_login(request):
     """
     Login with an email and password. If the account is unverified, request a two-step session and email code.
@@ -95,7 +95,7 @@ async def on_resend_verification(request):
     """
     Resend existing two-step session code if lost.
     """
-    two_step_session = await VerificationSession().decode(request)
+    two_step_session = await TwoStepSession().decode(request)
     await two_step_session.email_code()
     response = json("Verification resend successful!", two_step_session.account.json())
     return response
@@ -153,7 +153,7 @@ async def on_request_captcha(request):
 @requires_captcha()
 async def on_captcha_fulfill(request, captcha_session):
     """
-    Data retrieval with captcha based verification.
+    Data retrieval example with captcha verification.
     """
     return text("User who is confirmed not a robot has now gained access!")
 
@@ -171,7 +171,7 @@ async def on_captcha_img_request(request):
 @require_permissions("admin:update")
 async def on_require_perm(request, authentication_session):
     """
-    Data retrieval with wildcard based authorization access.
+    Data retrieval example with wildcard authorization access.
     """
     return text("Admin who can only update gained access!")
 
@@ -180,7 +180,7 @@ async def on_require_perm(request, authentication_session):
 @require_roles("Admin", "Mod")
 async def on_require_role(request, authentication_session):
     """
-    Data retrieval with role based authorization access.
+    Data retrieval example with role authorization access.
     """
     return text("Admin or mod gained access!")
 
