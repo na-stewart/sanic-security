@@ -42,7 +42,7 @@ async def on_email(request):
     Sends test message to email address.
     """
     await send_email(request.form.get('to'), 'test', 'Test message')
-    return text("Text message sent.")
+    return text("Email sent.")
 
 
 @app.exception(SecurityError)

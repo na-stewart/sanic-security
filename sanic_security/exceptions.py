@@ -133,6 +133,3 @@ class InsufficientRoleError(SecurityError):
 class InsufficientPermissionError(SecurityError):
     def __init__(self):
         super().__init__("Insufficient permissions required for this action.", 403)
-
-class TwillioError(SanicException):
-    pass
