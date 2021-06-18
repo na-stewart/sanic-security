@@ -186,7 +186,7 @@ class Session(BaseModel):
             if isinstance(self.account, Account)
             else None,
             "valid": self.valid,
-        }
+        }           
 
     def encode(self, response: HTTPResponse, secure=True, same_site: str = "lax"):
         """

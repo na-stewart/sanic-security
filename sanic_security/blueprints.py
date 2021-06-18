@@ -109,9 +109,9 @@ async def on_recovery_request(request, captcha_session):
     return response
 
 
-@recovery.post("api/recov/fulfill")
+@recovery.post("api/recov/recover")
 @requires_two_step_verification()
-async def on_recovery_fulfill(request, two_step_session):
+async def on_recovery(request, two_step_session):
     """
     Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
     """

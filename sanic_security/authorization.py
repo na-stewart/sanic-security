@@ -113,8 +113,8 @@ def require_roles(*required_roles: str):
                 return text('User is authorized with the role Admin or Moderator!')
 
     Raises:
-            AccountError
-            SessionError
+        AccountError
+        SessionError
     """
 
     def wrapper(func):

@@ -1,12 +1,11 @@
 from sanic import Sanic, text
 
-from sanic_security.blueprints import authentication
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.smtp import send_email
-from sanic_security.lib.twilio import send_sms
-from sanic_security.utils import xss_prevention_middleware
 from sanic_security.lib.tortoise import initialize_security_orm
-from sanic_security.tests.blueprints import security
+from sanic_security.lib.twilio import send_sms
+from sanic_security.test.blueprints import security
+from sanic_security.utils import xss_prevention_middleware
 
 app = Sanic("Sanic Security Test Server")
 
@@ -33,7 +32,7 @@ async def on_text(request):
     """
     Sends test message text to phone number.
     """
-    await send_sms(request.form.get('to'), 'Test message')
+    await send_sms(request.form.get("to"), "Test message")
     return text("Text message sent.")
 
 
@@ -42,7 +41,7 @@ async def on_email(request):
     """
     Sends test message to email address.
     """
-    await send_email(request.form.get('to'), 'test', 'Test message')
+    await send_email(request.form.get("to"), "test", "Test message")
     return text("Email sent.")
 
 
@@ -53,7 +52,5 @@ async def on_error(request, exception):
 
 initialize_security_orm(app)
 app.blueprint(security)
-app.blueprint(authentication)
-app.blueprint(verification)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True, workers=4)

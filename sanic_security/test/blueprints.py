@@ -43,7 +43,6 @@ async def on_register(request):
     """
     two_step_session = await register(request)
     await two_step_session.email_code()
-    await two_step_session.text_code()
     response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response, secure=False)
     return response

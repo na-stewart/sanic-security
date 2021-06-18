@@ -452,24 +452,24 @@ async def https_middleware(request):
 ## Blueprints
 
 Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
-single line of code.
+single line of code. 
 
 Blueprints are available for production and testing purposes.
 
 * Implementation
 
-You can either implement all endpoints at once or a specific group of endpoints. For example:
-
 ```python
+# Blueprint containing all security endpoints.
 app.blueprint(security)
 
-# Or
-
+"""
+Below are blueprints containing endpoints only related to authentication and captcha verification.
+You may need to create your own endpoints in some instances if you choose to only use specific blueprints.
+For example, when the account is registered via the register endpoint in the authenticaton blueprint, you need to
+create an endpoint for verifying the account as one is not available in either of the implemented blueprints below.
+"""
 app.blueprint(authentication)
-app.blueprint(authorization) #Testing only.
-app.blueprint(verification)
 app.blueprint(captcha)
-app.blueprint(recovery)
 ```
 
 * Live Endpoints
