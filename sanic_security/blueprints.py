@@ -22,9 +22,7 @@ authentication = Blueprint("authentication_blueprint")
 verification = Blueprint("verification_blueprint")
 recovery = Blueprint("recovery_blueprint")
 captcha = Blueprint("captcha_blueprint")
-authorization = Blueprint("captcha_blueprint")  # For testing purposes only.
 security = Blueprint.group(authentication, verification, recovery, captcha)
-
 
 @authentication.post("api/auth/register")
 @requires_captcha()
@@ -138,21 +136,3 @@ async def on_captcha_img_request(request):
     """
     captcha_session = await CaptchaSession().decode(request)
     return await file(captcha_session.get_image())
-
-
-@authorization.get("api/auth/perms")
-@require_permissions("admin:update")
-async def on_require_perm(request, authentication_session):
-    """
-    Data retrieval example with wildcard authorization access.
-    """
-    return text("Admin who can only update gained access!")
-
-
-@authorization.get("api/auth/roles")
-@require_roles("Admin", "Mod")
-async def on_require_role(request, authentication_session):
-    """
-    Data retrieval example with role authorization access.
-    """
-    return text("Admin or mod gained access!")
