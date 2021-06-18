@@ -50,7 +50,6 @@
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
     * [Blueprints](#Blueprints)
-    * [Testing](#Testing)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -117,11 +116,10 @@ WARNING: You must set a custom secret or you will compromise your encoded sessio
 
 ```ini
 [SECURITY]
-name=ExampleProject
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
-[TORTOISE]
+[SQL]
 username=admin
 password=8UVbijLUGYfUtItAi
 endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
@@ -151,24 +149,12 @@ delete the TWILLIO section.
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
 ```python
-initialize_security(app)
+initialize_security_orm(app)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
 ```
 
-
-All request bodies must be sent as `form-data`. For my below examples, I use my own custom json method:
-
-```python
-from sanic.response import json as sanic_json
-def json(message, content, status_code=200):
-    payload = {
-        'message': message,
-        'code': status_code,
-        'data': content
-    }
-    return sanic_json(payload, status=status_code)
-```
+All request bodies must be sent as `form-data`.
 
 ## Authentication
 
@@ -454,25 +440,23 @@ async def https_middleware(request):
 Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
 single line of code. 
 
-Blueprints are available for production and testing purposes.
-
 * Implementation
 
+ Blueprint containing all security endpoints.
 ```python
-# Blueprint containing all security endpoints.
 app.blueprint(security)
+```
 
-"""
 Below are blueprints containing endpoints only related to authentication and captcha verification.
-You may need to create your own endpoints in some instances if you choose to only use specific blueprints.
-For example, when the account is registered via the register endpoint in the authenticaton blueprint, you need to
+You may need to create your own endpoints in some instances if you choose to only use specific blueprints. For example, when the account is registered via the register endpoint in the authenticaton blueprint, you need to
 create an endpoint for verifying the account as one is not available in either of the implemented blueprints below.
-"""
+
+```python
 app.blueprint(authentication)
 app.blueprint(captcha)
 ```
 
-* Live Endpoints
+* Endpoints
 
 Method | Endpoint | Info |
 --- | --- | --- |
@@ -483,36 +467,15 @@ POST | api/auth/logout | Logout of logged in account.
 POST | api/verif/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
 POST | api/verif/resend | Resend existing two-step session code if lost.
 POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
-POST | api/recov/fulfill | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
+POST | api/recov/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
 POST | api/capt/request | Requests new captcha session.
 GET | api/capt/img | Retrieves captcha image from existing captcha session.
-
-* Testing Endpoints
-
-Method | Endpoint | Info |
---- | --- | --- |
-POST | api/test/auth/register | Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/test/auth/login | Login with an email and password.
-POST | api/test/auth/verify | Verify account with a two-step session code found in email.
-POST | api/test/auth/logout | Logout of logged in account.
-POST | api/test/verif/request | Request new two-step session and send email with code. Used if existing session is invalid or expired.
-POST | api/test/verif/resend | Resend existing two-step session code if lost.
-POST | api/test/recov/request | Requests new two-step session to ensure current recovery attempt is being made by account owner.
-POST | api/test/recov/fulfill | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
-POST | api/test/capt/request | Requests new captcha session.
-POST | api/test/capt/img | Retrieves captcha image from existing captcha session.
-POST | api/test/capt/fulfill | Data retrieval example with captcha verification.
-GET | api/test/capt/img | Retrieves captcha image from existing captcha session.
-POST | api/test/auth/roles |  Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
-GET | api/test/auth/roles |  Data retrieval example with role authorization access.
-POST | api/test/auth/perms |  Creates 'Admin' and 'Mod' roles to be used for testing role based authorization.
-GET | api/test/auth/perms |  Data retrieval example with wildcard authorization access.
-
 
 <!-- ROADMAP -->
 ## Roadmap
 
 Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
+
 
 
 <!-- CONTRIBUTING -->

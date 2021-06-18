@@ -1,17 +1,17 @@
 from sanic import Blueprint
-from sanic.response import file
+from sanic.response import file, text
 
 from sanic_security.authentication import login, logout, register
+from sanic_security.authorization import require_roles, require_permissions
 from sanic_security.captcha import requires_captcha, request_captcha
 from sanic_security.models import (
     CaptchaSession,
-    TwoStepSession,
-    json,
-)
+    TwoStepSession)
 from sanic_security.recovery import (
     request_password_recovery,
     recover_password,
 )
+from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -22,6 +22,7 @@ authentication = Blueprint("authentication_blueprint")
 verification = Blueprint("verification_blueprint")
 recovery = Blueprint("recovery_blueprint")
 captcha = Blueprint("captcha_blueprint")
+authorization = Blueprint("captcha_blueprint")  # For testing purposes only.
 security = Blueprint.group(authentication, verification, recovery, captcha)
 
 
@@ -111,7 +112,7 @@ async def on_recovery_request(request, captcha_session):
 
 @recovery.post("api/recov/recover")
 @requires_two_step_verification()
-async def on_recovery(request, two_step_session):
+async def on_recover(request, two_step_session):
     """
     Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
     """
@@ -137,3 +138,21 @@ async def on_captcha_img_request(request):
     """
     captcha_session = await CaptchaSession().decode(request)
     return await file(captcha_session.get_image())
+
+
+@authorization.get("api/auth/perms")
+@require_permissions("admin:update")
+async def on_require_perm(request, authentication_session):
+    """
+    Data retrieval example with wildcard authorization access.
+    """
+    return text("Admin who can only update gained access!")
+
+
+@authorization.get("api/auth/roles")
+@require_roles("Admin", "Mod")
+async def on_require_role(request, authentication_session):
+    """
+    Data retrieval example with role authorization access.
+    """
+    return text("Admin or mod gained access!")

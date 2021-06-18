@@ -14,15 +14,15 @@ def initialize_security_orm(app: Sanic):
 
     @app.listener("before_server_start")
     async def init_orm(app, loop):
-        username = config["TORTOISE"]["username"]
-        password = config["TORTOISE"]["password"]
-        endpoint = config["TORTOISE"]["endpoint"]
-        schema = config["TORTOISE"]["schema"]
-        engine = config["TORTOISE"]["engine"]
-        models = config["TORTOISE"]["models"].replace(" ", "").split(",")
+        username = config["SQL"]["username"]
+        password = config["SQL"]["password"]
+        endpoint = config["SQL"]["endpoint"]
+        schema = config["SQL"]["schema"]
+        engine = config["SQL"]["engine"]
+        models = config["SQL"]["models"].replace(" ", "").split(",")
         url = f"{engine}://{username}:{password}@{endpoint}/{schema}"
         await Tortoise.init(db_url=url, modules={"models": models})
-        if config["TORTOISE"]["generate"] == "true":
+        if config["SQL"]["generate"] == "true":
             await Tortoise.generate_schemas()
 
     @app.listener("after_server_stop")
