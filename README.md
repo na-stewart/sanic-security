@@ -43,9 +43,9 @@
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
-    * [Recovery](#account-recovery)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
+    * [Recovery](#account-recovery)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -236,43 +236,6 @@ async def on_authenticated(request, authentication_session):
                 authentication_session.account.json())
 ```
 
-## Account Recovery
-
-* Recovery Attempt
-
-Key | Value |
---- | --- |
-**email** | test@test.com
-**captcha** | Aj8HgD
-
-```python
-@app.post('api/recovery/attempt')
-@requires_captcha()
-async def on_recovery_attempt(request, captcha_session):
-    two_step_session = await attempt_account_recovery(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
-    response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
-    two_step_session.encode(response)
-    return response
-```
-
-* Recovery Fulfill
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVa
-**password** | newpass
-
-```python
-@app.post('api/recovery/fulfill')
-@requires_two_step_verification()
-async def on_recovery_fulfill(request, two_step_session):
-    await fulfill_account_recovery_attempt(request, two_step_session)
-    return json('Account recovered successfully.', two_step_session.account.json())
-```
-
-
 ## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in security.ini.
@@ -373,6 +336,42 @@ Key | Value |
 async def on_verify(request, two_step_session):
     await verify_account(two_step_session)
     return json('You have verified your account and may login!', two_step_session.json())
+```
+
+## Account Recovery
+
+* Recovery Attempt
+
+Key | Value |
+--- | --- |
+**email** | test@test.com
+**captcha** | Aj8HgD
+
+```python
+@app.post('api/recovery/attempt')
+@requires_captcha()
+async def on_recovery_attempt(request, captcha_session):
+    two_step_session = await attempt_account_recovery(request)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json('A recovery attempt has been made, please verify account ownership.', two_step_session.json())
+    two_step_session.encode(response)
+    return response
+```
+
+* Recovery Fulfill
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVa
+**password** | newpass
+
+```python
+@app.post('api/recovery/fulfill')
+@requires_two_step_verification()
+async def on_recovery_fulfill(request, two_step_session):
+    await fulfill_account_recovery_attempt(request, two_step_session)
+    return json('Account recovered successfully.', two_step_session.account.json())
 ```
 
 ## Authorization
