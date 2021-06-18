@@ -46,11 +46,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         raise InvalidIdentifierError(
             "Please use a valid email format such as you@mail.com."
         )
-    if (
-        form.get("phone")
-        and not form.get("phone").isdigit()
-        or len(form.get("phone")) < 11
-    ):
+    if form.get("phone") and (not form.get("phone").isdigit() or len(form.get("phone")) < 11):
         raise InvalidIdentifierError(
             "Please use a valid phone format such as 15621435489 or 19498963648018."
         )

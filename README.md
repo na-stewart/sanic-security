@@ -447,8 +447,6 @@ app.blueprint(security)
 ```
 
 Below are blueprints containing endpoints only related to authentication and captcha verification.
-You may need to create your own endpoints in some instances if you choose to only use specific blueprints. For example, when the account is registered via the register endpoint in the authenticaton blueprint, you need to
-create an endpoint for verifying the account as one is not available in either of the implemented blueprints below.
 
 ```python
 app.blueprint(authentication)
