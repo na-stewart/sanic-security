@@ -8,7 +8,7 @@ from sanic_security.exceptions import (
     InsufficientPermissionError,
     InsufficientRoleError,
 )
-from sanic_security.models import Role, Permission
+from sanic_security.models import Role, Permission, Account
 
 
 async def check_permissions(request: Request, *required_permissions: str):
@@ -126,3 +126,25 @@ def require_roles(*required_roles: str):
         return wrapped
 
     return wrapper
+
+
+async def create_role(name: str, account: Account):
+    """
+    Quick creation of a role associated with an account.
+
+    Args:
+        name (str):  The name of the role associated with the account.
+        account (Account): the account associated with the created role.
+    """
+    return await Role().create(account=account, name=name)
+
+
+async def create_permission(wildcard: str, account: Account):
+    """
+    Quick creation of a permission associated with an account.
+
+    Args:
+        wildcard (str):  The wildcard of the permission associated with the account.
+        account (Account): the account associated with the created permission.
+    """
+    return await Permission.create(account=account, wildcard=wildcard)

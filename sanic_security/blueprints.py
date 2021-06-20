@@ -42,7 +42,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.account.json())
-    authentication_session.encode(response, secure=False)
+    authentication_session.encode(response)
     return response
 
 
@@ -89,7 +89,7 @@ async def on_request_verification(request, captcha_session):
     )
     await two_step_session.email_code()
     response = json("Verification request successful!", two_step_session.json())
-    two_step_session.encode(response, secure=False)
+    two_step_session.encode(response)
     return response
 
 

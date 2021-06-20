@@ -1,44 +1,24 @@
-from unittest import IsolatedAsyncioTestCase
+import json
+import random
+from unittest import TestCase
 
-import pytest
-from sanic import Sanic
-from sanic_testing import TestManager
-
-from sanic_security.authentication import register, login
-from sanic_security.lib.tortoise import initialize_security_orm
-from sanic_security.utils import json
+import httpx
 
 
-@pytest.fixture
-def app():
-    test_app = Sanic(__name__)
-    TestManager(test_app)
+class SecurityTest(TestCase):
+    client = httpx.Client()
 
-    @test_app.post("register")
-    async def on_register(request):
-        """
-        Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-        """
-        account = await register(request, verified=True)
-        response = json("Registration successful!", account.json())
-        return response
+    def test_authentication(self):
+        email = f"{''.join(random.choices('abc', k=5))}@gmail.com"
+        #Register.
+        data = {"username": "test", "email": email, "password": "testtest"}
+        register_response = self.client.post("http://0.0.0.0:8000/api/test/auth/register", data=data)
+        assert register_response.status_code == 200
+        #Verify.
+        code = json.loads(register_response.read())["data"]
+        verify_response = self.client.post("http://0.0.0.0:8000/api/test/auth/verify", data={"code": code})
+        assert verify_response.status_code == 200
+        # Login.
+        login_response = self.client.post("http://0.0.0.0:8000/api/test/auth/login", data={"email": email, "password": "testtest"})
+        assert login_response.status_code == 200
 
-    @test_app.post("login")
-    async def on_login(self, request):
-        """
-        Login with an email and password.
-        """
-        authentication_session = await login(request)
-        response = json("Login successful!", authentication_session.account.json())
-        authentication_session.encode(response, secure=False)
-        return response
-
-    initialize_security_orm(test_app)
-    return test_app
-
-
-def test_basic_test_client(app):
-    request, response = app.test_client.post("/")
-
-    assert response.body == b"foo"
-    assert response.status == 200
