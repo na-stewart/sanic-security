@@ -81,12 +81,9 @@ async def on_resend_verification(request):
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     """
-    Request new two-step session and send email with code. Used if existing session is invalid or expired.
+    Request new two-step session and send email with code.
     """
-    existing_two_step_session = await TwoStepSession().decode(request)
-    two_step_session = await request_two_step_verification(
-        request, existing_two_step_session.account
-    )
+    two_step_session = await request_two_step_verification(request)
     await two_step_session.email_code()
     response = json("Verification request successful!", two_step_session.json())
     two_step_session.encode(response)
@@ -133,4 +130,4 @@ async def on_captcha_img_request(request):
     Retrieves captcha image from existing captcha session.
     """
     captcha_session = await CaptchaSession().decode(request)
-    return await file(captcha_session.get_image())
+    return await captcha_session.get_image()

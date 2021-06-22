@@ -10,7 +10,7 @@ from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic import Sanic
 from sanic.request import Request
-from sanic.response import HTTPResponse
+from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 
 from sanic_security.exceptions import *
@@ -403,14 +403,18 @@ class CaptchaSession(VerificationSession):
         await cls.initialize_cache()
         return random.choice(os.listdir(f"{security_cache_path}/captcha")).split(".")[0]
 
-    def get_image(self):
+    async def get_image(self):
         """
         Retrieves cached captcha image challange path.
 
         Returns:
-            captcha_image_path
+            captcha_image
         """
-        return f"{security_cache_path}/captcha/{self.code}.png"
+        try:
+            captcha_image_response = await file(f"{security_cache_path}/captcha/{self.code}.png")
+        except Exception as e:
+            captcha_image_response = json("Could not retrieve captcha image.", str(e), e.__name__)
+        return captcha_image_response
 
 
 class AuthenticationSession(Session):

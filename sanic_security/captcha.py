@@ -26,7 +26,7 @@ async def captcha(request: Request):
     Verifies a captcha challenge attempt.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
 
     Raises:
         SessionError
