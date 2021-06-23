@@ -414,7 +414,7 @@ async def on_require_perms(request, authentication_session):
 * Require Roles
 
 ```python
-@app.get("api/auth/roles")
+@app.post("api/auth/roles")
 @require_roles("Admin", "Moderator")
 async def on_require_roles(request, authentication_session):
     return text("Account permitted")
