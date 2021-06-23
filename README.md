@@ -78,7 +78,7 @@ This library is intended to be easy, convenient, and contains a variety of featu
 
 This repository has been starred by Sanic's core maintainer:
 
-![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/ahopkins.png)
+![alt text](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -250,7 +250,7 @@ You must download a .ttf font for captcha challenges and define the file"s path 
 
 Captcha challenge example:
 
-![alt text](https://github.com/sunset-developer/asyncauth/blob/master/images/captcha.png)
+![alt text](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
 
 * Request Captcha
 
