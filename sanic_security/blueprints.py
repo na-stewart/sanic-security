@@ -1,7 +1,7 @@
 from sanic import Blueprint
 from sanic.response import file
 
-from sanic_security.authentication import login, logout, register
+from sanic_security.authentication import login, logout, register, requires_authentication
 from sanic_security.captcha import requires_captcha, request_captcha
 from sanic_security.models import CaptchaSession, TwoStepSession
 from sanic_security.recovery import (
@@ -57,16 +57,17 @@ async def on_verify(request, two_step_session):
 
 
 @authentication.post("api/auth/logout")
-async def on_logout(request):
+@requires_authentication()
+async def on_logout(request, authentication_session):
     """
     Logout of logged in account.
     """
-    authentication_session = await logout(request)
+    await logout(authentication_session)
     response = json("Logout successful!", authentication_session.account.json())
     return response
 
 
-@verification.post("api/verif/resend")
+@verification.post("api/auth/verification/resend")
 async def on_resend_verification(request):
     """
     Resend existing two-step session code if lost.
@@ -77,7 +78,7 @@ async def on_resend_verification(request):
     return response
 
 
-@verification.post("api/verif/request")
+@verification.post("api/auth/verification/request")
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     """
@@ -90,7 +91,7 @@ async def on_request_verification(request, captcha_session):
     return response
 
 
-@recovery.post("api/recov/request")
+@recovery.post("api/auth/recovery/request")
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
     """
@@ -103,7 +104,7 @@ async def on_recovery_request(request, captcha_session):
     return response
 
 
-@recovery.post("api/recov/recover")
+@recovery.post("api/auth/recovery/recover")
 @requires_two_step_verification()
 async def on_recover(request, two_step_session):
     """
@@ -113,7 +114,7 @@ async def on_recover(request, two_step_session):
     return json("Account recovered successfully", two_step_session.account.json())
 
 
-@captcha.post("api/capt/request")
+@captcha.post("api/auth/captcha/request")
 async def on_request_captcha(request):
     """
     Requests new captcha session.
@@ -124,7 +125,7 @@ async def on_request_captcha(request):
     return response
 
 
-@captcha.get("api/capt/img")
+@captcha.get("api/auth/captcha/img")
 async def on_captcha_img_request(request):
     """
     Retrieves captcha image from existing captcha session.

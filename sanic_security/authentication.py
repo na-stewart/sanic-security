@@ -105,20 +105,15 @@ async def login(request: Request, account: Account = None):
         raise NotFoundError("An account with this email does not exist.")
 
 
-async def logout(request: Request):
+async def logout(authentication_session: AuthenticationSession):
     """
     Invalidates client's authentication session and revokes access.
 
     Args:
-        request (Request): Sanic request parameter.
-
-    Returns:
-        authentication_session
+        authentication_session (AuthenticationSession): Authentication session being invalidated and logged out from.
     """
-    authentication_session = await AuthenticationSession().decode(request)
     authentication_session.valid = False
     await authentication_session.save(update_fields=["valid"])
-    return authentication_session
 
 
 async def authenticate(request: Request):
