@@ -7,7 +7,8 @@ from sanic_security.models import (
     Account,
     TwoStepSession,
     SessionFactory,
-    SessionErrorFactory, AccountErrorFactory
+    SessionErrorFactory,
+    AccountErrorFactory,
 )
 
 session_factory = SessionFactory()
@@ -108,5 +109,3 @@ def requires_two_step_verification():
         return wrapped
 
     return wrapper
-
-

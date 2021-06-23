@@ -9,8 +9,12 @@ from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account, Permission, Role
 from sanic_security.recovery import request_password_recovery
 from sanic_security.utils import json, hash_password
-from sanic_security.verification import verify_account, two_step_verification, request_two_step_verification, \
-    requires_two_step_verification
+from sanic_security.verification import (
+    verify_account,
+    two_step_verification,
+    request_two_step_verification,
+    requires_two_step_verification,
+)
 
 app = Sanic(__name__)
 
@@ -18,7 +22,12 @@ app = Sanic(__name__)
 @app.post("api/test/auth/setup")
 async def on_setup_test_account(request):
     if not await Account.filter(email="test3@test.com").exists():
-        await Account.create(username="test", email="test@test.com", password=hash_password("testtest"), verified=True)
+        await Account.create(
+            username="test",
+            email="test@test.com",
+            password=hash_password("testtest"),
+            verified=True,
+        )
         setup_response = text("Test account successfully setup!")
     else:
         setup_response = text("Test account has already been setup!")
@@ -82,11 +91,20 @@ async def on_verification_attempt(request, two_step_session):
 @requires_authentication()
 async def on_perms_assignment(request, authentication_session):
     if await Permission.filter(account=authentication_session.account).exists():
-        assignment_response = json("Permissions already added to account!", authentication_session.account.json())
+        assignment_response = json(
+            "Permissions already added to account!",
+            authentication_session.account.json(),
+        )
     else:
-        await Permission.create(account=authentication_session.account, wildcard="admin:update")
-        await Permission.create(account=authentication_session.account, wildcard="admin:add")
-        assignment_response = json("Permissions added to account!", authentication_session.account.json())
+        await Permission.create(
+            account=authentication_session.account, wildcard="admin:update"
+        )
+        await Permission.create(
+            account=authentication_session.account, wildcard="admin:add"
+        )
+        assignment_response = json(
+            "Permissions added to account!", authentication_session.account.json()
+        )
     return assignment_response
 
 
@@ -94,11 +112,15 @@ async def on_perms_assignment(request, authentication_session):
 @requires_authentication()
 async def on_roles_assignment(request, authentication_session):
     if await Role.filter(account=authentication_session.account).exists():
-        assignment_response = json("Roles already added to account!", authentication_session.account.json())
+        assignment_response = json(
+            "Roles already added to account!", authentication_session.account.json()
+        )
     else:
         await Role.create(account=authentication_session.account, name="Admin")
         await Role.create(account=authentication_session.account, name="Mod")
-        assignment_response = json("Roles added to account!", authentication_session.account.json())
+        assignment_response = json(
+            "Roles added to account!", authentication_session.account.json()
+        )
     return assignment_response
 
 
@@ -117,8 +139,12 @@ async def on_role_authorization_permit_attempt(request, authentication_session):
 @app.post("api/test/auth/recovery/request")
 async def on_recovery_request(request):
     if not await Account.filter(email=request.form.get("email")).exists():
-        await Account.create(username="test", email=request.form.get("email"), password=hash_password("testtest"),
-                             verified=True)
+        await Account.create(
+            username="test",
+            email=request.form.get("email"),
+            password=hash_password("testtest"),
+            verified=True,
+        )
     two_step_session = await request_password_recovery(request)
     response = json("Recovery request successful!", two_step_session.code)
     two_step_session.encode(response, False)

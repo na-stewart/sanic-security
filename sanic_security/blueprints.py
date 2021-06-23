@@ -1,7 +1,12 @@
 from sanic import Blueprint
 from sanic.response import file
 
-from sanic_security.authentication import login, logout, register, requires_authentication
+from sanic_security.authentication import (
+    login,
+    logout,
+    register,
+    requires_authentication,
+)
 from sanic_security.captcha import requires_captcha, request_captcha
 from sanic_security.models import CaptchaSession, TwoStepSession
 from sanic_security.recovery import (

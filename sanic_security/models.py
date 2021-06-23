@@ -411,9 +411,13 @@ class CaptchaSession(VerificationSession):
             captcha_image
         """
         try:
-            captcha_image_response = await file(f"{security_cache_path}/captcha/{self.code}.png")
+            captcha_image_response = await file(
+                f"{security_cache_path}/captcha/{self.code}.png"
+            )
         except Exception as e:
-            captcha_image_response = json("Could not retrieve captcha image.", str(e), e.__name__)
+            captcha_image_response = json(
+                "Could not retrieve captcha image.", str(e), e.__name__
+            )
         return captcha_image_response
 
 
