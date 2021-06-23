@@ -21,7 +21,7 @@ app = Sanic(__name__)
 
 @app.post("api/test/auth/setup")
 async def on_setup_test_account(request):
-    if not await Account.filter(email="test3@test.com").exists():
+    if not await Account.filter(email="test@test.com").exists():
         await Account.create(
             username="test",
             email="test@test.com",
@@ -159,4 +159,5 @@ async def on_error(request, exception):
 initialize_security_orm(app)
 app.blueprint(security)
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
+    ssl = {"cert": "sanic.crt", "key": "sanic.key"}
+    app.run(host="127.0.0.1", port=8000, debug=True, workers=4, ssl=ssl)

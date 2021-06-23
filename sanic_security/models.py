@@ -221,7 +221,7 @@ class Session(BaseModel):
         cookie = request.cookies.get(self.cookie)
         try:
             if not cookie:
-                raise DecodingError("No session provided by client.")
+                raise DecodingError(f"No session provided by client.")
             else:
                 return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
         except DecodeError as e:
@@ -243,8 +243,8 @@ class Session(BaseModel):
         decoded = self.decode_raw(request)
         return (
             await self.filter(uid=decoded.get("uid"))
-            .prefetch_related("account")
-            .first()
+                .prefetch_related("account")
+                .first()
         )
 
     async def crosscheck_location(self, request):
@@ -256,7 +256,7 @@ class Session(BaseModel):
         """
 
         if not await self.filter(ip=get_ip(request), account=self.account).exists():
-            raise UnknownLocationError()
+            raise CrosscheckError("Client location does not match any existing session location.")
 
     class Meta:
         abstract = True
@@ -314,13 +314,14 @@ class VerificationSession(Session):
 
         Raises:
             CrossCheckError
+            MaximumAttemptsError
         """
         if self.attempts >= 5:
             raise MaximumAttemptsError()
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=["attempts"])
-            raise IncorrectCodeError()
+            raise CrosscheckError("The value provided does not match.")
         else:
             self.valid = False
             await self.save(update_fields=["valid"])
@@ -338,7 +339,7 @@ class TwoStepSession(VerificationSession):
     async def initialize_cache():
         if not dir_exists(f"{security_cache_path}/verification"):
             async with aiofiles.open(
-                f"{security_cache_path}/verification/codes.txt", mode="w"
+                    f"{security_cache_path}/verification/codes.txt", mode="w"
             ) as f:
                 for i in range(100):
                     code = "".join(
@@ -350,7 +351,7 @@ class TwoStepSession(VerificationSession):
     async def get_random_code(cls):
         await cls.initialize_cache()
         async with aiofiles.open(
-            f"{security_cache_path}/verification/codes.txt", mode="r"
+                f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -365,7 +366,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-        self, subject="Verification", code_prefix="Your code is:\n\n "
+            self, subject="Verification", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.

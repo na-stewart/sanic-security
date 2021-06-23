@@ -11,3 +11,5 @@
 /sanic_security.egg-info/
 .idea
 /requirements.txt
+/sanic.crt
+/sanic.key

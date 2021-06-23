@@ -88,9 +88,9 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired", 401)
 
 
-class IncorrectCodeError(SessionError):
-    def __init__(self):
-        super().__init__("The code provided is incorrect.", 401)
+class CrosscheckError(SessionError):
+    def __init__(self, message="The code provided is incorrect."):
+        super().__init__(message, 401)
 
 
 class MaximumAttemptsError(SessionError):
@@ -98,11 +98,6 @@ class MaximumAttemptsError(SessionError):
         super().__init__(
             "You've reached the maximum amount of attempts for this session.", 401
         )
-
-
-class UnknownLocationError(SessionError):
-    def __init__(self):
-        super().__init__("Session in an unknown location.", 401)
 
 
 class InsufficientRoleError(SecurityError):
