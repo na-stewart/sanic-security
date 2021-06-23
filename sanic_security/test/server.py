@@ -8,6 +8,7 @@ from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account, Permission, Role
+from sanic_security.recovery import request_password_recovery
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import verify_account, two_step_verification, request_two_step_verification, \
     requires_two_step_verification
@@ -17,7 +18,7 @@ app = Sanic(__name__)
 
 @app.post("api/test/auth/setup")
 async def on_setup_test_account(request):
-    if not await Account.filter(email="test@test.com").exists():
+    if not await Account.filter(email="test3@test.com").exists():
         await Account.create(username="test", email="test@test.com", password=hash_password("testtest"), verified=True)
         setup_response = text("Test account successfully setup!")
     else:
@@ -112,6 +113,28 @@ async def on_permission_authorization_permit_attempt(request, authentication_ses
 @require_roles("Admin", "Mod")
 async def on_role_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
+
+
+@app.post("api/test/auth/recovery/request")
+async def on_recovery_request(request):
+    if not await Account.filter(email=request.form.get("email")).exists():
+        await Account.create(username="test", email=request.form.get("email"), password=hash_password("testtest"),
+                             verified=True)
+    two_step_session = await request_password_recovery(request)
+    response = json("Recovery request successful!", two_step_session.code)
+    two_step_session.encode(response, False)
+    return response
+
+
+@app.post("api/auth/recovery/revert")
+async def on_recovery_revert(request):
+    """
+    Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
+    """
+    account = await Account.filter(email=request.form.get("email")).first()
+    account.password = hash_password("testtest")
+    await account.save(update_fields=["password"])
+    return json("Recovery reverted!", account.json())
 
 
 @app.exception(SecurityError)

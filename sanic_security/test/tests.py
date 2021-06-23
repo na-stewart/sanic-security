@@ -7,20 +7,18 @@ import httpx
 class SecurityTest(TestCase):
     client = httpx.Client()
     client.post("http://127.0.0.1:8000/api/test/auth/setup")
-
-    def setUp(self):
-        self.client.post("http://127.0.0.1:8000/api/test/auth/login", data={"email": "test@test.com", "password": "testtest"})
+    client.post("http://127.0.0.1:8000/api/test/auth/login", data={"email": "test@test.com", "password": "testtest"})
 
     def test_authentication(self):
         register_response = self.client.post("http://127.0.0.1:8000/api/test/auth/register",
-                                             data={"username": "test", "email": "register@test.com",
+                                             data={"username": "test", "email": "test2@test.com",
                                                    "password": "testtest"})
         assert register_response.status_code == 200, register_response.text
         code = json.loads(register_response.text)["data"]
         verify_response = self.client.post("http://127.0.0.1:8000/api/auth/verify", data={"code": code})
         assert verify_response.status_code == 200, verify_response.text
         login_response = self.client.post("http://127.0.0.1:8000/api/test/auth/login",
-                                          data={"email": "register@test.com", "password": "testtest"})
+                                          data={"email": "test2@test.com", "password": "testtest"})
         assert login_response.status_code == 200, login_response.text
 
     def test_captcha(self):
@@ -54,6 +52,11 @@ class SecurityTest(TestCase):
         permission_authorization_response = self.client.post("http://127.0.0.1:8000/api/test/auth/perms/permit")
         assert permission_authorization_response.status_code == 200, permission_authorization_response.text
 
-
-
-
+    def test_recovery(self):
+        recovery_request_response = self.client.post("http://127.0.0.1:8000/api/test/auth/recovery/request",
+                                                     data={"email": "test3@test.com"})
+        assert recovery_request_response.status_code == 200, recovery_request_response.text
+        code = json.loads(recovery_request_response.text)["data"]
+        recovery_recover_response = self.client.post("http://127.0.0.1:8000/api/test/auth/recovery/recover",
+                                                     data={"password": "recovered", "code": code})
+        assert recovery_recover_response, recovery_recover_response.text
