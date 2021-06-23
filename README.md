@@ -223,7 +223,7 @@ async def on_login(request):
 @app.get("api/auth/authenticate")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
-    return json("Hello " + authentication_session.account.username + "! You are now authenticated.", 
+    return json(f"Hello {authentication_session.account.username}! You are now authenticated.", 
                 authentication_session.account.json())
 ```
 
