@@ -83,7 +83,7 @@ async def login(request: Request, account: Account = None):
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
-        account (Account): Account being logged into. Will retrieve account via email if no account is passed.
+        account (Account): Account being logged into.
 
     Returns:
         authentication_session

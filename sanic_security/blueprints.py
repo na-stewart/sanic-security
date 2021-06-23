@@ -1,5 +1,4 @@
 from sanic import Blueprint
-from sanic.response import file
 
 from sanic_security.authentication import (
     login,
