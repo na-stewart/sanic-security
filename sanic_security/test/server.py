@@ -151,17 +151,6 @@ async def on_recovery_request(request):
     return response
 
 
-@app.post("api/auth/recovery/revert")
-async def on_recovery_revert(request):
-    """
-    Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
-    """
-    account = await Account.filter(email=request.form.get("email")).first()
-    account.password = hash_password("testtest")
-    await account.save(update_fields=["password"])
-    return json("Recovery reverted!", account.json())
-
-
 @app.exception(SecurityError)
 async def on_error(request, exception):
     return exception.response

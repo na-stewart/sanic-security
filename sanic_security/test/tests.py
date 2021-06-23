@@ -106,7 +106,14 @@ class SecurityTest(TestCase):
         ), recovery_request_response.text
         code = json.loads(recovery_request_response.text)["data"]
         recovery_recover_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/recovery/recover",
+            "http://127.0.0.1:8000/api/auth/recovery/recover",
             data={"password": "recovered", "code": code},
         )
-        assert recovery_recover_response, recovery_recover_response.text
+        assert (
+            recovery_recover_response.status_code == 200
+        ), recovery_recover_response.text
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "test3@test.com", "password": "recovered"},
+        )
+        assert login_response.status_code == 200, login_response.text
