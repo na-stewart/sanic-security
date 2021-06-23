@@ -125,7 +125,7 @@ username=admin
 password=8UVbijLUGYfUtItAi
 endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
 schema=exampleschema
-models=sanic_security.core.models, example.core.models
+models=sanic_security.models, example.models
 engine=mysql
 generate=true
 
