@@ -1,5 +1,6 @@
 from sanic.exceptions import SanicException
-from sanic.response import json
+
+from sanic_security.utils import json
 
 
 class SecurityError(SanicException):
@@ -11,52 +12,25 @@ class SecurityError(SanicException):
 
     Args:
         message (str): Human readable error message.
-        code (int): HTTP Error code.
+        code (int): HTTP error code.
     """
 
     def __init__(self, message: str, code: int):
-        self.response = json(
-            {
-                "message": "An error has occurred!",
-                "error_code": code,
-                "data": {"error": self.__class__.__name__, "summary": message},
-            },
-            status=code,
-        )
+        self.response = json(message, self.__class__.__name__, code)
         super().__init__(message, code)
 
 
 class NotFoundError(SecurityError):
-    """
-    Raised when a model can't be found in the database.
-    Args:
-        message (str): Human readable error message.
-    """
-
     def __init__(self, message):
         super().__init__(message, 404)
 
 
 class DeletedError(SecurityError):
-    """
-    Raised when a model in the database has been marked deleted.
-    Args:
-        message (str): Human readable error message.
-    """
-
     def __init__(self, message):
         super().__init__(message, 404)
 
 
 class AccountError(SecurityError):
-    """
-    An account related error.
-
-    Args:
-        message (str): Human readable error message.
-        code (int): HTTP Error code.
-    """
-
     def __init__(self, message, code):
         super().__init__(message, code)
 
@@ -66,14 +40,9 @@ class ExistsError(AccountError):
         super().__init__("Account with this email or phone number already exists.", 409)
 
 
-class TooManyCharsError(AccountError):
-    def __init__(self):
-        super().__init__("Email, username, or phone number is too long.", 400)
-
-
-class InvalidEmailError(AccountError):
-    def __init__(self):
-        super().__init__("Please use a valid email format such as you@mail.com.", 400)
+class InvalidIdentifierError(AccountError):
+    def __init__(self, message):
+        super().__init__(message, 400)
 
 
 class DisabledError(AccountError):
@@ -81,9 +50,9 @@ class DisabledError(AccountError):
         super().__init__("This account has been disabled.", 401)
 
 
-class PasswordMismatchError(AccountError):
+class PasswordIncorrectError(AccountError):
     def __init__(self):
-        super().__init__("The password provided does not match account password.", 401)
+        super().__init__("The password provided is incorrect.", 401)
 
 
 class UnverifiedError(AccountError):
@@ -106,7 +75,7 @@ class SessionError(SecurityError):
 
 class DecodingError(SessionError):
     def __init__(self, exception):
-        super().__init__("Session cookie could not be decoded. " + str(exception), 400)
+        super().__init__(f"Session could not be decoded. {exception}", 400)
 
 
 class InvalidError(SessionError):
@@ -120,8 +89,8 @@ class ExpiredError(SessionError):
 
 
 class CrosscheckError(SessionError):
-    def __init__(self):
-        super().__init__("Session crosschecking attempt was incorrect", 401)
+    def __init__(self, message="The code provided is incorrect."):
+        super().__init__(message, 401)
 
 
 class MaximumAttemptsError(SessionError):
@@ -129,11 +98,6 @@ class MaximumAttemptsError(SessionError):
         super().__init__(
             "You've reached the maximum amount of attempts for this session.", 401
         )
-
-
-class UnknownLocationError(SessionError):
-    def __init__(self):
-        super().__init__("Session in an unknown location.", 401)
 
 
 class InsufficientRoleError(SecurityError):

@@ -1,23 +1,21 @@
 from sanic.request import Request
 
-from sanic_security.core.models import (
+from sanic_security.models import (
     AuthenticationSession,
     Account,
     TwoStepSession,
     AccountErrorFactory,
 )
-from sanic_security.core.utils import hash_password
-from sanic_security.core.verification import request_two_step_verification
+from sanic_security.utils import hash_password
+from sanic_security.verification import request_two_step_verification
 
 account_error_factory = AccountErrorFactory()
 
 
-async def fulfill_account_recovery_attempt(
-    request: Request, two_step_session: TwoStepSession
-):
+async def recover_password(request: Request, two_step_session: TwoStepSession):
     """
-    Recovers an account by setting the password to a new one once recovery attempt was determined to be made
-    by the account owner.
+    Recovers an account by changing the password once recovery request was determined to be made by the account owner
+    via requiring two-step verification.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: password.
@@ -31,16 +29,15 @@ async def fulfill_account_recovery_attempt(
     await two_step_session.account.save(update_fields=["password"])
 
 
-async def attempt_account_recovery(request: Request):
+async def request_password_recovery(request: Request):
     """
-    Requests a two-step session to ensure that the recovery attempt was made by the account owner.
+    Requests a two-step session to ensure that recovery request was made by the account owner.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
 
     Returns:
-        two_step_session: A new two-step session for the client is created with all identifying information
-        on request and requires encoding.
+        two_step_session
     """
 
     account = await Account.get_via_email(request.form.get("email"))

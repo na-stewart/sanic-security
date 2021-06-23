@@ -1,10 +1,10 @@
 from sanic import Sanic
 from tortoise import Tortoise
 
-from sanic_security.core.utils import config
+from sanic_security.utils import config
 
 
-def initialize_tortoise(app: Sanic):
+def initialize_security_orm(app: Sanic):
     """
     Initializes tortoise-orm.
 
@@ -20,7 +20,7 @@ def initialize_tortoise(app: Sanic):
         schema = config["TORTOISE"]["schema"]
         engine = config["TORTOISE"]["engine"]
         models = config["TORTOISE"]["models"].replace(" ", "").split(",")
-        url = engine + "://{0}:{1}@{2}/{3}".format(username, password, endpoint, schema)
+        url = f"{engine}://{username}:{password}@{endpoint}/{schema}"
         await Tortoise.init(db_url=url, modules={"models": models})
         if config["TORTOISE"]["generate"] == "true":
             await Tortoise.generate_schemas()

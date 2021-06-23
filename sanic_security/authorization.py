@@ -3,12 +3,12 @@ from fnmatch import fnmatch
 
 from sanic.request import Request
 
-from sanic_security.core.authentication import authenticate
-from sanic_security.core.exceptions import (
+from sanic_security.authentication import authenticate
+from sanic_security.exceptions import (
     InsufficientPermissionError,
     InsufficientRoleError,
 )
-from sanic_security.core.models import Role, Permission
+from sanic_security.models import Role, Permission, Account
 
 
 async def check_permissions(request: Request, *required_permissions: str):
@@ -55,10 +55,9 @@ async def check_roles(request: Request, *required_roles: str):
         SessionError
     """
     authentication_session = await authenticate(request)
-    for role in required_roles:
-        if await Role.filter(
-            account=authentication_session.account, name=role
-        ).exists():
+    client_roles = await Role.filter(account=authentication_session.account).all()
+    for role in client_roles:
+        if role in client_roles:
             break
     else:
         raise InsufficientRoleError()
@@ -114,7 +113,7 @@ def require_roles(*required_roles: str):
                 return text('User is authorized with the role Admin or Moderator!')
 
     Raises:
-            AccountError
+        AccountError
         SessionError
     """
 
@@ -127,3 +126,25 @@ def require_roles(*required_roles: str):
         return wrapped
 
     return wrapper
+
+
+async def create_role(name: str, account: Account):
+    """
+    Quick creation of a role associated with an account.
+
+    Args:
+        name (str):  The name of the role associated with the account.
+        account (Account): the account associated with the created role.
+    """
+    return await Role().create(account=account, name=name)
+
+
+async def create_permission(wildcard: str, account: Account):
+    """
+    Quick creation of a permission associated with an account.
+
+    Args:
+        wildcard (str):  The wildcard of the permission associated with the account.
+        account (Account): the account associated with the created permission.
+    """
+    return await Permission.create(account=account, wildcard=wildcard)

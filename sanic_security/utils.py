@@ -3,6 +3,7 @@ import os
 from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
+from sanic.response import json as sanic_json
 
 security_cache_path = "./resources/security-cache"
 config = ConfigParser()
@@ -14,6 +15,7 @@ def xss_prevention_middleware(request: Request, response: HTTPResponse):
     Adds a header to all responses that prevents cross site scripting.
 
     Args:
+        request: (Request): Sanic request parameter.
         response (HTTPResponse): Sanic response parameter.
     """
     response.headers["x-xss-protection"] = "1; mode=block"
@@ -27,13 +29,12 @@ def https_redirect_middleware(request: Request):
         request (Request): Sanic request parameter.
     """
     if request.url.startswith("http://"):
-        url = request.url.replace("http://", "https://", 1)
-        return redirect(url)
+        return redirect(request.url.replace("http://", "https://", 1))
 
 
 def hash_password(password: str):
     """
-    Securely hashes passed password to be stored. The function provides PKCS#5 password-based key derivation function 2. It uses HMAC as pseudorandom function.
+    Securely hashes passed password to be stored.
 
     Args:
         password (str): Password to be hashed.
@@ -64,7 +65,7 @@ def get_ip(request: Request):
 
 def dir_exists(path: str):
     """
-    Checks if path exists and isn't empty, and creates it if it doesn't.
+    Checks if path exists and isn't empty. Creates new path if neither of these conditions are met.
 
     Args:
          path (str): Path being checked.
@@ -78,3 +79,17 @@ def dir_exists(path: str):
     except FileExistsError:
         exists = os.listdir(path)
     return exists
+
+
+def json(message: str, data, status_code: int = 200):
+    """
+    A preformatted Sanic json response.
+
+    Args:
+        message (int): Message describing data or relaying human readable information.
+        data (Any): Raw information to be used by client.
+        status_code (int): HTTP response code.
+    """
+    return sanic_json(
+        {"message": message, "code": status_code, "data": data}, status=status_code
+    )
