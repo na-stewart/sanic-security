@@ -430,14 +430,18 @@ async def on_error(request, exception):
 
 ## Middleware
 
-Does something with the header ig idk found it in the docs. (CHANGE WHEN WIFI ACCESS)
+* Cross Site Scripting Protection Middleware
+
+The HTTP X-XSS-Protection response header is a feature that stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
 ```python
 @app.middleware("response")
 async def xxs_middleware(request, response):
     xss_prevention_middleware(request, response)
 ```
 
-sRedirects all http requests to https.
+* Https Redirection Middleware
+
+Redirects all http requests to https.
 
 ```python
 @app.middleware("request")
@@ -485,10 +489,9 @@ You may test Sanic Security manually with postman or run automated unit tests.
 
 Make sure the test Sanic instance (`test/server.py`)  is running on your machine as both postman, and the unit tests operate as a test client.
 
-The test Sanic instance includes custom test endpoints and live blueprint endpoints that are accessed via the test clients.
+Then run the unit tests (`test/tests.py`) or test with postman via clicking the button below.
 
-Then run the unit tests (`test/tests.py`) or use a Sanic Security postman collection with the button below.
-
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e)
 
 <!-- ROADMAP -->
 ## Roadmap

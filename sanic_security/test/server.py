@@ -1,5 +1,4 @@
 from sanic import Sanic, text
-from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import register, login, requires_authentication
 from sanic_security.authorization import require_roles, require_permissions
