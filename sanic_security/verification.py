@@ -33,8 +33,8 @@ async def request_two_step_verification(request: Request, account=None):
     Creates a two-step session associated with an account.
 
     Args:
-        request (Request): Sanic request parameter.
-        account (Account): The account being associated with the verification session. Will retrieve account via email if no account is passed.
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
+        account (Account): The account being associated with the verification session.
 
     Returns:
          two_step_session
