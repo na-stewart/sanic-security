@@ -12,7 +12,7 @@ class SecurityError(SanicException):
 
     Args:
         message (str): Human readable error message.
-        code (int): HTTP Error code.
+        code (int): HTTP error code.
     """
 
     def __init__(self, message: str, code: int):
@@ -21,36 +21,16 @@ class SecurityError(SanicException):
 
 
 class NotFoundError(SecurityError):
-    """
-    Raised when a model can't be found in the database.
-    Args:
-        message (str): Human readable error message.
-    """
-
     def __init__(self, message):
         super().__init__(message, 404)
 
 
 class DeletedError(SecurityError):
-    """
-    Raised when a model in the database has been marked deleted.
-    Args:
-        message (str): Human readable error message.
-    """
-
     def __init__(self, message):
         super().__init__(message, 404)
 
 
 class AccountError(SecurityError):
-    """
-    An account related error.
-
-    Args:
-        message (str): Human readable error message.
-        code (int): HTTP Error code.
-    """
-
     def __init__(self, message, code):
         super().__init__(message, code)
 

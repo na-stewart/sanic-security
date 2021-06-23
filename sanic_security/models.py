@@ -405,7 +405,7 @@ class CaptchaSession(VerificationSession):
 
     async def get_image(self):
         """
-        Retrieves cached captcha image challange path.
+        Retrieves captcha image file.
 
         Returns:
             captcha_image
