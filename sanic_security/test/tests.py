@@ -5,6 +5,10 @@ import httpx
 
 
 class SecurityTest(TestCase):
+    """
+    Sanic Securty unit tests.
+    """
+
     client = httpx.Client()
     client.post("http://127.0.0.1:8000/api/test/auth/setup")
     client.post(
@@ -13,6 +17,9 @@ class SecurityTest(TestCase):
     )
 
     def test_authentication(self):
+        """
+        Registers a new account test2@test.com, attempts account verification, and logs into it.
+        """
         register_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
@@ -34,6 +41,9 @@ class SecurityTest(TestCase):
         assert login_response.status_code == 200, login_response.text
 
     def test_captcha(self):
+        """
+        Requests a captcha and image, then attempts the captcha using the captcha solution provided in the request captcha response.
+        """
         captcha_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/captcha/request"
         )
@@ -54,6 +64,9 @@ class SecurityTest(TestCase):
         ), captcha_attempt_response.text
 
     def test_verification(self):
+        """
+        Requests two-step verification, then attempts verification using the code provided in the request verification response.
+        """
         verification_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verification/request",
             data={"email": "test@test.com"},
@@ -71,6 +84,9 @@ class SecurityTest(TestCase):
         ), verification_attempt_response.text
 
     def test_role_authorization(self):
+        """
+        Assigns roles to the test@test.com account, then attempts to authorise this account with those roles.
+        """
         roles_assign_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles/assign"
         )
@@ -83,6 +99,9 @@ class SecurityTest(TestCase):
         ), role_authorization_response.text
 
     def test_permission_authorization(self):
+        """
+        Assigns permissions to the test@test.com account, then attempts to authorise this account with those permissions.
+        """
         permissions_assign_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/perms/assign"
         )
@@ -97,6 +116,10 @@ class SecurityTest(TestCase):
         ), permission_authorization_response.text
 
     def test_recovery(self):
+        """
+        Requests password recovery for a newly created account test3@test.com, then attempts to recover password using the code found in the recovery request response.
+        Once the password is changed, a login attempt is made to test3@test.com with the new password.
+        """
         recovery_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/recovery/request",
             data={"email": "test3@test.com"},
