@@ -178,7 +178,7 @@ async def on_register(request, captcha_session):
     two_step_session = await register(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    response = json("Registration successful", two_step_session.account.json())
+    response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
 ```
@@ -288,8 +288,6 @@ async def on_captcha_attempt(request, captcha_session):
 ## Two-Step Verification
 
 * Request Two-step Verification (Creates and encodes a two-step session)
-
-If no email is provided via the request form, it will retrieve an account from an existing two-step session.
   
 Key | Value |
 --- | --- |
