@@ -83,10 +83,11 @@ def requires_two_step_verification():
     Example:
         This method is not called directly and instead used as a decorator:
 
-            @app.post('api/captcha')
+            @app.post("api/verification/attempt")
             @requires_two_step_verification()
-            async def on_two_step_verification(request, two_step_session):
-                return text('User has successfully provided the correct verification code from email/sms!')
+            async def on_verified(request, two_step_session):
+                response = json("Two-step verification attempt successful!", two_step_session.json())
+                return response
 
     Raises:
         SessionError

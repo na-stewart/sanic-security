@@ -47,11 +47,10 @@ def requires_captcha():
     Example:
         This method is not called directly and instead used as a decorator:
 
-            @app.post('api/captcha')
+            @app.post("api/captcha/attempt")
             @requires_captcha()
-            async def on_captcha(request, captcha_session):
-                return text('User has successfully completed the captcha challenge!')
-
+            async def on_captcha_attempt(request, captcha_session):
+                return json("Captcha attempt successful!", captcha_session.json())
     Raises:
         SessionError
     """

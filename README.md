@@ -402,6 +402,8 @@ Examples of wildcard permissions are:
   employee:*
   ```
 
+* Require Permissions
+
 ```python
 @app.post("api/auth/perms")
 @require_permissions("admin:update", "employee:add")

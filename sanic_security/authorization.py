@@ -74,10 +74,10 @@ def require_permissions(*required_permissions: str):
     Example:
         This method is not called directly and instead used as a decorator:
 
-            @app.post('api/authorize')
-            @require_permissions('admin:update', 'admin:create')
-            async def on_authorize(request, authentication_session):
-                return text('User is authorized to update and create data!')
+            @app.post("api/auth/perms")
+            @require_permissions("admin:update", "employee:add")
+            async def on_require_perms(request, authentication_session):
+                return text("Account permitted.")
 
     Raises:
         AccountError
@@ -107,10 +107,10 @@ def require_roles(*required_roles: str):
     Example:
         This method is not called directly and instead used as a decorator:
 
-            @app.post('api/authorize')
-            @require_roles('Admin', 'Moderator')
-            async def on_authorize(request, authentication_session):
-                return text('User is authorized with the role Admin or Moderator!')
+            @app.post("api/auth/roles")
+            @require_roles("Admin", "Moderator")
+            async def on_require_roles(request, authentication_session):
+                return text("Account permitted")
 
     Raises:
         AccountError
