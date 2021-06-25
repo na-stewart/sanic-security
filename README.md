@@ -528,7 +528,7 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 <!-- Versioning -->
 ## Versioning
 
-0.0.0.0
+**0.0.0.0**
 
 Major.Minor.Revision.Patch
 
