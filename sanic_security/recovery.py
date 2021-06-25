@@ -4,7 +4,8 @@ from sanic_security.models import (
     AuthenticationSession,
     Account,
     TwoStepSession,
-    AccountErrorFactory, SessionFactory,
+    AccountErrorFactory,
+    SessionFactory,
 )
 from sanic_security.utils import hash_password
 
