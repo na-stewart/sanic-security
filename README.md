@@ -530,9 +530,7 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 0.0.0.0
 
-major.minor.revision.patch
-
-Release
+Major.Minor.Revision.Patch
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
