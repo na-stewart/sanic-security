@@ -30,7 +30,7 @@ async def request_two_step_verification(request: Request, account=None):
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     account_error = account_error_factory.get(account)
-    if not isinstance(account_error, UnverifiedError):
+    if account_error and not isinstance(account_error, UnverifiedError):
         raise account_error
     return await session_factory.get("twostep", request, account=account)
 
@@ -69,7 +69,7 @@ async def two_step_verification(request: Request):
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
     account_error = account_error_factory.get(two_step_session.account)
-    if not isinstance(account_error, UnverifiedError):
+    if account_error and not isinstance(account_error, UnverifiedError):
         raise account_error
     await two_step_session.crosscheck_location(request)
     await two_step_session.crosscheck_code(request.form.get("code"))
