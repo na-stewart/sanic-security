@@ -523,6 +523,14 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 * [thewchan](https://github.com/thewchan) added a MANIFEST.in to make packaging to conda-forge possible.
 
+<!-- Versioning -->
+## Versioning
+
+0.0.0.0
+
+major.minor.revision.patch
+
+Release
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
