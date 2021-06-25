@@ -4,12 +4,12 @@ from sanic_security.models import (
     AuthenticationSession,
     Account,
     TwoStepSession,
-    AccountErrorFactory,
+    AccountErrorFactory, SessionFactory,
 )
 from sanic_security.utils import hash_password
-from sanic_security.verification import request_two_step_verification
 
 account_error_factory = AccountErrorFactory()
+session_factory = SessionFactory()
 
 
 async def recover_password(request: Request, two_step_session: TwoStepSession):
@@ -42,4 +42,4 @@ async def request_password_recovery(request: Request):
 
     account = await Account.get_via_email(request.form.get("email"))
     account_error_factory.throw(account)
-    return await request_two_step_verification(request, account)
+    return await session_factory.get("twostep", request, account=account)

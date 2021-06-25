@@ -16,18 +16,6 @@ session_error_factory = SessionErrorFactory()
 account_error_factory = AccountErrorFactory()
 
 
-def _raise_account_error(account):
-    """
-    Circumvents an account unverified error retrieved from the account error factory as this module is utilised to verify unverified accounts.
-
-    Args:
-        account (Account): account being passed to the error factory.
-    """
-    account_error = account_error_factory.get(account)
-    if account_error and not isinstance(account_error, UnverifiedError):
-        raise account_error
-
-
 async def request_two_step_verification(request: Request, account=None):
     """
     Creates a two-step session associated with an account.
@@ -41,7 +29,9 @@ async def request_two_step_verification(request: Request, account=None):
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    _raise_account_error(account)
+    account_error = account_error_factory.get(account)
+    if not isinstance(account_error, UnverifiedError):
+        raise account_error
     return await session_factory.get("twostep", request, account=account)
 
 
@@ -78,7 +68,9 @@ async def two_step_verification(request: Request):
     """
     two_step_session = await TwoStepSession().decode(request)
     session_error_factory.throw(two_step_session)
-    _raise_account_error(two_step_session.account)
+    account_error = account_error_factory.get(two_step_session.account)
+    if not isinstance(account_error, UnverifiedError):
+        raise account_error
     await two_step_session.crosscheck_location(request)
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
