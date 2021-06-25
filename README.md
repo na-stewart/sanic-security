@@ -391,7 +391,7 @@ Role-based access control (RBAC) is a policy-neutral access-control mechanism de
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
-This concept was inspired by [Apache Shiro"s](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
+This concept was inspired by [Apache Shiro's](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
 
 Examples of wildcard permissions are:
 
