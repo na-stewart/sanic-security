@@ -133,9 +133,9 @@ async def authenticate(request: Request):
         SessionError
     """
     authentication_session = await AuthenticationSession().decode(request)
+    account_error_factory.throw(authentication_session.account)
     session_error_factory.throw(authentication_session)
     await authentication_session.crosscheck_location(request)
-    account_error_factory.throw(authentication_session.account)
     return authentication_session
 
 

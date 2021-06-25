@@ -67,10 +67,10 @@ async def two_step_verification(request: Request):
          two_step_session
     """
     two_step_session = await TwoStepSession().decode(request)
-    session_error_factory.throw(two_step_session)
     account_error = account_error_factory.get(two_step_session.account)
     if account_error and not isinstance(account_error, UnverifiedError):
         raise account_error
+    session_error_factory.throw(two_step_session)
     await two_step_session.crosscheck_location(request)
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
