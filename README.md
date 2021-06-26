@@ -122,7 +122,7 @@ WARNING: You must set a custom secret or you will compromise your encoded sessio
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
-[SQL]
+[TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
 endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
