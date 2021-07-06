@@ -121,6 +121,7 @@ WARNING: You must set a custom secret or you will compromise your encoded sessio
 [SECURITY]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
+name=Sanic-Security
 
 [TORTOISE]
 username=admin
@@ -478,12 +479,12 @@ POST | api/auth/register | A captcha is required. Register an account with an em
 POST | api/auth/login | Login with an email and password.
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
-POST | api/auth/verification/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
-POST | api/auth/verification/resend | Resend existing two-step session code if lost.
-POST | api/auth/recovery/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
-POST | api/auth/recovery/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
-POST | api/auth/captcha/request | Requests new captcha session.
-GET | api/auth/captcha/img | Retrieves captcha image from existing captcha session.
+POST | api/verif/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
+POST | api/verif/resend | Resend existing two-step session code if lost.
+POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
+POST | api/recov/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
+POST | api/capt/request | Requests new captcha session.
+GET | api/capt/img | Retrieves captcha image from existing captcha session.
 
 ## Testing
 

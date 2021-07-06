@@ -38,8 +38,7 @@ async def on_login(request):
     """
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.json())
-    if request.form.get("email") == "test@test.com":
-        authentication_session.encode(response, False)
+    authentication_session.encode(response, False)
     return response
 
 
@@ -97,7 +96,7 @@ async def on_verification_attempt(request, two_step_session):
 @requires_authentication()
 async def on_perms_assignment(request, authentication_session):
     """
-    Assigns permissions to the test@test.com account.
+    Assigns permissions to a logged in test account.
     """
     if await Permission.filter(account=authentication_session.account).exists():
         assignment_response = json(
@@ -121,7 +120,7 @@ async def on_perms_assignment(request, authentication_session):
 @requires_authentication()
 async def on_roles_assignment(request, authentication_session):
     """
-    Assigns roles to the test@test.com account.
+    Assigns roles to a logged in test account account.
     """
     if await Role.filter(account=authentication_session.account).exists():
         assignment_response = json(
@@ -180,10 +179,17 @@ async def on_account_creation(request):
     """
     form = request.form
     try:
-        account = await Account.create(username="test", email=form.get('email'), password=hash_password('testtest'), verified=True)
+        account = await Account.create(
+            username="test",
+            email=form.get("email"),
+            password=hash_password("testtest"),
+            verified=True,
+        )
         response = json("Account creation successful!", account.json())
     except IntegrityError:
-        response = json("Account creation has failed due to expected integrity error!", None)
+        response = json(
+            "Account creation has failed due to expected integrity error!", None
+        )
     return response
 
 

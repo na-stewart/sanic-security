@@ -174,7 +174,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = f"security_{self.__class__.__name__}"
+        self.cookie = f"{config['SECURITY']['name']}_{self.__class__.__name__}"
 
     def json(self):
         return {
