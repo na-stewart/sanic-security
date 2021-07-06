@@ -147,8 +147,8 @@ tls=true
 start_tls=false
 ```
 
-You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
-delete the TWILLIO section.
+You may remove each section below `TORTOISE` in the configuration you aren't using. For example, if you're not utilizing Twillio you can
+delete the `TWILLIO` section.
 
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
