@@ -1,4 +1,5 @@
 from sanic import Sanic, text
+from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import register, login, requires_authentication
 from sanic_security.authorization import require_roles, require_permissions
@@ -17,25 +18,6 @@ from sanic_security.verification import (
 )
 
 app = Sanic(__name__)
-
-
-@app.post("api/test/auth/setup")
-async def on_setup_test_account(request):
-    """
-    Creates a test account that is intended to be used only to login to, authenticate, and authorize.
-    """
-    if not await Account.filter(email="test@test.com").exists():
-        await Account.create(
-            username="test",
-            email="test@test.com",
-            password=hash_password("testtest"),
-            verified=True,
-        )
-        setup_response = text("Test account successfully setup!")
-    else:
-        setup_response = text("Test account has already been setup!")
-
-    return setup_response
 
 
 @app.post("api/test/auth/register")
@@ -71,7 +53,7 @@ async def on_verify(request):
     return json("Account verification successful!", two_step_session.account.json())
 
 
-@app.post("api/test/auth/captcha/request")
+@app.post("api/test/capt/request")
 async def on_captcha_request(request):
     """
     Requests new captcha session.
@@ -82,7 +64,7 @@ async def on_captcha_request(request):
     return response
 
 
-@app.post("api/test/auth/captcha/attempt")
+@app.post("api/test/capt/attempt")
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     """
@@ -91,7 +73,7 @@ async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 
 
-@app.post("api/test/auth/verification/request")
+@app.post("api/test/verif/request")
 async def on_request_verification(request):
     """
     Requests new two-step session.
@@ -102,7 +84,7 @@ async def on_request_verification(request):
     return response
 
 
-@app.post("api/test/auth/verification/attempt")
+@app.post("api/test/verif/attempt")
 @requires_two_step_verification()
 async def on_verification_attempt(request, two_step_session):
     """
@@ -172,7 +154,7 @@ async def on_role_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
 
 
-@app.post("api/test/auth/recovery/request")
+@app.post("api/test/recov/request")
 async def on_recovery_request(request):
     """
     Requests new two-step session for password recovery. A new account is created and specifically used for recovery.
@@ -188,6 +170,20 @@ async def on_recovery_request(request):
     two_step_session = await request_password_recovery(request)
     response = json("Recovery request successful!", two_step_session.code)
     two_step_session.encode(response, False)
+    return response
+
+
+@app.post("api/test/account/create")
+async def on_account_creation(request):
+    """
+    Creates an account to be used for testing purposes.
+    """
+    form = request.form
+    try:
+        account = await Account.create(username="test", email=form.get('email'), password=hash_password('testtest'), verified=True)
+        response = json("Account creation successful!", account.json())
+    except IntegrityError:
+        response = json("Account creation has failed due to expected integrity error!", None)
     return response
 
 

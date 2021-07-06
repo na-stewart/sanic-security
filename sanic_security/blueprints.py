@@ -71,7 +71,7 @@ async def on_logout(request, authentication_session):
     return response
 
 
-@verification.post("api/auth/verification/resend")
+@verification.post("api/verif/resend")
 async def on_resend_verification(request):
     """
     Resend existing two-step session code if lost.
@@ -82,7 +82,7 @@ async def on_resend_verification(request):
     return response
 
 
-@verification.post("api/auth/verification/request")
+@verification.post("api/verif/request")
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     """
@@ -95,7 +95,7 @@ async def on_request_verification(request, captcha_session):
     return response
 
 
-@recovery.post("api/auth/recovery/request")
+@recovery.post("api/recov/request")
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
     """
@@ -108,7 +108,7 @@ async def on_recovery_request(request, captcha_session):
     return response
 
 
-@recovery.post("api/auth/recovery/recover")
+@recovery.post("api/recov/recover")
 @requires_two_step_verification()
 async def on_recover(request, two_step_session):
     """
@@ -118,7 +118,7 @@ async def on_recover(request, two_step_session):
     return json("Account recovered successfully", two_step_session.account.json())
 
 
-@captcha.post("api/auth/captcha/request")
+@captcha.post("api/capt/request")
 async def on_request_captcha(request):
     """
     Requests new captcha session.
@@ -129,7 +129,7 @@ async def on_request_captcha(request):
     return response
 
 
-@captcha.get("api/auth/captcha/img")
+@captcha.get("api/capt/img")
 async def on_captcha_img_request(request):
     """
     Retrieves captcha image from existing captcha session.
