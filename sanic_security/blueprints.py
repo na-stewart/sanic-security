@@ -9,7 +9,6 @@ from sanic_security.authentication import (
 from sanic_security.captcha import requires_captcha, request_captcha
 from sanic_security.models import CaptchaSession, TwoStepSession
 from sanic_security.recovery import (
-    request_password_recovery,
     recover_password,
 )
 from sanic_security.utils import json
@@ -101,7 +100,7 @@ async def on_recovery_request(request, captcha_session):
     """
     Requests new two-step session to ensure current recovery attempt is being made by account owner.
     """
-    two_step_session = await request_password_recovery(request)
+    two_step_session = await request_two_step_verification(request, allow_unverified=False)
     await two_step_session.email_code()
     response = json("Recovery request successful!", two_step_session.account.json())
     two_step_session.encode(response)
