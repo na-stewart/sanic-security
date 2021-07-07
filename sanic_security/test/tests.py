@@ -11,7 +11,7 @@ class SecurityTest(TestCase):
 
     def test_authentication(self):
         """
-        Registers a new account test2@test.com, attempts account verification, and logs into it.
+        Registers a new account then attempts account verification and then logs into it.
         """
         client = httpx.Client()
         register_response = client.post(
@@ -98,7 +98,7 @@ class SecurityTest(TestCase):
 
     def test_role_authorization(self):
         """
-        Assigns roles to the test@test.com account, then attempts to authorise this account with those roles.
+        Assigns roles to the test account, then attempts to authorise this account with those roles.
         """
         client = httpx.Client()
         account_creation_response = client.post(
@@ -126,7 +126,7 @@ class SecurityTest(TestCase):
 
     def test_permission_authorization(self):
         """
-        Assigns permissions to the test@test.com account, then attempts to authorise this account with those permissions.
+        Assigns permissions to the test account, then attempts to authorise this account with those permissions.
         """
         client = httpx.Client()
         account_creation_response = client.post(
@@ -156,8 +156,8 @@ class SecurityTest(TestCase):
 
     def test_recovery(self):
         """
-        Requests password recovery for a newly created account test3@test.com, then attempts to recover password using the code found in the recovery request response.
-        Once the password is changed, a login attempt is made to test3@test.com with the new password.
+        Requests password recovery for a newly created test account, then attempts to recover password using the code found in the recovery request response.
+        Once the password is changed, a login attempt is made to the test account with the new password.
         """
         client = httpx.Client()
         account_creation_response = client.post(

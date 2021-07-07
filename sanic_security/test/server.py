@@ -188,7 +188,7 @@ async def on_account_creation(request):
         response = json("Account creation successful!", account.json())
     except IntegrityError:
         response = json(
-            "Account creation has failed due to expected integrity error!", None
+            "Account creation has failed due to an expected integrity error!", None
         )
     return response
 
