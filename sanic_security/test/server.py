@@ -8,7 +8,6 @@ from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account, Permission, Role
-from sanic_security.recovery import request_password_recovery
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import (
     verify_account,
@@ -158,15 +157,7 @@ async def on_recovery_request(request):
     """
     Requests new two-step session for password recovery. A new account is created and specifically used for recovery.
     """
-    form = request.form
-    if not await Account.filter(email=form.get("email")).exists():
-        await Account.create(
-            username="test",
-            email=form.get("email"),
-            password=hash_password("testtest"),
-            verified=True,
-        )
-    two_step_session = await request_password_recovery(request)
+    two_step_session = await request_two_step_verification(request, allow_unverified=False)
     response = json("Recovery request successful!", two_step_session.code)
     two_step_session.encode(response, False)
     return response
