@@ -16,7 +16,9 @@ session_error_factory = SessionErrorFactory()
 account_error_factory = AccountErrorFactory()
 
 
-async def request_two_step_verification(request: Request, account=None, allow_unverified=True):
+async def request_two_step_verification(
+    request: Request, account=None, allow_unverified=True
+):
     """
     Creates a two-step session associated with an account.
 
@@ -31,7 +33,11 @@ async def request_two_step_verification(request: Request, account=None, allow_un
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     account_error = account_error_factory.get(account)
-    if account_error and not isinstance(account_error, UnverifiedError) and not allow_unverified:
+    if (
+        account_error
+        and not isinstance(account_error, UnverifiedError)
+        and not allow_unverified
+    ):
         raise account_error
     return await session_factory.get("twostep", request, account=account)
 

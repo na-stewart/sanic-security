@@ -100,7 +100,9 @@ async def on_recovery_request(request, captcha_session):
     """
     Requests new two-step session to ensure current recovery attempt is being made by account owner.
     """
-    two_step_session = await request_two_step_verification(request, allow_unverified=False)
+    two_step_session = await request_two_step_verification(
+        request, allow_unverified=False
+    )
     await two_step_session.email_code()
     response = json("Recovery request successful!", two_step_session.account.json())
     two_step_session.encode(response)
