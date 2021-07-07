@@ -45,7 +45,7 @@
     * [Authentication](#authentication)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
-    * [Recovery](#account-recovery)
+    * [Recovery](#recovery)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
