@@ -7,7 +7,7 @@ from sanic_security.authentication import (
     requires_authentication,
 )
 from sanic_security.captcha import requires_captcha, request_captcha
-from sanic_security.models import CaptchaSession, TwoStepSession
+from sanic_security.models import CaptchaSession
 from sanic_security.recovery import (
     recover_password,
 )
@@ -19,10 +19,9 @@ from sanic_security.verification import (
 )
 
 authentication = Blueprint("authentication_blueprint")
-verification = Blueprint("verification_blueprint")
 recovery = Blueprint("recovery_blueprint")
 captcha = Blueprint("captcha_blueprint")
-security = Blueprint.group(authentication, verification, recovery, captcha)
+security = Blueprint.group(authentication, recovery, captcha)
 
 
 @authentication.post("api/auth/register")
@@ -67,30 +66,6 @@ async def on_logout(request, authentication_session):
     """
     await logout(authentication_session)
     response = json("Logout successful!", authentication_session.account.json())
-    return response
-
-
-@verification.post("api/verif/resend")
-async def on_resend_verification(request):
-    """
-    Resend existing two-step session code if lost.
-    """
-    two_step_session = await TwoStepSession().decode(request)
-    await two_step_session.email_code()
-    response = json("Verification resend successful!", two_step_session.account.json())
-    return response
-
-
-@verification.post("api/verif/request")
-@requires_captcha()
-async def on_request_verification(request, captcha_session):
-    """
-    Request new two-step session and send email with code.
-    """
-    two_step_session = await request_two_step_verification(request)
-    await two_step_session.email_code()
-    response = json("Verification request successful!", two_step_session.json())
-    two_step_session.encode(response)
     return response
 
 
