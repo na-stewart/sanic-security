@@ -164,7 +164,7 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 * Registration (With all verification requirements)
 
-Phone can be null or empty. A captcha request must be made.
+Phone can be null or empty.
 
 Key | Value |
 --- | --- |
@@ -204,6 +204,20 @@ async def on_register(request):
     return json("Registration Successful!", account.json())
 ```
 
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post("api/auth/verify")
+@requires_two_step_verification(allow_unverified=True)
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json("You have verified your account and may login!", two_step_session.json())
+```
+
 * Login
 
 Key | Value |
@@ -241,11 +255,9 @@ async def on_logout(request, authentication_session):
     return response
 ```
 
-
-
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file"s path in security.ini.
+You must download a .ttf font for captcha challenges and define the file's path in security.ini.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
@@ -334,19 +346,6 @@ async def on_verified(request, two_step_session):
     return response
 ```
 
-* Verify Account
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post("api/verification/verify")
-@requires_two_step_verification()
-async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
-    return json("You have verified your account and may login!", two_step_session.json())
-```
 
 ## Password Recovery
 
