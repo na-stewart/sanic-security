@@ -11,7 +11,6 @@ from sanic_security.models import Account, Permission, Role
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import (
     verify_account,
-    two_step_verification,
     request_two_step_verification,
     requires_two_step_verification,
 )
@@ -42,11 +41,11 @@ async def on_login(request):
 
 
 @app.post("api/test/auth/verify")
-async def on_verify(request):
+@requires_two_step_verification(True)
+async def on_verify(request, two_step_session):
     """
     Verify account with a two-step session code found in register response.
     """
-    two_step_session = await two_step_verification(request)
     await verify_account(two_step_session)
     return json("Account verification successful!", two_step_session.account.json())
 

@@ -23,7 +23,7 @@ def _validate_account(account: Account, allow_unverified: bool):
 
     Args:
         account (Account): The account being validated.
-        allow_unverified (bool): Prevents an unverified error from raising when true, best used for registration cases.
+        allow_unverified (bool): Prevents an account unverified error from raising when true, best used for registration cases.
 
     Raises:
         AccountError
@@ -46,7 +46,7 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session.
-        allow_unverified (bool): Prevents an unverified error from raising when true, best used for registration cases.
+        allow_unverified (bool): Prevents an account unverified error from raising when true, best used for registration cases.
 
     Returns:
          two_step_session
@@ -70,7 +70,6 @@ async def verify_account(two_step_session: TwoStepSession):
     Returns:
          two_step_session
     """
-    _validate_account(two_step_session.account, True)
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=["verified"])
     return two_step_session
@@ -82,7 +81,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        allow_unverified (bool): Prevents an unverified error from raising when true, best used for registration cases.
+        allow_unverified (bool): Prevents an account unverified error from raising when true, best used for registration cases.
 
     Raises:
         SessionError
@@ -104,7 +103,7 @@ def requires_two_step_verification(allow_unverified=False):
     Verifies a two-step challenge attempt.
 
     Args:
-        allow_unverified (bool): Prevents an unverified error from raising when true, best used for registration cases.
+        allow_unverified (bool): Prevents an account unverified error from raising when true, best used for registration cases.
 
 
     Example:
