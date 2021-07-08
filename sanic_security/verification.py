@@ -38,7 +38,7 @@ def _validate_account(account: Account, allow_unverified: bool):
 
 
 async def request_two_step_verification(
-        request: Request, account=None, allow_unverified=False
+    request: Request, account=None, allow_unverified=False
 ):
     """
     Creates a two-step session associated with an account.

@@ -43,7 +43,7 @@ async def on_login(request):
     """
     Login with an email and password. A two-step session will be requested for an account that is not verified on login and the code is emailed.
     """
-    account = await Account.get_via_email(request.form.get('email'))
+    account = await Account.get_via_email(request.form.get("email"))
     try:
         authentication_session = await login(request, account)
     except UnverifiedError as e:
