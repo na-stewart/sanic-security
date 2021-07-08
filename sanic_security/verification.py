@@ -18,7 +18,7 @@ account_error_factory = AccountErrorFactory()
 
 def _validate_account(account: Account, allow_unverified: bool):
     """
-    Validates that an account used for verification does not have any error conditions and also will bypass any UnverifiedErrors
+    Validates that an account used for verification does not have any error conditions and also will bypass any unverified errors
     if allow_unverified is true.
 
     Args:
@@ -29,16 +29,16 @@ def _validate_account(account: Account, allow_unverified: bool):
         AccountError
     """
     account_error = account_error_factory.get(account)
-    if (
-        account_error
-        and not isinstance(account_error, UnverifiedError)
-        and not allow_unverified
-    ):
-        raise account_error
+    if account_error:
+        if isinstance(account_error, UnverifiedError):
+            if not allow_unverified:
+                raise account_error
+        else:
+            raise account_error
 
 
 async def request_two_step_verification(
-    request: Request, account=None, allow_unverified=False
+        request: Request, account=None, allow_unverified=False
 ):
     """
     Creates a two-step session associated with an account.

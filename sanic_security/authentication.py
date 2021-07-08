@@ -90,6 +90,7 @@ async def login(request: Request, account: Account = None):
 
     Raises:
         AccountError
+        SessionError
     """
     form = request.form
     if not account:

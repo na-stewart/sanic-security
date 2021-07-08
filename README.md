@@ -303,6 +303,8 @@ async def on_captcha_attempt(request, captcha_session):
 ## Two-Step Verification
 
 * Request Two-step Verification (Creates and encodes a two-step session)
+
+A route that is only used for requesting verification is not recommended and should be conditional. For example, an account logging in is unverified and requires verification.
   
 Key | Value |
 --- | --- |
@@ -463,11 +465,12 @@ single line of code.
 app.blueprint(security)
 ```
 
-Below are blueprints containing endpoints only related to authentication and captcha verification.
+Below are blueprints containing specific endpoints.
 
 ```python
 app.blueprint(authentication)
 app.blueprint(captcha)
+app.blueprint(recovery)
 ```
 
 * Endpoints
@@ -478,8 +481,6 @@ POST | api/auth/register | A captcha is required. Register an account with an em
 POST | api/auth/login | Login with an email and password.
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
-POST | api/verif/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
-POST | api/verif/resend | Resend existing two-step session code if lost.
 POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
 POST | api/recov/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
 POST | api/capt/request | Requests new captcha session.

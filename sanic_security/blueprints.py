@@ -7,7 +7,8 @@ from sanic_security.authentication import (
     requires_authentication,
 )
 from sanic_security.captcha import requires_captcha, request_captcha
-from sanic_security.models import CaptchaSession
+from sanic_security.exceptions import UnverifiedError
+from sanic_security.models import CaptchaSession, Account
 from sanic_security.recovery import (
     recover_password,
 )
@@ -40,9 +41,16 @@ async def on_register(request, captcha_session):
 @authentication.post("api/auth/login")
 async def on_login(request):
     """
-    Login with an email and password.
+    Login with an email and password. A two-step session will be requested for an account that is not verified on login and the code is emailed.
     """
-    authentication_session = await login(request)
+    account = await Account.get_via_email(request.form.get('email'))
+    try:
+        authentication_session = await login(request, account)
+    except UnverifiedError as e:
+        two_step_session = await request_two_step_verification(request, account)
+        await two_step_session.email_code()
+        two_step_session.encode(e.response)
+        return e.response
     response = json("Login successful!", authentication_session.account.json())
     authentication_session.encode(response)
     return response
