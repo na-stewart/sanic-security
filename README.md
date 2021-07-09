@@ -164,7 +164,7 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 * Registration (With all verification requirements)
 
-Phone can be null or empty. A captcha request must be made.
+Phone can be null or empty.
 
 Key | Value |
 --- | --- |
@@ -204,6 +204,20 @@ async def on_register(request):
     return json("Registration Successful!", account.json())
 ```
 
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post("api/auth/verify")
+@requires_two_step_verification(allow_unverified=True)
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json("You have verified your account and may login!", two_step_session.json())
+```
+
 * Login
 
 Key | Value |
@@ -241,11 +255,9 @@ async def on_logout(request, authentication_session):
     return response
 ```
 
-
-
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file"s path in security.ini.
+You must download a .ttf font for captcha challenges and define the file's path in security.ini.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
@@ -291,6 +303,8 @@ async def on_captcha_attempt(request, captcha_session):
 ## Two-Step Verification
 
 * Request Two-step Verification (Creates and encodes a two-step session)
+
+A route that is only used for requesting verification is not recommended and should be conditional. For example, an account logging in is unverified and requires verification.
   
 Key | Value |
 --- | --- |
@@ -334,19 +348,6 @@ async def on_verified(request, two_step_session):
     return response
 ```
 
-* Verify Account
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post("api/verification/verify")
-@requires_two_step_verification()
-async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
-    return json("You have verified your account and may login!", two_step_session.json())
-```
 
 ## Password Recovery
 
@@ -464,11 +465,12 @@ single line of code.
 app.blueprint(security)
 ```
 
-Below are blueprints containing endpoints only related to authentication and captcha verification.
+Below are blueprints containing specific endpoints.
 
 ```python
 app.blueprint(authentication)
 app.blueprint(captcha)
+app.blueprint(recovery)
 ```
 
 * Endpoints
@@ -479,8 +481,6 @@ POST | api/auth/register | A captcha is required. Register an account with an em
 POST | api/auth/login | Login with an email and password.
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
-POST | api/verif/request | A captcha is required. Request new two-step session and send email with code. Used if existing session is invalid or expired.
-POST | api/verif/resend | Resend existing two-step session code if lost.
 POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
 POST | api/recov/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
 POST | api/capt/request | Requests new captcha session.
