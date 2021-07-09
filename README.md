@@ -350,7 +350,7 @@ async def on_verified(request, two_step_session):
 
 ## Password Recovery
 
-* Password recovery request
+* Password Recovery Request
 
 Key | Value |
 --- | --- |
