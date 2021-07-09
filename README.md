@@ -54,7 +54,6 @@
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
-* [Acknowledgements](#acknowledgements)
 * [Versioning](#Versioning)
 
 
@@ -519,12 +518,6 @@ Contributions are what make the open source community such an amazing place to b
 ## License
 
 Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
-
-
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements 
-
-* [thewchan](https://github.com/thewchan) added MANIFEST.in.
 
 <!-- Versioning -->
 ## Versioning
