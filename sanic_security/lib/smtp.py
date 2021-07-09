@@ -8,7 +8,6 @@ from sanic_security.utils import config
 async def send_email(to, subj, msg, text_type="plain"):
     """
     Sends an email using SMTP.
-    Used to determine if the client is authenticated.
 
     Args:
         to (str): Email being sent too address.
