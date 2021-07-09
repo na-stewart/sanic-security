@@ -303,7 +303,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification (Creates and encodes a two-step session)
 
-A route that is only used for requesting verification is not recommended and should be conditional. For example, an account logging in is unverified and requires verification.
+Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
   
 Key | Value |
 --- | --- |
