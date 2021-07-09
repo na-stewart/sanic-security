@@ -54,7 +54,6 @@
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
-* [Acknowledgements](#acknowledgements)
 * [Versioning](#Versioning)
 
 
@@ -304,7 +303,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification (Creates and encodes a two-step session)
 
-A route that is only used for requesting verification is not recommended and should be conditional. For example, an account logging in is unverified and requires verification.
+Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
   
 Key | Value |
 --- | --- |
@@ -519,12 +518,6 @@ Contributions are what make the open source community such an amazing place to b
 ## License
 
 Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
-
-
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements 
-
-* [thewchan](https://github.com/thewchan) added MANIFEST.in.
 
 <!-- Versioning -->
 ## Versioning
