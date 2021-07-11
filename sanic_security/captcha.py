@@ -10,7 +10,7 @@ session_error_factory = SessionErrorFactory()
 
 async def request_captcha(request: Request):
     """
-    Creates a captcha session associated with an account.
+    Creates a captcha session.
 
     Args:
         request (Request): Sanic request parameter.

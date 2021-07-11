@@ -10,8 +10,6 @@ from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account, Permission, Role
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import (
-    verify_account,
-    two_step_verification,
     request_two_step_verification,
     requires_two_step_verification,
 )
@@ -39,16 +37,6 @@ async def on_login(request):
     response = json("Login successful!", authentication_session.json())
     authentication_session.encode(response, False)
     return response
-
-
-@app.post("api/test/auth/verify")
-async def on_verify(request):
-    """
-    Verify account with a two-step session code found in register response.
-    """
-    two_step_session = await two_step_verification(request)
-    await verify_account(two_step_session)
-    return json("Account verification successful!", two_step_session.account.json())
 
 
 @app.post("api/test/capt/request")
@@ -157,9 +145,7 @@ async def on_recovery_request(request):
     """
     Requests new two-step session for password recovery. A new account is created and specifically used for recovery.
     """
-    two_step_session = await request_two_step_verification(
-        request, allow_unverified=False
-    )
+    two_step_session = await request_two_step_verification(request)
     response = json("Recovery request successful!", two_step_session.code)
     two_step_session.encode(response, False)
     return response

@@ -437,7 +437,7 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def generate_expiration_date(self, days: int = 0, minutes: int = 0):
+    def _generate_expiration_date(self, days: int = 0, minutes: int = 0):
         """
         Creates an expiration date. Adds days to current datetime.
 
@@ -471,20 +471,20 @@ class SessionFactory:
             return await CaptchaSession.create(
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
-                expiration_date=self.generate_expiration_date(minutes=1),
+                expiration_date=self._generate_expiration_date(minutes=1),
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
                 code=await TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
-                expiration_date=self.generate_expiration_date(minutes=5),
+                expiration_date=self._generate_expiration_date(minutes=5),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
                 account=account,
                 ip=get_ip(request),
-                expiration_date=self.generate_expiration_date(days=30),
+                expiration_date=self._generate_expiration_date(days=30),
             )
         else:
             raise ValueError("Invalid session type.")
