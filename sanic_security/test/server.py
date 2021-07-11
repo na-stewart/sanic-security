@@ -33,7 +33,7 @@ async def on_register(request):
 @app.post("api/test/auth/login")
 async def on_login(request):
     """
-    Login with an email and password. Will only encode an authentication session when logging in with the test@test.com account.
+    Login with an email and password. Will only encode an authentication session when logging in with the test account.
     """
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.json())
@@ -138,7 +138,7 @@ async def on_roles_assignment(request, authentication_session):
 @require_permissions("admin:update")
 async def on_permission_authorization_permit_attempt(request, authentication_session):
     """
-    Authorization with permissions provided to the test@test.com account.
+    Authorization with permissions provided to the test account.
     """
     return text("Account permitted.")
 
@@ -147,7 +147,7 @@ async def on_permission_authorization_permit_attempt(request, authentication_ses
 @require_roles("Admin", "Mod")
 async def on_role_authorization_permit_attempt(request, authentication_session):
     """
-    Authorization with roles provided to the test@test.com account.
+    Authorization with roles provided to the test account.
     """
     return text("Account permitted.")
 
