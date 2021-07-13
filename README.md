@@ -246,7 +246,7 @@ async def on_authenticated(request, authentication_session):
 * Logout
 
 ```python
-@authentication.post("api/auth/logout")
+@app.post("api/auth/logout")
 @requires_authentication()
 async def on_logout(request, authentication_session):
     await logout(authentication_session)
