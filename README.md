@@ -361,7 +361,7 @@ Key | Value |
 @app.post("api/recovery/attempt")
 @requires_captcha()
 async def on_recovery_request(request, captcha_session):
-    two_step_session = await request_two_step_verification(request, allow_unverified=False)
+    two_step_session = await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json("A recovery attempt has been made, please verify account ownership.", two_step_session.json())
