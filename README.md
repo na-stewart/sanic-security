@@ -146,7 +146,7 @@ tls=true
 start_tls=false
 ```
 
-You may remove each section below `TORTOISE` in the configuration you aren't using. For example, if you're not utilizing Twillio you can
+You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
 delete the `TWILLIO` section.
 
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
@@ -477,7 +477,7 @@ app.blueprint(recovery)
 Method | Endpoint | Info |
 --- | --- | --- |
 POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/auth/login | Login with an email and password.
+POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and a code is emailed
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
 POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
