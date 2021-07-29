@@ -153,37 +153,3 @@ class SecurityTest(TestCase):
         assert (
             permission_authorization_response.status_code == 200
         ), permission_authorization_response.text
-
-    def test_recovery(self):
-        """
-        Requests password recovery for a newly created test account, then attempts to recover password using the code found in the recovery request response.
-        Once the password is changed, a login attempt is made to the test account with the new password.
-        """
-        client = httpx.Client()
-        account_creation_response = client.post(
-            "http://127.0.0.1:8000/api/test/account/create",
-            data={"email": "recovery@test.com"},
-        )
-        assert (
-            account_creation_response.status_code == 200
-        ), account_creation_response.text
-        recovery_request_response = client.post(
-            "http://127.0.0.1:8000/api/test/recov/request",
-            data={"email": "recovery@test.com"},
-        )
-        assert (
-            recovery_request_response.status_code == 200
-        ), recovery_request_response.text
-        code = json.loads(recovery_request_response.text)["data"]
-        recovery_recover_response = client.post(
-            "http://127.0.0.1:8000/api/recov/recover",
-            data={"password": "recovered", "code": code},
-        )
-        assert (
-            recovery_recover_response.status_code == 200
-        ), recovery_recover_response.text
-        login_response = client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "recovery@test.com", "password": "recovered"},
-        )
-        assert login_response.status_code == 200, login_response.text

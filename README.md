@@ -45,7 +45,6 @@
     * [Authentication](#authentication)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
-    * [Recovery](#password-recovery)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
     * [Middleware](#Middleware)
@@ -73,7 +72,6 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Password recovery
 * Wildcard permissions
 * Role permissions
-* Easy database integration
 * Blueprints
 * Completely async
 
@@ -104,12 +102,9 @@ pip3 install sanic-security
 
 ## Usage
 
-Once Sanic Security is configured and good to go, implementing is easy as pie.
+Once Sanic Security is configured and good to go, implementing is easy.
 
 ### Initial Setup
-
-Familiarity with [Sanic](https://github.com/huge-success/sanic) and [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html)
-is recommended.
 
 First you have to create a configuration file called security.ini in the project directory. Make sure Python's 
 working directory is the project directory. Below is an example of its contents: 
@@ -120,7 +115,14 @@ WARNING: You must set a custom secret or you will compromise your encoded sessio
 [SECURITY]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
-name=Sanic-Security
+
+[BLUEPRINT]
+register_route=api/auth/register
+login_route=api/auth/login
+verify_route=api/auth/verify
+logout_route=api/auth/logout
+captcha_request_route=api/capt/request
+captcha_img_route=api/capt/img
 
 [TORTOISE]
 username=admin
@@ -304,6 +306,8 @@ async def on_captcha_attempt(request, captcha_session):
 * Request Two-step Verification (Creates and encodes a two-step session)
 
 Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
+
+For verification requests and endpoints requiring verification, an `allow_unverified` (defaulted to false) parameter is available to allow unverified accounts access to the endpoint.
   
 Key | Value |
 --- | --- |
@@ -345,43 +349,6 @@ Key | Value |
 async def on_verified(request, two_step_session):
     response = json("Two-step verification attempt successful!", two_step_session.json())
     return response
-```
-
-
-## Password Recovery
-
-* Password Recovery Request
-
-Key | Value |
---- | --- |
-**email** | test@test.com
-**captcha** | Aj8HgD
-
-```python
-@app.post("api/recovery/attempt")
-@requires_captcha()
-async def on_recovery_request(request, captcha_session):
-    two_step_session = await request_two_step_verification(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
-    response = json("A recovery attempt has been made, please verify account ownership.", two_step_session.json())
-    two_step_session.encode(response)
-    return response
-```
-
-* Recover password
-
-Key | Value |
---- | --- |
-**password** | newpass
-**code** | G8ha9nVa
-
-```python
-@app.post("api/recovery/recover")
-@requires_two_step_verification()
-async def on_recover(request, two_step_session):
-    await recover_password(request, two_step_session)
-    return json("Account recovered successfully.", two_step_session.account.json())
 ```
 
 ## Authorization
@@ -463,15 +430,6 @@ single line of code.
 ```python
 app.blueprint(security)
 ```
-
-Below are blueprints containing specific endpoints.
-
-```python
-app.blueprint(authentication)
-app.blueprint(captcha)
-app.blueprint(recovery)
-```
-
 * Endpoints
 
 Method | Endpoint | Info |
@@ -480,8 +438,6 @@ POST | api/auth/register | A captcha is required. Register an account with an em
 POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
-POST | api/recov/request | A captcha is required. Requests new two-step session to ensure current recovery attempt is being made by account owner.
-POST | api/recov/recover | Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
 POST | api/capt/request | Requests new captcha session.
 GET | api/capt/img | Retrieves captcha image from existing captcha session.
 
@@ -493,7 +449,7 @@ Make sure the test Sanic instance (`test/server.py`)  is running on your machine
 
 Then run the unit tests (`test/tests.py`) or test with postman via clicking the button below.
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e)
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e?action=collection%2Fimport)
 
 <!-- ROADMAP -->
 ## Roadmap

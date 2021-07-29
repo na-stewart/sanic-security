@@ -14,20 +14,17 @@ from sanic_security.models import (
     Account,
     SessionFactory,
     AuthenticationSession,
-    AccountErrorFactory,
-    SessionErrorFactory,
 )
 from sanic_security.utils import hash_password
+from sanic_security.validation import validate_account, validate_session
 from sanic_security.verification import request_two_step_verification
 
 session_factory = SessionFactory()
-account_error_factory = AccountErrorFactory()
-session_error_factory = SessionErrorFactory()
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
     """
-    Creates a new account. This is the recommend method for creating accounts' with Sanic Security.
+    Registers a new account to be used by a client.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
@@ -97,7 +94,7 @@ async def login(request: Request, account: Account = None):
         account = await Account.get_via_email(form.get("email"))
     if account:
         if account.password == hash_password(form.get("password")):
-            account_error_factory.throw(account)
+            validate_account(account)
             authentication_session = await session_factory.get(
                 "authentication", request, account=account
             )
@@ -134,8 +131,8 @@ async def authenticate(request: Request):
         SessionError
     """
     authentication_session = await AuthenticationSession().decode(request)
-    account_error_factory.throw(authentication_session.account)
-    session_error_factory.throw(authentication_session)
+    validate_account(authentication_session.account)
+    validate_session(authentication_session)
     await authentication_session.crosscheck_location(request)
     return authentication_session
 

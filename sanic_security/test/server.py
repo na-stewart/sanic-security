@@ -140,17 +140,6 @@ async def on_role_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
 
 
-@app.post("api/test/recov/request")
-async def on_recovery_request(request):
-    """
-    Requests new two-step session for password recovery. A new account is created and specifically used for recovery.
-    """
-    two_step_session = await request_two_step_verification(request)
-    response = json("Recovery request successful!", two_step_session.code)
-    two_step_session.encode(response, False)
-    return response
-
-
 @app.post("api/test/account/create")
 async def on_account_creation(request):
     """

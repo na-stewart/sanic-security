@@ -19,38 +19,6 @@ from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
 
 
-class BaseErrorFactory:
-    """
-    Easily raise or retrieve errors based off of model variable values.
-    """
-
-    def get(self, model):
-        """
-        Retrieves an error based off of defined variable conditions.
-
-        Args:
-            model: Model being used to check for validation.
-
-        Raises:
-            SecurityError
-        """
-        raise NotImplementedError()
-
-    def throw(self, model):
-        """
-        Raises an error that was retrieved in the get method.
-
-        Args:
-            model (BaseModel): Model being used to check for validation.
-
-        Raises:
-            SecurityError
-        """
-        error = self.get(model)
-        if error:
-            raise error
-
-
 class BaseModel(Model):
     """
     Base Sanic Security model that all other models derive from.
@@ -73,7 +41,7 @@ class BaseModel(Model):
 
     def json(self):
         """
-        Retrieve a JSON serializable dict to be used in a HTTP request or response.
+        A JSON serializable dict to be used in a HTTP request or response.
 
         Example:
             Below is an example of this method returning a dict to be used for JSON serialization.
@@ -103,9 +71,9 @@ class Account(BaseModel):
     Attributes:
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
-        phone (str): Mobile phone number with country code included and can be used for verification.
-        password (bytes): Must be created using the hash_password method found in the utils module.
-        disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
+        phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
+        password (bytes): Password of account for protection. Must be set using the hash_password method found in the utils module.
+        disabled (bool): Renders an account unusable but available.
         verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
     """
 
@@ -142,20 +110,6 @@ class Account(BaseModel):
         return account
 
 
-class AccountErrorFactory(BaseErrorFactory):
-    def get(self, model):
-        error = None
-        if not model:
-            error = NotFoundError("This account does not exist.")
-        elif model.deleted:
-            error = DeletedError("This account has been permanently deleted.")
-        elif model.disabled:
-            error = DisabledError()
-        elif not model.verified:
-            error = UnverifiedError()
-        return error
-
-
 class Session(BaseModel):
     """
     Used for client identification and validation. Base session model that all session models derive from.
@@ -174,7 +128,7 @@ class Session(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cookie = f"{config['SECURITY']['name']}_{self.__class__.__name__}"
+        self.cookie = f"ss_{self.__class__.__name__[:4].lower()}"
 
     def json(self):
         return {
@@ -188,7 +142,7 @@ class Session(BaseModel):
             "valid": self.valid,
         }
 
-    def encode(self, response: HTTPResponse, secure=True, same_site: str = "lax"):
+    def encode(self, response: HTTPResponse, secure=True):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -206,7 +160,7 @@ class Session(BaseModel):
         encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]["secure"] = secure
-        response.cookies[self.cookie]["samesite"] = same_site
+        response.cookies[self.cookie]["httponly"] = True
 
     def decode_raw(self, request: Request):
         """
@@ -262,20 +216,6 @@ class Session(BaseModel):
 
     class Meta:
         abstract = True
-
-
-class SessionErrorFactory(BaseErrorFactory):
-    def get(self, model):
-        error = None
-        if model is None:
-            error = NotFoundError("Session could not be found.")
-        elif not model.valid:
-            error = InvalidError()
-        elif model.deleted:
-            error = DeletedError("Session has been deleted.")
-        elif datetime.datetime.now(datetime.timezone.utc) >= model.expiration_date:
-            error = ExpiredError()
-        return error
 
 
 class VerificationSession(Session):
@@ -392,7 +332,7 @@ class CaptchaSession(VerificationSession):
             image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
             for i in range(100):
                 code = "".join(
-                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHkKlLbBnN", k=6)
+                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
                 )
                 await loop.run_in_executor(
                     None,
@@ -437,21 +377,6 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    def _generate_expiration_date(self, days: int = 0, minutes: int = 0):
-        """
-        Creates an expiration date. Adds days to current datetime.
-
-        Args:
-            days (int):  Days to be added to current time.
-            minutes (int): Minutes to be added to the current time.
-
-        Returns:
-            expiration_date
-        """
-        return datetime.datetime.utcnow() + datetime.timedelta(
-            days=days, minutes=minutes
-        )
-
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
          Creates and returns a session with all of the fulfilled requirements.
@@ -471,20 +396,23 @@ class SessionFactory:
             return await CaptchaSession.create(
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
-                expiration_date=self._generate_expiration_date(minutes=1),
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(minutes=1),
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
                 code=await TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
-                expiration_date=self._generate_expiration_date(minutes=5),
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(minutes=5),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
                 account=account,
                 ip=get_ip(request),
-                expiration_date=self._generate_expiration_date(days=30),
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(days=30),
             )
         else:
             raise ValueError("Invalid session type.")
