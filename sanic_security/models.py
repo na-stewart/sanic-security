@@ -142,7 +142,7 @@ class Session(BaseModel):
             "valid": self.valid,
         }
 
-    def encode(self, response: HTTPResponse, secure=True, same_site: str = "lax"):
+    def encode(self, response: HTTPResponse, secure=True):
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -161,7 +161,6 @@ class Session(BaseModel):
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]["secure"] = secure
         response.cookies[self.cookie]["httponly"] = True
-        response.cookies[self.cookie]["samesite"] = same_site
 
     def decode_raw(self, request: Request):
         """
