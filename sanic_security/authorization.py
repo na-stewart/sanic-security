@@ -128,7 +128,7 @@ def require_roles(*required_roles: str):
     return wrapper
 
 
-async def create_role(name: str, account: Account):
+async def assign_role(name: str, account: Account):
     """
     Quick creation of a role associated with an account.
 
@@ -139,7 +139,7 @@ async def create_role(name: str, account: Account):
     return await Role().create(account=account, name=name)
 
 
-async def create_permission(wildcard: str, account: Account):
+async def assign_permission(wildcard: str, account: Account):
     """
     Quick creation of a permission associated with an account.
 

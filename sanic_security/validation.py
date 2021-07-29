@@ -16,7 +16,7 @@ def validate_account(account: Account):
     Validates an account by determining if an error should be raised due to variable values.
 
     Args:
-        account (Account): Account being validated
+        account (Account): Account being validated.
 
     Raises:
         AccountError
@@ -36,7 +36,7 @@ def validate_session(session: Session):
     Validates a session by determining if an error should be raised due to variable values.
 
     Args:
-        session (Session): session being validated
+        session (Session): Session being validated.
 
     Raises:
         SessionError

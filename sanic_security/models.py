@@ -41,7 +41,7 @@ class BaseModel(Model):
 
     def json(self):
         """
-        Retrieve a JSON serializable dict to be used in a HTTP request or response.
+        A JSON serializable dict to be used in a HTTP request or response.
 
         Example:
             Below is an example of this method returning a dict to be used for JSON serialization.
@@ -71,9 +71,9 @@ class Account(BaseModel):
     Attributes:
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
-        phone (str): Mobile phone number with country code included and can be used for verification.
-        password (bytes): Must be created using the hash_password method found in the utils module.
-        disabled (bool): Renders an account unusable but available for moderators to investigate for infractions.
+        phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
+        password (bytes): Password of account for protection. Must be set using the hash_password method found in the utils module.
+        disabled (bool): Renders an account unusable but available.
         verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
     """
 

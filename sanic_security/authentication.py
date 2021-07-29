@@ -24,7 +24,7 @@ session_factory = SessionFactory()
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
     """
-    Creates a new account. This is the recommend method for creating accounts' with Sanic Security.
+    Registers a new account to be used by a client.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).

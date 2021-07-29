@@ -23,7 +23,7 @@ async def request_captcha(request: Request):
 
 async def captcha(request: Request):
     """
-    Verifies a captcha challenge attempt.
+    Validates a captcha challenge attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
@@ -42,7 +42,7 @@ async def captcha(request: Request):
 
 def requires_captcha():
     """
-    Verifies a captcha attempt.
+    Validates a captcha attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:
