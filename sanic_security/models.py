@@ -376,6 +376,7 @@ class SessionFactory:
     """
     Prevents human error when creating sessions.
     """
+
     async def get(self, session_type: str, request: Request, account: Account = None):
         """
          Creates and returns a session with all of the fulfilled requirements.
@@ -395,20 +396,23 @@ class SessionFactory:
             return await CaptchaSession.create(
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
-                expiration_date=datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
-        )
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(minutes=1),
+            )
         elif session_type == "twostep":
             return await TwoStepSession.create(
                 code=await TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
-                expiration_date=datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(minutes=5),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
                 account=account,
                 ip=get_ip(request),
-                expiration_date=datetime.datetime.utcnow() + datetime.timedelta(days=30)
+                expiration_date=datetime.datetime.utcnow()
+                + datetime.timedelta(days=30),
             )
         else:
             raise ValueError("Invalid session type.")

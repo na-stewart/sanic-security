@@ -1,7 +1,13 @@
 import datetime
 
-from sanic_security.exceptions import NotFoundError, DeletedError, DisabledError, UnverifiedError, InvalidError, \
-    ExpiredError
+from sanic_security.exceptions import (
+    NotFoundError,
+    DeletedError,
+    DisabledError,
+    UnverifiedError,
+    InvalidError,
+    ExpiredError,
+)
 from sanic_security.models import Account, Session
 
 
