@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import UnverifiedError, SecurityError
+from sanic_security.exceptions import UnverifiedError
 from sanic_security.models import (
     Account,
     TwoStepSession,
