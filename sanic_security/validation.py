@@ -12,6 +12,15 @@ from sanic_security.models import Account, Session
 
 
 def validate_account(account: Account):
+    """
+    Validates an account by raising an error if a certain variable conditions are met.
+
+    Args:
+        account (Account): Account being validated
+
+    Raises:
+        AccountError
+    """
     if not account:
         raise NotFoundError("This account does not exist.")
     elif account.deleted:
@@ -23,6 +32,15 @@ def validate_account(account: Account):
 
 
 def validate_session(session: Session):
+    """
+    Validates a session by raising an error if a certain variable conditions are met.
+
+    Args:
+        session (Session): session being validated
+
+    Raises:
+        SessionError
+    """
     if session is None:
         raise NotFoundError("Session could not be found.")
     elif not session.valid:
