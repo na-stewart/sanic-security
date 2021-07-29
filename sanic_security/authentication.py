@@ -14,15 +14,12 @@ from sanic_security.models import (
     Account,
     SessionFactory,
     AuthenticationSession,
-    AccountErrorFactory,
-    SessionErrorFactory,
 )
 from sanic_security.utils import hash_password
+from sanic_security.validation import validate_account, validate_session
 from sanic_security.verification import request_two_step_verification
 
 session_factory = SessionFactory()
-account_error_factory = AccountErrorFactory()
-session_error_factory = SessionErrorFactory()
 
 
 async def register(request: Request, verified: bool = False, disabled: bool = False):
@@ -47,7 +44,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             "Please use a valid email format such as you@mail.com."
         )
     if form.get("phone") and (
-        not form.get("phone").isdigit() or len(form.get("phone")) < 11
+            not form.get("phone").isdigit() or len(form.get("phone")) < 11
     ):
         raise InvalidIdentifierError(
             "Please use a valid phone format such as 15621435489 or 19498963648018."
@@ -97,7 +94,7 @@ async def login(request: Request, account: Account = None):
         account = await Account.get_via_email(form.get("email"))
     if account:
         if account.password == hash_password(form.get("password")):
-            account_error_factory.throw(account)
+            validate_account(account)
             authentication_session = await session_factory.get(
                 "authentication", request, account=account
             )
@@ -134,8 +131,8 @@ async def authenticate(request: Request):
         SessionError
     """
     authentication_session = await AuthenticationSession().decode(request)
-    account_error_factory.throw(authentication_session.account)
-    session_error_factory.throw(authentication_session)
+    validate_account(authentication_session.account)
+    validate_session(authentication_session)
     await authentication_session.crosscheck_location(request)
     return authentication_session
 

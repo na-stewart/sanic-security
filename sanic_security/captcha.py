@@ -2,10 +2,10 @@ import functools
 
 from sanic import Request
 
-from sanic_security.models import CaptchaSession, SessionFactory, SessionErrorFactory
+from sanic_security.models import CaptchaSession, SessionFactory
+from sanic_security.validation import validate_session
 
 session_factory = SessionFactory()
-session_error_factory = SessionErrorFactory()
 
 
 async def request_captcha(request: Request):
@@ -35,7 +35,7 @@ async def captcha(request: Request):
         captcha_session
     """
     captcha_session = await CaptchaSession().decode(request)
-    session_error_factory.throw(captcha_session)
+    validate_session(captcha_session)
     await captcha_session.crosscheck_code(request.form.get("captcha"))
     return captcha_session
 

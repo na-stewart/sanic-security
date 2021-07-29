@@ -2,18 +2,15 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import UnverifiedError
+from sanic_security.exceptions import UnverifiedError, SecurityError
 from sanic_security.models import (
     Account,
     TwoStepSession,
     SessionFactory,
-    SessionErrorFactory,
-    AccountErrorFactory,
 )
+from sanic_security.validation import validate_account, validate_session
 
 session_factory = SessionFactory()
-session_error_factory = SessionErrorFactory()
-account_error_factory = AccountErrorFactory()
 
 
 def _validate_account(account: Account, allow_unverified: bool):
@@ -28,17 +25,15 @@ def _validate_account(account: Account, allow_unverified: bool):
     Raises:
         AccountError
     """
-    account_error = account_error_factory.get(account)
-    if account_error:
-        if isinstance(account_error, UnverifiedError):
-            if not allow_unverified:
-                raise account_error
-        else:
-            raise account_error
+    try:
+        validate_account(account)
+    except UnverifiedError as e:
+        if not allow_unverified:
+            raise e
 
 
 async def request_two_step_verification(
-    request: Request, account=None, allow_unverified=False
+        request: Request, account=None, allow_unverified=False
 ):
     """
     Creates a two-step session associated with an account.
@@ -92,7 +87,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
     """
     two_step_session = await TwoStepSession().decode(request)
     _validate_account(two_step_session.account, allow_unverified)
-    session_error_factory.throw(two_step_session)
+    validate_session(two_step_session)
     await two_step_session.crosscheck_location(request)
     await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
