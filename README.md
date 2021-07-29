@@ -449,7 +449,7 @@ Make sure the test Sanic instance (`test/server.py`)  is running on your machine
 
 Then run the unit tests (`test/tests.py`) or test with postman via clicking the button below.
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e)
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e?action=collection%2Fimport)
 
 <!-- ROADMAP -->
 ## Roadmap

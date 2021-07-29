@@ -160,6 +160,7 @@ class Session(BaseModel):
         encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
         response.cookies[self.cookie] = encoded
         response.cookies[self.cookie]["secure"] = secure
+        response.cookies[self.cookie]["httponly"] = True
         response.cookies[self.cookie]["samesite"] = same_site
 
     def decode_raw(self, request: Request):
