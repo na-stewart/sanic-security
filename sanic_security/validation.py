@@ -13,7 +13,7 @@ from sanic_security.models import Account, Session
 
 def validate_account(account: Account):
     """
-    Validates an account by raising an error if a certain variable conditions are met.
+    Validates an account by determining if an error should be raised due to variable values.
 
     Args:
         account (Account): Account being validated
@@ -33,7 +33,7 @@ def validate_account(account: Account):
 
 def validate_session(session: Session):
     """
-    Validates a session by raising an error if a certain variable conditions are met.
+    Validates a session by determining if an error should be raised due to variable values.
 
     Args:
         session (Session): session being validated
