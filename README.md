@@ -425,7 +425,7 @@ Sanic Security blueprints contain endpoints that allow you to employ fundamental
 single line of code. 
 
 * Implementation
-* 
+
 ```python
 app.blueprint(security)
 ```
