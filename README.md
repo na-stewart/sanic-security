@@ -47,9 +47,10 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
-    * [Middleware](#Middleware)
-    * [Blueprints](#Blueprints)
-    * [Testing](#Testing)
+    * [Middleware](#middleware)
+    * [Blueprints](#blueprints)
+    * [Testing](#testing)
+    * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -69,7 +70,6 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Captcha
 * SMS and email verification
 * JWT
-* Password recovery
 * Wildcard permissions
 * Role permissions
 * Blueprints
@@ -451,12 +451,43 @@ Then run the unit tests (`test/tests.py`) or test with postman via clicking the 
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e?action=collection%2Fimport)
 
+
+## Tortoise
+
+Sanic Security uses [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations.
+
+Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
+
+* Define your models like so
+
+```python
+from tortoise.models import Model
+from tortoise import fields
+
+class Tournament(Model):
+    id = fields.IntField(pk=True)
+    name = fields.TextField()
+```
+
+* Use it like so
+
+```python
+# Create instance by save
+tournament = Tournament(name='New Tournament')
+await tournament.save()
+
+# Or by .create()
+await Tournament.create(name='Another Tournament')
+
+# Now search for a record
+tour = await Tournament.filter(name__contains='Another').first()
+print(tour.name)
+```
+
 <!-- ROADMAP -->
 ## Roadmap
 
 Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
-
-
 
 <!-- CONTRIBUTING -->
 ## Contributing
