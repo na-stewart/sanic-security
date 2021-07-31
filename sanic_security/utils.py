@@ -16,7 +16,7 @@ def xss_prevention_middleware(request: Request, response: HTTPResponse):
 
     Args:
         request: (Request): Sanic request parameter.
-        response (HTTPResponse): Sanic response parameter.
+        response: (HTTPResponse) Sanic response parameter.
     """
     response.headers["x-xss-protection"] = "1; mode=block"
 
