@@ -15,7 +15,7 @@ def xss_prevention_middleware(request: Request, response: HTTPResponse):
     Adds a header to all responses that prevents cross site scripting.
 
     Args:
-        request: (Request): Sanic request parameter.
+        request: (Request) Sanic request parameter.
         response: (HTTPResponse) Sanic response parameter.
     """
     response.headers["x-xss-protection"] = "1; mode=block"
