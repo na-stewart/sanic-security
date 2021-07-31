@@ -14,11 +14,11 @@ setup(
     install_requires=[
         "sanic>=21.3.0",
         "tortoise-orm>=0.17.0",
-        "aiofiles>=0.4.0",
-        "pyjwt>=2.0.0",
+        "httpx>=0.13.0",
+        "pyjwt>=1.7.0",
+        "aiosmtplib>=1.1.0",
         "captcha",
-        "aiosmtplib>=1.0.0",
-        "httpx>=0.13.0"
+        "aiofiles>=0.3.0",
     ],
     author_email="aidanstewart@sunsetdeveloper.com",
     description="A powerful, simple, and async security library for Sanic.",
