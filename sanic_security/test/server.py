@@ -31,7 +31,7 @@ async def on_register(request):
 @app.post("api/test/auth/login")
 async def on_login(request):
     """
-    Login with an email and password. Will only encode an authentication session when logging in with the test account.
+    Login with an email and password.
     """
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.json())
@@ -107,7 +107,7 @@ async def on_perms_assignment(request, authentication_session):
 @requires_authentication()
 async def on_roles_assignment(request, authentication_session):
     """
-    Assigns roles to a logged in test account account.
+    Assigns roles to a logged in test account.
     """
     if await Role.filter(account=authentication_session.account).exists():
         assignment_response = json(

@@ -321,7 +321,7 @@ async def on_request_verification(request, captcha_session):
     two_step_session =  await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    response = json("Verification request successful!", two_step_session.json())
+    response = json("Verification request successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
 ```
@@ -334,7 +334,7 @@ async def on_resend_verification(request):
     two_step_session = await TwoStepSession().decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    return json("Verification code resend successful!", two_step_session.json())
+    return json("Verification code resend successful!", two_step_session.account.json())
 ```
 
 * Requires Two-Step Verification
@@ -347,7 +347,7 @@ Key | Value |
 @app.post("api/verification/attempt")
 @requires_two_step_verification()
 async def on_verified(request, two_step_session):
-    response = json("Two-step verification attempt successful!", two_step_session.json())
+    response = json("Two-step verification attempt successful!", two_step_session.account.json())
     return response
 ```
 
@@ -402,7 +402,7 @@ async def on_error(request, exception):
 
 * Cross Site Scripting Protection Middleware
 
-The HTTP X-XSS-Protection response header is a feature that stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+ Adds a header to all responses that prevents cross site scripting.
 ```python
 @app.middleware("response")
 async def xxs_middleware(request, response):

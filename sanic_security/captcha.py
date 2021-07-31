@@ -42,7 +42,7 @@ async def captcha(request: Request):
 
 def requires_captcha():
     """
-    Validates a captcha attempt.
+    Validates a captcha challenge attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:

@@ -61,14 +61,6 @@ class UnverifiedError(AccountError):
 
 
 class SessionError(SecurityError):
-    """
-    A session related error.
-
-    Args:
-        message (str): Human readable error message.
-        code (int): HTTP Error code.
-    """
-
     def __init__(self, message, code):
         super().__init__(message, code)
 
