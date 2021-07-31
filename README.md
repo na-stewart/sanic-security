@@ -216,7 +216,7 @@ Key | Value |
 @requires_two_step_verification(allow_unverified=True)
 async def on_verify(request, two_step_session):
     await verify_account(two_step_session)
-    return json("You have verified your account and may login!", two_step_session.json())
+    return json("You have verified your account and may login!", two_step_session.account.json())
 ```
 
 * Login
@@ -321,7 +321,7 @@ async def on_request_verification(request, captcha_session):
     two_step_session =  await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    response = json("Verification request successful!", two_step_session.account.json())
+    response = json("Verification request successful!", two_step_session.json())
     two_step_session.encode(response)
     return response
 ```
@@ -334,7 +334,7 @@ async def on_resend_verification(request):
     two_step_session = await TwoStepSession().decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    return json("Verification code resend successful!", two_step_session.account.json())
+    return json("Verification code resend successful!", two_step_session.json())
 ```
 
 * Requires Two-Step Verification
@@ -347,7 +347,7 @@ Key | Value |
 @app.post("api/verification/attempt")
 @requires_two_step_verification()
 async def on_verified(request, two_step_session):
-    response = json("Two-step verification attempt successful!", two_step_session.account.json())
+    response = json("Two-step verification attempt successful!", two_step_session.json())
     return response
 ```
 
