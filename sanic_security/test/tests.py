@@ -34,6 +34,40 @@ class SecurityTest(TestCase):
         )
         assert login_response.status_code == 200, login_response.text
 
+    def test_two_factor_authentication(self):
+        client = httpx.Client()
+        account_creation_response = client.post(
+            "http://127.0.0.1:8000/api/test/account/create",
+            data={"email": "twofactorauth@test.com"},
+        )
+        assert (
+            account_creation_response.status_code == 200
+        ), account_creation_response.text
+        two_factor_login_response = client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/two-factor",
+            data={"email": "twofactorauth@test.com", "password": "testtest"},
+        )
+        assert (
+            two_factor_login_response.status_code == 200
+        ), two_factor_login_response.text
+        authenticate_response = client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 401, authenticate_response.text
+        verification_request_response = client.post(
+            "http://127.0.0.1:8000/api/test/verif/request",
+            data={"email": "twofactorauth@test.com"},
+        )
+        assert (
+            verification_request_response.status_code == 200
+        ), verification_request_response.text
+        code = json.loads(verification_request_response.text)["data"]
+        second_factor_response = client.post(
+            "http://127.0.0.1:8000/api/test/auth/second-factor",
+            data={"code": code},
+        )
+        assert second_factor_response.status_code == 200, second_factor_response.text
+
     def test_captcha(self):
         """
         Requests a captcha and image, then attempts the captcha using the captcha solution provided in the request captcha response.

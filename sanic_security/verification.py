@@ -15,12 +15,11 @@ session_factory = SessionFactory()
 
 def _validate_account(account: Account, allow_unverified: bool):
     """
-    Validates that an account used for verification does not have any error conditions and also will bypass any unverified errors
-    if allow_unverified is true.
+    Validates an account by determining if an error should be raised due to variable values.
 
     Args:
         account (Account): The account being validated.
-        allow_unverified (bool): Prevents an account unverified error from raising when true, best used for registration cases.
+        allow_unverified (bool):  Prevents an unverified account from raising an unverified error.
 
     Raises:
         AccountError
@@ -33,7 +32,9 @@ def _validate_account(account: Account, allow_unverified: bool):
 
 
 async def request_two_step_verification(
-    request: Request, account=None, allow_unverified=False
+    request: Request,
+    account=None,
+    allow_unverified=False,
 ):
     """
     Creates a two-step session associated with an account.
@@ -41,7 +42,8 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
-        allow_unverified (bool): Prevents an unverified account from raising an Unverified error.
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error.
+        metadata (Any): Metadata included in two-step verification session.
 
     Returns:
          two_step_session
@@ -49,7 +51,8 @@ async def request_two_step_verification(
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     _validate_account(account, allow_unverified)
-    return await session_factory.get("twostep", request, account=account)
+    two_step_session = await session_factory.get("twostep", request, account)
+    return two_step_session
 
 
 async def verify_account(two_step_session: TwoStepSession):
@@ -76,7 +79,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        allow_unverified (bool): Prevents an unverified account from raising an Unverified error.
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error.
 
     Raises:
         SessionError
@@ -85,7 +88,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession().decode(request)
+    two_step_session = await TwoStepSession.decode(request)
     _validate_account(two_step_session.account, allow_unverified)
     validate_session(two_step_session)
     await two_step_session.crosscheck_location(request)

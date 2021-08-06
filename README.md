@@ -307,8 +307,6 @@ async def on_captcha_attempt(request, captcha_session):
 
 Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
 
-For verification requests and endpoints requiring verification, an `allow_unverified` (defaulted to false) parameter is available to allow unverified accounts access to the endpoint.
-  
 Key | Value |
 --- | --- |
 **email** | test@test.com

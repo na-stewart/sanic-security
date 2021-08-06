@@ -73,8 +73,8 @@ class Account(BaseModel):
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
         password (bytes): Password of account for protection. Must be set using the hash_password method found in the utils module.
-        disabled (bool): Renders an account unusable but available.
-        verified (bool): Determines if an account has been through the two-step verification process before being allowed use.
+        disabled (bool): Renders the account unusable but available.
+        verified (bool): Determines if the account needs verification before use.
     """
 
     username = fields.CharField(max_length=45)
@@ -126,10 +126,6 @@ class Session(BaseModel):
     ip = fields.CharField(max_length=16)
     cache_path = "./resources/security-cache/session/"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.cookie = f"ss_{self.__class__.__name__[:4].lower()}"
-
     def json(self):
         return {
             "uid": str(self.uid),
@@ -142,14 +138,14 @@ class Session(BaseModel):
             "valid": self.valid,
         }
 
-    def encode(self, response: HTTPResponse, secure=True):
+    def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):
         """
         Transforms session into jwt and then is stored in a cookie.
 
         Args:
-            secure (bool): If true, connections must be SSL encrypted (aka https).
             response (HTTPResponse): Sanic response object used to store JWT into a cookie on the client.
-            same_site (bool): : Allows you to declare if your cookie should be restricted to a first-party or same-site context.
+            secure (bool): Determines if connections must be SSL encrypted (aka https) for cookie to be used.
+            tag (str): Identifier applied to encoded session cookie.
         """
         payload = {
             "date_created": str(self.date_created),
@@ -157,22 +153,25 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
+        cookie = f"{tag}_{self.__class__.__name__}"
         encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
-        response.cookies[self.cookie] = encoded
-        response.cookies[self.cookie]["secure"] = secure
-        response.cookies[self.cookie]["httponly"] = True
+        response.cookies[cookie] = encoded
+        response.cookies[cookie]["secure"] = secure
+        response.cookies[cookie]["httponly"] = True
 
-    def decode_raw(self, request: Request):
+    @classmethod
+    def decode_raw(cls, request: Request, tag: str = "sec"):
         """
         Decodes JWT token from client cookie into a python dict.
 
         Args:
             request (Request): Sanic request parameter.
+            tag (str): Identifier found applied to encoded session cookie.
 
         Returns:
             session_dict
         """
-        cookie = request.cookies.get(self.cookie)
+        cookie = request.cookies.get(f"{tag}_{cls.__name__}")
         try:
             if not cookie:
                 raise DecodingError(f"No session provided by client.")
@@ -181,12 +180,14 @@ class Session(BaseModel):
         except DecodeError as e:
             raise DecodingError(e)
 
-    async def decode(self, request: Request):
+    @classmethod
+    async def decode(cls, request: Request, tag: str = "sec"):
         """
         Decodes JWT token from client cookie to a Sanic Security session.
 
         Args:
             request (Request): Sanic request parameter.
+            tag (str): Identifier found applied to encoded session cookie.
 
         Returns:
             session
@@ -194,12 +195,11 @@ class Session(BaseModel):
         Raises:
             DecodeError
         """
-        decoded = self.decode_raw(request)
-        return (
-            await self.filter(uid=decoded.get("uid"))
-            .prefetch_related("account")
-            .first()
+        decoded = cls.decode_raw(request, tag)
+        decoded_session = (
+            await cls.filter(uid=decoded.get("uid")).prefetch_related("account").first()
         )
+        return decoded_session
 
     async def crosscheck_location(self, request):
         """
@@ -353,23 +353,18 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        try:
-            captcha_image_response = await file(
-                f"{security_cache_path}/captcha/{self.code}.png"
-            )
-        except Exception as e:
-            captcha_image_response = json(
-                "Could not retrieve captcha image.", str(e), e.__name__
-            )
-        return captcha_image_response
+        return await file(f"{security_cache_path}/captcha/{self.code}.png")
 
 
 class AuthenticationSession(Session):
     """
     Used to authenticate a client and provide access to a user's account.
+
+    Attributes:
+        two_factor (bool): Determines if the authentication session needs a second factor before use.
     """
 
-    pass
+    two_factor = fields.BooleanField(default=False)
 
 
 class SessionFactory:
@@ -377,14 +372,17 @@ class SessionFactory:
     Prevents human error when creating sessions.
     """
 
-    async def get(self, session_type: str, request: Request, account: Account = None):
+    async def get(
+        self, session_type: str, request: Request, account: Account = None, **kwargs
+    ):
         """
          Creates and returns a session with all of the fulfilled requirements.
 
         Args:
             session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
             request (Request):  Sanic request paramater.
-            account (Account): Account being associated to a session.
+            account (Account): Account being associated to the session.
+            kwargs: Extra arguments applied to session creation.
 
         Returns:
             session
@@ -394,6 +392,7 @@ class SessionFactory:
         """
         if session_type == "captcha":
             return await CaptchaSession.create(
+                **kwargs,
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
@@ -401,6 +400,7 @@ class SessionFactory:
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
+                **kwargs,
                 code=await TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
@@ -409,6 +409,7 @@ class SessionFactory:
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
+                **kwargs,
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
