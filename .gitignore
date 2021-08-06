@@ -11,4 +11,3 @@
 /requirements.txt
 /sanic.crt
 /sanic.key
-/sanic_security/lib/tortoise.py
