@@ -33,6 +33,10 @@ class SecurityTest(TestCase):
             data={"email": "auth@test.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
+        authenticate_response = client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_two_factor_authentication(self):
         """

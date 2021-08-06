@@ -104,7 +104,7 @@ async def login(request: Request, account: Account = None, two_factor=False):
 
 async def second_factor(request: Request):
     """
-    Removes the second-factor requirement from the client authentication session. To be used with some form of verification.
+    Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
 
     Args:
         request (Request): Sanic request parameter.
