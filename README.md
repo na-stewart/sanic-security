@@ -317,7 +317,7 @@ async def on_request_captcha(request):
 ```python
 @app.get("api/captcha/img")
 async def on_captcha_img(request):
-    captcha_session = await CaptchaSession().decode(request)
+    captcha_session = await CaptchaSession.decode(request)
     return await captcha_session.get_image()
 ```
 
@@ -362,7 +362,7 @@ async def on_request_verification(request, captcha_session):
 ```python
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
-    two_step_session = await TwoStepSession().decode(request)
+    two_step_session = await TwoStepSession.decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     return json("Verification code resend successful!", two_step_session.json())
