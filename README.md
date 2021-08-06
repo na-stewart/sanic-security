@@ -190,6 +190,20 @@ async def on_register(request, captcha_session):
     return response
 ```
 
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post("api/auth/verify")
+@requires_two_step_verification(allow_unverified=True)
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json("You have verified your account and may login!", two_step_session.account.json())
+```
+
 * Registration (Without verification requirements)
 
 Phone can be null or empty.
@@ -206,20 +220,6 @@ Key | Value |
 async def on_register(request):
     account = await register(request, verified=True)
     return json("Registration Successful!", account.json())
-```
-
-* Verify Account
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post("api/auth/verify")
-@requires_two_step_verification(allow_unverified=True)
-async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
-    return json("You have verified your account and may login!", two_step_session.account.json())
 ```
 
 * Login
@@ -266,7 +266,7 @@ async def on_two_factor_login(request):
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
     authentication_session = await second_factor(request)
-    response = json("Second factor successful! You may now be authenticated!", authentication_session.account.json())
+    response = json("Second factor attempt(code found in email/mobile) successful! You may now be authenticated!", authentication_session.account.json())
     return response
 ```
 
