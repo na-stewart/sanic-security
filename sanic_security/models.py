@@ -361,7 +361,7 @@ class AuthenticationSession(Session):
     Used to authenticate a client and provide access to a user's account.
 
     Attributes:
-        two_factor (bool): Determines if the authentication session needs a second factor before use.
+        two_factor (bool): Determines the two-factor requirement in order to be used to authenticate.
     """
 
     two_factor = fields.BooleanField(default=False)

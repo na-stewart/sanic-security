@@ -81,7 +81,7 @@ async def login(request: Request, account: Account = None, two_factor=False):
         two_factor (bool): Determines if login requires a second factor to authenticate account.
 
     Returns:
-        authentication_session: Authentication session returned when logging in without two factor authentication.
+        authentication_session
 
     Raises:
         AccountError
@@ -104,7 +104,7 @@ async def login(request: Request, account: Account = None, two_factor=False):
 
 async def second_factor(request: Request):
     """
-    Disables the second factor requirement for the client authentication session.
+    Removes the second-factor requirement from the client authentication session. To be used with some form of verification.
 
     Args:
         request (Request): Sanic request parameter.

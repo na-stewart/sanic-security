@@ -35,6 +35,9 @@ class SecurityTest(TestCase):
         assert login_response.status_code == 200, login_response.text
 
     def test_two_factor_authentication(self):
+        """
+        Login with a two-factor requirement, then attempts to verify authentication session using the code provided in the login response.
+        """
         client = httpx.Client()
         account_creation_response = client.post(
             "http://127.0.0.1:8000/api/test/account/create",

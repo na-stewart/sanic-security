@@ -57,7 +57,7 @@ async def on_login(request):
 @app.post("api/test/auth/login/two-factor")
 async def on_two_factor_login(request):
     """
-    Login with an email and password.
+    Login with an email and password with a second factor requirement.
     """
     authentication_session = await login(request, two_factor=True)
     two_step_session = await request_two_step_verification(request, authentication_session.account)
