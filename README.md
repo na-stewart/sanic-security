@@ -67,8 +67,9 @@ This library is intended to be easy, convenient, and contains a variety of featu
 
 
 * Easy login and registering
-* Captcha
 * SMS and email verification
+* Two-factor authentication
+* Captcha
 * JWT
 * Wildcard permissions
 * Role permissions
