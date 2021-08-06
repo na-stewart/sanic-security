@@ -276,7 +276,7 @@ async def on_second_factor(request, two_step_verification):
 @app.get("api/auth/authenticate")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You are now authenticated.", 
+    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
                 authentication_session.account.json())
 ```
 
