@@ -3,16 +3,6 @@ from tortoise import Tortoise
 
 from sanic_security.utils import config
 
-AERICH = {
-    "connections": {"default": "mysql://root:123456@127.0.0.1:3306/test"},
-    "apps": {
-        "models": {
-            "models": ["sanic_security.models", "aerich.models"],
-            "default_connection": "default",
-        },
-    },
-}
-
 
 def initialize_security_orm(app: Sanic):
     """
