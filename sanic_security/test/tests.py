@@ -54,14 +54,7 @@ class SecurityTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth",
         )
         assert authenticate_response.status_code == 401, authenticate_response.text
-        verification_request_response = client.post(
-            "http://127.0.0.1:8000/api/test/verif/request",
-            data={"email": "twofactorauth@test.com"},
-        )
-        assert (
-            verification_request_response.status_code == 200
-        ), verification_request_response.text
-        code = json.loads(verification_request_response.text)["data"]
+        code = json.loads(two_factor_login_response.text)["data"]
         second_factor_response = client.post(
             "http://127.0.0.1:8000/api/test/auth/second-factor",
             data={"code": code},

@@ -60,8 +60,10 @@ async def on_two_factor_login(request):
     Login with an email and password.
     """
     authentication_session = await login(request, two_factor=True)
-    response = json("Login successful!", authentication_session.json())
+    two_step_session = await request_two_step_verification(request, authentication_session.account)
+    response = json("Login successful!", two_step_session.code)
     authentication_session.encode(response, False)
+    two_step_session.encode(response, False)
     return response
 
 

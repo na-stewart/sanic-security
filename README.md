@@ -163,6 +163,8 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 ## Authentication
 
+
+
 * Registration (With all verification requirements)
 
 Phone can be null or empty.
@@ -235,6 +237,38 @@ async def on_login(request):
     return response
 ```
 
+* Login (With two-factor authentication)
+
+Key | Value |
+--- | --- |
+**email** | test@test.com
+**password** | testpass
+
+
+```python
+@app.post("api/auth/login")
+async def on_two_factor_login(request):
+    authentication_session = await login(request, two_factor=True)
+    two_step_session = await request_two_step_verification(request, authentication_session.account)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
+    authentication_session.encode(response)
+    two_step_session.encode(response)
+    return response
+```
+
+* Second Factor
+
+```python
+@app.post("api/auth/login/second-factor")
+@requires_two_step_verification()
+async def on_second_factor(request, two_step_verification):
+    authentication_session = await second_factor(request)
+    response = json("Second factor successful! You may now be authenticated!", authentication_session.account.json())
+    return response
+```
+
 * Requires Authentication
 
 ```python
@@ -255,7 +289,6 @@ async def on_logout(request, authentication_session):
     response = json("Logout successful!", authentication_session.account.json())
     return response
 ```
-
 ## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in security.ini.
