@@ -266,7 +266,7 @@ async def on_two_factor_login(request):
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
     authentication_session = await second_factor(request)
-    response = json("Second factor attempt(code found in email/mobile) successful! You may now be authenticated!", authentication_session.account.json())
+    response = json("Second factor attempt successful! You may now be authenticated!", authentication_session.account.json())
     return response
 ```
 
@@ -339,7 +339,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification (Creates and encodes a two-step session)
 
-Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
+Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification. The example below is not conditional.
 
 Key | Value |
 --- | --- |
