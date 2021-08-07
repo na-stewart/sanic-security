@@ -92,6 +92,11 @@ class MaximumAttemptsError(SessionError):
         )
 
 
+class SecondFactorError(SessionError):
+    def __init__(self):
+        super().__init__("A second factor is required for this session.", 401)
+
+
 class InsufficientRoleError(SecurityError):
     def __init__(self):
         super().__init__("Insufficient roles required for this action.", 403)

@@ -9,12 +9,9 @@ from sanic_security.exceptions import (
     ExistsError,
     InvalidIdentifierError,
     NotFoundError,
+    SecondFactorError,
 )
-from sanic_security.models import (
-    Account,
-    SessionFactory,
-    AuthenticationSession,
-)
+from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
 from sanic_security.validation import validate_account, validate_session
 from sanic_security.verification import request_two_step_verification
@@ -74,13 +71,14 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         )
 
 
-async def login(request: Request, account: Account = None):
+async def login(request: Request, account: Account = None, two_factor=False):
     """
     Used to login to accounts registered with Sanic Security.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
-        account (Account): Account being logged into.
+        account (Account): Account being logged into. If None, an account is retrieved via email with the form-data argument.
+        two_factor (bool): Determines if login requires a second factor to authenticate account.
 
     Returns:
         authentication_session
@@ -95,14 +93,29 @@ async def login(request: Request, account: Account = None):
     if account:
         if account.password == hash_password(form.get("password")):
             validate_account(account)
-            authentication_session = await session_factory.get(
-                "authentication", request, account=account
+            return await session_factory.get(
+                "authentication", request, account, two_factor=two_factor
             )
-            return authentication_session
         else:
             raise PasswordIncorrectError()
     else:
         raise NotFoundError("An account with this email does not exist.")
+
+
+async def second_factor(request: Request):
+    """
+    Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
+
+    Args:
+        request (Request): Sanic request parameter.
+
+    Returns:
+        authentication_session
+    """
+    authentication_session = await AuthenticationSession.decode(request)
+    authentication_session.two_factor = False
+    await authentication_session.save(update_fields=["two_factor"])
+    return authentication_session
 
 
 async def logout(authentication_session: AuthenticationSession):
@@ -130,9 +143,11 @@ async def authenticate(request: Request):
         AccountError
         SessionError
     """
-    authentication_session = await AuthenticationSession().decode(request)
+    authentication_session = await AuthenticationSession.decode(request)
     validate_account(authentication_session.account)
     validate_session(authentication_session)
+    if authentication_session.two_factor:
+        raise SecondFactorError()
     await authentication_session.crosscheck_location(request)
     return authentication_session
 

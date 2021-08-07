@@ -1,7 +1,12 @@
 from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
 
-from sanic_security.authentication import register, login, requires_authentication
+from sanic_security.authentication import (
+    register,
+    login,
+    requires_authentication,
+    second_factor,
+)
 from sanic_security.authorization import require_roles, require_permissions
 from sanic_security.blueprints import security
 from sanic_security.captcha import request_captcha, requires_captcha
@@ -15,6 +20,16 @@ from sanic_security.verification import (
 )
 
 app = Sanic(__name__)
+
+
+@app.post("api/test/auth")
+@requires_authentication()
+async def on_authenticate(request, authentication_session):
+    """
+    Test if client is authenticated.
+    """
+    response = json("Authentication successful!", authentication_session.account.json())
+    return response
 
 
 @app.post("api/test/auth/register")
@@ -36,6 +51,32 @@ async def on_login(request):
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.json())
     authentication_session.encode(response, False)
+    return response
+
+
+@app.post("api/test/auth/login/two-factor")
+async def on_two_factor_login(request):
+    """
+    Login with an email and password with a second factor requirement.
+    """
+    authentication_session = await login(request, two_factor=True)
+    two_step_session = await request_two_step_verification(
+        request, authentication_session.account
+    )
+    response = json("Login successful!", two_step_session.code)
+    authentication_session.encode(response, False)
+    two_step_session.encode(response, False)
+    return response
+
+
+@app.post("api/test/auth/second-factor")
+@requires_two_step_verification()
+async def on_second_factor(request, two_step_verification):
+    """
+    Second factor in the two-factor authentication process.
+    """
+    authentication_session = await second_factor(request)
+    response = json("Second factor successful!", authentication_session.json())
     return response
 
 

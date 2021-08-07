@@ -136,7 +136,7 @@ async def assign_role(name: str, account: Account):
         name (str):  The name of the role associated with the account.
         account (Account): the account associated with the created role.
     """
-    return await Role().create(account=account, name=name)
+    return await Role.create(account=account, name=name)
 
 
 async def assign_permission(wildcard: str, account: Account):

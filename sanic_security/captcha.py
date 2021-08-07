@@ -34,7 +34,7 @@ async def captcha(request: Request):
     Returns:
         captcha_session
     """
-    captcha_session = await CaptchaSession().decode(request)
+    captcha_session = await CaptchaSession.decode(request)
     validate_session(captcha_session)
     await captcha_session.crosscheck_code(request.form.get("captcha"))
     return captcha_session

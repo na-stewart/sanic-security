@@ -67,8 +67,9 @@ This library is intended to be easy, convenient, and contains a variety of featu
 
 
 * Easy login and registering
-* Captcha
 * SMS and email verification
+* Two-factor authentication
+* Captcha
 * JWT
 * Wildcard permissions
 * Role permissions
@@ -163,6 +164,8 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 ## Authentication
 
+
+
 * Registration (With all verification requirements)
 
 Phone can be null or empty.
@@ -187,6 +190,20 @@ async def on_register(request, captcha_session):
     return response
 ```
 
+* Verify Account
+
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
+```python
+@app.post("api/auth/verify")
+@requires_two_step_verification(allow_unverified=True)
+async def on_verify(request, two_step_session):
+    await verify_account(two_step_session)
+    return json("You have verified your account and may login!", two_step_session.account.json())
+```
+
 * Registration (Without verification requirements)
 
 Phone can be null or empty.
@@ -205,20 +222,6 @@ async def on_register(request):
     return json("Registration Successful!", account.json())
 ```
 
-* Verify Account
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post("api/auth/verify")
-@requires_two_step_verification(allow_unverified=True)
-async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
-    return json("You have verified your account and may login!", two_step_session.account.json())
-```
-
 * Login
 
 Key | Value |
@@ -235,13 +238,45 @@ async def on_login(request):
     return response
 ```
 
+* Login (With two-factor authentication)
+
+Key | Value |
+--- | --- |
+**email** | test@test.com
+**password** | testpass
+
+
+```python
+@app.post("api/auth/login")
+async def on_two_factor_login(request):
+    authentication_session = await login(request, two_factor=True)
+    two_step_session = await request_two_step_verification(request, authentication_session.account)
+    await two_step_session.text_code() # Text verification code.
+    await two_step_session.email_code() # Or email verification code.
+    response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
+    authentication_session.encode(response)
+    two_step_session.encode(response)
+    return response
+```
+
+* Second Factor
+
+```python
+@app.post("api/auth/login/second-factor")
+@requires_two_step_verification()
+async def on_second_factor(request, two_step_verification):
+    authentication_session = await second_factor(request)
+    response = json("Second factor attempt successful! You may now be authenticated!", authentication_session.account.json())
+    return response
+```
+
 * Requires Authentication
 
 ```python
 @app.get("api/auth/authenticate")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You are now authenticated.", 
+    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
                 authentication_session.account.json())
 ```
 
@@ -255,7 +290,6 @@ async def on_logout(request, authentication_session):
     response = json("Logout successful!", authentication_session.account.json())
     return response
 ```
-
 ## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in security.ini.
@@ -284,7 +318,7 @@ async def on_request_captcha(request):
 ```python
 @app.get("api/captcha/img")
 async def on_captcha_img(request):
-    captcha_session = await CaptchaSession().decode(request)
+    captcha_session = await CaptchaSession.decode(request)
     return await captcha_session.get_image()
 ```
 
@@ -305,10 +339,8 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification (Creates and encodes a two-step session)
 
-Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification.
+Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification. The example below is not conditional.
 
-For verification requests and endpoints requiring verification, an `allow_unverified` (defaulted to false) parameter is available to allow unverified accounts access to the endpoint.
-  
 Key | Value |
 --- | --- |
 **email** | test@test.com
@@ -331,7 +363,7 @@ async def on_request_verification(request, captcha_session):
 ```python
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
-    two_step_session = await TwoStepSession().decode(request)
+    two_step_session = await TwoStepSession.decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     return json("Verification code resend successful!", two_step_session.json())
