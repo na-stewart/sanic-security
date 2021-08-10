@@ -102,7 +102,7 @@ async def login(request: Request, account: Account = None, two_factor=False):
         raise NotFoundError("An account with this email does not exist.")
 
 
-async def second_factor(request: Request):
+async def login_second_factor(request: Request):
     """
     Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
 

@@ -265,9 +265,10 @@ async def on_two_factor_login(request):
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
-    authentication_session = await second_factor(request)
-    response = json("Second factor attempt successful! You may now be authenticated!", authentication_session.account.json())
-    return response
+  authentication_session = await login_second_factor(request)
+  response = json("Second factor attempt successful! You may now be authenticated!",
+                  authentication_session.account.json())
+  return response
 ```
 
 * Requires Authentication
