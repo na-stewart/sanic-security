@@ -43,7 +43,6 @@ async def request_two_step_verification(
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
         allow_unverified (bool): Prevents an unverified account from raising an unverified error.
-        metadata (Any): Metadata included in two-step verification session.
 
     Returns:
          two_step_session
