@@ -40,14 +40,40 @@ async def on_login(request):
     account = await Account.get_via_email(request.form.get("email"))
     try:
         authentication_session = await login(request, account)
+        response = json("Login successful!", authentication_session.account.json())
+        authentication_session.encode(response)
     except UnverifiedError as e:
         two_step_session = await request_two_step_verification(request, account)
+        response = e.response
         await two_step_session.email_code()
-        two_step_session.encode(e.response)
-        return e.response
-    response = json("Login successful!", authentication_session.account.json())
-    authentication_session.encode(response)
+        two_step_session.encode(response)
     return response
+
+
+@security.post(config["BLUEPRINT"]["two_factor_login_route"])
+async def on_two_factor_login(request):
+    """
+    Login with an email and password. A two-step session will be requested as the secon
+    """
+    account = await Account.get_via_email(request.form.get("email"))
+    try:
+        authentication_session = await login(request, account)
+        response = json("Login successful!", authentication_session.account.json())
+        authentication_session.encode(response)
+    except UnverifiedError as e:
+        response = e.response
+    two_step_session = await request_two_step_verification(request, account)
+    await two_step_session.email_code()
+    two_step_session.encode(response)
+    return response
+
+
+@security.post(config["BLUEPRINT"]["second_factor_login_route"])
+@requires_two_step_verification()
+async def on_login_second_factor(request, two_step_session):
+    """
+    Login with the second
+    """
 
 
 @security.post(config["BLUEPRINT"]["verify_route"])

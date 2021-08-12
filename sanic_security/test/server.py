@@ -69,7 +69,7 @@ async def on_two_factor_login(request):
     return response
 
 
-@app.post("api/test/auth/second-factor")
+@app.post("api/test/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
     """
