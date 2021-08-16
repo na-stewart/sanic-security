@@ -63,7 +63,7 @@ class SecurityTest(TestCase):
         assert authenticate_response.status_code == 401, authenticate_response.text
         code = json.loads(two_factor_login_response.text)["data"]
         second_factor_response = client.post(
-            "http://127.0.0.1:8000/api/test/auth/second-factor",
+            "http://127.0.0.1:8000/api/test/auth/login/second-factor",
             data={"code": code},
         )
         assert second_factor_response.status_code == 200, second_factor_response.text

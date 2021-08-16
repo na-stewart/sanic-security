@@ -4,6 +4,7 @@ import os
 import random
 import string
 import uuid
+
 import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
@@ -14,9 +15,9 @@ from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, security_cache_path, dir_exists, config
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
+from sanic_security.utils import get_ip, security_cache_path, dir_exists, config
 
 
 class BaseModel(Model):
@@ -107,6 +108,34 @@ class Account(BaseModel):
             account
         """
         account = await Account.filter(email=email).first()
+        return account
+
+    @staticmethod
+    async def get_via_username(username: str):
+        """
+        Retrieve an account with a username.
+
+        Args:
+            username (str): Username associated to account being retrieved.
+
+        Returns:
+            account
+        """
+        account = await Account.filter(username=username).first()
+        return account
+
+    @staticmethod
+    async def get_via_phone(phone: str):
+        """
+        Retrieve an account with a phone number.
+
+        Args:
+            phone (str): Phone number associated to account being retrieved.
+
+        Returns:
+            account
+        """
+        account = await Account.filter(phone=phone).first()
         return account
 
 
@@ -319,6 +348,9 @@ class TwoStepSession(VerificationSession):
         """
         await send_email(self.account.email, subject, code_prefix + self.code)
 
+    class Meta:
+        table = "two_step_session"
+
 
 class CaptchaSession(VerificationSession):
     """
@@ -355,6 +387,9 @@ class CaptchaSession(VerificationSession):
         """
         return await file(f"{security_cache_path}/captcha/{self.code}.png")
 
+    class Meta:
+        table = "captcha_session"
+
 
 class AuthenticationSession(Session):
     """
@@ -365,6 +400,9 @@ class AuthenticationSession(Session):
     """
 
     two_factor = fields.BooleanField(default=False)
+
+    class Meta:
+        table = "authentication_session"
 
 
 class SessionFactory:
@@ -380,7 +418,7 @@ class SessionFactory:
 
         Args:
             session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
-            request (Request):  Sanic request paramater.
+            request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
             kwargs: Extra arguments applied to session creation.
 

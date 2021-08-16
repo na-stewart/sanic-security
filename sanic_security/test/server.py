@@ -5,7 +5,7 @@ from sanic_security.authentication import (
     register,
     login,
     requires_authentication,
-    second_factor,
+    validate_second_factor,
 )
 from sanic_security.authorization import require_roles, require_permissions
 from sanic_security.blueprints import security
@@ -69,13 +69,13 @@ async def on_two_factor_login(request):
     return response
 
 
-@app.post("api/test/auth/second-factor")
+@app.post("api/test/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
     """
     Second factor in the two-factor authentication process.
     """
-    authentication_session = await second_factor(request)
+    authentication_session = await validate_second_factor(request)
     response = json("Second factor successful!", authentication_session.json())
     return response
 

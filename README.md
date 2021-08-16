@@ -65,16 +65,14 @@
 Sanic Security is an authentication and authorization library made easy, designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library is intended to be easy, convenient, and contains a variety of features:
 
-
 * Easy login and registering
-* SMS and email verification
+* Text and email verification
 * Two-factor authentication
 * Captcha
 * JWT
 * Wildcard permissions
 * Role permissions
 * Blueprints
-* Completely async
 
 This repository has been starred by Sanic's core maintainer:
 
@@ -265,9 +263,10 @@ async def on_two_factor_login(request):
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_second_factor(request, two_step_verification):
-    authentication_session = await second_factor(request)
-    response = json("Second factor attempt successful! You may now be authenticated!", authentication_session.account.json())
-    return response
+  authentication_session = await validate_second_factor(request)
+  response = json("Second factor attempt successful! You may now be authenticated!",
+                  authentication_session.account.json())
+  return response
 ```
 
 * Requires Authentication
@@ -489,7 +488,7 @@ Sanic Security uses [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest
 
 Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
 
-* Define your models like so
+* Define your models like so:
 
 ```python
 from tortoise.models import Model
@@ -500,7 +499,7 @@ class Tournament(Model):
     name = fields.TextField()
 ```
 
-* Use it like so
+* Use it like so:
 
 ```python
 # Create instance by save
