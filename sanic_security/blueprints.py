@@ -9,7 +9,6 @@ from sanic_security.authentication import (
 from sanic_security.captcha import requires_captcha, request_captcha
 from sanic_security.exceptions import UnverifiedError
 from sanic_security.models import CaptchaSession, Account
-from sanic_security.recovery import recover_password
 from sanic_security.utils import json, config
 from sanic_security.verification import (
     request_two_step_verification,
@@ -41,40 +40,14 @@ async def on_login(request):
     account = await Account.get_via_email(request.form.get("email"))
     try:
         authentication_session = await login(request, account)
-        response = json("Login successful!", authentication_session.account.json())
-        authentication_session.encode(response)
     except UnverifiedError as e:
         two_step_session = await request_two_step_verification(request, account)
-        response = e.response
         await two_step_session.email_code()
-        two_step_session.encode(response)
+        two_step_session.encode(e.response)
+        return e.response
+    response = json("Login successful!", authentication_session.account.json())
+    authentication_session.encode(response)
     return response
-
-
-@security.post(config["BLUEPRINT"]["two_factor_login_route"])
-async def on_two_factor_login(request):
-    """
-    Login with an email and password. A two-step session will be requested as the secon
-    """
-    account = await Account.get_via_email(request.form.get("email"))
-    try:
-        authentication_session = await login(request, account)
-        response = json("Login successful!", authentication_session.account.json())
-        authentication_session.encode(response)
-    except UnverifiedError as e:
-        response = e.response
-    two_step_session = await request_two_step_verification(request, account)
-    await two_step_session.email_code()
-    two_step_session.encode(response)
-    return response
-
-
-@security.post(config["BLUEPRINT"]["second_factor_login_route"])
-@requires_two_step_verification()
-async def on_login_second_factor(request, two_step_session):
-    """
-    Login with the second
-    """
 
 
 @security.post(config["BLUEPRINT"]["verify_route"])
@@ -96,29 +69,6 @@ async def on_logout(request, authentication_session):
     await logout(authentication_session)
     response = json("Logout successful!", authentication_session.account.json())
     return response
-
-
-@security.post("api/recov/request")
-@requires_captcha()
-async def on_recovery_request(request, captcha_session):
-    """
-    Requests new two-step session to be used for account recovery.
-    """
-    two_step_session = await request_two_step_verification(request)
-    await two_step_session.email_code()
-    response = json("Recovery request successful!", two_step_session.account.json())
-    two_step_session.encode(response)
-    return response
-
-
-@security.post("api/recov/recover")
-@requires_two_step_verification()
-async def on_recover(request, two_step_session):
-    """
-    Changes an account's password once recovery attempt was determined to have been made by account owner with two-step code found in email.
-    """
-    await recover_password(request, two_step_session)
-    return json("Account recovered successfully", two_step_session.account.json())
 
 
 @security.post(config["BLUEPRINT"]["captcha_request_route"])
