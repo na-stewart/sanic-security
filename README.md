@@ -95,8 +95,7 @@ sudo apt-get install python3-pip
 * Install pip packages
 ```sh
 pip3 install sanic-security
-```
-
+````
 
 ## Usage
 
@@ -190,8 +189,8 @@ Key | Value |
 
 ```python
 @app.post("api/auth/verify")
-async def on_verify(request, two_step_session):
-    two_step_session = await verify_account(two_step_session)
+async def on_verify(request):
+    two_step_session = await verify_account(request)
     return json("You have verified your account and may login!", two_step_session.account.json())
 ```
 

@@ -63,7 +63,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
 
 async def verify_account(request: Request):
     """
-    Used to verify an account associated to an existing two-step session.
+    Removes the verification requirement from the account associated to an existing two-step session.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
