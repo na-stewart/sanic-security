@@ -446,9 +446,7 @@ GET | api/capt/img | Retrieves captcha image from existing captcha session.
 
 ## Testing
 
-You may test Sanic Security manually with postman or run automated unit tests.
-
-Make sure the test Sanic instance (`test/server.py`)  is running on your machine as both postman, and the unit tests operate as a test client.
+Make sure the test Sanic instance (`test/server.py`) is running on your machine as both postman, and the unit tests operate as a test client.
 
 Then run the unit tests (`test/tests.py`) or test with postman via clicking the button below.
 
