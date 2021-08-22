@@ -348,7 +348,7 @@ async def on_request_verification(request, captcha_session):
     return response
 ```
 
-* Resend Two-step Verification Code (Does not create new two-step session, only resends existing session code)
+* Resend Two-step Verification Code (does not create new two-step session, only resends existing session code)
 
 ```python
 @app.post("api/verification/resend")
