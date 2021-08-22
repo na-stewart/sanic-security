@@ -56,7 +56,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             disabled=disabled,
         )
         return (
-            await request_two_step_verification(request, account, True)
+            await session_factory.get("twostep", request, account)
             if not verified
             else account
         )

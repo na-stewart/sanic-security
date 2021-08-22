@@ -47,7 +47,6 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
-    * [Middleware](#middleware)
     * [Blueprints](#blueprints)
     * [Testing](#testing)
     * [Tortoise](#tortoise)
@@ -428,27 +427,6 @@ async def on_error(request, exception):
     return exception.response
 ```
 
-## Middleware
-
-* Cross Site Scripting Protection Middleware
-
- Adds a header to all responses that prevents cross site scripting.
-```python
-@app.middleware("response")
-async def xxs_middleware(request, response):
-    xss_prevention_middleware(request, response)
-```
-
-* Https Redirection Middleware
-
-Redirects all http requests to https.
-
-```python
-@app.middleware("request")
-async def https_middleware(request):
-    return https_redirect_middleware(request)
-```
-
 ## Blueprints
 
 Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
@@ -464,7 +442,7 @@ app.blueprint(security)
 Method | Endpoint | Info |
 --- | --- | --- |
 POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed
+POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed.
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
 POST | api/capt/request | Requests new captcha session.

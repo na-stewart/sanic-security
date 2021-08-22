@@ -10,28 +10,6 @@ config = ConfigParser()
 config.read("./security.ini")
 
 
-def xss_prevention_middleware(request: Request, response: HTTPResponse):
-    """
-    Adds a header to all responses that prevents cross site scripting.
-
-    Args:
-        request (Request): Sanic request parameter.
-        response: (HTTPResponse): Sanic response parameter.
-    """
-    response.headers["x-xss-protection"] = "1; mode=block"
-
-
-def https_redirect_middleware(request: Request):
-    """
-    Redirects all http requests to https.
-
-    Args:
-        request (Request): Sanic request parameter.
-    """
-    if request.url.startswith("http://"):
-        return redirect(request.url.replace("http://", "https://", 1))
-
-
 def hash_password(password: str):
     """
     Securely hashes passed password to be stored.
