@@ -1,5 +1,7 @@
 import hashlib
 import os
+import random
+import string
 from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import HTTPResponse, redirect
@@ -8,6 +10,12 @@ from sanic.response import json as sanic_json
 security_cache_path = "./resources/security-cache"
 config = ConfigParser()
 config.read("./security.ini")
+
+
+def get_secret():
+    if "SS_SECRET" not in os.environ:
+        os.environ["SS_SECRET"] = "".join(random.choices(string.ascii_letters + string.digits, k=20))
+    return os.environ["SS_SECRET"]
 
 
 def hash_password(password: str):
@@ -23,10 +31,9 @@ def hash_password(password: str):
     return hashlib.pbkdf2_hmac(
         "sha512",
         password.encode("utf-8"),
-        config["SECURITY"]["SECRET"].encode("utf-8"),
+        get_secret().encode("utf-8"),
         100000,
     )
-
 
 def get_ip(request: Request):
     """

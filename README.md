@@ -49,7 +49,7 @@
     * [Error Handling](#error-handling)
     * [Blueprints](#blueprints)
     * [Testing](#testing)
-    * [Tortoise](#tortoise)
+* [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -104,13 +104,11 @@ Once Sanic Security is configured and good to go, implementing is easy.
 
 ### Initial Setup
 
-First you have to create a configuration file called security.ini in the project directory. Below is an example of its contents: 
+First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents: 
 
-WARNING: You must set a custom secret or you will compromise your encoded sessions.
 
 ```ini
 [SECURITY]
-secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
 [BLUEPRINT]
@@ -160,8 +158,6 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 ## Authentication
 
-
-
 * Registration (With all verification requirements)
 
 Phone can be null or empty.
@@ -194,9 +190,8 @@ Key | Value |
 
 ```python
 @app.post("api/auth/verify")
-@requires_two_step_verification(allow_unverified=True)
 async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
+    two_step_session = await verify_account(two_step_session)
     return json("You have verified your account and may login!", two_step_session.account.json())
 ```
 
@@ -267,16 +262,6 @@ async def on_second_factor(request, two_step_verification):
   return response
 ```
 
-* Requires Authentication
-
-```python
-@app.get("api/auth/authenticate")
-@requires_authentication()
-async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
-                authentication_session.account.json())
-```
-
 * Logout
 
 ```python
@@ -287,6 +272,17 @@ async def on_logout(request, authentication_session):
     response = json("Logout successful!", authentication_session.account.json())
     return response
 ```
+
+* Requires Authentication
+
+```python
+@app.get("api/auth/authenticate")
+@requires_authentication()
+async def on_authenticated(request, authentication_session):
+    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
+                authentication_session.account.json())
+```
+
 ## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in security.ini.
