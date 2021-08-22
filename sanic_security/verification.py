@@ -2,6 +2,7 @@ import functools
 
 from sanic.request import Request
 
+from sanic_security.exceptions import UnverifiedError
 from sanic_security.models import (
     Account,
     TwoStepSession,
@@ -33,6 +34,33 @@ async def request_two_step_verification(
     return two_step_session
 
 
+async def two_step_verification(request: Request, allow_unverified=False):
+    """
+    Verifies a two-step verification attempt.
+
+    Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error.
+
+    Raises:
+        SessionError
+        AccountError
+
+    Returns:
+         two_step_session
+    """
+    two_step_session = await TwoStepSession.decode(request)
+    try:
+        validate_account(two_step_session.account)
+    except UnverifiedError as e:
+        if not allow_unverified:
+            raise e
+    validate_session(two_step_session)
+    await two_step_session.crosscheck_location(request)
+    await two_step_session.crosscheck_code(request.form.get("code"))
+    return two_step_session
+
+
 async def verify_account(request: Request):
     """
     Used to verify an account associated to an existing two-step session.
@@ -46,31 +74,9 @@ async def verify_account(request: Request):
     Returns:
          two_step_session
     """
-    two_step_session = await two_step_verification(request)
+    two_step_session = await two_step_verification(request, True)
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=["verified"])
-    return two_step_session
-
-
-async def two_step_verification(request: Request):
-    """
-    Verifies a two-step verification attempt.
-
-    Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-
-    Raises:
-        SessionError
-        AccountError
-
-    Returns:
-         two_step_session
-    """
-    two_step_session = await TwoStepSession.decode(request)
-    validate_account(two_step_session.account)
-    validate_session(two_step_session)
-    await two_step_session.crosscheck_location(request)
-    await two_step_session.crosscheck_code(request.form.get("code"))
     return two_step_session
 
 

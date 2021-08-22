@@ -21,7 +21,7 @@ class SecurityTest(TestCase):
             data={
                 "username": "test",
                 "email": "auth@test.com",
-                "password": "testtest",
+                "password": "password",
             },
         )
         assert register_response.status_code == 200, register_response.text
@@ -32,7 +32,7 @@ class SecurityTest(TestCase):
         assert verify_response.status_code == 200, verify_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "auth@test.com", "password": "testtest"},
+            data={"email": "auth@test.com", "password": "password"},
         )
         assert login_response.status_code == 200, login_response.text
         authenticate_response = self.client.post(
@@ -53,7 +53,7 @@ class SecurityTest(TestCase):
         ), account_creation_response.text
         two_factor_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/two-factor",
-            data={"email": "twofactorauth@test.com", "password": "testtest"},
+            data={"email": "twofactorauth@test.com", "password": "password"},
         )
         assert (
             two_factor_login_response.status_code == 200
@@ -82,7 +82,7 @@ class SecurityTest(TestCase):
         ), account_creation_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "captcha@test.com", "password": "testtest"},
+            data={"email": "captcha@test.com", "password": "password"},
         )
         assert login_response.status_code == 200, login_response.text
         captcha_request_response = self.client.post(
@@ -142,7 +142,7 @@ class SecurityTest(TestCase):
         ), account_creation_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "roleauth@test.com", "password": "testtest"},
+            data={"email": "roleauth@test.com", "password": "password"},
         )
         assert login_response.status_code == 200, login_response.text
         roles_assign_response = self.client.post(
@@ -155,6 +155,12 @@ class SecurityTest(TestCase):
         assert (
             role_authorization_response.status_code == 200
         ), role_authorization_response.text
+        insufficient_role_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles/deny"
+        )
+        assert (
+            insufficient_role_authorization_response.status_code == 403
+        ), insufficient_role_authorization_response.text
 
     def test_permission_authorization(self):
         """
@@ -169,7 +175,7 @@ class SecurityTest(TestCase):
         ), account_creation_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "permauth@test.com", "password": "testtest"},
+            data={"email": "permauth@test.com", "password": "password"},
         )
         assert login_response.status_code == 200, login_response.text
         permissions_assign_response = self.client.post(
@@ -184,3 +190,9 @@ class SecurityTest(TestCase):
         assert (
             permission_authorization_response.status_code == 200
         ), permission_authorization_response.text
+        insufficient_permission_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/perms/deny"
+        )
+        assert (
+            insufficient_permission_authorization_response.status_code == 403
+        ), insufficient_permission_authorization_response.text
