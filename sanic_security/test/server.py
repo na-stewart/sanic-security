@@ -170,7 +170,7 @@ async def on_permission_authorization_permit_attempt(request, authentication_ses
 
 @app.post("api/test/auth/perms/deny")
 @require_permissions("admin:deny")
-async def on_permission_authorization_permit_attempt(request, authentication_session):
+async def on_permission_authorization_deny_attempt(request, authentication_session):
     """
     Authorization with insufficient permissions provided to the test account.
     """
@@ -188,7 +188,7 @@ async def on_role_authorization_permit_attempt(request, authentication_session):
 
 @app.post("api/test/auth/roles/deny")
 @require_roles("Deny")
-async def on_role_authorization_permit_attempt(request, authentication_session):
+async def on_role_authorization_deny_attempt(request, authentication_session):
     """
     Authorization with insufficient roles provided to the test account.
     """
