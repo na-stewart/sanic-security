@@ -39,7 +39,7 @@ async def request_two_step_verification(
 
 async def two_step_verification(request: Request, allow_unverified=False):
     """
-    Verifies a two-step verification attempt.
+    Validates a two-step verification attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
@@ -85,7 +85,7 @@ async def verify_account(request: Request):
 
 def requires_two_step_verification():
     """
-    Verifies a two-step challenge attempt.
+    Validates a two-step challenge attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:
