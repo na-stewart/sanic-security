@@ -172,11 +172,29 @@ async def on_permission_authorization_permit_attempt(request, authentication_ses
     return text("Account permitted.")
 
 
+@app.post("api/test/auth/perms/deny")
+@require_permissions("admin:add")
+async def on_permission_authorization_permit_attempt(request, authentication_session):
+    """
+    Authorization with insufficient permissions provided to the test account.
+    """
+    return text("Account permitted.")
+
+
 @app.post("api/test/auth/roles/permit")
 @require_roles("Admin", "Mod")
 async def on_role_authorization_permit_attempt(request, authentication_session):
     """
     Authorization with roles provided to the test account.
+    """
+    return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/deny")
+@require_roles("Admin", "Mod")
+async def on_role_authorization_permit_attempt(request, authentication_session):
+    """
+    Authorization with insufficient roles provided to the test account.
     """
     return text("Account permitted.")
 
