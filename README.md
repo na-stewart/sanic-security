@@ -105,8 +105,7 @@ Once Sanic Security is configured and good to go, implementing is easy.
 
 ### Initial Setup
 
-First you have to create a configuration file called security.ini in the project directory. Make sure Python's 
-working directory is the project directory. Below is an example of its contents: 
+First you have to create a configuration file called security.ini in the project directory. Below is an example of its contents: 
 
 WARNING: You must set a custom secret or you will compromise your encoded sessions.
 
@@ -336,7 +335,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 ## Two-Step Verification
 
-* Request Two-step Verification (Creates and encodes a two-step session)
+* Request Two-step Verification (creates and encodes a two-step session)
 
 Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification. The example below is not conditional.
 
