@@ -17,7 +17,7 @@ from tortoise import fields, Model
 from sanic_security.exceptions import *
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
-from sanic_security.utils import get_ip, security_cache_path, dir_exists, config, get_secret
+from sanic_security.utils import get_ip, security_cache_path, dir_exists, config
 
 
 class BaseModel(Model):
@@ -183,7 +183,7 @@ class Session(BaseModel):
             "ip": self.ip,
         }
         cookie = f"{tag}_{self.__class__.__name__}"
-        encoded = jwt.encode(payload, get_secret(), "HS256")
+        encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
         response.cookies[cookie] = encoded
         response.cookies[cookie]["secure"] = secure
         response.cookies[cookie]["httponly"] = True
@@ -205,7 +205,7 @@ class Session(BaseModel):
             if not cookie:
                 raise DecodingError(f"No session provided by client.")
             else:
-                return jwt.decode(cookie, get_secret(), "HS256")
+                return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
         except DecodeError as e:
             raise DecodingError(e)
 

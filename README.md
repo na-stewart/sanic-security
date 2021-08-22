@@ -109,6 +109,7 @@ First you have to create a configuration file called security.ini in the working
 
 ```ini
 [SECURITY]
+secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=source-sans-pro.light.ttf
 
 [BLUEPRINT]
