@@ -331,8 +331,6 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification (creates and encodes a two-step session)
 
-Requesting verification should be conditional. For example, an account that is logging in is unverified and requires verification. The example below is not conditional.
-
 Key | Value |
 --- | --- |
 **email** | test@test.com
