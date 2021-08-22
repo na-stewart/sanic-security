@@ -40,11 +40,6 @@ class ExistsError(AccountError):
         super().__init__("Account with this email or phone number already exists.", 409)
 
 
-class InvalidIdentifierError(AccountError):
-    def __init__(self, message):
-        super().__init__(message, 400)
-
-
 class DisabledError(AccountError):
     def __init__(self):
         super().__init__("This account has been disabled.", 401)
