@@ -14,7 +14,6 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
 from sanic_security.validation import validate_account, validate_session
-from sanic_security.verification import request_two_step_verification
 
 session_factory = SessionFactory()
 
