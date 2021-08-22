@@ -104,8 +104,7 @@ Once Sanic Security is configured and good to go, implementing is easy.
 
 ### Initial Setup
 
-First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents: 
-
+First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents:
 
 ```ini
 [SECURITY]
