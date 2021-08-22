@@ -12,7 +12,6 @@ from sanic_security.models import CaptchaSession, Account
 from sanic_security.utils import json, config
 from sanic_security.verification import (
     request_two_step_verification,
-    requires_two_step_verification,
     verify_account,
 )
 
@@ -51,12 +50,11 @@ async def on_login(request):
 
 
 @security.post(config["BLUEPRINT"]["verify_route"])
-@requires_two_step_verification(True)
-async def on_verify(request, two_step_session):
+async def on_verify(request):
     """
     Verify account with a two-step session code found in email.
     """
-    await verify_account(two_step_session)
+    two_step_session = await verify_account(request)
     return json("Account verification successful!", two_step_session.account.json())
 
 

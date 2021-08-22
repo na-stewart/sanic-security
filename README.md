@@ -47,10 +47,9 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
-    * [Middleware](#middleware)
     * [Blueprints](#blueprints)
     * [Testing](#testing)
-    * [Tortoise](#tortoise)
+* [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -96,8 +95,7 @@ sudo apt-get install python3-pip
 * Install pip packages
 ```sh
 pip3 install sanic-security
-```
-
+````
 
 ## Usage
 
@@ -105,9 +103,7 @@ Once Sanic Security is configured and good to go, implementing is easy.
 
 ### Initial Setup
 
-First you have to create a configuration file called security.ini in the project directory. Below is an example of its contents: 
-
-WARNING: You must set a custom secret or you will compromise your encoded sessions.
+First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents:
 
 ```ini
 [SECURITY]
@@ -161,8 +157,6 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 ## Authentication
 
-
-
 * Registration (With all verification requirements)
 
 Phone can be null or empty.
@@ -195,9 +189,8 @@ Key | Value |
 
 ```python
 @app.post("api/auth/verify")
-@requires_two_step_verification(allow_unverified=True)
-async def on_verify(request, two_step_session):
-    await verify_account(two_step_session)
+async def on_verify(request):
+    two_step_session = await verify_account(request)
     return json("You have verified your account and may login!", two_step_session.account.json())
 ```
 
@@ -268,16 +261,6 @@ async def on_second_factor(request, two_step_verification):
   return response
 ```
 
-* Requires Authentication
-
-```python
-@app.get("api/auth/authenticate")
-@requires_authentication()
-async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
-                authentication_session.account.json())
-```
-
 * Logout
 
 ```python
@@ -288,6 +271,17 @@ async def on_logout(request, authentication_session):
     response = json("Logout successful!", authentication_session.account.json())
     return response
 ```
+
+* Requires Authentication
+
+```python
+@app.get("api/auth/authenticate")
+@requires_authentication()
+async def on_authenticated(request, authentication_session):
+    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
+                authentication_session.account.json())
+```
+
 ## Captcha
 
 You must download a .ttf font for captcha challenges and define the file's path in security.ini.
@@ -428,27 +422,6 @@ async def on_error(request, exception):
     return exception.response
 ```
 
-## Middleware
-
-* Cross Site Scripting Protection Middleware
-
- Adds a header to all responses that prevents cross site scripting.
-```python
-@app.middleware("response")
-async def xxs_middleware(request, response):
-    xss_prevention_middleware(request, response)
-```
-
-* Https Redirection Middleware
-
-Redirects all http requests to https.
-
-```python
-@app.middleware("request")
-async def https_middleware(request):
-    return https_redirect_middleware(request)
-```
-
 ## Blueprints
 
 Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
@@ -464,7 +437,7 @@ app.blueprint(security)
 Method | Endpoint | Info |
 --- | --- | --- |
 POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed
+POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed.
 POST | api/auth/verify | Verify account with a two-step session code found in email.
 POST | api/auth/logout | Logout of logged in account.
 POST | api/capt/request | Requests new captcha session.
@@ -472,9 +445,7 @@ GET | api/capt/img | Retrieves captcha image from existing captcha session.
 
 ## Testing
 
-You may test Sanic Security manually with postman or run automated unit tests.
-
-Make sure the test Sanic instance (`test/server.py`)  is running on your machine as both postman, and the unit tests operate as a test client.
+Make sure the test Sanic instance (`test/server.py`) is running on your machine as both postman, and the unit tests operate as a test client.
 
 Then run the unit tests (`test/tests.py`) or test with postman via clicking the button below.
 

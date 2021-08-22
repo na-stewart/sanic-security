@@ -7,14 +7,13 @@ from tortoise.exceptions import IntegrityError, ValidationError
 from sanic_security.exceptions import (
     PasswordIncorrectError,
     ExistsError,
-    InvalidIdentifierError,
     NotFoundError,
     SecondFactorError,
+    AccountError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
 from sanic_security.validation import validate_account, validate_session
-from sanic_security.verification import request_two_step_verification
 
 session_factory = SessionFactory()
 
@@ -37,13 +36,11 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     """
     form = request.form
     if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
-        raise InvalidIdentifierError(
-            "Please use a valid email format such as you@mail.com."
-        )
+        raise AccountError("Please use a valid email format such as you@mail.com.")
     if form.get("phone") and (
         not form.get("phone").isdigit() or len(form.get("phone")) < 11
     ):
-        raise InvalidIdentifierError(
+        raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018."
         )
     try:
@@ -56,7 +53,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             disabled=disabled,
         )
         return (
-            await request_two_step_verification(request, account, True)
+            await session_factory.get("twostep", request, account)
             if not verified
             else account
         )
@@ -66,9 +63,7 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
         else:
             raise ie
     except ValidationError:
-        raise InvalidIdentifierError(
-            "Email, username, or phone number is too long or invalid."
-        )
+        raise AccountError("Email, username, or phone number is too long or invalid.")
 
 
 async def login(request: Request, account: Account = None, two_factor=False):

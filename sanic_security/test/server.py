@@ -133,10 +133,7 @@ async def on_perms_assignment(request, authentication_session):
         )
     else:
         await Permission.create(
-            account=authentication_session.account, wildcard="admin:update"
-        )
-        await Permission.create(
-            account=authentication_session.account, wildcard="admin:add"
+            account=authentication_session.account, wildcard="admin:permit"
         )
         assignment_response = json(
             "Permissions added to account!", authentication_session.account.json()
@@ -155,8 +152,7 @@ async def on_roles_assignment(request, authentication_session):
             "Roles already added to account!", authentication_session.account.json()
         )
     else:
-        await Role.create(account=authentication_session.account, name="Admin")
-        await Role.create(account=authentication_session.account, name="Mod")
+        await Role.create(account=authentication_session.account, name="Permit")
         assignment_response = json(
             "Roles added to account!", authentication_session.account.json()
         )
@@ -164,7 +160,7 @@ async def on_roles_assignment(request, authentication_session):
 
 
 @app.post("api/test/auth/perms/permit")
-@require_permissions("admin:update")
+@require_permissions("admin:permit")
 async def on_permission_authorization_permit_attempt(request, authentication_session):
     """
     Authorization with permissions provided to the test account.
@@ -172,11 +168,29 @@ async def on_permission_authorization_permit_attempt(request, authentication_ses
     return text("Account permitted.")
 
 
+@app.post("api/test/auth/perms/deny")
+@require_permissions("admin:deny")
+async def on_permission_authorization_deny_attempt(request, authentication_session):
+    """
+    Authorization with insufficient permissions provided to the test account.
+    """
+    return text("Account permitted.")
+
+
 @app.post("api/test/auth/roles/permit")
-@require_roles("Admin", "Mod")
+@require_roles("Permit")
 async def on_role_authorization_permit_attempt(request, authentication_session):
     """
     Authorization with roles provided to the test account.
+    """
+    return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/deny")
+@require_roles("Deny")
+async def on_role_authorization_deny_attempt(request, authentication_session):
+    """
+    Authorization with insufficient roles provided to the test account.
     """
     return text("Account permitted.")
 
@@ -191,7 +205,7 @@ async def on_account_creation(request):
         account = await Account.create(
             username="test",
             email=form.get("email"),
-            password=hash_password("testtest"),
+            password=hash_password("password"),
             verified=True,
         )
         response = json("Account creation successful!", account.json())

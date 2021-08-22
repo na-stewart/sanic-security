@@ -57,7 +57,7 @@ async def check_roles(request: Request, *required_roles: str):
     authentication_session = await authenticate(request)
     client_roles = await Role.filter(account=authentication_session.account).all()
     for role in client_roles:
-        if role in client_roles:
+        if role.name in required_roles:
             break
     else:
         raise InsufficientRoleError()
