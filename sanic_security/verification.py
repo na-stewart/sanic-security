@@ -27,9 +27,12 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
-    if not account:
-        account = await Account.get_via_email(request.form.get("email"))
-    validate_account(account)
+    try:
+        if not account:
+            account = await Account.get_via_email(request.form.get("email"))
+        validate_account(account)
+    except UnverifiedError:
+        pass
     two_step_session = await session_factory.get("twostep", request, account)
     return two_step_session
 
