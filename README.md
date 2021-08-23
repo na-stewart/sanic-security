@@ -323,7 +323,7 @@ Key | Value |
 @app.post("api/verification/request")
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
-    two_step_session =  await request_two_step_verification(request)
+    two_step_session = await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json("Verification request successful!", two_step_session.json())
