@@ -8,7 +8,7 @@ from sanic_security.validation import validate_session
 session_factory = SessionFactory()
 
 
-async def request_captcha(request: Request):
+async def request_captcha(request: Request) -> CaptchaSession:
     """
     Creates a captcha session.
 
@@ -21,7 +21,7 @@ async def request_captcha(request: Request):
     return await session_factory.get("captcha", request)
 
 
-async def captcha(request: Request):
+async def captcha(request: Request) -> CaptchaSession:
     """
     Validates a captcha challenge attempt.
 

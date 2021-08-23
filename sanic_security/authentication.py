@@ -18,7 +18,9 @@ from sanic_security.validation import validate_account, validate_session
 session_factory = SessionFactory()
 
 
-async def register(request: Request, verified: bool = False, disabled: bool = False):
+async def register(
+    request: Request, verified: bool = False, disabled: bool = False
+) -> Account:
     """
     Registers a new account to be used by a client.
 
@@ -36,12 +38,13 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
     """
     form = request.form
     if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
-        raise AccountError("Please use a valid email format such as you@mail.com.")
+        raise AccountError("Please use a valid email format such as you@mail.com.", 400)
     if form.get("phone") and (
         not form.get("phone").isdigit() or len(form.get("phone")) < 11
     ):
         raise AccountError(
-            "Please use a valid phone format such as 15621435489 or 19498963648018."
+            "Please use a valid phone format such as 15621435489 or 19498963648018.",
+            400,
         )
     try:
         account = await Account.create(
@@ -52,21 +55,21 @@ async def register(request: Request, verified: bool = False, disabled: bool = Fa
             verified=verified,
             disabled=disabled,
         )
-        return (
-            await session_factory.get("twostep", request, account)
-            if not verified
-            else account
-        )
+        return account
     except IntegrityError as ie:
         if ie.args[0].args[0] == 1062:
             raise ExistsError()
         else:
             raise ie
     except ValidationError:
-        raise AccountError("Email, username, or phone number is too long or invalid.")
+        raise AccountError(
+            "Email, username, or phone number is too long or invalid.", 400
+        )
 
 
-async def login(request: Request, account: Account = None, two_factor=False):
+async def login(
+    request: Request, account: Account = None, two_factor=False
+) -> AuthenticationSession:
     """
     Used to login to accounts registered with Sanic Security.
 
@@ -97,7 +100,7 @@ async def login(request: Request, account: Account = None, two_factor=False):
         raise NotFoundError("An account with this email does not exist.")
 
 
-async def validate_second_factor(request: Request):
+async def validate_second_factor(request: Request) -> AuthenticationSession:
     """
     Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
 
@@ -124,7 +127,7 @@ async def logout(authentication_session: AuthenticationSession):
     await authentication_session.save(update_fields=["valid"])
 
 
-async def authenticate(request: Request):
+async def authenticate(request: Request) -> AuthenticationSession:
     """
     Used to determine if the client is authenticated.
 
