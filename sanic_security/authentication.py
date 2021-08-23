@@ -30,8 +30,7 @@ async def register(
         disabled (bool): If true, account being registered must be enabled before use.
 
     Returns:
-        account: An account is returned if the verified parameter is true.
-        two_step_session: A two-step session is returned if the verified parameter is false.
+        account
 
     Raises:
         AccountError
