@@ -3,14 +3,14 @@ import os
 from configparser import ConfigParser
 
 from sanic.request import Request
-from sanic.response import json as sanic_json
+from sanic.response import json as sanic_json, HTTPResponse
 
 security_cache_path = "./resources/security-cache"
 config = ConfigParser()
 config.read("./security.ini")
 
 
-def hash_password(password: str):
+def hash_password(password: str) -> bytes:
     """
     Securely hashes passed password to be stored.
 
@@ -28,7 +28,7 @@ def hash_password(password: str):
     )
 
 
-def get_ip(request: Request):
+def get_ip(request: Request) -> str:
     """
     Retrieves ip address from request.
 
@@ -41,7 +41,7 @@ def get_ip(request: Request):
     return request.remote_addr if request.remote_addr else request.ip
 
 
-def dir_exists(path: str):
+def dir_exists(path: str) -> bool:
     """
     Checks if path exists and isn't empty. Creates new path if neither of these conditions are met.
 
@@ -59,7 +59,7 @@ def dir_exists(path: str):
     return exists
 
 
-def json(message: str, data, status_code: int = 200):
+def json(message: str, data, status_code: int = 200) -> HTTPResponse:
     """
     A preformatted Sanic json response.
 

@@ -40,7 +40,7 @@ class BaseModel(Model):
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
-    def json(self):
+    def json(self) -> dict:
         """
         A JSON serializable dict to be used in a HTTP request or response.
 
@@ -189,7 +189,7 @@ class Session(BaseModel):
         response.cookies[cookie]["httponly"] = True
 
     @classmethod
-    def decode_raw(cls, request: Request, tag: str = "sec"):
+    def decode_raw(cls, request: Request, tag: str = "sec") -> dict:
         """
         Decodes JWT token from client cookie into a python dict.
 
@@ -270,7 +270,7 @@ class VerificationSession(Session):
         raise NotImplementedError()
 
     @classmethod
-    async def get_random_code(cls):
+    async def get_random_code(cls) -> str:
         """
         Retrieves a random cached verification session code.
         """
@@ -378,7 +378,7 @@ class CaptchaSession(VerificationSession):
         await cls.initialize_cache()
         return random.choice(os.listdir(f"{security_cache_path}/captcha")).split(".")[0]
 
-    async def get_image(self):
+    async def get_image(self) -> HTTPResponse:
         """
         Retrieves captcha image file.
 

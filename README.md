@@ -56,8 +56,6 @@
 * [Versioning](#Versioning)
 
 
-
-
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
@@ -157,7 +155,7 @@ All request bodies must be sent as `form-data`. The tables in the below examples
 
 ## Authentication
 
-* Registration (With all verification requirements)
+* Registration
 
 Phone can be null or empty.
 
@@ -173,7 +171,8 @@ Key | Value |
 @app.post("api/auth/register")
 @requires_captcha()
 async def on_register(request, captcha_session):
-    two_step_session = await register(request)
+    account = await register(request)
+    two_step_session = await request_two_step_verification(request, account, allow_unverified=True)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json("Registration successful!", two_step_session.account.json())
@@ -192,24 +191,6 @@ Key | Value |
 async def on_verify(request):
     two_step_session = await verify_account(request)
     return json("You have verified your account and may login!", two_step_session.account.json())
-```
-
-* Registration (Without verification requirements)
-
-Phone can be null or empty.
-
-Key | Value |
---- | --- |
-**username** | test 
-**email** | test@test.com 
-**phone** | 19811354186
-**password** | testpass
-
-```python
-@app.post("api/auth/register")
-async def on_register(request):
-    account = await register(request, verified=True)
-    return json("Registration Successful!", account.json())
 ```
 
 * Login
@@ -340,7 +321,7 @@ Key | Value |
 @app.post("api/verification/request")
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
-    two_step_session =  await request_two_step_verification(request)
+    two_step_session = await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json("Verification request successful!", two_step_session.json())

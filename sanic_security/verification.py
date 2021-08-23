@@ -14,15 +14,15 @@ session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
-    request: Request,
-    account=None,
-):
+    request: Request, account: Account = None, allow_unverified: bool = False
+) -> TwoStepSession:
     """
     Creates a two-step session associated with an account.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error during validation.
 
     Returns:
          two_step_session
@@ -31,19 +31,22 @@ async def request_two_step_verification(
         if not account:
             account = await Account.get_via_email(request.form.get("email"))
         validate_account(account)
-    except UnverifiedError:
-        pass
+    except UnverifiedError as e:
+        if not allow_unverified:
+            raise e
     two_step_session = await session_factory.get("twostep", request, account)
     return two_step_session
 
 
-async def two_step_verification(request: Request, allow_unverified=False):
+async def two_step_verification(
+    request: Request, allow_unverified: bool = False
+) -> TwoStepSession:
     """
     Validates a two-step verification attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        allow_unverified (bool): Prevents an unverified account from raising an unverified error.
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error during validation.
 
     Raises:
         SessionError
@@ -64,7 +67,7 @@ async def two_step_verification(request: Request, allow_unverified=False):
     return two_step_session
 
 
-async def verify_account(request: Request):
+async def verify_account(request: Request) -> TwoStepSession:
     """
     Removes the verification requirement from the account associated to an existing two-step session.
 
@@ -83,9 +86,12 @@ async def verify_account(request: Request):
     return two_step_session
 
 
-def requires_two_step_verification():
+def requires_two_step_verification(allow_unverified: bool = False):
     """
     Validates a two-step challenge attempt.
+
+    Args:
+        allow_unverified (bool): Prevents an unverified account from raising an unverified error during validation.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -104,7 +110,7 @@ def requires_two_step_verification():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            two_step_session = await two_step_verification(request)
+            two_step_session = await two_step_verification(request, allow_unverified)
             return await func(request, two_step_session, *args, **kwargs)
 
         return wrapped

@@ -37,9 +37,11 @@ async def on_register(request):
     """
     Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is provided in the response.
     """
-    two_step_session = await register(request)
+    account = await register(request)
+    two_step_session = await request_two_step_verification(request, account, True)
+    await two_step_session.email_code()
     response = json("Registration successful!", two_step_session.code)
-    two_step_session.encode(response, secure=False)
+    two_step_session.encode(response, False)
     return response
 
 
