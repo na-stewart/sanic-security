@@ -62,7 +62,7 @@
 Sanic Security is an authentication and authorization library made easy, designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library is intended to be easy, convenient, and contains a variety of features:
 
-* Easy login and registration
+* Simple login, registration, and authentication
 * Text and email verification
 * Two-factor authentication
 * Captcha
