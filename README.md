@@ -46,6 +46,7 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
+    * [Validation](#validation)
     * [Error Handling](#error-handling)
     * [Blueprints](#blueprints)
     * [Testing](#testing)
@@ -172,7 +173,7 @@ Key | Value |
 @requires_captcha()
 async def on_register(request, captcha_session):
     account = await register(request)
-    two_step_session = await request_two_step_verification(request, account, allow_unverified=True)
+    two_step_session = await request_two_step_verification(request, account)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
     response = json("Registration successful!", two_step_session.account.json())
@@ -391,6 +392,25 @@ async def on_require_perms(request, authentication_session):
 @require_roles("Admin", "Moderator")
 async def on_require_roles(request, authentication_session):
     return text("Account permitted")
+```
+
+## Validation
+
+Validation determines if an error should be raised due to a model's variable values. For example, a `DisabledError` would be
+raised when attempting to validate an account with the disabled variable value set to true. 
+
+* Validate Account
+
+```python
+account = await Account.get_via_email("test@test.com")
+validate_account(account)
+```
+
+* Validate Session
+
+```python
+authentication_session = await AuthenticationSession.decode()
+validate_session(authentication_session)
 ```
 
 ## Error Handling

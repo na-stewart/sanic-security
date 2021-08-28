@@ -14,7 +14,7 @@ session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
-    request: Request, account: Account = None, allow_unverified: bool = False
+    request: Request, account: Account = None
 ) -> TwoStepSession:
     """
     Creates a two-step session associated with an account.
@@ -22,18 +22,12 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
-        allow_unverified (bool): Prevents an unverified account from raising an unverified error during validation.
 
     Returns:
          two_step_session
     """
-    try:
-        if not account:
-            account = await Account.get_via_email(request.form.get("email"))
-        validate_account(account)
-    except UnverifiedError as e:
-        if not allow_unverified:
-            raise e
+    if not account:
+        account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("twostep", request, account)
     return two_step_session
 

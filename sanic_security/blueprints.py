@@ -25,7 +25,7 @@ async def on_register(request, captcha_session):
     Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
     """
     account = await register(request)
-    two_step_session = await request_two_step_verification(request, account, True)
+    two_step_session = await request_two_step_verification(request, account)
     await two_step_session.email_code()
     response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response)
@@ -41,7 +41,7 @@ async def on_login(request):
     try:
         authentication_session = await login(request, account)
     except UnverifiedError as e:
-        two_step_session = await request_two_step_verification(request, account, True)
+        two_step_session = await request_two_step_verification(request, account)
         await two_step_session.email_code()
         two_step_session.encode(e.response)
         return e.response
@@ -86,5 +86,5 @@ async def on_captcha_img_request(request):
     """
     Retrieves captcha image from existing captcha session.
     """
-    captcha_session = await CaptchaSession().decode(request)
+    captcha_session = await CaptchaSession.decode(request)
     return await captcha_session.get_image()
