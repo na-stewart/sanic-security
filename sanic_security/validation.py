@@ -23,12 +23,12 @@ def validate_account(account: Account):
     """
     if not account:
         raise NotFoundError("Account could not be found.")
+    elif account.deleted:
+        raise DeletedError("Account has been deleted.")
     elif not account.verified:
         raise UnverifiedError()
     elif account.disabled:
         raise DisabledError()
-    elif account.deleted:
-        raise DeletedError("Account has been deleted.")
 
 
 def validate_session(session: Session):
@@ -43,9 +43,9 @@ def validate_session(session: Session):
     """
     if session is None:
         raise NotFoundError("Session could not be found.")
+    elif session.deleted:
+        raise DeletedError("Session has been deleted.")
     elif datetime.datetime.now(datetime.timezone.utc) >= session.expiration_date:
         raise ExpiredError()
     elif not session.valid:
         raise InvalidError()
-    elif session.deleted:
-        raise DeletedError("Session has been deleted.")
