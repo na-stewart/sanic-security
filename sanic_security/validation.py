@@ -41,7 +41,7 @@ def validate_session(session: Session):
     Raises:
         SessionError
     """
-    if session is None:
+    if not session:
         raise NotFoundError("Session could not be found.")
     elif session.deleted:
         raise DeletedError("Session has been deleted.")
