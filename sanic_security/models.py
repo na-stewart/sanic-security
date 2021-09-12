@@ -9,10 +9,10 @@ import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
-from sanic import Sanic
 from sanic.request import Request
 from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
+from tortoise.exceptions import DoesNotExist
 
 from sanic_security.exceptions import *
 from sanic_security.lib.smtp import send_email
@@ -39,6 +39,15 @@ class BaseModel(Model):
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
+
+    def validate(self):
+        """
+        Determines if an error should be raised due variable values.
+
+        Raises:
+            SecurityError
+        """
+        raise NotImplementedError()
 
     def json(self) -> dict:
         """
@@ -96,6 +105,14 @@ class Account(BaseModel):
             "verified": self.verified,
         }
 
+    def validate(self):
+        if self.deleted:
+            raise DeletedError("Account has been deleted.")
+        elif self.disabled:
+            raise DisabledError()
+        elif not self.verified:
+            raise UnverifiedError()
+
     @staticmethod
     async def get_via_email(email: str):
         """
@@ -107,7 +124,7 @@ class Account(BaseModel):
         Returns:
             account
         """
-        account = await Account.filter(email=email).first()
+        account = await Account.filter(email=email).get()
         return account
 
     @staticmethod
@@ -121,7 +138,7 @@ class Account(BaseModel):
         Returns:
             account
         """
-        account = await Account.filter(username=username).first()
+        account = await Account.filter(username=username).get()
         return account
 
     @staticmethod
@@ -135,7 +152,7 @@ class Account(BaseModel):
         Returns:
             account
         """
-        account = await Account.filter(phone=phone).first()
+        account = await Account.filter(phone=phone).get()
         return account
 
 
@@ -166,6 +183,24 @@ class Session(BaseModel):
             else None,
             "valid": self.valid,
         }
+
+    def validate(self):
+        if self.deleted:
+            raise DeletedError("Session has been deleted!")
+        elif datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date:
+            raise ExpiredError()
+        elif not self.valid:
+            raise InvalidError()
+
+    async def crosscheck_location(self, request):
+        """
+        Checks if client using session is in a known location (ip address).
+
+        Raises:
+            UnknownLocationError:
+        """
+        if not await self.filter(ip=get_ip(request), account=self.account).exists():
+            raise SessionError("Unrecognised location.", 401)
 
     def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):
         """
@@ -203,11 +238,11 @@ class Session(BaseModel):
         cookie = request.cookies.get(f"{tag}_{cls.__name__}")
         try:
             if not cookie:
-                raise DecodingError(f"No session provided by client.")
+                raise SessionError(f"No session provided by client.", 400)
             else:
                 return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
         except DecodeError as e:
-            raise DecodingError(e)
+            raise SessionError(str(e), 400)
 
     @classmethod
     async def decode(cls, request: Request, tag: str = "sec"):
@@ -223,25 +258,16 @@ class Session(BaseModel):
 
         Raises:
             DecodeError
+            SessionError
         """
         decoded = cls.decode_raw(request, tag)
-        decoded_session = (
-            await cls.filter(uid=decoded.get("uid")).prefetch_related("account").first()
-        )
-        return decoded_session
-
-    async def crosscheck_location(self, request):
-        """
-        Checks if client using session is in a known location (ip address). Prevents cookie jacking.
-
-        Raises:
-            UnknownLocationError:
-        """
-
-        if not await self.filter(ip=get_ip(request), account=self.account).exists():
-            raise CrosscheckError(
-                "Client location does not match any existing session location."
+        try:
+            decoded_session = (
+                await cls.filter(uid=decoded["uid"]).prefetch_related("account").get()
             )
+        except DoesNotExist:
+            raise NotFoundError("Session could not be found.")
+        return decoded_session
 
     class Meta:
         abstract = True
@@ -263,9 +289,6 @@ class VerificationSession(Session):
     async def initialize_cache():
         """
         Creates verification session cache and generates required files.
-
-        Args:
-            app (Sanic): Sanic Framework app.
         """
         raise NotImplementedError()
 
@@ -276,23 +299,25 @@ class VerificationSession(Session):
         """
         raise NotImplementedError()
 
-    async def crosscheck_code(self, code: str):
+    async def crosscheck_code(self, request: Request, code: str):
         """
         Used to check if code passed is equivalent to the verification session code.
 
         Args:
             code (str): Code being cross-checked with verification session code.
+            request (Request): Sanic request parameter.
 
         Raises:
             CrossCheckError
             MaximumAttemptsError
         """
+        await self.crosscheck_location(request)
         if self.attempts >= 5:
-            raise MaximumAttemptsError()
+            raise SessionError("The maximum attempts allowed for this session has been reached.", 401)
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=["attempts"])
-            raise CrosscheckError("The value provided does not match.")
+            raise SessionError("The value provided does not match.", 401)
         else:
             self.valid = False
             await self.save(update_fields=["valid"])
@@ -310,7 +335,7 @@ class TwoStepSession(VerificationSession):
     async def initialize_cache():
         if not dir_exists(f"{security_cache_path}/verification"):
             async with aiofiles.open(
-                f"{security_cache_path}/verification/codes.txt", mode="w"
+                    f"{security_cache_path}/verification/codes.txt", mode="w"
             ) as f:
                 for i in range(100):
                     code = "".join(
@@ -322,7 +347,7 @@ class TwoStepSession(VerificationSession):
     async def get_random_code(cls):
         await cls.initialize_cache()
         async with aiofiles.open(
-            f"{security_cache_path}/verification/codes.txt", mode="r"
+                f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -337,7 +362,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-        self, subject="Verification", code_prefix="Your code is:\n\n "
+            self, subject="Verification", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.
@@ -411,7 +436,7 @@ class SessionFactory:
     """
 
     async def get(
-        self, session_type: str, request: Request, account: Account = None, **kwargs
+            self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
          Creates and returns a session with all of the fulfilled requirements.
@@ -434,7 +459,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(minutes=1),
+                                + datetime.timedelta(minutes=1),
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
@@ -443,7 +468,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(minutes=5),
+                                + datetime.timedelta(minutes=5),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -451,7 +476,7 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(days=30),
+                                + datetime.timedelta(days=30),
             )
         else:
             raise ValueError("Invalid session type.")

@@ -47,7 +47,6 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [Validation](#validation)
     * [Error Handling](#error-handling)
     * [Blueprints](#blueprints)
     * [Testing](#testing)
@@ -393,33 +392,6 @@ async def on_require_perms(request, authentication_session):
 @require_roles("Admin", "Moderator")
 async def on_require_roles(request, authentication_session):
     return text("Account permitted")
-```
-
-## Validation
-
-Validation determines if an error should be raised due to a model's variable values. For example, a `DisabledError` would be
-raised when attempting to validate an account with the disabled variable value set to true. 
-
-* Validate Account
-
-```python
-account = await Account.get_via_email("test@test.com")
-validate_account(account)
-```
-
-* Validate Session
-
-```python
-authentication_session = await AuthenticationSession.decode()
-validate_session(authentication_session)
-```
-
-## Error Handling
-
-```python
-@app.exception(SecurityError)
-async def on_error(request, exception):
-    return exception.response
 ```
 
 ## Blueprints

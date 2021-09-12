@@ -2,24 +2,21 @@ import functools
 import re
 
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, ValidationError
+from tortoise.exceptions import IntegrityError, ValidationError, DoesNotExist
 
 from sanic_security.exceptions import (
-    PasswordIncorrectError,
     ExistsError,
     NotFoundError,
-    SecondFactorError,
-    AccountError,
+    AccountError, SessionError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
-from sanic_security.validation import validate_account, validate_session
 
 session_factory = SessionFactory()
 
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+        request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account to be used by a client.
@@ -35,11 +32,10 @@ async def register(
     Raises:
         AccountError
     """
-    form = request.form
-    if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
+    if not re.search("[^@]+@[^@]+.[^@]+", request.form["email"]):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
-    if form.get("phone") and (
-        not form.get("phone").isdigit() or len(form.get("phone")) < 11
+    if request.form["phone"] and (
+            not request.form["phone"].isdigit() or len(request.form["phone"]) < 11
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -47,10 +43,10 @@ async def register(
         )
     try:
         account = await Account.create(
-            email=form.get("email"),
-            username=form.get("username"),
-            password=hash_password(form.get("password")),
-            phone=form.get("phone"),
+            email=request.form["email"],
+            username=request.form["username"],
+            password=hash_password(request.form["password"]),
+            phone=request.form["phone"],
             verified=verified,
             disabled=disabled,
         )
@@ -67,7 +63,7 @@ async def register(
 
 
 async def login(
-    request: Request, account: Account = None, two_factor=False
+        request: Request, account: Account = None, two_factor=False
 ) -> AuthenticationSession:
     """
     Used to login to accounts registered with Sanic Security.
@@ -84,18 +80,17 @@ async def login(
         AccountError
         SessionError
     """
-    form = request.form
-    if not account:
-        account = await Account.get_via_email(form.get("email"))
-    if account:
-        if account.password == hash_password(form.get("password")):
-            validate_account(account)
-            return await session_factory.get(
-                "authentication", request, account, two_factor=two_factor
-            )
-        else:
-            raise PasswordIncorrectError()
-    else:
+    try:
+        if not account:
+            account = await Account.get_via_email(request.form["email"])
+            if account.password == hash_password(request.form["password"]):
+                account.validate()
+                return await session_factory.get(
+                    "authentication", request, account, two_factor=two_factor
+                )
+            else:
+                raise AccountError("Incorrect password!", 401)
+    except DoesNotExist:
         raise NotFoundError("An account with this email does not exist.")
 
 
@@ -141,10 +136,10 @@ async def authenticate(request: Request) -> AuthenticationSession:
         SessionError
     """
     authentication_session = await AuthenticationSession.decode(request)
-    validate_account(authentication_session.account)
-    validate_session(authentication_session)
+    authentication_session.account.validate()
+    authentication_session.validate()
     if authentication_session.two_factor:
-        raise SecondFactorError()
+        raise SessionError("A second factor is required for this session.", 401)
     await authentication_session.crosscheck_location(request)
     return authentication_session
 
