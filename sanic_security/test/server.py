@@ -1,7 +1,9 @@
-from sanic import Sanic
+from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import login, on_second_factor, register, requires_authentication, logout
+from sanic_security.authorization import require_permissions, require_roles
+from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError, UnverifiedError
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account
@@ -11,7 +13,7 @@ from sanic_security.verification import request_two_step_verification, requires_
 app = Sanic(__name__)
 
 
-@app.post("api/auth/register")
+@app.post("api/test/auth/register")
 async def on_register(request, captcha_session):
     account = await register(request, verified=request.form.get("verified") == "true",
                              disabled=request.form.get("disabled") == "true")
@@ -88,11 +90,34 @@ async def on_authenticate(request, authentication_session):
     return response
 
 
+@app.post("api/test/capt/request")
+async def on_captcha_request(request):
+    captcha_session = await request_captcha(request)
+    response = json("Captcha request successful!", captcha_session.code)
+    captcha_session.encode(response, False)
+    return response
+
+
+@app.post("api/test/capt")
+@requires_captcha()
+async def on_captcha_attempt(request, captcha_session):
+    return json("Captcha attempt successful!", captcha_session.json())
+
+
+@app.post("api/test/auth/perms")
+@require_permissions("admin:create")
+async def on_permission_authorization_permit_attempt(request, authentication_session):
+    return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles")
+@require_roles("Admin")
+async def on_role_authorization_permit_attempt(request, authentication_session):
+    return text("Account permitted.")
+
+
 @app.post("api/test/account/create")
 async def on_account_creation(request):
-    """
-    Creates an account to be used for testing purposes.
-    """
     try:
         account = await Account.create(
             username="test",

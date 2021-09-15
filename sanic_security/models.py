@@ -218,8 +218,7 @@ class Session(BaseModel):
             "ip": self.ip,
         }
         cookie = f"{tag}_{self.__class__.__name__}"
-        encoded = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
-        response.cookies[cookie] = encoded
+        response.cookies[cookie] = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
         response.cookies[cookie]["secure"] = secure
         response.cookies[cookie]["httponly"] = True
 
