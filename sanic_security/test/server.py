@@ -1,22 +1,35 @@
 from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
 
-from sanic_security.authentication import login, on_second_factor, register, requires_authentication, logout
+from sanic_security.authentication import (
+    login,
+    on_second_factor,
+    register,
+    requires_authentication,
+    logout,
+)
 from sanic_security.authorization import require_permissions, require_roles
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError, UnverifiedError
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account
 from sanic_security.utils import json, hash_password
-from sanic_security.verification import request_two_step_verification, requires_two_step_verification, verify_account
+from sanic_security.verification import (
+    request_two_step_verification,
+    requires_two_step_verification,
+    verify_account,
+)
 
 app = Sanic(__name__)
 
 
 @app.post("api/test/auth/register")
 async def on_register(request, captcha_session):
-    account = await register(request, verified=request.form.get("verified") == "true",
-                             disabled=request.form.get("disabled") == "true")
+    account = await register(
+        request,
+        verified=request.form.get("verified") == True,
+        disabled=request.form.get("disabled") == True
+    )
     two_step_session = await request_two_step_verification(request, account)
     await two_step_session.email_code()
     response = json("Registration successful!", two_step_session.code)
@@ -27,10 +40,14 @@ async def on_register(request, captcha_session):
 @app.post("api/test/auth/login/two-factor")
 async def on_login_with_two_factor_authentication(request):
     authentication_session = await login(request, two_factor=True)
-    two_step_session = await request_two_step_verification(request, authentication_session.account)
+    two_step_session = await request_two_step_verification(
+        request, authentication_session.account
+    )
     await two_step_session.email_code()
-    response = json("Login successful! A second factor is now required to be authenticated.",
-                    two_step_session.code)
+    response = json(
+        "Login successful! A second factor is now required to be authenticated.",
+        two_step_session.code,
+    )
     authentication_session.encode(response, False)
     two_step_session.encode(response, False)
     return response
@@ -40,7 +57,9 @@ async def on_login_with_two_factor_authentication(request):
 @requires_two_step_verification()
 async def on_login_second_factor(request, two_step_verification):
     authentication_session = await on_second_factor(request)
-    response = json("Second factor attempt successful!", authentication_session.account.json())
+    response = json(
+        "Second factor attempt successful!", authentication_session.account.json()
+    )
     return response
 
 
@@ -63,7 +82,9 @@ async def on_login_with_verification_check(request):
 @app.post("api/test/auth/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json("You have verified your account and may login!", two_step_session.account.json())
+    return json(
+        "You have verified your account and may login!", two_step_session.account.json()
+    )
 
 
 @app.post("api/test/auth/login")
@@ -104,14 +125,26 @@ async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 
 
-@app.post("api/test/auth/perms")
+@app.post("api/test/auth/perms/sufficient")
 @require_permissions("admin:create")
 async def on_permission_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
 
 
-@app.post("api/test/auth/roles")
+@app.post("api/test/auth/perms/insufficient")
+@require_permissions("admin:update")
+async def on_permission_authorization_permit_attempt(request, authentication_session):
+    return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/sufficient")
 @require_roles("Admin")
+async def on_role_authorization_permit_attempt(request, authentication_session):
+    return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/insufficient")
+@require_roles("Owner")
 async def on_role_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
 

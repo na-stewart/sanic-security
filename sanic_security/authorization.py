@@ -5,7 +5,8 @@ from sanic.request import Request
 
 from sanic_security.authentication import authenticate
 from sanic_security.exceptions import (
-    InsufficientRolesError, InsufficientPermissionsError,
+    InsufficientRolesError,
+    InsufficientPermissionsError,
 )
 from sanic_security.models import Role, Permission, Account, AuthenticationSession
 

@@ -218,7 +218,9 @@ class Session(BaseModel):
             "ip": self.ip,
         }
         cookie = f"{tag}_{self.__class__.__name__}"
-        response.cookies[cookie] = jwt.encode(payload, config["SECURITY"]["secret"], "HS256")
+        response.cookies[cookie] = jwt.encode(
+            payload, config["SECURITY"]["secret"], "HS256"
+        )
         response.cookies[cookie]["secure"] = secure
         response.cookies[cookie]["httponly"] = True
 
@@ -312,7 +314,9 @@ class VerificationSession(Session):
         """
         await self.crosscheck_location(request)
         if self.attempts >= 5:
-            raise SessionError("The maximum attempts allowed for this session has been reached.", 401)
+            raise SessionError(
+                "The maximum attempts allowed for this session has been reached.", 401
+            )
         elif self.code != code:
             self.attempts += 1
             await self.save(update_fields=["attempts"])
@@ -334,7 +338,7 @@ class TwoStepSession(VerificationSession):
     async def initialize_cache():
         if not dir_exists(f"{security_cache_path}/verification"):
             async with aiofiles.open(
-                    f"{security_cache_path}/verification/codes.txt", mode="w"
+                f"{security_cache_path}/verification/codes.txt", mode="w"
             ) as f:
                 for i in range(100):
                     code = "".join(
@@ -346,7 +350,7 @@ class TwoStepSession(VerificationSession):
     async def get_random_code(cls):
         await cls.initialize_cache()
         async with aiofiles.open(
-                f"{security_cache_path}/verification/codes.txt", mode="r"
+            f"{security_cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -361,7 +365,7 @@ class TwoStepSession(VerificationSession):
         await send_sms(self.account.phone, code_prefix + self.code)
 
     async def email_code(
-            self, subject="Verification", code_prefix="Your code is:\n\n "
+        self, subject="Verification", code_prefix="Your code is:\n\n "
     ):
         """
         Sends account associated with this session the code via email.
@@ -435,7 +439,7 @@ class SessionFactory:
     """
 
     async def get(
-            self, session_type: str, request: Request, account: Account = None, **kwargs
+        self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
          Creates and returns a session with all of the fulfilled requirements.
@@ -444,7 +448,7 @@ class SessionFactory:
             session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
-            kwargs: Extra arguments applied to session creation.
+            kwargs: Extra arguments applied during session creation.
 
         Returns:
             session
@@ -458,7 +462,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=await CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(minutes=1),
+                + datetime.timedelta(minutes=1),
             )
         elif session_type == "twostep":
             return await TwoStepSession.create(
@@ -467,7 +471,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(minutes=5),
+                + datetime.timedelta(minutes=5),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -475,7 +479,7 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(days=30),
+                + datetime.timedelta(days=30),
             )
         else:
             raise ValueError("Invalid session type.")

@@ -31,9 +31,7 @@ async def request_two_step_verification(
     return two_step_session
 
 
-async def two_step_verification(
-    request: Request
-) -> TwoStepSession:
+async def two_step_verification(request: Request) -> TwoStepSession:
     """
     Validates a two-step verification attempt.
 

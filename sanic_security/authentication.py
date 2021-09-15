@@ -7,7 +7,8 @@ from tortoise.exceptions import IntegrityError, ValidationError, DoesNotExist
 from sanic_security.exceptions import (
     ExistsError,
     NotFoundError,
-    AccountError, SessionError,
+    AccountError,
+    SessionError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
@@ -16,7 +17,7 @@ session_factory = SessionFactory()
 
 
 async def register(
-        request: Request, verified: bool = False, disabled: bool = False
+    request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account to be used by a client.
@@ -35,7 +36,7 @@ async def register(
     if not re.search("[^@]+@[^@]+.[^@]+", request.form["email"]):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
     if request.form["phone"] and (
-            not request.form["phone"].isdigit() or len(request.form["phone"]) < 11
+        not request.form["phone"].isdigit() or len(request.form["phone"]) < 11
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -63,7 +64,7 @@ async def register(
 
 
 async def login(
-        request: Request, account: Account = None, two_factor=False
+    request: Request, account: Account = None, two_factor=False
 ) -> AuthenticationSession:
     """
     Used to login to accounts registered with Sanic Security.
