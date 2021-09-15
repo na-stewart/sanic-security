@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 
 import httpx
@@ -55,4 +56,42 @@ class RegistrationTest(TestCase):
     def test_registration_incorrect_email(self):
         registration_response = self.register("invalid@registercom", True, False)
         assert registration_response.status_code == 400, registration_response.text
+
+
+class LoginTest(TestCase):
+    def setUp(self):
+        self.client = httpx.Client()
+
+    def create_account(self, email: str):
+        registration_response = self.client.post(
+            "http://127.0.0.1:8000/api/account",
+            data={"email": email},
+        )
+        return registration_response
+
+    def login(self):
+        self.create_account("simple@login.com")
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "simple@login.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+
+    def login_two_factor(self):
+        self.create_account("twofactor@login.com")
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/two-factor",
+            data={"email": "twofactor@login.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+        second_factor_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/second_factor",
+            data={"code": json.loads(login_response.text)["data"]},
+        )
+        assert second_factor_response.status_code == 200, second_factor_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
+
 

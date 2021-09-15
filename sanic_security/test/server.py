@@ -149,15 +149,15 @@ async def on_role_authorization_permit_attempt(request, authentication_session):
     return text("Account permitted.")
 
 
-@app.post("api/test/account/create")
+@app.post("api/test/account")
 async def on_account_creation(request):
     try:
         account = await Account.create(
             username="test",
             email=request.form.get("email"),
-            password=hash_password("password"),
-            verified=request.form.get("verified") == "true",
-            disabled=request.form.get("disabled") == "true",
+            password=hash_password("testtest"),
+            verified=True,
+            disabled=False
         )
         response = json("Account creation successful!", account.json())
     except IntegrityError:
