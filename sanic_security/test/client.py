@@ -1,4 +1,3 @@
-import json
 from unittest import TestCase
 
 import httpx
@@ -15,20 +14,45 @@ class RegistrationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
 
-    def test_registration_disabled(self):
-        disabled_registration_response = self.client.post(
+    def register(self, email: str, disabled: bool, verified: bool):
+        registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
                 "username": "test",
-                "email": "disabled@register.com",
+                "email": email,
                 "password": "testtest",
-                "disabled": True,
-                "verified": True
+                "disabled": disabled,
+                "verified": verified
             },
         )
-        assert disabled_registration_response.status_code == 200, disabled_registration_response.text
+        return registration_response
+
+    def login(self, email: str):
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "disabled@register.com", "password": "testtest"},
+            data={"email": email, "password": "testtest"},
         )
-        assert "disabled!" in login_response.text, disabled_registration_response.text
+        return login_response
+
+    def test_registration_disabled(self):
+        registration_response = self.register("disabled@register.com", True, True)
+        assert registration_response.status_code == 200, registration_response.text
+        login_response = self.login("disabled@register.com")
+        assert "disabled." in login_response.text, login_response.text
+
+    def test_registration_unverified(self):
+        registration_response = self.register("unverified@register.com", False, True)
+        assert registration_response.status_code == 200, registration_response.text
+        login_response = self.login("disabled@register.com")
+        assert "verification." in login_response.text, login_response.text
+
+    def test_registration_unverified_disabled(self):
+        registration_response = self.register("unverified&disabled@register.com", True, False)
+        assert registration_response.status_code == 200, registration_response.text
+        login_response = self.login("disabled@register.com")
+        assert "verification." in login_response.text, login_response.text
+
+    def test_registration_incorrect_email(self):
+        registration_response = self.register("invalid@registercom", True, False)
+        assert registration_response.status_code == 400, registration_response.text
+
