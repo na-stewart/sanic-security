@@ -5,12 +5,12 @@ import httpx
 
 
 class RegistrationTest(TestCase):
-    '''
+    """
     code = json.loads(register_response.text)["data"]
     verify_response = self.client.post(
         "http://127.0.0.1:8000/api/auth/verify", data={"code": code}
     )
-    '''
+    """
 
     def setUp(self):
         self.client = httpx.Client()
@@ -23,7 +23,7 @@ class RegistrationTest(TestCase):
                 "email": email,
                 "password": "testtest",
                 "disabled": disabled,
-                "verified": verified
+                "verified": verified,
             },
         )
         return registration_response
@@ -47,14 +47,17 @@ class RegistrationTest(TestCase):
         login_response = self.login("unverified@register.com")
         assert "verification." in login_response.text, login_response.text
         verify_response = self.client.post(
-            "http://127.0.0.1:8000/api/auth/verify", data={"code": json.loads(registration_response.text)["data"]}
+            "http://127.0.0.1:8000/api/auth/verify",
+            data={"code": json.loads(registration_response.text)["data"]},
         )
         assert verify_response.status_code == 200, verify_response.text
         login_response = self.login("unverified@register.com")
         assert login_response.status_code == 200, login_response.text
 
     def test_registration_unverified_disabled(self):
-        registration_response = self.register("unverified&disabled@register.com", True, False)
+        registration_response = self.register(
+            "unverified&disabled@register.com", True, False
+        )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.login("unverifieddisabled@register.com")
         assert "verification." in login_response.text, login_response.text
@@ -65,7 +68,6 @@ class RegistrationTest(TestCase):
 
 
 class LoginTest(TestCase):
-
     def setUp(self):
         self.client = httpx.Client()
 
@@ -103,7 +105,6 @@ class LoginTest(TestCase):
 
 
 class VerificationTest(TestCase):
-
     def setUp(self):
         self.client = httpx.Client()
 
@@ -112,14 +113,14 @@ class VerificationTest(TestCase):
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
-                captcha_request_response.status_code == 200
+            captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt/attempt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
-                captcha_attempt_response.status_code == 200
+            captcha_attempt_response.status_code == 200
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
@@ -129,15 +130,17 @@ class VerificationTest(TestCase):
         )
         two_step_verification_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step/request",
-            data={"email": "two-step@verification.com"}
+            data={"email": "two-step@verification.com"},
         )
         assert (
-                two_step_verification_request_response.status_code == 200
+            two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step/attempt",
-            data={"captcha": json.loads(two_step_verification_request_response.text)["data"]},
+            data={
+                "code": json.loads(two_step_verification_request_response.text)["data"]
+            },
         )
         assert (
-                two_step_verification_attempt_response.status_code == 200
+            two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text

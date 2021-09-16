@@ -8,7 +8,12 @@ from sanic_security.authentication import (
     requires_authentication,
     logout,
 )
-from sanic_security.authorization import require_permissions, require_roles, assign_role, assign_permission
+from sanic_security.authorization import (
+    require_permissions,
+    require_roles,
+    assign_role,
+    assign_permission,
+)
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError, UnverifiedError
 from sanic_security.lib.tortoise import initialize_security_orm
@@ -28,7 +33,7 @@ async def on_register(request):
     account = await register(
         request,
         verified=request.form.get("verified") == True,
-        disabled=request.form.get("disabled") == True
+        disabled=request.form.get("disabled") == True,
     )
     if account.verified:
         two_step_session = await request_two_step_verification(request, account)
@@ -142,11 +147,12 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-
 @app.post("api/test/auth/assign")
 async def on_authorization_assign(request, authentication_session):
     response = text("Account assigned permissions.")
-    if not await Role.filter(name="Admin", account=authentication_session.account).exists():
+    if not await Role.filter(
+        name="Admin", account=authentication_session.account
+    ).exists():
         await assign_role("Admin", authentication_session.account)
         await assign_permission("admin:create", authentication_session.account)
     else:
@@ -186,7 +192,7 @@ async def on_account_creation(request):
             email=request.form.get("email"),
             password=hash_password("testtest"),
             verified=True,
-            disabled=False
+            disabled=False,
         )
         response = json("Account creation successful!", account.json())
     except IntegrityError:
