@@ -8,11 +8,11 @@ from sanic_security.authentication import (
     requires_authentication,
     logout,
 )
-from sanic_security.authorization import require_permissions, require_roles
+from sanic_security.authorization import require_permissions, require_roles, assign_role, assign_permission
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError, UnverifiedError
 from sanic_security.lib.tortoise import initialize_security_orm
-from sanic_security.models import Account
+from sanic_security.models import Account, Role
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import (
     request_two_step_verification,
@@ -24,16 +24,19 @@ app = Sanic(__name__)
 
 
 @app.post("api/test/auth/register")
-async def on_register(request, captcha_session):
+async def on_register(request):
     account = await register(
         request,
         verified=request.form.get("verified") == True,
         disabled=request.form.get("disabled") == True
     )
-    two_step_session = await request_two_step_verification(request, account)
-    await two_step_session.email_code()
-    response = json("Registration successful!", two_step_session.code)
-    two_step_session.encode(response)
+    if account.verified:
+        two_step_session = await request_two_step_verification(request, account)
+        await two_step_session.email_code()
+        response = json("Registration successful!", two_step_session.code)
+        two_step_session.encode(response)
+    else:
+        response = json("Registration successful!", account.json())
     return response
 
 
@@ -125,27 +128,38 @@ async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 
 
+@app.post("api/test/auth/assign")
+async def on_authorization_assign(request, authentication_session):
+    response = text("Account assigned permissions.")
+    if not await Role.filter(name="Admin", account=authentication_session.account).exists():
+        await assign_role("Admin", authentication_session.account)
+        await assign_permission("admin:create", authentication_session.account)
+    else:
+        response = text("Account already assigned permissions.")
+    return response
+
+
 @app.post("api/test/auth/perms/sufficient")
 @require_permissions("admin:create")
-async def on_permission_authorization_permit_attempt(request, authentication_session):
+async def on_permission_authorization_sufficient(request, authentication_session):
     return text("Account permitted.")
 
 
 @app.post("api/test/auth/perms/insufficient")
 @require_permissions("admin:update")
-async def on_permission_authorization_permit_attempt(request, authentication_session):
+async def on_permission_authorization_insufficient(request, authentication_session):
     return text("Account permitted.")
 
 
 @app.post("api/test/auth/roles/sufficient")
 @require_roles("Admin")
-async def on_role_authorization_permit_attempt(request, authentication_session):
+async def on_role_authorization_sufficient(request, authentication_session):
     return text("Account permitted.")
 
 
 @app.post("api/test/auth/roles/insufficient")
 @require_roles("Owner")
-async def on_role_authorization_permit_attempt(request, authentication_session):
+async def on_role_authorization_insufficient(request, authentication_session):
     return text("Account permitted.")
 
 
