@@ -128,6 +128,21 @@ async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 
 
+@app.post("api/test/two-step/request")
+async def on_request_verification(request):
+    two_step_session = await request_two_step_verification(request)
+    response = json("Verification request successful!", two_step_session.code)
+    two_step_session.encode(response, False)
+    return response
+
+
+@app.post("api/test/two-step/attempt")
+@requires_two_step_verification()
+async def on_verification_attempt(request, two_step_session):
+    return json("Two step verification attempt successful!", two_step_session.json())
+
+
+
 @app.post("api/test/auth/assign")
 async def on_authorization_assign(request, authentication_session):
     response = text("Account assigned permissions.")
