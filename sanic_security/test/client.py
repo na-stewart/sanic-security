@@ -101,9 +101,6 @@ class LoginTest(TestCase):
         )
         assert authenticate_response.status_code == 200, authenticate_response.text
 
-    def test_login_unverified(self):
-        self.create_account("unverified@login.com")
-
 
 class VerificationTest(TestCase):
 
