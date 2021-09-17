@@ -24,8 +24,8 @@ async def register(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
-        verified (bool): If false, account being registered must be verified before use.
-        disabled (bool): If true, account being registered must be enabled before use.
+        verified (bool): Enables or disabled the verification requirement for the account being registered.
+        disabled (bool): Renders an account unusable until manually set to false if designated true.
 
     Returns:
         account
@@ -72,7 +72,7 @@ async def login(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
         account (Account): Account being logged into. If None, an account is retrieved via email with the form-data argument.
-        two_factor (bool): Determines if login requires a second factor to authenticate account.
+        two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
         authentication_session
