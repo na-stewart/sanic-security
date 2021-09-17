@@ -72,6 +72,10 @@ class RegistrationTest(TestCase):
 
 
 class LoginTest(TestCase):
+    """
+    Tests basic login, logout and two-factor authentication.
+    """
+
     def setUp(self):
         self.client = httpx.Client()
 
@@ -88,6 +92,26 @@ class LoginTest(TestCase):
             data={"email": "emailpass@login.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
+
+    def test_login_with_logout(self):
+        """
+        Login with an email and password then logout and attempt to authenticate.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "logout@login.com"},
+        )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "logout@login.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+        logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
+        assert logout_response.status_code == 200, login_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 401, authenticate_response.text
 
     def test_login_two_factor(self):
         """
@@ -114,6 +138,9 @@ class LoginTest(TestCase):
 
 
 class VerificationTest(TestCase):
+    """
+    Tests verification such as two-step verification and captcha.
+    """
     def setUp(self):
         self.client = httpx.Client()
 
@@ -183,6 +210,10 @@ class VerificationTest(TestCase):
 
 
 class AuthorizationTest(TestCase):
+    """
+    Tests role and permissions based authorization.
+    """
+
     def setUp(self):
         self.client = httpx.Client()
 
