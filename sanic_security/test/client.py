@@ -5,6 +5,10 @@ import httpx
 
 
 class RegistrationTest(TestCase):
+    """
+    Tests registration and login responses based off of registration conditions.
+    """
+
     def setUp(self):
         self.client = httpx.Client()
 
@@ -22,6 +26,9 @@ class RegistrationTest(TestCase):
         return registration_response
 
     def test_registration_disabled(self):
+        """
+        Registration and login with a disabled account.
+        """
         registration_response = self.register("disabled@register.com", True, True)
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
@@ -31,6 +38,9 @@ class RegistrationTest(TestCase):
         assert "DisabledError" in login_response.text, login_response.text
 
     def test_registration_unverified(self):
+        """
+        Registration and login with an unverified account.
+        """
         registration_response = self.register("unverified@register.com", False, False)
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
@@ -40,6 +50,9 @@ class RegistrationTest(TestCase):
         assert "UnverifiedError" in login_response.text, login_response.text
 
     def test_registration_unverified_disabled(self):
+        """
+        Registration and login with an unverified and disabled account.
+        """
         registration_response = self.register(
             "unverified&disabled@register.com", True, False
         )
@@ -51,16 +64,21 @@ class RegistrationTest(TestCase):
         assert "UnverifiedError" in login_response.text, login_response.text
 
     def test_registration_incorrect_email(self):
+        """
+        Registration with an incorrect email format.
+        """
         registration_response = self.register("invalid@registercom", True, False)
         assert registration_response.status_code == 400, registration_response.text
 
 
 class LoginTest(TestCase):
-
     def setUp(self):
         self.client = httpx.Client()
 
     def test_login(self):
+        """
+        Login with an email and password.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "emailpass@login.com"},
@@ -72,6 +90,9 @@ class LoginTest(TestCase):
         assert login_response.status_code == 200, login_response.text
 
     def test_login_two_factor(self):
+        """
+        Login with an email and password and require a second factor for successful authentication.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "twofactor@login.com"},
@@ -97,21 +118,27 @@ class VerificationTest(TestCase):
         self.client = httpx.Client()
 
     def test_captcha(self):
+        """
+        Captcha request and attempt.
+        """
         captcha_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
-                captcha_request_response.status_code == 200
+            captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
-                captcha_attempt_response.status_code == 200
+            captcha_attempt_response.status_code == 200
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
+        """
+        Two step verification request and attempt.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "two-step@verification.com"},
@@ -121,7 +148,7 @@ class VerificationTest(TestCase):
             data={"email": "two-step@verification.com"},
         )
         assert (
-                two_step_verification_request_response.status_code == 200
+            two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step",
@@ -130,10 +157,13 @@ class VerificationTest(TestCase):
             },
         )
         assert (
-                two_step_verification_attempt_response.status_code == 200
+            two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text
 
     def test_account_verification(self):
+        """
+        Account verification process with successful login.
+        """
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
@@ -147,9 +177,7 @@ class VerificationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
-            data={
-                "code": json.loads(registration_response.text)["data"]
-            },
+            data={"code": json.loads(registration_response.text)["data"]},
         )
         assert verify_account_response.status_code == 200, verify_account_response.text
 
@@ -159,6 +187,9 @@ class AuthorizationTest(TestCase):
         self.client = httpx.Client()
 
     def test_roles_authorization(self):
+        """
+        Role authorization with sufficient and insufficient roles.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "roles@authorization.com"},
@@ -169,12 +200,23 @@ class AuthorizationTest(TestCase):
         )
         assert login_response.status_code == 200, login_response.text
         self.client.post("http://127.0.0.1:8000/api/test/auth/roles/assign")
-        sufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/roles/sufficient")
-        assert sufficient_roles_response.status_code == 200, sufficient_roles_response.text
-        insufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/roles/insufficient")
-        assert insufficient_roles_response.status_code == 403, insufficient_roles_response.text
+        sufficient_roles_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles/sufficient"
+        )
+        assert (
+            sufficient_roles_response.status_code == 200
+        ), sufficient_roles_response.text
+        insufficient_roles_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles/insufficient"
+        )
+        assert (
+            insufficient_roles_response.status_code == 403
+        ), insufficient_roles_response.text
 
     def test_permissions_authorization(self):
+        """
+        Permissions authorization with sufficient and insufficient roles.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "perms@authorization.com"},
@@ -185,9 +227,15 @@ class AuthorizationTest(TestCase):
         )
         assert login_response.status_code == 200, login_response.text
         self.client.post("http://127.0.0.1:8000/api/test/auth/perms/assign")
-        sufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/perms/sufficient")
-        assert sufficient_roles_response.status_code == 200, sufficient_roles_response.text
-        insufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/perms/insufficient")
-        assert insufficient_roles_response.status_code == 403, insufficient_roles_response.text
-
-
+        sufficient_roles_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/perms/sufficient"
+        )
+        assert (
+            sufficient_roles_response.status_code == 200
+        ), sufficient_roles_response.text
+        insufficient_roles_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/perms/insufficient"
+        )
+        assert (
+            insufficient_roles_response.status_code == 403
+        ), insufficient_roles_response.text

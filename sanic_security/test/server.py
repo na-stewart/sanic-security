@@ -37,7 +37,9 @@ async def on_register(request):
     )
     if not account.verified:
         two_step_session = await request_two_step_verification(request, account)
-        response = json("Registration successful! Verification required.", two_step_session.code)
+        response = json(
+            "Registration successful! Verification required.", two_step_session.code
+        )
         two_step_session.encode(response, False)
     else:
         response = json("Registration successful!", account.json())
@@ -149,7 +151,7 @@ async def on_verification_attempt(request, two_step_session):
 async def on_authorization_assign_perms(request, authentication_session):
     response = text("Account assigned permissions.")
     if not await Permission.filter(
-            wildcard="admin:create", account=authentication_session.account
+        wildcard="admin:create", account=authentication_session.account
     ).exists():
         await assign_permission("admin:create", authentication_session.account)
     else:
@@ -174,7 +176,7 @@ async def on_permission_authorization_insufficient(request, authentication_sessi
 async def on_authorization_assign_role(request, authentication_session):
     response = text("Account assigned role.")
     if not await Role.filter(
-            name="Admin", account=authentication_session.account
+        name="Admin", account=authentication_session.account
     ).exists():
         await assign_role("Admin", authentication_session.account)
     else:
