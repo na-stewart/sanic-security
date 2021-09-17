@@ -69,7 +69,7 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * JWT
 * Wildcard permissions
 * Role permissions
-* Blueprints
+* Blueprint
 
 This repository has been starred by Sanic's core maintainer:
 
