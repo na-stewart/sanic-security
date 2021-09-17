@@ -2,18 +2,16 @@ import functools
 import re
 
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, ValidationError
+from tortoise.exceptions import IntegrityError, ValidationError, DoesNotExist
 
 from sanic_security.exceptions import (
-    PasswordIncorrectError,
     ExistsError,
     NotFoundError,
-    SecondFactorError,
     AccountError,
+    SessionError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import hash_password
-from sanic_security.validation import validate_account, validate_session
 
 session_factory = SessionFactory()
 
@@ -35,11 +33,10 @@ async def register(
     Raises:
         AccountError
     """
-    form = request.form
-    if not re.search("[^@]+@[^@]+.[^@]+", form.get("email")):
+    if not re.search("[^@]+@[^@]+\.[^@]+", request.form.get("email")):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
-    if form.get("phone") and (
-        not form.get("phone").isdigit() or len(form.get("phone")) < 11
+    if request.form.get("phone") and (
+        not request.form.get("phone").isdigit() or len(request.form.get("phone")) < 11
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -47,10 +44,10 @@ async def register(
         )
     try:
         account = await Account.create(
-            email=form.get("email"),
-            username=form.get("username"),
-            password=hash_password(form.get("password")),
-            phone=form.get("phone"),
+            email=request.form.get("email"),
+            username=request.form.get("username"),
+            password=hash_password(request.form.get("password")),
+            phone=request.form.get("phone"),
             verified=verified,
             disabled=disabled,
         )
@@ -84,22 +81,21 @@ async def login(
         AccountError
         SessionError
     """
-    form = request.form
-    if not account:
-        account = await Account.get_via_email(form.get("email"))
-    if account:
-        if account.password == hash_password(form.get("password")):
-            validate_account(account)
-            return await session_factory.get(
-                "authentication", request, account, two_factor=two_factor
-            )
-        else:
-            raise PasswordIncorrectError()
-    else:
+    try:
+        if not account:
+            account = await Account.get_via_email(request.form.get("email"))
+            if account.password == hash_password(request.form.get("password")):
+                account.validate()
+                return await session_factory.get(
+                    "authentication", request, account, two_factor=two_factor
+                )
+            else:
+                raise AccountError("Incorrect password!", 401)
+    except DoesNotExist:
         raise NotFoundError("An account with this email does not exist.")
 
 
-async def validate_second_factor(request: Request) -> AuthenticationSession:
+async def on_second_factor(request: Request) -> AuthenticationSession:
     """
     Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
 
@@ -141,10 +137,10 @@ async def authenticate(request: Request) -> AuthenticationSession:
         SessionError
     """
     authentication_session = await AuthenticationSession.decode(request)
-    validate_account(authentication_session.account)
-    validate_session(authentication_session)
+    authentication_session.account.validate()
+    authentication_session.validate()
     if authentication_session.two_factor:
-        raise SecondFactorError()
+        raise SessionError("A second factor is required for this session.", 401)
     await authentication_session.crosscheck_location(request)
     return authentication_session
 

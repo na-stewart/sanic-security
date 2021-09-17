@@ -2,13 +2,12 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import UnverifiedError
+from sanic_security.exceptions import AccountError
 from sanic_security.models import (
     Account,
     TwoStepSession,
     SessionFactory,
 )
-from sanic_security.validation import validate_account, validate_session
 
 session_factory = SessionFactory()
 
@@ -32,15 +31,12 @@ async def request_two_step_verification(
     return two_step_session
 
 
-async def two_step_verification(
-    request: Request, allow_unverified: bool = False
-) -> TwoStepSession:
+async def two_step_verification(request: Request) -> TwoStepSession:
     """
     Validates a two-step verification attempt.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        allow_unverified (bool): Prevents an unverified account from raising an unverified error during validation.
 
     Raises:
         SessionError
@@ -50,14 +46,9 @@ async def two_step_verification(
          two_step_session
     """
     two_step_session = await TwoStepSession.decode(request)
-    try:
-        validate_account(two_step_session.account)
-    except UnverifiedError as e:
-        if not allow_unverified:
-            raise e
-    validate_session(two_step_session)
-    await two_step_session.crosscheck_location(request)
-    await two_step_session.crosscheck_code(request.form.get("code"))
+    two_step_session.validate()
+    two_step_session.account.validate()
+    await two_step_session.crosscheck_code(request, request.form.get("code"))
     return two_step_session
 
 
@@ -74,13 +65,17 @@ async def verify_account(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await two_step_verification(request, True)
+    two_step_session = await TwoStepSession.decode(request)
+    if two_step_session.account.verified:
+        raise AccountError("Account already verified!", 401)
+    two_step_session.validate()
+    two_step_session.crosscheck_code(request, request.form.get("code"))
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=["verified"])
     return two_step_session
 
 
-def requires_two_step_verification(allow_unverified: bool = False):
+def requires_two_step_verification():
     """
     Validates a two-step challenge attempt.
 
@@ -104,7 +99,7 @@ def requires_two_step_verification(allow_unverified: bool = False):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            two_step_session = await two_step_verification(request, allow_unverified)
+            two_step_session = await two_step_verification(request)
             return await func(request, two_step_session, *args, **kwargs)
 
         return wrapped

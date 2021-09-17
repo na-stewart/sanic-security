@@ -47,9 +47,7 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [Validation](#validation)
-    * [Error Handling](#error-handling)
-    * [Blueprints](#blueprints)
+    * [Blueprint](#blueprint)
     * [Testing](#testing)
 * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
@@ -65,17 +63,17 @@ Sanic Security is an authentication and authorization library made easy, designe
 This library is intended to be easy, convenient, and contains a variety of features:
 
 * Simple login, registration, and authentication
-* Text and email verification
+* Text and email two-step verification
 * Two-factor authentication
 * Captcha
 * JWT
 * Wildcard permissions
 * Role permissions
-* Blueprints
+* Blueprint
 
 This repository has been starred by Sanic's core maintainer:
 
-![alt text](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)
+[![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -395,36 +393,9 @@ async def on_require_roles(request, authentication_session):
     return text("Account permitted")
 ```
 
-## Validation
+## Blueprint
 
-Validation determines if an error should be raised due to a model's variable values. For example, a `DisabledError` would be
-raised when attempting to validate an account with the disabled variable value set to true. 
-
-* Validate Account
-
-```python
-account = await Account.get_via_email("test@test.com")
-validate_account(account)
-```
-
-* Validate Session
-
-```python
-authentication_session = await AuthenticationSession.decode()
-validate_session(authentication_session)
-```
-
-## Error Handling
-
-```python
-@app.exception(SecurityError)
-async def on_error(request, exception):
-    return exception.response
-```
-
-## Blueprints
-
-Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
+The Sanic Security blueprint contains endpoints that allow you to employ fundamental authentication and verification into your application with a
 single line of code. 
 
 * Implementation
@@ -433,6 +404,8 @@ single line of code.
 app.blueprint(security)
 ```
 * Endpoints
+
+Endpoints are configured via security.ini file.
 
 Method | Endpoint | Info |
 --- | --- | --- |
