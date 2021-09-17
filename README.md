@@ -48,7 +48,7 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Error Handling](#error-handling)
-    * [Blueprints](#blueprints)
+    * [Blueprint](#blueprint)
     * [Testing](#testing)
 * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
@@ -394,9 +394,9 @@ async def on_require_roles(request, authentication_session):
     return text("Account permitted")
 ```
 
-## Blueprints
+## Blueprint
 
-Sanic Security blueprints contain endpoints that allow you to employ fundamental authentication and verification into your application with a
+The Sanic Security blueprint contains endpoints that allow you to employ fundamental authentication and verification into your application with a
 single line of code. 
 
 * Implementation
@@ -405,6 +405,8 @@ single line of code.
 app.blueprint(security)
 ```
 * Endpoints
+
+Endpoints are configured via security.ini file.
 
 Method | Endpoint | Info |
 --- | --- | --- |

@@ -32,12 +32,11 @@ app = Sanic(__name__)
 async def on_register(request):
     account = await register(
         request,
-        verified=request.form.get("verified") == True,
-        disabled=request.form.get("disabled") == True,
+        verified=request.form["verified"] == True,
+        disabled=request.form["disabled"] == True,
     )
     if account.verified:
         two_step_session = await request_two_step_verification(request, account)
-        await two_step_session.email_code()
         response = json("Registration successful!", two_step_session.code)
         two_step_session.encode(response)
     else:
@@ -51,7 +50,6 @@ async def on_login_with_two_factor_authentication(request):
     two_step_session = await request_two_step_verification(
         request, authentication_session.account
     )
-    await two_step_session.email_code()
     response = json(
         "Login successful! A second factor is now required to be authenticated.",
         two_step_session.code,
@@ -78,7 +76,6 @@ async def on_login_with_verification_check(request):
         authentication_session = await login(request, account)
     except UnverifiedError:
         two_step_session = await request_two_step_verification(request, account)
-        await two_step_session.email_code()
         response = json("Verification required!", two_step_session.code)
         two_step_session.encode(response, False)
         return response
@@ -141,7 +138,7 @@ async def on_request_verification(request):
     return response
 
 
-@app.post("api/test/two-step/attempt")
+@app.post("api/test/two-step")
 @requires_two_step_verification()
 async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
@@ -151,7 +148,7 @@ async def on_verification_attempt(request, two_step_session):
 async def on_authorization_assign(request, authentication_session):
     response = text("Account assigned permissions.")
     if not await Role.filter(
-        name="Admin", account=authentication_session.account
+            name="Admin", account=authentication_session.account
     ).exists():
         await assign_role("Admin", authentication_session.account)
         await assign_permission("admin:create", authentication_session.account)

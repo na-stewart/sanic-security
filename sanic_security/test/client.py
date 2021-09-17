@@ -73,13 +73,13 @@ class LoginTest(TestCase):
 
     def create_account(self, email: str):
         account_creation_response = self.client.post(
-            "http://127.0.0.1:8000/api/account",
+            "http://127.0.0.1:8000/api/test/account",
             data={"email": email},
         )
         return account_creation_response
 
     def test_login(self):
-        self.create_account("simple@login.com")
+        self.create_account("emailpass@login.com")
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "simple@login.com", "password": "testtest"},
@@ -116,7 +116,7 @@ class VerificationTest(TestCase):
             captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/capt/attempt",
+            "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
@@ -125,7 +125,7 @@ class VerificationTest(TestCase):
 
     def test_two_step_verification(self):
         self.client.post(
-            "http://127.0.0.1:8000/api/account",
+            "http://127.0.0.1:8000/api/test/account",
             data={"email": "two-step@verification.com"},
         )
         two_step_verification_request_response = self.client.post(
@@ -136,7 +136,7 @@ class VerificationTest(TestCase):
             two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/two-step/attempt",
+            "http://127.0.0.1:8000/api/test/two-step",
             data={
                 "code": json.loads(two_step_verification_request_response.text)["data"]
             },
