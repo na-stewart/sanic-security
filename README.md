@@ -47,7 +47,6 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [Error Handling](#error-handling)
     * [Blueprint](#blueprint)
     * [Testing](#testing)
 * [Tortoise](#tortoise)
@@ -73,8 +72,7 @@ This library is intended to be easy, convenient, and contains a variety of featu
 * Blueprints
 
 This repository has been starred by Sanic's core maintainer:
-
-![alt text](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)
+[![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
 
 <!-- GETTING STARTED -->
 ## Getting Started

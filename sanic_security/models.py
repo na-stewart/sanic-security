@@ -108,10 +108,10 @@ class Account(BaseModel):
     def validate(self):
         if self.deleted:
             raise DeletedError("Account has been deleted.")
-        elif self.disabled:
-            raise DisabledError()
         elif not self.verified:
             raise UnverifiedError()
+        elif self.disabled:
+            raise DisabledError()
 
     @staticmethod
     async def get_via_email(email: str):

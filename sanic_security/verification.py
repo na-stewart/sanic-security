@@ -48,7 +48,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     two_step_session.account.validate()
-    await two_step_session.crosscheck_code(request.form["code"])
+    await two_step_session.crosscheck_code(request, request.form.get("code"))
     return two_step_session
 
 
@@ -69,7 +69,7 @@ async def verify_account(request: Request) -> TwoStepSession:
     if two_step_session.account.verified:
         raise AccountError("Account already verified!", 401)
     two_step_session.validate()
-    two_step_session.crosscheck_code(request, request.form["code"])
+    two_step_session.crosscheck_code(request, request.form.get("code"))
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=["verified"])
     return two_step_session

@@ -33,10 +33,10 @@ async def register(
     Raises:
         AccountError
     """
-    if not re.search("[^@]+@[^@]+.[^@]+", request.form["email"]):
+    if not re.search("[^@]+@[^@]+\.[^@]+", request.form.get("email")):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
-    if request.form["phone"] and (
-        not request.form["phone"].isdigit() or len(request.form["phone"]) < 11
+    if request.form.get("phone") and (
+        not request.form.get("phone").isdigit() or len(request.form.get("phone")) < 11
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -44,10 +44,10 @@ async def register(
         )
     try:
         account = await Account.create(
-            email=request.form["email"],
-            username=request.form["username"],
-            password=hash_password(request.form["password"]),
-            phone=request.form["phone"],
+            email=request.form.get("email"),
+            username=request.form.get("username"),
+            password=hash_password(request.form.get("password")),
+            phone=request.form.get("phone"),
             verified=verified,
             disabled=disabled,
         )
@@ -83,8 +83,8 @@ async def login(
     """
     try:
         if not account:
-            account = await Account.get_via_email(request.form["email"])
-            if account.password == hash_password(request.form["password"]):
+            account = await Account.get_via_email(request.form.get("email"))
+            if account.password == hash_password(request.form.get("password")):
                 account.validate()
                 return await session_factory.get(
                     "authentication", request, account, two_factor=two_factor

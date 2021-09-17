@@ -32,8 +32,8 @@ app = Sanic(__name__)
 async def on_register(request):
     account = await register(
         request,
-        verified=request.form["verified"] == True,
-        disabled=request.form["disabled"] == True,
+        verified=request.form.get("verified") == "true",
+        disabled=request.form.get("disabled") == "true",
     )
     if account.verified:
         two_step_session = await request_two_step_verification(request, account)
@@ -148,7 +148,7 @@ async def on_verification_attempt(request, two_step_session):
 async def on_authorization_assign(request, authentication_session):
     response = text("Account assigned permissions.")
     if not await Role.filter(
-            name="Admin", account=authentication_session.account
+        name="Admin", account=authentication_session.account
     ).exists():
         await assign_role("Admin", authentication_session.account)
         await assign_permission("admin:create", authentication_session.account)
