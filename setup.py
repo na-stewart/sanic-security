@@ -6,7 +6,7 @@ with open("README.md", "r") as rm:
 
 setup(
     name="sanic-security",
-    version="0.10.8.4",
+    version="0.10.9.0",
     packages=setuptools.find_packages(),
     url="https://github.com/sunset-developer/sanic-security",
     license="GNU General Public License v3.0",
