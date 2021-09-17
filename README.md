@@ -310,7 +310,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 ## Two-Step Verification
 
-* Request Two-step Verification (creates and encodes a two-step session)
+* Request Two-step Verification
 
 Key | Value |
 --- | --- |
@@ -329,7 +329,7 @@ async def on_request_verification(request, captcha_session):
     return response
 ```
 
-* Resend Two-step Verification Code (does not create new two-step session, only resends existing session code)
+* Resend Two-step Verification Code
 
 ```python
 @app.post("api/verification/resend")
