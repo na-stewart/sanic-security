@@ -308,7 +308,7 @@ async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 ```
 
-## Two-Step Verification
+## Two-step Verification
 
 * Request Two-step Verification
 
@@ -340,7 +340,7 @@ async def on_resend_verification(request):
     return json("Verification code resend successful!", two_step_session.json())
 ```
 
-* Requires Two-Step Verification
+* Requires Two-step Verification
 
 Key | Value |
 --- | --- |
