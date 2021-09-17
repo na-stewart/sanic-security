@@ -5,12 +5,6 @@ import httpx
 
 
 class RegistrationTest(TestCase):
-    """
-    code = json.loads(register_response.text)["data"]
-    verify_response = self.client.post(
-        "http://127.0.0.1:8000/api/auth/verify", data={"code": code}
-    )
-    """
 
     def setUp(self):
         self.client = httpx.Client()
