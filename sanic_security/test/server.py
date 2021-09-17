@@ -17,7 +17,7 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError, UnverifiedError
 from sanic_security.lib.tortoise import initialize_security_orm
-from sanic_security.models import Account, Role
+from sanic_security.models import Account, Role, Permission
 from sanic_security.utils import json, hash_password
 from sanic_security.verification import (
     request_two_step_verification,
@@ -25,24 +25,20 @@ from sanic_security.verification import (
     verify_account,
 )
 
-# TODO This still needs work in the case that it's messy, not reliability.
-
 app = Sanic(__name__)
 
 
 @app.post("api/test/auth/register")
 async def on_register(request):
-    request.form["username"] = "test"
-    request.form["password"] = "testtest"
     account = await register(
         request,
         verified=request.form.get("verified") == "true",
         disabled=request.form.get("disabled") == "true",
     )
-    if account.verified:
+    if not account.verified:
         two_step_session = await request_two_step_verification(request, account)
-        response = json("Registration successful!", two_step_session.code)
-        two_step_session.encode(response)
+        response = json("Registration successful! Verification required.", two_step_session.code)
+        two_step_session.encode(response, False)
     else:
         response = json("Registration successful!", account.json())
     return response
@@ -50,7 +46,6 @@ async def on_register(request):
 
 @app.post("api/test/auth/login/two-factor")
 async def on_login_with_two_factor_authentication(request):
-    request.form["password"] = "testtest"
     authentication_session = await login(request, two_factor=True)
     two_step_session = await request_two_step_verification(
         request, authentication_session.account
@@ -74,6 +69,21 @@ async def on_login_second_factor(request, two_step_verification):
     return response
 
 
+@app.post("api/test/auth/login/unverified")
+async def on_login_with_verification_check(request):
+    account = await Account.get_via_email(request.form.get("email"))
+    try:
+        authentication_session = await login(request, account)
+    except UnverifiedError:
+        two_step_session = await request_two_step_verification(request, account)
+        response = json("Verification required!", two_step_session.code)
+        two_step_session.encode(response, False)
+        return response
+    response = json("Login successful!", authentication_session.account.json())
+    authentication_session.encode(response, False)
+    return response
+
+
 @app.post("api/test/auth/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
@@ -84,7 +94,6 @@ async def on_verify(request):
 
 @app.post("api/test/auth/login")
 async def on_login(request):
-    request.form["password"] = "testtest"
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.account.json())
     authentication_session.encode(response, False)
@@ -135,13 +144,13 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-@app.post("api/test/auth/assign")
-async def on_authorization_assign(request, authentication_session):
+@app.post("api/test/auth/perms/assign")
+@requires_authentication()
+async def on_authorization_assign_perms(request, authentication_session):
     response = text("Account assigned permissions.")
-    if not await Role.filter(
-        name="Admin", account=authentication_session.account
+    if not await Permission.filter(
+            wildcard="admin:create", account=authentication_session.account
     ).exists():
-        await assign_role("Admin", authentication_session.account)
         await assign_permission("admin:create", authentication_session.account)
     else:
         response = text("Account already assigned permissions.")
@@ -158,6 +167,19 @@ async def on_permission_authorization_sufficient(request, authentication_session
 @require_permissions("admin:update")
 async def on_permission_authorization_insufficient(request, authentication_session):
     return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/assign")
+@requires_authentication()
+async def on_authorization_assign_role(request, authentication_session):
+    response = text("Account assigned role.")
+    if not await Role.filter(
+            name="Admin", account=authentication_session.account
+    ).exists():
+        await assign_role("Admin", authentication_session.account)
+    else:
+        response = text("Account already assigned role.")
+    return response
 
 
 @app.post("api/test/auth/roles/sufficient")

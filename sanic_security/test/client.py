@@ -4,9 +4,6 @@ from unittest import TestCase
 import httpx
 
 
-# TODO This still needs work in the case that it's messy, not reliability.
-
-
 class RegistrationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
@@ -15,7 +12,9 @@ class RegistrationTest(TestCase):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
+                "username": "test",
                 "email": email,
+                "password": "testtest",
                 "disabled": disabled,
                 "verified": verified,
             },
@@ -27,7 +26,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "disabled@register.com"},
+            data={"email": "disabled@register.com", "password": "testtest"},
         )
         assert "DisabledError" in login_response.text, login_response.text
 
@@ -36,7 +35,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified@register.com"},
+            data={"email": "unverified@register.com", "password": "testtest"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -47,26 +46,17 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified&disabled@register.com"},
+            data={"email": "unverified&disabled@register.com", "password": "testtest"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
     def test_registration_incorrect_email(self):
-        invalid_email_registration_response_1 = self.register(
-            "invalid1@registercom", False, True
-        )
-        assert (
-            invalid_email_registration_response_1.status_code == 400
-        ), invalid_email_registration_response_1.text
-        invalid_email_registration_response_2 = self.register(
-            "invalid2 @register.com", False, True
-        )
-        assert (
-            invalid_email_registration_response_2.status_code == 400
-        ), invalid_email_registration_response_2.text
+        registration_response = self.register("invalid@registercom", True, False)
+        assert registration_response.status_code == 400, registration_response.text
 
 
 class LoginTest(TestCase):
+
     def setUp(self):
         self.client = httpx.Client()
 
@@ -77,7 +67,7 @@ class LoginTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "emailpass@login.com"},
+            data={"email": "emailpass@login.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
 
@@ -88,7 +78,7 @@ class LoginTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/two-factor",
-            data={"email": "twofactor@login.com"},
+            data={"email": "twofactor@login.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
         second_factor_response = self.client.post(
@@ -111,14 +101,14 @@ class VerificationTest(TestCase):
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
-            captcha_request_response.status_code == 200
+                captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
-            captcha_attempt_response.status_code == 200
+                captcha_attempt_response.status_code == 200
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
@@ -131,7 +121,7 @@ class VerificationTest(TestCase):
             data={"email": "two-step@verification.com"},
         )
         assert (
-            two_step_verification_request_response.status_code == 200
+                two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step",
@@ -140,33 +130,64 @@ class VerificationTest(TestCase):
             },
         )
         assert (
-            two_step_verification_attempt_response.status_code == 200
+                two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text
 
     def test_account_verification(self):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
-                "email": "unverified@verification.com",
+                "username": "test",
+                "email": "account@verification.com",
+                "password": "testtest",
                 "disabled": False,
                 "verified": False,
             },
         )
         assert registration_response.status_code == 200, registration_response.text
-        unverified_login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login/unverified",
-            data={"email": "unverified@verification.com"},
-        )
-        assert (
-            unverified_login_response.status_code == 200
-        ), unverified_login_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
-            data={"code": json.loads(registration_response.text)["data"]},
+            data={
+                "code": json.loads(registration_response.text)["data"]
+            },
         )
         assert verify_account_response.status_code == 200, verify_account_response.text
-        verified_login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login/unverified",
-            data={"email": "unverified@verification.com"},
+
+
+class AuthorizationTest(TestCase):
+    def setUp(self):
+        self.client = httpx.Client()
+
+    def test_roles_authorization(self):
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "roles@authorization.com"},
         )
-        assert verified_login_response.status_code == 200, verified_login_response.text
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "roles@authorization.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+        self.client.post("http://127.0.0.1:8000/api/test/auth/roles/assign")
+        sufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/roles/sufficient")
+        assert sufficient_roles_response.status_code == 200, sufficient_roles_response.text
+        insufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/roles/insufficient")
+        assert insufficient_roles_response.status_code == 403, insufficient_roles_response.text
+
+    def test_permissions_authorization(self):
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "perms@authorization.com"},
+        )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "perms@authorization.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+        self.client.post("http://127.0.0.1:8000/api/test/auth/perms/assign")
+        sufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/perms/sufficient")
+        assert sufficient_roles_response.status_code == 200, sufficient_roles_response.text
+        insufficient_roles_response = self.client.post("http://127.0.0.1:8000/api/test/auth/perms/insufficient")
+        assert insufficient_roles_response.status_code == 403, insufficient_roles_response.text
+
+
