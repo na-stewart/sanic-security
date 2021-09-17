@@ -67,7 +67,7 @@ async def verify_account(request: Request) -> TwoStepSession:
     """
     two_step_session = await TwoStepSession.decode(request)
     if two_step_session.account.verified:
-        raise AccountError("Account already verified!", 403)
+        raise AccountError("Account already verified.", 403)
     two_step_session.validate()
     two_step_session.crosscheck_code(request, request.form.get("code"))
     two_step_session.account.verified = True

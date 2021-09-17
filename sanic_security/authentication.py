@@ -90,7 +90,7 @@ async def login(
                     "authentication", request, account, two_factor=two_factor
                 )
             else:
-                raise AccountError("Incorrect password!", 401)
+                raise AccountError("Incorrect password.", 401)
     except DoesNotExist:
         raise NotFoundError("An account with this email does not exist.")
 
