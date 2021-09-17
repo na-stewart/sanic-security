@@ -194,7 +194,7 @@ async def on_permission_authorization_sufficient(request, authentication_session
 @require_permissions("admin:update")
 async def on_permission_authorization_insufficient(request, authentication_session):
     """
-    Permissions authorization attempt fails purposely.
+    Permissions authorization attempt that fails purposely.
     """
     return text("Account permitted.")
 
@@ -228,7 +228,7 @@ async def on_role_authorization_sufficient(request, authentication_session):
 @require_roles("Owner")
 async def on_role_authorization_insufficient(request, authentication_session):
     """
-    Roles authorization attempt fails purposely.
+    Roles authorization attempt that fails purposely.
     """
     return text("Account permitted.")
 

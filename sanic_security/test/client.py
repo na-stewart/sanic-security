@@ -141,6 +141,7 @@ class VerificationTest(TestCase):
     """
     Tests verification such as two-step verification and captcha.
     """
+
     def setUp(self):
         self.client = httpx.Client()
 
