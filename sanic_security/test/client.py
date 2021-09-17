@@ -4,6 +4,9 @@ from unittest import TestCase
 import httpx
 
 
+# TODO This still needs work in the case that it's messy, not reliability.
+
+
 class RegistrationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
@@ -12,9 +15,7 @@ class RegistrationTest(TestCase):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
-                "username": "test",
                 "email": email,
-                "password": "testtest",
                 "disabled": disabled,
                 "verified": verified,
             },
@@ -26,7 +27,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "disabled@register.com", "password": "testtest"},
+            data={"email": "disabled@register.com"},
         )
         assert "DisabledError" in login_response.text, login_response.text
 
@@ -35,7 +36,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified@register.com", "password": "testtest"},
+            data={"email": "unverified@register.com"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -46,13 +47,23 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified&disabled@register.com", "password": "testtest"},
+            data={"email": "unverified&disabled@register.com"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
     def test_registration_incorrect_email(self):
-        registration_response = self.register("invalid@registercom", True, False)
-        assert registration_response.status_code == 400, registration_response.text
+        invalid_email_registration_response_1 = self.register(
+            "invalid1@registercom", False, True
+        )
+        assert (
+            invalid_email_registration_response_1.status_code == 400
+        ), invalid_email_registration_response_1.text
+        invalid_email_registration_response_2 = self.register(
+            "invalid2 @register.com", False, True
+        )
+        assert (
+            invalid_email_registration_response_2.status_code == 400
+        ), invalid_email_registration_response_2.text
 
 
 class LoginTest(TestCase):
@@ -66,7 +77,7 @@ class LoginTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "emailpass@login.com", "password": "testtest"},
+            data={"email": "emailpass@login.com"},
         )
         assert login_response.status_code == 200, login_response.text
 
@@ -77,7 +88,7 @@ class LoginTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/two-factor",
-            data={"email": "twofactor@login.com", "password": "testtest"},
+            data={"email": "twofactor@login.com"},
         )
         assert login_response.status_code == 200, login_response.text
         second_factor_response = self.client.post(
@@ -136,18 +147,26 @@ class VerificationTest(TestCase):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
-                "username": "test",
-                "email": "account@verification.com",
-                "password": "testtest",
+                "email": "unverified@verification.com",
                 "disabled": False,
                 "verified": False,
             },
         )
         assert registration_response.status_code == 200, registration_response.text
+        unverified_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/unverified",
+            data={"email": "unverified@verification.com"},
+        )
+        assert (
+            unverified_login_response.status_code == 200
+        ), unverified_login_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
-            data={
-                "code": json.loads(registration_response.text)["data"]
-            },
+            data={"code": json.loads(registration_response.text)["data"]},
         )
         assert verify_account_response.status_code == 200, verify_account_response.text
+        verified_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/unverified",
+            data={"email": "unverified@verification.com"},
+        )
+        assert verified_login_response.status_code == 200, verified_login_response.text

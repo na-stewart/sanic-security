@@ -25,11 +25,15 @@ from sanic_security.verification import (
     verify_account,
 )
 
+# TODO This still needs work in the case that it's messy, not reliability.
+
 app = Sanic(__name__)
 
 
 @app.post("api/test/auth/register")
 async def on_register(request):
+    request.form["username"] = "test"
+    request.form["password"] = "testtest"
     account = await register(
         request,
         verified=request.form.get("verified") == "true",
@@ -46,6 +50,7 @@ async def on_register(request):
 
 @app.post("api/test/auth/login/two-factor")
 async def on_login_with_two_factor_authentication(request):
+    request.form["password"] = "testtest"
     authentication_session = await login(request, two_factor=True)
     two_step_session = await request_two_step_verification(
         request, authentication_session.account
@@ -69,21 +74,6 @@ async def on_login_second_factor(request, two_step_verification):
     return response
 
 
-@app.post("api/test/auth/login/unverified")
-async def on_login_with_verification_check(request):
-    account = await Account.get_via_email(request.form.get("email"))
-    try:
-        authentication_session = await login(request, account)
-    except UnverifiedError:
-        two_step_session = await request_two_step_verification(request, account)
-        response = json("Verification required!", two_step_session.code)
-        two_step_session.encode(response, False)
-        return response
-    response = json("Login successful!", authentication_session.account.json())
-    authentication_session.encode(response, False)
-    return response
-
-
 @app.post("api/test/auth/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
@@ -94,6 +84,7 @@ async def on_verify(request):
 
 @app.post("api/test/auth/login")
 async def on_login(request):
+    request.form["password"] = "testtest"
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.account.json())
     authentication_session.encode(response, False)
