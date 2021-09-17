@@ -12,7 +12,7 @@ config.read("./security.ini")
 
 def hash_password(password: str) -> bytes:
     """
-    Securely hashes passed password to be stored.
+    Securely hashes password to be stored.
 
     Args:
         password (str): Password to be hashed.
