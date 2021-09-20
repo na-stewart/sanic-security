@@ -153,7 +153,6 @@ class Account(BaseModel):
         except DoesNotExist:
             raise NotFoundError("Account with this username does not exist.")
 
-
     @staticmethod
     async def get_via_phone(phone: str):
         """
