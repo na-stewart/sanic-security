@@ -2,11 +2,9 @@ import functools
 import re
 
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, ValidationError, DoesNotExist
+from tortoise.exceptions import IntegrityError, ValidationError
 
 from sanic_security.exceptions import (
-    ExistsError,
-    NotFoundError,
     AccountError,
     SessionError,
 )
@@ -20,7 +18,7 @@ async def register(
     request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
-    Registers a new account to be used by a client.
+    Registers a new account.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
@@ -33,7 +31,9 @@ async def register(
     Raises:
         AccountError
     """
-    if not re.search(r"[^@]+@[^@]+\.[^@]+", request.form.get("email")):
+    if not re.search(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", request.form.get("email")
+    ):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
     if request.form.get("phone") and (
         not request.form.get("phone").isdigit() or len(request.form.get("phone")) < 11
@@ -54,7 +54,7 @@ async def register(
         return account
     except IntegrityError as ie:
         if ie.args[0].args[0] == 1062:
-            raise ExistsError()
+            raise AccountError("This account already exists.", 409)
         else:
             raise ie
     except ValidationError:
@@ -81,18 +81,15 @@ async def login(
         AccountError
         SessionError
     """
-    try:
-        if not account:
-            account = await Account.get_via_email(request.form.get("email"))
-            if account.password == hash_password(request.form.get("password")):
-                account.validate()
-                return await session_factory.get(
-                    "authentication", request, account, two_factor=two_factor
-                )
-            else:
-                raise AccountError("Incorrect password.", 401)
-    except DoesNotExist:
-        raise NotFoundError("An account with this email does not exist.")
+    if not account:
+        account = await Account.get_via_email(request.form.get("email"))
+        if account.password == hash_password(request.form.get("password")):
+            account.validate()
+            return await session_factory.get(
+                "authentication", request, account, two_factor=two_factor
+            )
+        else:
+            raise AccountError("Incorrect password.", 401)
 
 
 async def on_second_factor(request: Request) -> AuthenticationSession:

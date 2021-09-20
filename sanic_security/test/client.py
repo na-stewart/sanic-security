@@ -25,6 +25,34 @@ class RegistrationTest(TestCase):
         )
         return registration_response
 
+    def test_registration(self):
+        """
+        Registration and login.
+        """
+        registration_response = self.register("emailpass@register.com", False, True)
+        assert registration_response.status_code == 200, registration_response.text
+
+    def test_invalid_registration(self):
+        """
+        Registration with an intentionally invalid email and with an already existent email.
+        """
+        invalid_email_registration_response = self.register(
+            "inv alid@register.com", False, True
+        )
+        assert (
+            invalid_email_registration_response.status_code == 400
+        ), invalid_email_registration_response.text
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "exists@register.com"},
+        )
+        account_exists_registration_response = self.register(
+            "exists@register.com", False, True
+        )
+        assert (
+            account_exists_registration_response.status_code == 409
+        ), account_exists_registration_response.text
+
     def test_registration_disabled(self):
         """
         Registration and login with a disabled account.
@@ -54,21 +82,14 @@ class RegistrationTest(TestCase):
         Registration and login with an unverified and disabled account.
         """
         registration_response = self.register(
-            "unverified&disabled@register.com", True, False
+            "unverified_disabled@register.com", True, False
         )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified&disabled@register.com", "password": "testtest"},
+            data={"email": "unverified_disabled@register.com", "password": "testtest"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
-
-    def test_registration_incorrect_email(self):
-        """
-        Registration with an incorrect email format.
-        """
-        registration_response = self.register("invalid@registercom", True, False)
-        assert registration_response.status_code == 400, registration_response.text
 
 
 class LoginTest(TestCase):
@@ -93,21 +114,43 @@ class LoginTest(TestCase):
         )
         assert login_response.status_code == 200, login_response.text
 
-    def test_login_with_logout(self):
+    def test_invalid_login(self):
         """
-        Login with an email and password then logout and attempt to authenticate.
+        Login with an intentionally incorrect password and into a non existent account.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "incorrectpass@login.com"},
+        )
+        incorrect_password_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "incorrectpass@login.com", "password": "incorrecttest"},
+        )
+        assert (
+            incorrect_password_login_response.status_code == 401
+        ), incorrect_password_login_response.text
+        unavailable_account_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "unavailable@login.com", "password": "testtest"},
+        )
+        assert (
+            unavailable_account_login_response.status_code == 404
+        ), unavailable_account_login_response
+
+    def test_logout(self):
+        """
+        Logout of logged in account and attempt to authenticate.
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "logout@login.com"},
         )
-        login_response = self.client.post(
+        self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "logout@login.com", "password": "testtest"},
         )
-        assert login_response.status_code == 200, login_response.text
         logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
-        assert logout_response.status_code == 200, login_response.text
+        assert logout_response.status_code == 200, logout_response.text
         authenticate_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth",
         )
@@ -190,7 +233,7 @@ class VerificationTest(TestCase):
 
     def test_account_verification(self):
         """
-        Account verification process with successful login.
+        Account registration and verification process with successful login.
         """
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
@@ -202,7 +245,6 @@ class VerificationTest(TestCase):
                 "verified": False,
             },
         )
-        assert registration_response.status_code == 200, registration_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
             data={"code": json.loads(registration_response.text)["data"]},
@@ -220,54 +262,54 @@ class AuthorizationTest(TestCase):
 
     def test_roles_authorization(self):
         """
-        Role authorization with sufficient and insufficient roles.
+        Authorization with roles.
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "roles@authorization.com"},
         )
-        login_response = self.client.post(
+        self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "roles@authorization.com", "password": "testtest"},
         )
-        assert login_response.status_code == 200, login_response.text
         self.client.post("http://127.0.0.1:8000/api/test/auth/roles/assign")
-        sufficient_roles_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/roles/sufficient"
+        permitted_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Admin"}
         )
         assert (
-            sufficient_roles_response.status_code == 200
-        ), sufficient_roles_response.text
-        insufficient_roles_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/roles/insufficient"
+            permitted_authorization_response.status_code == 200
+        ), permitted_authorization_response.text
+        prohibited_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Owner"}
         )
         assert (
-            insufficient_roles_response.status_code == 403
-        ), insufficient_roles_response.text
+            prohibited_authorization_response.status_code == 403
+        ), prohibited_authorization_response.text
 
     def test_permissions_authorization(self):
         """
-        Permissions authorization with sufficient and insufficient roles.
+        Authorization with wildcard permissions.
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "perms@authorization.com"},
         )
-        login_response = self.client.post(
+        self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "perms@authorization.com", "password": "testtest"},
         )
-        assert login_response.status_code == 200, login_response.text
         self.client.post("http://127.0.0.1:8000/api/test/auth/perms/assign")
-        sufficient_roles_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/perms/sufficient"
+        permitted_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/perms",
+            data={"permissions": "admin:create"},
         )
         assert (
-            sufficient_roles_response.status_code == 200
-        ), sufficient_roles_response.text
-        insufficient_roles_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/perms/insufficient"
+            permitted_authorization_response.status_code == 200
+        ), permitted_authorization_response.text
+        prohibited_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/perms",
+            data={"permissions": "admin:update"},
         )
         assert (
-            insufficient_roles_response.status_code == 403
-        ), insufficient_roles_response.text
+            prohibited_authorization_response.status_code == 403
+        ), prohibited_authorization_response.text
