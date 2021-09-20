@@ -261,6 +261,9 @@ class AuthorizationTest(TestCase):
         self.client = httpx.Client()
 
     def test_roles_authorization(self):
+        """
+        Authorization with roles.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "roles@authorization.com"},
@@ -284,6 +287,9 @@ class AuthorizationTest(TestCase):
         ), prohibited_authorization_response.text
 
     def test_permissions_authorization(self):
+        """
+        Authorization with wildcard permissions.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "perms@authorization.com"},
