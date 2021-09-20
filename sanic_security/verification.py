@@ -54,7 +54,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
 
 async def verify_account(request: Request) -> TwoStepSession:
     """
-    Verifies account with two-step verification code found in email or text.
+    Verifies account with two-step session code found in email or text.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.

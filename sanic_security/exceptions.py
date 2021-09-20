@@ -1,9 +1,7 @@
-from sanic.exceptions import SanicException
-
 from sanic_security.utils import json
 
 
-class SecurityError(SanicException):
+class SecurityError(Exception):
     """
     Sanic Security related error.
 
@@ -33,11 +31,6 @@ class DeletedError(SecurityError):
 class AccountError(SecurityError):
     def __init__(self, message, code):
         super().__init__(message, code)
-
-
-class ExistsError(AccountError):
-    def __init__(self):
-        super().__init__("Account with this email or phone number already exists.", 409)
 
 
 class DisabledError(AccountError):

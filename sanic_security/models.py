@@ -123,9 +123,15 @@ class Account(BaseModel):
 
         Returns:
             account
+
+        Raises:
+            NotFoundError
         """
-        account = await Account.filter(email=email).get()
-        return account
+        try:
+            account = await Account.filter(email=email).get()
+            return account
+        except DoesNotExist:
+            raise NotFoundError("Account with this email could not be found.")
 
     @staticmethod
     async def get_via_username(username: str):
@@ -137,9 +143,16 @@ class Account(BaseModel):
 
         Returns:
             account
+
+        Raises:
+            NotFoundError
         """
-        account = await Account.filter(username=username).get()
-        return account
+        try:
+            account = await Account.filter(username=username).get()
+            return account
+        except DoesNotExist:
+            raise NotFoundError("Account with this username does not exist.")
+
 
     @staticmethod
     async def get_via_phone(phone: str):
@@ -151,9 +164,15 @@ class Account(BaseModel):
 
         Returns:
             account
+
+        Raises:
+            NotFoundError
         """
-        account = await Account.filter(phone=phone).get()
-        return account
+        try:
+            account = await Account.filter(phone=phone).get()
+            return account
+        except DoesNotExist:
+            raise NotFoundError("Account with this phone number does not exist.")
 
 
 class Session(BaseModel):
