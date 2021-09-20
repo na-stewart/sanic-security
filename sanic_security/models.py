@@ -42,7 +42,7 @@ class BaseModel(Model):
 
     def validate(self):
         """
-        Determines if an error should be raised due variable values.
+        Raises an error with respect to variable values.
 
         Raises:
             SecurityError

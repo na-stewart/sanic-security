@@ -61,6 +61,7 @@ async def verify_account(request: Request) -> TwoStepSession:
 
     Raises:
         SessionError
+        AccountError
 
     Returns:
          two_step_session
