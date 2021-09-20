@@ -97,8 +97,9 @@ async def on_login(request):
     """
     Login to an account with an email and password. Authentication session is then encoded.
     """
-    authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.account.json())
+    account = await Account.get_via_email(request.form.get("email"))
+    authentication_session = await login(request, account)
+    response = json("Login successful!", account.json())
     authentication_session.encode(response, False)
     return response
 

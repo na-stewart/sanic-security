@@ -1,7 +1,9 @@
+from sanic.exceptions import SanicException
+
 from sanic_security.utils import json
 
 
-class SecurityError(Exception):
+class SecurityError(SanicException):
     """
     Sanic Security related error.
 
