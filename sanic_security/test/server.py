@@ -9,10 +9,10 @@ from sanic_security.authentication import (
     logout,
 )
 from sanic_security.authorization import (
-    require_permissions,
-    require_roles,
     assign_role,
     assign_permission,
+    check_permissions,
+    check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
@@ -182,11 +182,11 @@ async def on_authorization_assign_perms(request, authentication_session):
 
 
 @app.post("api/test/auth/perms")
-@require_permissions("admin:create")
-async def on_permissions_authorization(request, authentication_session):
+async def on_permissions_authorization(request):
     """
     Permissions authorization.
     """
+    await check_permissions(request, request.form.get("permissions"))
     return text("Account permitted.")
 
 
@@ -207,11 +207,11 @@ async def on_authorization_assign_role(request, authentication_session):
 
 
 @app.post("api/test/auth/roles")
-@require_roles("Admin")
-async def on_roles_authorization(request, authentication_session):
+async def on_roles_authorization(request):
     """
     Roles authorization.
     """
+    await check_roles(request, request.form.get("roles"))
     return text("Account permitted.")
 
 

@@ -31,7 +31,9 @@ async def register(
     Raises:
         AccountError
     """
-    if not re.search(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", request.form.get("email")):
+    if not re.search(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", request.form.get("email")
+    ):
         raise AccountError("Please use a valid email format such as you@mail.com.", 400)
     if request.form.get("phone") and (
         not request.form.get("phone").isdigit() or len(request.form.get("phone")) < 11
