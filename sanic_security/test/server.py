@@ -14,6 +14,7 @@ from sanic_security.authorization import (
     check_permissions,
     check_roles,
 )
+from sanic_security.blueprint import security
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
@@ -243,5 +244,6 @@ async def on_error(request, exception):
 
 
 initialize_security_orm(app)
+app.blueprint(security)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
