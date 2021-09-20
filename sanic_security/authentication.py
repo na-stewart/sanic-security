@@ -83,13 +83,13 @@ async def login(
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-        if account.password == hash_password(request.form.get("password")):
-            account.validate()
-            return await session_factory.get(
-                "authentication", request, account, two_factor=two_factor
-            )
-        else:
-            raise AccountError("Incorrect password.", 401)
+    if account.password == hash_password(request.form.get("password")):
+        account.validate()
+        return await session_factory.get(
+            "authentication", request, account, two_factor=two_factor
+        )
+    else:
+        raise AccountError("Incorrect password.", 401)
 
 
 async def on_second_factor(request: Request) -> AuthenticationSession:
