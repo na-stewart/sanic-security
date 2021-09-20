@@ -31,17 +31,19 @@ class RegistrationTest(TestCase):
         """
         registration_response = self.register("emailpass@register.com", False, True)
         assert registration_response.status_code == 200, registration_response.text
-        login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "emailpass@register.com", "password": "testtest"},
+
+    def test_invalid_registration(self):
+        """
+        Registration with an intentionally invalid email and with an already existent email.
+        """
+        invalid_email_registration_response = self.register("inv alid@register.com", False, True)
+        assert invalid_email_registration_response.status_code == 400, invalid_email_registration_response.text
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "exists@register.com"},
         )
-        assert login_response.status_code == 200, login_response.text
-        invalid_registration_response = self.register(
-            "invalid@registercom", True, False
-        )
-        assert (
-            invalid_registration_response.status_code == 400
-        ), invalid_registration_response.text
+        account_exists_registration_response = self.register("exists@register.com", False, True)
+        assert account_exists_registration_response.status_code == 409, account_exists_registration_response.text
 
     def test_registration_disabled(self):
         """
@@ -72,12 +74,12 @@ class RegistrationTest(TestCase):
         Registration and login with an unverified and disabled account.
         """
         registration_response = self.register(
-            "unverified&disabled@register.com", True, False
+            "unverified_disabled@register.com", True, False
         )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "unverified&disabled@register.com", "password": "testtest"},
+            data={"email": "unverified_disabled@register.com", "password": "testtest"},
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -98,32 +100,45 @@ class LoginTest(TestCase):
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "emailpass@login.com"},
         )
-        invalid_login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "emailpass@login.com", "password": "incorrecttest"},
-        )
-        assert invalid_login_response.status_code == 401, invalid_login_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "emailpass@login.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
 
-    def test_login_with_logout(self):
+    def test_invalid_login(self):
         """
-        Login with an email and password then logout and attempt to authenticate.
+        Login with an intentionally incorrect password and into a non existent account.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "incorrectpass@login.com"},
+        )
+        incorrect_password_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "incorrectpass@login.com", "password": "incorrecttest"},
+        )
+        assert incorrect_password_login_response.status_code == 401, incorrect_password_login_response.text
+        unavailable_account_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "unavailable@login.com", "password": "testtest"},
+        )
+        assert unavailable_account_login_response.status_code == 404, unavailable_account_login_response
+
+    def test_logout(self):
+        """
+        Logout of logged in account and attempt to authenticate.
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "logout@login.com"},
         )
-        login_response = self.client.post(
+        self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "logout@login.com", "password": "testtest"},
         )
-        assert login_response.status_code == 200, login_response.text
         logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
-        assert logout_response.status_code == 200, login_response.text
+        assert logout_response.status_code == 200, logout_response.text
         authenticate_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth",
         )
@@ -169,14 +184,14 @@ class VerificationTest(TestCase):
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
-            captcha_request_response.status_code == 200
+                captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
-            captcha_attempt_response.status_code == 200
+                captcha_attempt_response.status_code == 200
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
@@ -192,7 +207,7 @@ class VerificationTest(TestCase):
             data={"email": "two-step@verification.com"},
         )
         assert (
-            two_step_verification_request_response.status_code == 200
+                two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step",
@@ -201,7 +216,7 @@ class VerificationTest(TestCase):
             },
         )
         assert (
-            two_step_verification_attempt_response.status_code == 200
+                two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text
 
     def test_account_verification(self):
@@ -218,7 +233,6 @@ class VerificationTest(TestCase):
                 "verified": False,
             },
         )
-        assert registration_response.status_code == 200, registration_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
             data={"code": json.loads(registration_response.text)["data"]},
