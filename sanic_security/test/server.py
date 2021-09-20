@@ -15,7 +15,7 @@ from sanic_security.authorization import (
     assign_permission,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
-from sanic_security.exceptions import SecurityError, UnverifiedError
+from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
 from sanic_security.models import Account, Role, Permission
 from sanic_security.utils import json, hash_password
@@ -140,7 +140,7 @@ async def on_captcha_request(request):
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     """
-    Captcha challenge attempt.
+    Captcha challenge.
     """
     return json("Captcha attempt successful!", captcha_session.json())
 
@@ -160,7 +160,7 @@ async def on_request_verification(request):
 @requires_two_step_verification()
 async def on_verification_attempt(request, two_step_session):
     """
-    Two-step verification attempt.
+    Two-step verification.
     """
     return json("Two step verification attempt successful!", two_step_session.json())
 
@@ -181,20 +181,11 @@ async def on_authorization_assign_perms(request, authentication_session):
     return response
 
 
-@app.post("api/test/auth/perms/sufficient")
+@app.post("api/test/auth/perms")
 @require_permissions("admin:create")
-async def on_permission_authorization_sufficient(request, authentication_session):
+async def on_permissions_authorization(request, authentication_session):
     """
-    Permissions authorization attempt.
-    """
-    return text("Account permitted.")
-
-
-@app.post("api/test/auth/perms/insufficient")
-@require_permissions("admin:update")
-async def on_permission_authorization_insufficient(request, authentication_session):
-    """
-    Permissions authorization attempt that fails purposely.
+    Permissions authorization.
     """
     return text("Account permitted.")
 
@@ -215,20 +206,11 @@ async def on_authorization_assign_role(request, authentication_session):
     return response
 
 
-@app.post("api/test/auth/roles/sufficient")
+@app.post("api/test/auth/roles")
 @require_roles("Admin")
-async def on_role_authorization_sufficient(request, authentication_session):
+async def on_roles_authorization(request, authentication_session):
     """
-    Roles authorization attempt.
-    """
-    return text("Account permitted.")
-
-
-@app.post("api/test/auth/roles/insufficient")
-@require_roles("Owner")
-async def on_role_authorization_insufficient(request, authentication_session):
-    """
-    Roles authorization attempt that fails purposely.
+    Roles authorization.
     """
     return text("Account permitted.")
 
