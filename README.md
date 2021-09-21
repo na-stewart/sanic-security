@@ -59,16 +59,15 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security is an authentication and authorization library made easy, designed for use with [Sanic](https://github.com/huge-success/sanic).
-This library is intended to be easy, convenient, and contains a variety of features:
+Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
+This library contains a variety of features including:
 
 * Simple login, registration, and authentication
 * Text and email two-step verification
 * Two-factor authentication
 * Captcha
 * JWT
-* Wildcard permissions
-* Role permissions
+* Wildcard and role based authorization
 * Blueprint
 
 This repository has been starred by Sanic's core maintainer:
@@ -97,7 +96,7 @@ pip3 install sanic-security
 
 ## Usage
 
-Once Sanic Security is configured and good to go, implementing is easy.
+Once Sanic Security is configured and good to go, implementation is easy.
 
 ### Initial Setup
 
@@ -324,7 +323,7 @@ async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    response = json("Verification request successful!", two_step_session.json())
+    response = json("Verification request successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
 ```
@@ -337,7 +336,7 @@ async def on_resend_verification(request):
     two_step_session = await TwoStepSession.decode(request)
     await two_step_session.text_code() # Text verification code.
     await two_step_session.email_code() # Or email verification code.
-    return json("Verification code resend successful!", two_step_session.json())
+    return json("Verification code resend successful!", two_step_session.account.json())
 ```
 
 * Requires Two-step Verification
@@ -350,7 +349,7 @@ Key | Value |
 @app.post("api/verification/attempt")
 @requires_two_step_verification()
 async def on_verified(request, two_step_session):
-    response = json("Two-step verification attempt successful!", two_step_session.json())
+    response = json("Two-step verification attempt successful!", two_step_session.account.json())
     return response
 ```
 
@@ -358,7 +357,7 @@ async def on_verified(request, two_step_session):
 
 Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
 
-Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. The components of RBAC such as role-permissions, user-role and role-role relationships make it simple to perform user assignments. 
+Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
