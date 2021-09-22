@@ -1,4 +1,3 @@
-include README.md
 include Makefile
 include LICENSE
 include setup.py
