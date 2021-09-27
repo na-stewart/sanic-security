@@ -91,7 +91,7 @@ async def login(
         )
     else:
         logger.warning(
-            f"Client ({account.email}/{get_ip(request)}) login attempt password is incorrect."
+            f"Client ({account.email}/{get_ip(request)}) login password is incorrect."
         )
         raise AccountError("Incorrect password.", 401)
 
