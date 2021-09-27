@@ -223,7 +223,9 @@ class Session(BaseModel):
         """
         ip = get_ip(request)
         if not await self.filter(ip=ip, account=self.account).exists():
-            logger.warning(f"Client ({self.account.email}) ip address ({ip}) is unrecognised.")
+            logger.warning(
+                f"Client ({self.account.email}/{ip}) ip address is unrecognised."
+            )
             raise SessionError("Unrecognised location.", 401)
 
     def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):
@@ -369,6 +371,7 @@ class TwoStepSession(VerificationSession):
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
                     await f.write(code + " ")
+            logger.info("Two step session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):
@@ -424,6 +427,7 @@ class CaptchaSession(VerificationSession):
                     code,
                     f"{security_cache_path}/captcha/{code}.png",
                 )
+            logger.info("Captcha session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):

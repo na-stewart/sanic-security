@@ -52,7 +52,9 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-async def verify_account(request: Request, two_step_session: TwoStepSession = None) -> TwoStepSession:
+async def verify_account(
+    request: Request, two_step_session: TwoStepSession = None
+) -> TwoStepSession:
     """
     Verifies account with two-step session code found in email or text.
 
