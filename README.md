@@ -272,7 +272,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 
 Captcha challenge example:
 
-![Captcha](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
+[![Captcha example](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
 
 * Request Captcha
 
