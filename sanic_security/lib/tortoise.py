@@ -22,7 +22,7 @@ def initialize_security_orm(app: Sanic):
         models = config["TORTOISE"]["models"].replace(" ", "").split(",")
         url = f"{engine}://{username}:{password}@{endpoint}/{schema}"
         await Tortoise.init(db_url=url, modules={"models": models})
-        if config["TORTOISE"]["generate"] == "true":
+        if config["TORTOISE"].getboolean("generate"):
             await Tortoise.generate_schemas()
 
     @app.listener("after_server_stop")
