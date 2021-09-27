@@ -40,7 +40,7 @@ async def check_permissions(
                 break
         else:
             logging.warning(
-                f"Client ({authentication_session.account.email}/{get_ip(request)} has insufficient permissions."
+                f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient permissions."
             )
             raise InsufficientPermissionsError()
     return authentication_session
@@ -68,7 +68,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
             break
     else:
         logging.warning(
-            f"Client ({authentication_session.account.email}/{get_ip(request)} has insufficient roles."
+            f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient roles."
         )
         raise InsufficientRolesError()
     return authentication_session
