@@ -9,6 +9,7 @@ import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
@@ -220,7 +221,9 @@ class Session(BaseModel):
         Raises:
             SessionError
         """
-        if not await self.filter(ip=get_ip(request), account=self.account).exists():
+        ip = get_ip(request)
+        if not await self.filter(ip=ip, account=self.account).exists():
+            logger.warning(f"Client ({self.account.email}) ip address ({ip}) is unrecognised.")
             raise SessionError("Unrecognised location.", 401)
 
     def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):

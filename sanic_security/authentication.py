@@ -1,6 +1,7 @@
 import functools
 import re
 
+from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
@@ -9,7 +10,7 @@ from sanic_security.exceptions import (
     SessionError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
-from sanic_security.utils import hash_password
+from sanic_security.utils import hash_password, get_ip
 
 session_factory = SessionFactory()
 
@@ -89,6 +90,7 @@ async def login(
             "authentication", request, account, two_factor=two_factor
         )
     else:
+        logger.warning(f"Client ({account.email}) login attempt with incorrect password from ip: {get_ip(request)}.")
         raise AccountError("Incorrect password.", 401)
 
 
