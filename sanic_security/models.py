@@ -340,6 +340,9 @@ class VerificationSession(Session):
         """
         await self.crosscheck_location(request)
         if self.attempts >= 5:
+            logger.warning(
+                f"Client ({self.account.email}/{get_ip(request)}) has used an incorrect session code for 5+ attempts."
+            )
             raise SessionError(
                 "The maximum attempts allowed for this session has been reached.", 401
             )
