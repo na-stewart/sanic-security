@@ -67,7 +67,7 @@ async def login(
     request: Request, account: Account = None, two_factor=False
 ) -> AuthenticationSession:
     """
-    Used to login to accounts registered with Sanic Security.
+    Used to login to accounts registered with Sanic Security. Login session expires after 30 days.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
