@@ -205,7 +205,10 @@ class Session(BaseModel):
     def validate(self):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
-        elif self.expiration_date and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date:
+        elif (
+            self.expiration_date
+            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+        ):
             raise ExpiredError()
         elif not self.valid:
             raise InvalidError()
