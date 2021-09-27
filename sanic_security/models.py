@@ -218,7 +218,7 @@ class Session(BaseModel):
         Checks if client using session is in a known location (ip address).
 
         Raises:
-            UnknownLocationError:
+            SessionError
         """
         if not await self.filter(ip=get_ip(request), account=self.account).exists():
             raise SessionError("Unrecognised location.", 401)
