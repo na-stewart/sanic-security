@@ -1,4 +1,5 @@
 import functools
+import logging
 from fnmatch import fnmatch
 
 from sanic.request import Request
@@ -9,6 +10,7 @@ from sanic_security.exceptions import (
     InsufficientPermissionsError,
 )
 from sanic_security.models import Role, Permission, Account, AuthenticationSession
+from sanic_security.utils import get_ip
 
 
 async def check_permissions(
@@ -37,6 +39,9 @@ async def check_permissions(
             if fnmatch(required_permission, client_permission.wildcard):
                 break
         else:
+            logging.warning(
+                f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient permissions."
+            )
             raise InsufficientPermissionsError()
     return authentication_session
 
@@ -62,6 +67,9 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         if role.name in required_roles:
             break
     else:
+        logging.warning(
+            f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient roles."
+        )
         raise InsufficientRolesError()
     return authentication_session
 

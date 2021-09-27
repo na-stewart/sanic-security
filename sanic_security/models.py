@@ -9,6 +9,7 @@ import aiofiles
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
@@ -220,7 +221,11 @@ class Session(BaseModel):
         Raises:
             SessionError
         """
-        if not await self.filter(ip=get_ip(request), account=self.account).exists():
+        ip = get_ip(request)
+        if not await self.filter(ip=ip, account=self.account).exists():
+            logger.warning(
+                f"Client ({self.account.email}/{ip}) ip address is unrecognised."
+            )
             raise SessionError("Unrecognised location.", 401)
 
     def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):
@@ -335,6 +340,9 @@ class VerificationSession(Session):
         """
         await self.crosscheck_location(request)
         if self.attempts >= 5:
+            logger.warning(
+                f"Client ({self.account.email}/{get_ip(request)}) has used an incorrect session code for 5+ attempts."
+            )
             raise SessionError(
                 "The maximum attempts allowed for this session has been reached.", 401
             )
@@ -366,6 +374,7 @@ class TwoStepSession(VerificationSession):
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
                     await f.write(code + " ")
+            logger.info("Two step session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):
@@ -421,6 +430,7 @@ class CaptchaSession(VerificationSession):
                     code,
                     f"{security_cache_path}/captcha/{code}.png",
                 )
+            logger.info("Captcha session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):

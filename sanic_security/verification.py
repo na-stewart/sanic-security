@@ -52,12 +52,15 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-async def verify_account(request: Request) -> TwoStepSession:
+async def verify_account(
+    request: Request, two_step_session: TwoStepSession = None
+) -> TwoStepSession:
     """
     Verifies account with two-step session code found in email or text.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        two_step_session (TwoStepSession): Two-step session associated with the account being verified. If None, a two-step session is retrieved via decoding.
 
     Raises:
         SessionError
@@ -66,11 +69,12 @@ async def verify_account(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession.decode(request)
+    if not two_step_session:
+        two_step_session = await TwoStepSession.decode(request)
     if two_step_session.account.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
-    two_step_session.crosscheck_code(request, request.form.get("code"))
+    await two_step_session.crosscheck_code(request, request.form.get("code"))
     two_step_session.account.verified = True
     await two_step_session.account.save(update_fields=["verified"])
     return two_step_session
