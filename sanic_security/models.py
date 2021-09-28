@@ -313,7 +313,7 @@ class VerificationSession(Session):
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
-    cache_path = config["SECURITY"]["security_cache_path"]
+    cache_path = config["SECURITY"]["cache_path"]
 
     @classmethod
     async def _initialize_cache(cls):
@@ -378,7 +378,7 @@ class TwoStepSession(VerificationSession):
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
                     await f.write(code + " ")
-            logger.info("Two step session cache initialised.")
+            logger.info("Two-step session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):
