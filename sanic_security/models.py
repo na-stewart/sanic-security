@@ -261,6 +261,9 @@ class Session(BaseModel):
 
         Returns:
             session_dict
+
+        Raises:
+            SessionError
         """
         cookie = request.cookies.get(f"{tag}_{cls.__name__}")
         try:
@@ -284,8 +287,7 @@ class Session(BaseModel):
             session
 
         Raises:
-            DecodeError
-            SessionError
+            NotFoundError
         """
         decoded = cls.decode_raw(request, tag)
         try:
@@ -335,23 +337,24 @@ class VerificationSession(Session):
             request (Request): Sanic request parameter.
 
         Raises:
-            CrossCheckError
-            MaximumAttemptsError
+            SessionError
+            InvalidError
         """
         await self.crosscheck_location(request)
-        if self.attempts >= 5:
-            logger.warning(
-                f"Client ({self.account.email}/{get_ip(request)}) has used an incorrect session code for 5+ attempts."
-            )
-            raise SessionError(
-                "The maximum attempts allowed for this session has been reached.", 401
-            )
-        elif self.code != code:
-            self.attempts += 1
-            await self.save(update_fields=["attempts"])
-            raise SessionError("The value provided does not match.", 401)
+        if self.code != code:
+            if self.attempts < 5:
+                self.attempts += 1
+                await self.save(update_fields=["attempts"])
+                raise SessionError("The value provided does not match.", 401)
+            else:
+                logger.warning(
+                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts."
+                )
+                self.valid = False
+                raise InvalidError()
         else:
             self.valid = False
+        if not self.valid:
             await self.save(update_fields=["valid"])
 
     class Meta:
