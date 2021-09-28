@@ -316,7 +316,7 @@ class VerificationSession(Session):
     cache_path = config["SECURITY"]["security_cache_path"]
 
     @classmethod
-    async def initialize_cache(cls):
+    async def _initialize_cache(cls):
         """
         Creates verification session cache and generates required files.
         """
@@ -368,7 +368,7 @@ class TwoStepSession(VerificationSession):
     """
 
     @classmethod
-    async def initialize_cache(cls):
+    async def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache_path}/verification"):
             async with aiofiles.open(
                 f"{cls.cache_path}/verification/codes.txt", mode="w"
@@ -382,7 +382,7 @@ class TwoStepSession(VerificationSession):
 
     @classmethod
     async def get_random_code(cls):
-        await cls.initialize_cache()
+        await cls._initialize_cache()
         async with aiofiles.open(
             f"{cls.cache_path}/verification/codes.txt", mode="r"
         ) as f:
@@ -420,7 +420,7 @@ class CaptchaSession(VerificationSession):
     """
 
     @classmethod
-    async def initialize_cache(cls):
+    async def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache_path}/captcha"):
             loop = asyncio.get_running_loop()
             image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
@@ -438,7 +438,7 @@ class CaptchaSession(VerificationSession):
 
     @classmethod
     async def get_random_code(cls):
-        await cls.initialize_cache()
+        await cls._initialize_cache()
         return random.choice(os.listdir(f"{cls.cache_path}/captcha")).split(".")[0]
 
     async def get_image(self) -> HTTPResponse:
