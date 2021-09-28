@@ -18,7 +18,7 @@ from tortoise.exceptions import DoesNotExist
 from sanic_security.exceptions import *
 from sanic_security.lib.smtp import send_email
 from sanic_security.lib.twilio import send_sms
-from sanic_security.utils import get_ip, security_cache_path, dir_exists, config
+from sanic_security.utils import get_ip, dir_exists, config
 
 
 class BaseModel(Model):
@@ -261,6 +261,9 @@ class Session(BaseModel):
 
         Returns:
             session_dict
+
+        Raises:
+            SessionError
         """
         cookie = request.cookies.get(f"{tag}_{cls.__name__}")
         try:
@@ -284,8 +287,7 @@ class Session(BaseModel):
             session
 
         Raises:
-            DecodeError
-            SessionError
+            NotFoundError
         """
         decoded = cls.decode_raw(request, tag)
         try:
@@ -311,9 +313,10 @@ class VerificationSession(Session):
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
+    cache_path = config["SECURITY"]["security_cache_path"]
 
-    @staticmethod
-    async def initialize_cache():
+    @classmethod
+    async def _initialize_cache(cls):
         """
         Creates verification session cache and generates required files.
         """
@@ -335,23 +338,24 @@ class VerificationSession(Session):
             request (Request): Sanic request parameter.
 
         Raises:
-            CrossCheckError
-            MaximumAttemptsError
+            SessionError
+            InvalidError
         """
         await self.crosscheck_location(request)
-        if self.attempts >= 5:
-            logger.warning(
-                f"Client ({self.account.email}/{get_ip(request)}) has used an incorrect session code for 5+ attempts."
-            )
-            raise SessionError(
-                "The maximum attempts allowed for this session has been reached.", 401
-            )
-        elif self.code != code:
-            self.attempts += 1
-            await self.save(update_fields=["attempts"])
-            raise SessionError("The value provided does not match.", 401)
+        if self.code != code:
+            if self.attempts < 5:
+                self.attempts += 1
+                await self.save(update_fields=["attempts"])
+                raise SessionError("The value provided does not match.", 401)
+            else:
+                logger.warning(
+                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts."
+                )
+                self.valid = False
+                raise InvalidError()
         else:
             self.valid = False
+        if not self.valid:
             await self.save(update_fields=["valid"])
 
     class Meta:
@@ -363,11 +367,11 @@ class TwoStepSession(VerificationSession):
     Validates a client using a code sent via email or text.
     """
 
-    @staticmethod
-    async def initialize_cache():
-        if not dir_exists(f"{security_cache_path}/verification"):
+    @classmethod
+    async def _initialize_cache(cls):
+        if not dir_exists(f"{cls.cache_path}/verification"):
             async with aiofiles.open(
-                f"{security_cache_path}/verification/codes.txt", mode="w"
+                f"{cls.cache_path}/verification/codes.txt", mode="w"
             ) as f:
                 for i in range(100):
                     code = "".join(
@@ -378,9 +382,9 @@ class TwoStepSession(VerificationSession):
 
     @classmethod
     async def get_random_code(cls):
-        await cls.initialize_cache()
+        await cls._initialize_cache()
         async with aiofiles.open(
-            f"{security_cache_path}/verification/codes.txt", mode="r"
+            f"{cls.cache_path}/verification/codes.txt", mode="r"
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
@@ -415,9 +419,9 @@ class CaptchaSession(VerificationSession):
     Validates a client as human with a captcha challenge.
     """
 
-    @staticmethod
-    async def initialize_cache():
-        if not dir_exists(f"{security_cache_path}/captcha"):
+    @classmethod
+    async def _initialize_cache(cls):
+        if not dir_exists(f"{cls.cache_path}/captcha"):
             loop = asyncio.get_running_loop()
             image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
             for i in range(100):
@@ -428,14 +432,14 @@ class CaptchaSession(VerificationSession):
                     None,
                     image.write,
                     code,
-                    f"{security_cache_path}/captcha/{code}.png",
+                    f"{cls.cache_path}/captcha/{code}.png",
                 )
             logger.info("Captcha session cache initialised.")
 
     @classmethod
     async def get_random_code(cls):
-        await cls.initialize_cache()
-        return random.choice(os.listdir(f"{security_cache_path}/captcha")).split(".")[0]
+        await cls._initialize_cache()
+        return random.choice(os.listdir(f"{cls.cache_path}/captcha")).split(".")[0]
 
     async def get_image(self) -> HTTPResponse:
         """
@@ -444,7 +448,7 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        return await file(f"{security_cache_path}/captcha/{self.code}.png")
+        return await file(f"{self.cache_path}/captcha/{self.code}.png")
 
     class Meta:
         table = "captcha_session"

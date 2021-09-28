@@ -7,8 +7,8 @@ from sanic_security.authentication import (
     requires_authentication,
 )
 from sanic_security.captcha import requires_captcha, request_captcha
-from sanic_security.exceptions import UnverifiedError
-from sanic_security.models import CaptchaSession, Account
+from sanic_security.exceptions import UnverifiedError, ExpiredError, InvalidError
+from sanic_security.models import CaptchaSession, Account, TwoStepSession
 from sanic_security.utils import json, config
 from sanic_security.verification import (
     request_two_step_verification,
@@ -55,9 +55,19 @@ async def on_login(request):
 @security.post(config["BLUEPRINT"]["verify_route"])
 async def on_verify(request):
     """
-    Verify account with a two-step session code found in email.
+    Verify account with a two-step session code found in email. A two step session will be requested if the current session
+    being used to verify account expires or is invalid.
     """
-    two_step_session = await verify_account(request)
+    two_step_session = await TwoStepSession.decode(request)
+    try:
+        await verify_account(request, two_step_session)
+    except ExpiredError or InvalidError as e:
+        two_step_session = await request_two_step_verification(
+            request, two_step_session.account
+        )
+        await two_step_session.email_code()
+        two_step_session.encode(e.response)
+        return e.response
     return json("Account verification successful!", two_step_session.account.json())
 
 

@@ -17,7 +17,7 @@ async def check_permissions(
     request: Request, *required_permissions: str
 ) -> AuthenticationSession:
     """
-    Used to determine if the client has sufficient permissions for an action.
+    Authenticates client and determines if the account has sufficient permissions for an action.
 
     Args:
         request (Request): Sanic request parameter.
@@ -29,6 +29,7 @@ async def check_permissions(
     Raises:
         AccountError
         SessionError
+        InsufficientPermissionsError
     """
     authentication_session = await authenticate(request)
     client_permissions = await Permission.filter(
@@ -48,7 +49,7 @@ async def check_permissions(
 
 async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
     """
-    Used to determine if the client has sufficient roles for an action.
+    Authenticates client and determines if the account has sufficient roles for an action.
 
     Args:
         request (Request): Sanic request parameter.
@@ -60,6 +61,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     Raises:
         AccountError
         SessionError
+        InsufficientRolesError
     """
     authentication_session = await authenticate(request)
     client_roles = await Role.filter(account=authentication_session.account).all()
@@ -76,7 +78,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
 
 def require_permissions(*required_permissions: str):
     """
-    Used to determine if the client has sufficient permissions for an action.
+    Authenticates client and determines if the account has sufficient permissions for an action.
 
     Args:
         *required_permissions (Tuple[str, ...]):  The permissions required to authorize an action.
@@ -92,6 +94,7 @@ def require_permissions(*required_permissions: str):
     Raises:
         AccountError
         SessionError
+        InsufficientPermissionsError
     """
 
     def wrapper(func):
@@ -109,7 +112,7 @@ def require_permissions(*required_permissions: str):
 
 def require_roles(*required_roles: str):
     """
-    Used to determine if the client has sufficient roles for an action.
+    Authenticates client and determines if the account has sufficient roles for an action.
 
     Args:
         *required_roles (Tuple[str, ...]): The roles required to authorize an action.
@@ -125,6 +128,7 @@ def require_roles(*required_roles: str):
     Raises:
         AccountError
         SessionError
+        InsufficientRolesError
     """
 
     def wrapper(func):
