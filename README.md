@@ -232,6 +232,10 @@ async def on_two_factor_login(request):
 
 * Second Factor
 
+Key | Value |
+--- | --- |
+**code** | G8ha9nVae
+
 ```python
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
