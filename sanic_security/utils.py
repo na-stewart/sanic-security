@@ -5,7 +5,6 @@ from configparser import ConfigParser
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
 
-security_cache_path = "./resources/security-cache"
 config = ConfigParser()
 config.read("./security.ini")
 

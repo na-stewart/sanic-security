@@ -62,7 +62,9 @@ async def on_verify(request):
     try:
         await verify_account(request, two_step_session)
     except ExpiredError or InvalidError as e:
-        two_step_session = await request_two_step_verification(request, two_step_session.account)
+        two_step_session = await request_two_step_verification(
+            request, two_step_session.account
+        )
         await two_step_session.email_code()
         two_step_session.encode(e.response)
         return e.response
