@@ -12,7 +12,14 @@ class RegistrationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
 
-    def register(self, email: str, disabled: bool, verified: bool):
+    def register(
+        self,
+        email: str,
+        disabled: bool,
+        verified: bool,
+        username: str = "test",
+        phone: str = None,
+    ):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
@@ -21,6 +28,7 @@ class RegistrationTest(TestCase):
                 "password": "testtest",
                 "disabled": disabled,
                 "verified": verified,
+                "phone": phone,
             },
         )
         return registration_response
@@ -42,16 +50,18 @@ class RegistrationTest(TestCase):
         assert (
             invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "exists@register.com"},
-        )
-        account_exists_registration_response = self.register(
-            "exists@register.com", False, True
+        invalid_username_registration_response = self.register(
+            "invalid@register.com", False, True, username="1nvalid"
         )
         assert (
-            account_exists_registration_response.status_code == 409
-        ), account_exists_registration_response.text
+            invalid_username_registration_response.status_code == 400
+        ), invalid_username_registration_response.text
+        invalid_phone_registration_response = self.register(
+            "invalid@register.com", False, True, phone="218183186"
+        )
+        assert (
+            invalid_phone_registration_response.status_code == 400
+        ), invalid_phone_registration_response.text
 
     def test_registration_disabled(self):
         """
