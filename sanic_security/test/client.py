@@ -23,7 +23,7 @@ class RegistrationTest(TestCase):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
-                "username": "test",
+                "username": username,
                 "email": email,
                 "password": "testtest",
                 "disabled": disabled,
@@ -42,7 +42,7 @@ class RegistrationTest(TestCase):
 
     def test_invalid_registration(self):
         """
-        Registration with an intentionally invalid email and with an already existent email.
+        Registration with an intentionally invalid email, username, phone, and with an already existent email.
         """
         invalid_email_registration_response = self.register(
             "inv alid@register.com", False, True
@@ -50,18 +50,28 @@ class RegistrationTest(TestCase):
         assert (
             invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
-        invalid_username_registration_response = self.register(
-            "invalid@register.com", False, True, username="1nvalid"
-        )
-        assert (
-            invalid_username_registration_response.status_code == 400
-        ), invalid_username_registration_response.text
         invalid_phone_registration_response = self.register(
-            "invalid@register.com", False, True, phone="218183186"
+            "invalidnum@register.com", False, True, phone="218183186"
         )
         assert (
             invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
+        invalid_username_registration_response = self.register(
+            "invaliduser@register.com", False, True, username="_inval!d_"
+        )
+        assert (
+            invalid_username_registration_response.status_code == 400
+        ), invalid_username_registration_response.text
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "exists@register.com"},
+        )
+        account_exists_registration_response = self.register(
+            "exists@register.com", False, True
+        )
+        assert (
+            account_exists_registration_response.status_code == 409
+        ), account_exists_registration_response.text
 
     def test_registration_disabled(self):
         """
@@ -172,11 +182,11 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "twofactor@login.com"},
+            data={"email": "two_factor@login.com"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/two-factor",
-            data={"email": "twofactor@login.com", "password": "testtest"},
+            data={"email": "two_factor@login.com", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
         second_factor_response = self.client.post(
@@ -222,11 +232,11 @@ class VerificationTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "two-step@verification.com"},
+            data={"email": "two_step@verification.com"},
         )
         two_step_verification_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step/request",
-            data={"email": "two-step@verification.com"},
+            data={"email": "two_step@verification.com"},
         )
         assert (
             two_step_verification_request_response.status_code == 200
