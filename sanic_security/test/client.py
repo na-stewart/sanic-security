@@ -45,7 +45,7 @@ class RegistrationTest(TestCase):
         Registration with an intentionally invalid email, username, phone, and with an already existent email.
         """
         invalid_email_registration_response = self.register(
-            "inv alid@register.com", False, True
+            "invalidregister.com", False, True
         )
         assert (
             invalid_email_registration_response.status_code == 400
