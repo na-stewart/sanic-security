@@ -33,11 +33,16 @@ async def register(
         AccountError
     """
     if not re.search(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", request.form.get("email")
+        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
-        raise AccountError("Please use a valid email format such as you@mail.com.", 400)
-    if request.form.get("phone") and (
-        not request.form.get("phone").isdigit() or len(request.form.get("phone")) < 11
+        raise AccountError("Please use a valid email such as you@mail.com.", 400)
+    if not re.search(r"^[a-z0-9_-]{3,32}$", request.form.get("username")):
+        raise AccountError(
+            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
+            400,
+        )
+    if request.form.get("phone") and not re.search(
+        r"^[0-9]{11,14}$", request.form.get("phone")
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -59,9 +64,7 @@ async def register(
         else:
             raise ie
     except ValidationError:
-        raise AccountError(
-            "Email, username, or phone number is too long or invalid.", 400
-        )
+        raise AccountError("Email, username, or phone number is invalid.", 400)
 
 
 async def login(
