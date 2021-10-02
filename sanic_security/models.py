@@ -88,8 +88,8 @@ class Account(BaseModel):
         verified (bool): Determines if the account needs verification before use.
     """
 
-    username = fields.CharField(max_length=45)
-    email = fields.CharField(unique=True, max_length=45)
+    username = fields.CharField(max_length=32)
+    email = fields.CharField(unique=True, max_length=255)
     phone = fields.CharField(unique=True, max_length=14, null=True)
     password = fields.BinaryField()
     disabled = fields.BooleanField(default=False)
@@ -528,7 +528,7 @@ class Role(BaseModel):
         name (str): Name of the role.
     """
 
-    name = fields.CharField(max_length=45)
+    name = fields.CharField(max_length=255)
 
     def json(self):
         return {
@@ -547,7 +547,7 @@ class Permission(BaseModel):
         wildcard (str): The wildcard for this permission.
     """
 
-    wildcard = fields.CharField(max_length=45)
+    wildcard = fields.CharField(max_length=255)
 
     def json(self):
         return {
