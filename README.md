@@ -415,7 +415,7 @@ Method | Endpoint | Info |
 --- | --- | --- |
 POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
 POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed.
-POST | api/auth/verify | Verify account with a two-step session code found in email.
+POST | api/auth/verify | Verify account with a two-step session code found in email. A two step session will be requested if the current session being used to verify account expires or is invalid.
 POST | api/auth/logout | Logout of logged in account.
 POST | api/capt/request | Requests new captcha session.
 GET | api/capt/img | Retrieves captcha image from existing captcha session.
