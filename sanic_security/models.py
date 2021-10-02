@@ -352,10 +352,10 @@ class VerificationSession(Session):
                     f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts."
                 )
                 self.valid = False
+                await self.save(update_fields=["valid"])
                 raise InvalidError()
         else:
             self.valid = False
-        if not self.valid:
             await self.save(update_fields=["valid"])
 
     class Meta:
