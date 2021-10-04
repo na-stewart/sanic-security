@@ -23,12 +23,6 @@
 
   <p align="center">
    A powerful, simple, and async security library for Sanic.
-    <br />
-    <a href="http://security.sunsetdeveloper.com/">Documentation</a>
-    ·
-    <a href="https://github.com/sunset-developer/sanic-security/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/sunset-developer/asyncauth/pulls">Request Feature</a>
   </p>
 </p>
 
