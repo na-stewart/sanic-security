@@ -7,6 +7,7 @@ import uuid
 
 import aiofiles
 import jwt
+import requests
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
@@ -248,6 +249,7 @@ class Session(BaseModel):
         )
         response.cookies[cookie]["httponly"] = True
         response.cookies[cookie]["samesite"] = config["SECURITY"]["session_samesite"]
+        response.cookies[cookie]["secure"] = config["SECURITY"].getboolean("session_secure")
 
     @classmethod
     def decode_raw(cls, request: Request, tag: str = "sec") -> dict:
