@@ -107,6 +107,7 @@ First you have to create a configuration file called security.ini in the working
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=captcha.ttf
 cache_path = ./resources/security-cache
+session_samesite = strict
 
 [BLUEPRINT]
 register_route=api/auth/register
