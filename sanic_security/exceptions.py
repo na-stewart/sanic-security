@@ -27,7 +27,7 @@ class NotFoundError(SecurityError):
 
 class DeletedError(SecurityError):
     def __init__(self, message):
-        super().__init__(message, 404)
+        super().__init__(message, 410)
 
 
 class AccountError(SecurityError):
