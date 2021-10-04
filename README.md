@@ -411,7 +411,7 @@ app.blueprint(security)
 ```
 * Endpoints
 
-Endpoints are configured via security.ini file.
+Endpoints are configured via the security.ini file.
 
 Method | Endpoint | Info |
 --- | --- | --- |
