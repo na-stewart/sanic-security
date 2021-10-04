@@ -228,13 +228,12 @@ class Session(BaseModel):
             )
             raise SessionError("Unrecognised location.", 401)
 
-    def encode(self, response: HTTPResponse, secure: bool = True, tag: str = "sec"):
+    def encode(self, response: HTTPResponse, tag: str = "sec"):
         """
         Transforms session into jwt and then is stored in a cookie.
 
         Args:
             response (HTTPResponse): Sanic response object used to store JWT into a cookie on the client.
-            secure (bool): Determines if connections must be SSL encrypted (aka https) for cookie to be used.
             tag (str): Identifier applied to encoded session cookie.
         """
         payload = {
@@ -247,8 +246,8 @@ class Session(BaseModel):
         response.cookies[cookie] = jwt.encode(
             payload, config["SECURITY"]["secret"], "HS256"
         )
-        response.cookies[cookie]["secure"] = secure
         response.cookies[cookie]["httponly"] = True
+        response.cookies[cookie]["samesite"] = config["SECURITY"]["session_samesite"]
 
     @classmethod
     def decode_raw(cls, request: Request, tag: str = "sec") -> dict:

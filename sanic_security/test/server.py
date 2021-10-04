@@ -44,7 +44,7 @@ async def on_register(request):
         response = json(
             "Registration successful! Verification required.", two_step_session.code
         )
-        two_step_session.encode(response, False)
+        two_step_session.encode(response)
     else:
         response = json("Registration successful!", account.json())
     return response
@@ -63,8 +63,8 @@ async def on_login_with_two_factor_authentication(request):
         "Login successful! A second factor is now required to be authenticated.",
         two_step_session.code,
     )
-    authentication_session.encode(response, False)
-    two_step_session.encode(response, False)
+    authentication_session.encode(response)
+    two_step_session.encode(response)
     return response
 
 
@@ -101,7 +101,7 @@ async def on_login(request):
     account = await Account.get_via_email(request.form.get("email"))
     authentication_session = await login(request, account)
     response = json("Login successful!", account.json())
-    authentication_session.encode(response, False)
+    authentication_session.encode(response)
     return response
 
 
@@ -123,7 +123,7 @@ async def on_authenticate(request, authentication_session):
     Check if current authentication session is valid.
     """
     response = json("Authenticated!", authentication_session.account.json())
-    authentication_session.encode(response, False)
+    authentication_session.encode(response)
     return response
 
 
@@ -134,7 +134,7 @@ async def on_captcha_request(request):
     """
     captcha_session = await request_captcha(request)
     response = json("Captcha request successful!", captcha_session.code)
-    captcha_session.encode(response, False)
+    captcha_session.encode(response)
     return response
 
 
@@ -154,7 +154,7 @@ async def on_request_verification(request):
     """
     two_step_session = await request_two_step_verification(request)
     response = json("Verification request successful!", two_step_session.code)
-    two_step_session.encode(response, False)
+    two_step_session.encode(response)
     return response
 
 
