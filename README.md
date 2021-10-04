@@ -18,14 +18,11 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-
   <h3 align="center">Sanic Security</h3>
-
   <p align="center">
    A powerful, simple, and async security library for Sanic.
   </p>
 </p>
-
 
 
 <!-- TABLE OF CONTENTS -->
