@@ -249,7 +249,9 @@ class Session(BaseModel):
         )
         response.cookies[cookie]["httponly"] = True
         response.cookies[cookie]["samesite"] = config["SECURITY"]["session_samesite"]
-        response.cookies[cookie]["secure"] = config["SECURITY"].getboolean("session_secure")
+        response.cookies[cookie]["secure"] = (
+            config["SECURITY"]["session_samesite"] != "strict"
+        )
 
     @classmethod
     def decode_raw(cls, request: Request, tag: str = "sec") -> dict:
