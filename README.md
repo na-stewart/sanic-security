@@ -231,7 +231,7 @@ Key | Value |
 ```python
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
-async def on_second_factor(request, two_step_verification):
+async def on_second_factor_login(request, two_step_verification):
   authentication_session = await on_second_factor(request)
   response = json("Second factor attempt successful! You may now be authenticated!",
                   authentication_session.account.json())
