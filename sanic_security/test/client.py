@@ -12,6 +12,9 @@ class RegistrationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
 
+    def tearDown(self):
+        self.client.close()
+
     def register(
         self,
         email: str,
@@ -120,6 +123,9 @@ class LoginTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
 
+    def tearDown(self):
+        self.client.close()
+
     def test_login(self):
         """
         Login with an email and password.
@@ -208,6 +214,9 @@ class VerificationTest(TestCase):
     def setUp(self):
         self.client = httpx.Client()
 
+    def tearDown(self):
+        self.client.close()
+
     def test_captcha(self):
         """
         Captcha request and attempt.
@@ -279,6 +288,9 @@ class AuthorizationTest(TestCase):
 
     def setUp(self):
         self.client = httpx.Client()
+
+    def tearDown(self):
+        self.client.close()
 
     def test_roles_authorization(self):
         """
