@@ -377,7 +377,7 @@ class TwoStepSession(VerificationSession):
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
                     await f.write(code + " ")
-            logger.info("Two-step session cache initialised.")
+            logger.info("Two-step session cache initialised")
 
     @classmethod
     async def get_random_code(cls):
@@ -412,7 +412,7 @@ class CaptchaSession(VerificationSession):
                     code,
                     f"{cls.cache_path}/captcha/{code}.png",
                 )
-            logger.info("Captcha session cache initialised.")
+            logger.info("Captcha session cache initialised")
 
     @classmethod
     async def get_random_code(cls):
