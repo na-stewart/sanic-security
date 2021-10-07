@@ -1,5 +1,4 @@
 include Makefile
 include LICENSE
 include setup.py
-include captcha.ttf
 recursive-include sanic-security *.py
