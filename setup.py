@@ -18,7 +18,7 @@ setup(
         "aiofiles>=0.3.0",
     ],
     author_email="aidanstewart@sunsetdeveloper.com",
-    description="A powerful, simple, and async security library for Sanic.",
+    description="An effective, simple, and async security library for Sanic.",
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

@@ -331,10 +331,10 @@ class VerificationSession(Session):
 
     async def crosscheck_code(self, request: Request, code: str):
         """
-        Used to check if code passed is equivalent to the verification session code.
+        Used to check if code passed is equivalent to the session code.
 
         Args:
-            code (str): Code being cross-checked with verification session code.
+            code (str): Code being cross-checked with session code.
             request (Request): Sanic request parameter.
 
         Raises:

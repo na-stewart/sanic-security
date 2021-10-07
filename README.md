@@ -20,7 +20,7 @@
 <p align="center">
   <h3 align="center">Sanic Security</h3>
   <p align="center">
-   A powerful, simple, and async security library for Sanic.
+   An effective, simple, and async security library for Sanic.
   </p>
 </p>
 
@@ -52,7 +52,7 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Simple login, registration, and authentication
+* Login, registration, and authentication
 * Two-step verification
 * Two-factor authentication
 * Captcha
@@ -61,6 +61,8 @@ This library contains a variety of features including:
 This repository has been starred by Sanic's core maintainer:
 
 [![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
+
+Please visit [security.sunsetdeveloper.com](security.sunsetdeveloper.com) for more information and documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -77,14 +79,14 @@ sudo apt-get install python3-pip
 
 ### Installation
 
-* Install pip packages
+* Install the Sanic Security pip package.
 ```sh
 pip3 install sanic-security
 ````
 
 ## Usage
 
-Once Sanic Security is configured and good to go, implementation is easy.
+Sanic Security setup and implementation is easy.
 
 ### Initial Setup
 
@@ -98,7 +100,7 @@ cache_path = ./resources/security-cache
 session_samesite = strict
 
 [TORTOISE]
-username=admin
+username=example
 password=8UVbijLUGYfUtItAi
 endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
 schema=exampleschema
@@ -239,7 +241,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 
 Captcha challenge example:
 
-[![Captcha example](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
+[![Captcha image.](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
 
 * Request Captcha
 
