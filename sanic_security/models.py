@@ -16,8 +16,6 @@ from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
 from sanic_security.exceptions import *
-from sanic_security.lib.smtp import send_email
-from sanic_security.lib.twilio import send_sms
 from sanic_security.utils import get_ip, dir_exists, config
 
 
@@ -390,27 +388,6 @@ class TwoStepSession(VerificationSession):
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
-
-    async def text_code(self, code_prefix="Your code is: "):
-        """
-        Sends account associated with this session the code via text.
-
-        Args:
-            code_prefix (str): Message being sent with code, for example "Your code is: ".
-        """
-        await send_sms(self.account.phone, code_prefix + self.code)
-
-    async def email_code(
-        self, subject="Verification", code_prefix="Your code is:\n\n "
-    ):
-        """
-        Sends account associated with this session the code via email.
-
-        Args:
-            code_prefix (str): Message being sent with code, for example "Your code is: ".
-            subject (str): Subject of email being sent with code.
-        """
-        await send_email(self.account.email, subject, code_prefix + self.code)
 
     class Meta:
         table = "two_step_session"

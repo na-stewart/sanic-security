@@ -38,7 +38,6 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [Blueprint](#blueprint)
     * [Testing](#testing)
 * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
@@ -54,12 +53,11 @@ Sanic Security is an authentication, authorization, and verification library des
 This library contains a variety of features including:
 
 * Simple login, registration, and authentication
-* Text and email two-step verification
+* Two-step verification
 * Two-factor authentication
 * Captcha
 * JWT
 * Wildcard and role based authorization
-* Blueprint
 
 This repository has been starred by Sanic's core maintainer:
 
@@ -100,14 +98,6 @@ captcha_font=captcha.ttf
 cache_path = ./resources/security-cache
 session_samesite = strict
 
-[BLUEPRINT]
-register_route=api/auth/register
-login_route=api/auth/login
-verify_route=api/auth/verify
-logout_route=api/auth/logout
-captcha_request_route=api/capt/request
-captcha_img_route=api/capt/img
-
 [TORTOISE]
 username=admin
 password=8UVbijLUGYfUtItAi
@@ -116,20 +106,6 @@ schema=exampleschema
 models=sanic_security.models, example.models
 engine=mysql
 generate=true
-
-[TWILIO]
-from=12058469963
-token=1bcioi878ygO8fi766Fb34750e82a5ab
-sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
-
-[SMTP]
-host=smtp.gmail.com
-port=465
-from=test@gmail.com
-username=test@gmail.com
-password=wfrfouwiurhwlnj
-tls=true
-start_tls=false
 ```
 
 You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
@@ -165,8 +141,7 @@ Key | Value |
 async def on_register(request, captcha_session):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
@@ -214,8 +189,7 @@ Key | Value |
 async def on_two_factor_login(request):
     authentication_session = await login(request, two_factor=True)
     two_step_session = await request_two_step_verification(request, authentication_session.account)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
     authentication_session.encode(response)
     two_step_session.encode(response)
@@ -318,8 +292,7 @@ Key | Value |
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
@@ -331,8 +304,7 @@ async def on_request_verification(request, captcha_session):
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
     two_step_session = await TwoStepSession.decode(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.account.json())
 ```
 
@@ -388,29 +360,6 @@ async def on_require_perms(request, authentication_session):
 async def on_require_roles(request, authentication_session):
     return text("Account permitted.")
 ```
-
-## Blueprint
-
-The Sanic Security blueprint contains endpoints that allow you to employ fundamental authentication and verification into your application with a
-single line of code. 
-
-* Implementation
-
-```python
-app.blueprint(security)
-```
-* Endpoints
-
-Endpoints are configured via the security.ini file.
-
-Method | Endpoint | Info |
---- | --- | --- |
-POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed.
-POST | api/auth/verify | Verify account with a two-step session code found in email. A two step session will be requested if the current session being used to verify account expires or is invalid.
-POST | api/auth/logout | Logout of logged in account.
-POST | api/capt/request | Requests new captcha session.
-GET | api/capt/img | Retrieves captcha image from existing captcha session.
 
 ## Testing
 
