@@ -18,7 +18,6 @@ setup(
         "captcha",
         "aiofiles>=0.3.0",
     ],
-    tests_require=["httpx>=0.13.0"],
     author_email="aidanstewart@sunsetdeveloper.com",
     description="An effective, simple, and async security library for Sanic.",
     long_description=long_description,

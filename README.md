@@ -349,10 +349,10 @@ async def on_require_roles(request, authentication_session):
 
 ## Testing
 
-* Install the Sanic Security test pip package:
+* Install httpx:
 
 ```shell
-pip3 install sanic-security test
+pip3 install httpx
 ```
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
