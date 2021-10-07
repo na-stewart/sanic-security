@@ -72,7 +72,7 @@ In order to get started, please install pip.
 ### Prerequisites
 
 * pip
-```sh
+```shell
 sudo apt-get install python3-pip
 ```
 
@@ -80,7 +80,7 @@ sudo apt-get install python3-pip
 ### Installation
 
 * Install the Sanic Security pip package.
-```sh
+```shell
 pip3 install sanic-security
 ````
 
@@ -351,7 +351,7 @@ async def on_require_roles(request, authentication_session):
 
 * Install the test Sanic Security pip package:
 
-```sh
+```shell
 pip3 install sanic-security test
 ```
 
