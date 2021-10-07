@@ -62,7 +62,7 @@ This repository has been starred by Sanic's core maintainer:
 
 [![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
 
-Please visit [security.sunsetdeveloper.com](security.sunsetdeveloper.com) for more information and documentation.
+Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for more information and documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
