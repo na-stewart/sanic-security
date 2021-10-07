@@ -363,12 +363,9 @@ async def on_require_roles(request, authentication_session):
 
 ## Testing
 
-Make sure the test Sanic instance (`test/server.py`) is running on your machine as both postman and the unit tests operate as a test client.
+Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-Then run the unit tests (`test/client.py`) or test with postman via clicking the button below.
-
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e?action=collection%2Fimport)
-
+Run the unit test client (`test/client.py`) and wait for results.
 
 ## Tortoise
 
