@@ -20,7 +20,7 @@ async def request_two_step_verification(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
-        account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
+        account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
 
     Returns:
          two_step_session

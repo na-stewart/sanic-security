@@ -130,7 +130,7 @@ class Account(BaseModel):
             account = await Account.filter(email=email).get()
             return account
         except DoesNotExist:
-            raise NotFoundError("Account with this email could not be found.")
+            raise NotFoundError("Account with this email does not exist.")
 
     @staticmethod
     async def get_via_username(username: str):
@@ -287,6 +287,7 @@ class Session(BaseModel):
 
         Raises:
             NotFoundError
+            SessionError
         """
         decoded = cls.decode_raw(request, tag)
         try:
@@ -307,7 +308,7 @@ class VerificationSession(Session):
 
     Attributes:
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
-        code (str): Used as a secret key that would be sent or provided in a way that makes it difficult for malicious actors to obtain.
+        code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
     """
 
     attempts = fields.IntField(default=0)

@@ -75,7 +75,7 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
-        account (Account): Account being logged into. If None, an account is retrieved via email with the form-data argument.
+        account (Account): Account being logged into. If None, an account is retrieved via email in the request form-data.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:

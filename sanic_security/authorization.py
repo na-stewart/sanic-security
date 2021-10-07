@@ -93,7 +93,7 @@ def require_permissions(*required_permissions: str):
     Raises:
         AccountError
         SessionError
-        InsufficientPermissionsError
+        AuthorizationError
     """
 
     def wrapper(func):
@@ -127,7 +127,7 @@ def require_roles(*required_roles: str):
     Raises:
         AccountError
         SessionError
-        InsufficientRolesError
+        AuthorizationError
     """
 
     def wrapper(func):
