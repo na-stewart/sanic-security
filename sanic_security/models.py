@@ -7,7 +7,6 @@ import uuid
 
 import aiofiles
 import jwt
-import requests
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
