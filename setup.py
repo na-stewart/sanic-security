@@ -14,9 +14,7 @@ setup(
     install_requires=[
         "sanic>=21.3.0",
         "tortoise-orm>=0.17.0",
-        "httpx>=0.13.0",
         "pyjwt>=1.7.0",
-        "aiosmtplib>=1.1.0",
         "captcha",
         "aiofiles>=0.3.0",
     ],
