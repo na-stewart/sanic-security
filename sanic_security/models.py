@@ -221,7 +221,7 @@ class Session(BaseModel):
         ip = get_ip(request)
         if not await self.filter(ip=ip, account=self.account).exists():
             logger.warning(
-                f"Client ({self.account.email}/{ip}) ip address is unrecognised."
+                f"Client ({self.account.email}/{ip}) ip address is unrecognised"
             )
             raise SessionError("Unrecognised location.", 401)
 
@@ -348,7 +348,7 @@ class VerificationSession(Session):
                 raise SessionError("The value provided does not match.", 401)
             else:
                 logger.warning(
-                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts."
+                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 self.valid = False
                 await self.save(update_fields=["valid"])
