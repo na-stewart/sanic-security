@@ -11,20 +11,17 @@ setup(
     url="https://github.com/sunset-developer/sanic-security",
     license="GNU General Public License v3.0",
     author="sunset-developer",
+    python_requires=">=3.6",
     install_requires=[
         "tortoise-orm>=0.17.0",
         "pyjwt>=1.7.0",
         "captcha",
         "aiofiles>=0.3.0",
     ],
-    tests_require=[
-        "httpx>=0.13.0"
-    ],
+    tests_require=["httpx>=0.13.0"],
     author_email="aidanstewart@sunsetdeveloper.com",
     description="An effective, simple, and async security library for Sanic.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     platforms="any",
-    python_requires=">=3.7"
-
 )
