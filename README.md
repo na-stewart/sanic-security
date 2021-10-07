@@ -224,7 +224,7 @@ async def on_logout(request, authentication_session):
 * Requires Authentication
 
 ```python
-@app.post("api/auth/authenticate")
+@app.post("api/auth")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
     return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
