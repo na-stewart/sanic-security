@@ -252,7 +252,7 @@ async def on_logout(request, authentication_session):
 * Requires Authentication
 
 ```python
-@app.get("api/auth/authenticate")
+@app.post("api/auth/authenticate")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
     return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
@@ -345,7 +345,7 @@ Key | Value |
 ```python
 @app.post("api/verification/attempt")
 @requires_two_step_verification()
-async def on_verified(request, two_step_session):
+async def on_verification(request, two_step_session):
     response = json("Two-step verification attempt successful!", two_step_session.account.json())
     return response
 ```
