@@ -14,7 +14,6 @@ from sanic_security.authorization import (
     check_permissions,
     check_roles,
 )
-from sanic_security.blueprint import security
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
@@ -72,8 +71,8 @@ async def on_login_with_two_factor_authentication(request):
 @requires_two_step_verification()
 async def on_login_second_factor(request, two_step_verification):
     """
-    Removes the second factor requirement from the current authentication session when the two-step verification attempt
-    is successful. The two-step verification process is the second factor in this instance.
+    Removes the second factor requirement from the client authentication session when the two-step verification attempt
+    is successful.
     """
     authentication_session = await on_second_factor(request)
     response = json(
@@ -96,7 +95,7 @@ async def on_verify(request):
 @app.post("api/test/auth/login")
 async def on_login(request):
     """
-    Login to an account with an email and password. Authentication session is then encoded.
+    Login to an account with an email and password. Authentication session is then created and encoded.
     """
     account = await Account.get_via_email(request.form.get("email"))
     authentication_session = await login(request, account)
@@ -162,7 +161,7 @@ async def on_request_verification(request):
 @requires_two_step_verification()
 async def on_verification_attempt(request, two_step_session):
     """
-    Two-step verification.
+    Attempt two-step verification.
     """
     return json("Two step verification attempt successful!", two_step_session.json())
 
@@ -196,7 +195,7 @@ async def on_permissions_authorization(request):
 @requires_authentication()
 async def on_authorization_assign_role(request, authentication_session):
     """
-    Roles assigned to logged in account.
+    Roles assigned to client.
     """
     response = text("Account assigned role.")
     if not await Role.filter(
@@ -244,6 +243,5 @@ async def on_error(request, exception):
 
 
 initialize_security_orm(app)
-app.blueprint(security)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)

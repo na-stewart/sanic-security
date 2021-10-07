@@ -20,7 +20,7 @@
 <p align="center">
   <h3 align="center">Sanic Security</h3>
   <p align="center">
-   A powerful, simple, and async security library for Sanic.
+   An effective, simple, and async security library for Sanic.
   </p>
 </p>
 
@@ -38,7 +38,6 @@
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
-    * [Blueprint](#blueprint)
     * [Testing](#testing)
 * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
@@ -53,17 +52,17 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Simple login, registration, and authentication
-* Text and email two-step verification
+* Login, registration, and authentication
+* Two-step verification
 * Two-factor authentication
 * Captcha
-* JWT
 * Wildcard and role based authorization
-* Blueprint
 
 This repository has been starred by Sanic's core maintainer:
 
 [![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
+
+Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for more documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -80,14 +79,14 @@ sudo apt-get install python3-pip
 
 ### Installation
 
-* Install pip packages
+* Install the Sanic Security pip package.
 ```sh
 pip3 install sanic-security
 ````
 
 ## Usage
 
-Once Sanic Security is configured and good to go, implementation is easy.
+Sanic Security setup and implementation is easy.
 
 ### Initial Setup
 
@@ -100,40 +99,15 @@ captcha_font=captcha.ttf
 cache_path = ./resources/security-cache
 session_samesite = strict
 
-[BLUEPRINT]
-register_route=api/auth/register
-login_route=api/auth/login
-verify_route=api/auth/verify
-logout_route=api/auth/logout
-captcha_request_route=api/capt/request
-captcha_img_route=api/capt/img
-
 [TORTOISE]
-username=admin
+username=example
 password=8UVbijLUGYfUtItAi
 endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
 schema=exampleschema
 models=sanic_security.models, example.models
 engine=mysql
 generate=true
-
-[TWILIO]
-from=12058469963
-token=1bcioi878ygO8fi766Fb34750e82a5ab
-sid=AC6156Jg67OOYe75c26dgtoTICifIe51cbf
-
-[SMTP]
-host=smtp.gmail.com
-port=465
-from=test@gmail.com
-username=test@gmail.com
-password=wfrfouwiurhwlnj
-tls=true
-start_tls=false
 ```
-
-You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
-delete the `TWILLIO` section.
 
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
@@ -165,8 +139,7 @@ Key | Value |
 async def on_register(request, captcha_session):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Registration successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
@@ -214,8 +187,7 @@ Key | Value |
 async def on_two_factor_login(request):
     authentication_session = await login(request, two_factor=True)
     two_step_session = await request_two_step_verification(request, authentication_session.account)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
     authentication_session.encode(response)
     two_step_session.encode(response)
@@ -231,7 +203,7 @@ Key | Value |
 ```python
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
-async def on_second_factor_login(request, two_step_verification):
+async def on_login_second_factor(request, two_step_verification):
   authentication_session = await on_second_factor(request)
   response = json("Second factor attempt successful! You may now be authenticated!",
                   authentication_session.account.json())
@@ -269,7 +241,7 @@ You must download a .ttf font for captcha challenges and define the file's path 
 
 Captcha challenge example:
 
-[![Captcha example](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
+[![Captcha image.](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
 
 * Request Captcha
 
@@ -298,7 +270,7 @@ Key | Value |
 **captcha** | Aj8HgD
 
 ```python
-@app.post("api/captcha/attempt")
+@app.post("api/captcha")
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
@@ -318,8 +290,7 @@ Key | Value |
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.account.json())
     two_step_session.encode(response)
     return response
@@ -331,8 +302,7 @@ async def on_request_verification(request, captcha_session):
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
     two_step_session = await TwoStepSession.decode(request)
-    await two_step_session.text_code() # Text verification code.
-    await two_step_session.email_code() # Or email verification code.
+    await email_code(two_step_session.code) #Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.account.json())
 ```
 
@@ -343,7 +313,7 @@ Key | Value |
 **code** | G8ha9nVa
 
 ```python
-@app.post("api/verification/attempt")
+@app.post("api/verification")
 @requires_two_step_verification()
 async def on_verification(request, two_step_session):
     response = json("Two-step verification attempt successful!", two_step_session.account.json())
@@ -357,19 +327,7 @@ Sanic Security comes with two protocols for authorization: role based and wildca
 Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
-This concept was inspired by [Apache Shiro's](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
-
-Examples of wildcard permissions are:
-
-  ```
-  admin:add,update,delete
-  admin:add
-  admin:*
-  employee:add,delete
-  employee:delete
-  employee:*
-  ```
+`printer:query`, `printer:query,delete`, `printer:*`.
 
 * Require Permissions
 
@@ -389,37 +347,11 @@ async def on_require_roles(request, authentication_session):
     return text("Account permitted.")
 ```
 
-## Blueprint
-
-The Sanic Security blueprint contains endpoints that allow you to employ fundamental authentication and verification into your application with a
-single line of code. 
-
-* Implementation
-
-```python
-app.blueprint(security)
-```
-* Endpoints
-
-Endpoints are configured via the security.ini file.
-
-Method | Endpoint | Info |
---- | --- | --- |
-POST | api/auth/register | A captcha is required. Register an account with an email, username, and password. Once the account is created successfully, a two-step session is requested and the code is emailed.
-POST | api/auth/login | Login with an email and password. A two-step session is requested when the account is not verified and the code is emailed.
-POST | api/auth/verify | Verify account with a two-step session code found in email. A two step session will be requested if the current session being used to verify account expires or is invalid.
-POST | api/auth/logout | Logout of logged in account.
-POST | api/capt/request | Requests new captcha session.
-GET | api/capt/img | Retrieves captcha image from existing captcha session.
-
 ## Testing
 
-Make sure the test Sanic instance (`test/server.py`) is running on your machine as both postman and the unit tests operate as a test client.
+Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-Then run the unit tests (`test/client.py`) or test with postman via clicking the button below.
-
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/d3667ed325439e0ffd6e?action=collection%2Fimport)
-
+Run the unit test client (`test/client.py`) and wait for results.
 
 ## Tortoise
 

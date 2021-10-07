@@ -6,20 +6,19 @@ with open("README.md", "r") as rm:
 
 setup(
     name="sanic-security",
-    version="0.10.9.10",
+    version="1.0.0.0",
     packages=setuptools.find_packages(),
     url="https://github.com/sunset-developer/sanic-security",
     license="GNU General Public License v3.0",
     author="sunset-developer",
     install_requires=[
-        "sanic>=21.3.0",
         "tortoise-orm>=0.17.0",
         "pyjwt>=1.7.0",
         "captcha",
         "aiofiles>=0.3.0",
     ],
     author_email="aidanstewart@sunsetdeveloper.com",
-    description="A powerful, simple, and async security library for Sanic.",
+    description="An effective, simple, and async security library for Sanic.",
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

@@ -5,10 +5,7 @@ from fnmatch import fnmatch
 from sanic.request import Request
 
 from sanic_security.authentication import authenticate
-from sanic_security.exceptions import (
-    InsufficientRolesError,
-    InsufficientPermissionsError,
-)
+from sanic_security.exceptions import AuthorizationError
 from sanic_security.models import Role, Permission, Account, AuthenticationSession
 from sanic_security.utils import get_ip
 
@@ -29,7 +26,7 @@ async def check_permissions(
     Raises:
         AccountError
         SessionError
-        InsufficientPermissionsError
+        AuthorizationError
     """
     authentication_session = await authenticate(request)
     client_permissions = await Permission.filter(
@@ -43,7 +40,9 @@ async def check_permissions(
             logging.warning(
                 f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient permissions."
             )
-            raise InsufficientPermissionsError()
+            raise AuthorizationError(
+                "Insufficient permissions required for this action."
+            )
     return authentication_session
 
 
@@ -61,7 +60,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     Raises:
         AccountError
         SessionError
-        InsufficientRolesError
+        AuthorizationError
     """
     authentication_session = await authenticate(request)
     client_roles = await Role.filter(account=authentication_session.account).all()
@@ -72,7 +71,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         logging.warning(
             f"Client ({authentication_session.account.email}/{get_ip(request)}) has insufficient roles."
         )
-        raise InsufficientRolesError()
+        raise AuthorizationError("Insufficient roles required for this action.")
     return authentication_session
 
 
@@ -94,7 +93,7 @@ def require_permissions(*required_permissions: str):
     Raises:
         AccountError
         SessionError
-        InsufficientPermissionsError
+        AuthorizationError
     """
 
     def wrapper(func):
@@ -128,7 +127,7 @@ def require_roles(*required_roles: str):
     Raises:
         AccountError
         SessionError
-        InsufficientRolesError
+        AuthorizationError
     """
 
     def wrapper(func):

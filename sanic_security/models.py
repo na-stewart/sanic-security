@@ -16,8 +16,6 @@ from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
 from sanic_security.exceptions import *
-from sanic_security.lib.smtp import send_email
-from sanic_security.lib.twilio import send_sms
 from sanic_security.utils import get_ip, dir_exists, config
 
 
@@ -27,11 +25,11 @@ class BaseModel(Model):
 
     Attributes:
         id (int): Primary key of model.
-        uid (bytes): Recommended identifier to be used for filtering or retrieval.
+        uid (bytes): Unique identifier.
         account (Account): Parent account associated with this model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): This attribute allows you to mark a model as deleted and filter it from queries without removing it from the database.
+        deleted (bool): Renders this account filterable without removing from the database.
     """
 
     id = fields.IntField(pk=True)
@@ -83,9 +81,9 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
-        password (bytes): Password of account for protection. Must be set using the hash_password method found in the utils module.
+        password (bytes): Password of account for protection. Must be set using the hash_password method.
         disabled (bool): Renders the account unusable but available.
-        verified (bool): Determines if the account needs verification before use.
+        verified (bool): Renders the account unusable until verified via two-step verification or other method.
     """
 
     username = fields.CharField(max_length=32)
@@ -132,7 +130,7 @@ class Account(BaseModel):
             account = await Account.filter(email=email).get()
             return account
         except DoesNotExist:
-            raise NotFoundError("Account with this email could not be found.")
+            raise NotFoundError("Account with this email does not exist.")
 
     @staticmethod
     async def get_via_username(username: str):
@@ -181,7 +179,7 @@ class Session(BaseModel):
 
     Attributes:
         expiration_date (datetime): Time the session expires and can no longer be used.
-        valid (bool): Used to determine if a session can be utilized or not.
+        valid (bool): Renders the session accessible but unusable.
         ip (str): IP address of client creating session.
         cache_path (str): Session cache path.
     """
@@ -189,7 +187,6 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-    cache_path = "./resources/security-cache/session/"
 
     def json(self):
         return {
@@ -224,7 +221,7 @@ class Session(BaseModel):
         ip = get_ip(request)
         if not await self.filter(ip=ip, account=self.account).exists():
             logger.warning(
-                f"Client ({self.account.email}/{ip}) ip address is unrecognised."
+                f"Client ({self.account.email}/{ip}) ip address is unrecognised"
             )
             raise SessionError("Unrecognised location.", 401)
 
@@ -290,6 +287,7 @@ class Session(BaseModel):
 
         Raises:
             NotFoundError
+            SessionError
         """
         decoded = cls.decode_raw(request, tag)
         try:
@@ -310,7 +308,7 @@ class VerificationSession(Session):
 
     Attributes:
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
-        code (str): Used as a secret key that would be sent or provided in a way that makes it difficult for malicious actors to obtain.
+        code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
     """
 
     attempts = fields.IntField(default=0)
@@ -333,10 +331,10 @@ class VerificationSession(Session):
 
     async def crosscheck_code(self, request: Request, code: str):
         """
-        Used to check if code passed is equivalent to the verification session code.
+        Used to check if code passed is equivalent to the session code.
 
         Args:
-            code (str): Code being cross-checked with verification session code.
+            code (str): Code being cross-checked with session code.
             request (Request): Sanic request parameter.
 
         Raises:
@@ -351,7 +349,7 @@ class VerificationSession(Session):
                 raise SessionError("The value provided does not match.", 401)
             else:
                 logger.warning(
-                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts."
+                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 self.valid = False
                 await self.save(update_fields=["valid"])
@@ -380,7 +378,7 @@ class TwoStepSession(VerificationSession):
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
                     await f.write(code + " ")
-            logger.info("Two-step session cache initialised.")
+            logger.info("Two-step session cache initialised")
 
     @classmethod
     async def get_random_code(cls):
@@ -390,27 +388,6 @@ class TwoStepSession(VerificationSession):
         ) as f:
             codes = await f.read()
             return random.choice(codes.split())
-
-    async def text_code(self, code_prefix="Your code is: "):
-        """
-        Sends account associated with this session the code via text.
-
-        Args:
-            code_prefix (str): Message being sent with code, for example "Your code is: ".
-        """
-        await send_sms(self.account.phone, code_prefix + self.code)
-
-    async def email_code(
-        self, subject="Verification", code_prefix="Your code is:\n\n "
-    ):
-        """
-        Sends account associated with this session the code via email.
-
-        Args:
-            code_prefix (str): Message being sent with code, for example "Your code is: ".
-            subject (str): Subject of email being sent with code.
-        """
-        await send_email(self.account.email, subject, code_prefix + self.code)
 
     class Meta:
         table = "two_step_session"
@@ -436,7 +413,7 @@ class CaptchaSession(VerificationSession):
                     code,
                     f"{cls.cache_path}/captcha/{code}.png",
                 )
-            logger.info("Captcha session cache initialised.")
+            logger.info("Captcha session cache initialised")
 
     @classmethod
     async def get_random_code(cls):
@@ -472,17 +449,17 @@ class AuthenticationSession(Session):
 
 class SessionFactory:
     """
-    Prevents human error when creating sessions.
+    Used to create and retrieve a session with pre-determined values.
     """
 
     async def get(
         self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
-         Creates and returns a session with all of the fulfilled requirements.
+        Creates and returns a session with all of the fulfilled requirements.
 
         Args:
-            session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
+            session_type (str): The type of session being retrieved. Available types are: captcha, two-step, and authentication.
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
             kwargs: Extra arguments applied during session creation.
@@ -501,7 +478,7 @@ class SessionFactory:
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(minutes=1),
             )
-        elif session_type == "twostep":
+        elif session_type == "two-step":
             return await TwoStepSession.create(
                 **kwargs,
                 code=await TwoStepSession.get_random_code(),

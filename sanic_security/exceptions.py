@@ -60,11 +60,6 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired", 401)
 
 
-class InsufficientRolesError(SecurityError):
-    def __init__(self):
-        super().__init__("Insufficient roles required for this action.", 403)
-
-
-class InsufficientPermissionsError(SecurityError):
-    def __init__(self):
-        super().__init__("Insufficient permissions required for this action.", 403)
+class AuthorizationError(SecurityError):
+    def __init__(self, message):
+        super().__init__(message, 403)

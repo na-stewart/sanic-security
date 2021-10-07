@@ -20,14 +20,14 @@ async def request_two_step_verification(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
-        account (Account): The account being associated with the verification session. If None, an account is retrieved via email with the form-data argument.
+        account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
 
     Returns:
          two_step_session
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await session_factory.get("twostep", request, account)
+    two_step_session = await session_factory.get("two-step", request, account)
     return two_step_session
 
 
@@ -56,11 +56,11 @@ async def verify_account(
     request: Request, two_step_session: TwoStepSession = None
 ) -> TwoStepSession:
     """
-    Verifies account with two-step session code found in email or text.
+    Verifies account with two-step session code.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        two_step_session (TwoStepSession): Two-step session associated with the account being verified. If None, a two-step session is retrieved via decoding.
+        two_step_session (TwoStepSession): Two-step session associated with the account being verified. If None, a two-step session is retrieved via client by decoding.
 
     Raises:
         SessionError
@@ -82,7 +82,7 @@ async def verify_account(
 
 def requires_two_step_verification():
     """
-    Validates a two-step challenge attempt.
+    Validates a two-step verification attempt.
 
     Example:
         This method is not called directly and instead used as a decorator:

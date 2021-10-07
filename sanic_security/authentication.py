@@ -71,11 +71,11 @@ async def login(
     request: Request, account: Account = None, two_factor=False
 ) -> AuthenticationSession:
     """
-    Used to login to accounts registered with Sanic Security. Login session expires after 30 days.
+    Login with email and password. Authentication session expires after 30 days.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
-        account (Account): Account being logged into. If None, an account is retrieved via email with the form-data argument.
+        account (Account): Account being logged into. If None, an account is retrieved via email in the request form-data.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
@@ -93,7 +93,7 @@ async def login(
         )
     else:
         logger.warning(
-            f"Client ({account.email}/{get_ip(request)}) login password is incorrect."
+            f"Client ({account.email}/{get_ip(request)}) login password is incorrect"
         )
         raise AccountError("Incorrect password.", 401)
 
