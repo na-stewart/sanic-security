@@ -349,9 +349,15 @@ async def on_require_roles(request, authentication_session):
 
 ## Testing
 
-Make sure the test Sanic instance (`test/server.py`) is running on your machine.
+* Install the test Sanic Security pip package:
 
-Run the unit test client (`test/client.py`) and wait for results.
+```sh
+pip3 install sanic-security test
+```
+
+* Make sure the test Sanic instance (`test/server.py`) is running on your machine.
+
+* Run the unit test client (`test/client.py`) and wait for results.
 
 ## Tortoise
 
