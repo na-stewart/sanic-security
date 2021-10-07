@@ -56,7 +56,6 @@ This library contains a variety of features including:
 * Two-step verification
 * Two-factor authentication
 * Captcha
-* JWT
 * Wildcard and role based authorization
 
 This repository has been starred by Sanic's core maintainer:
@@ -107,9 +106,6 @@ models=sanic_security.models, example.models
 engine=mysql
 generate=true
 ```
-
-You may remove each section in the configuration you aren't using. For example, if you're not utilizing Twillio you can
-delete the `TWILLIO` section.
 
 Once you've configured Sanic Security, you can initialize Sanic with the example below:
 
@@ -205,7 +201,7 @@ Key | Value |
 ```python
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
-async def on_second_factor_login(request, two_step_verification):
+async def on_login_second_factor(request, two_step_verification):
   authentication_session = await on_second_factor(request)
   response = json("Second factor attempt successful! You may now be authenticated!",
                   authentication_session.account.json())
@@ -272,7 +268,7 @@ Key | Value |
 **captcha** | Aj8HgD
 
 ```python
-@app.post("api/captcha/attempt")
+@app.post("api/captcha")
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
@@ -315,7 +311,7 @@ Key | Value |
 **code** | G8ha9nVa
 
 ```python
-@app.post("api/verification/attempt")
+@app.post("api/verification")
 @requires_two_step_verification()
 async def on_verification(request, two_step_session):
     response = json("Two-step verification attempt successful!", two_step_session.account.json())
@@ -329,19 +325,7 @@ Sanic Security comes with two protocols for authorization: role based and wildca
 Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`. The colon in this example is a special character used to delimit the next part in the permission string. In this example, the first part is the domain that is being operated on (printer), and the second part is the action (query) being performed. 
-This concept was inspired by [Apache Shiro's](https://shiro.apache.org/static/1.7.1/apidocs/org/apache/shiro/authz/permission/WildcardPermission.html) implementation of wildcard based permissions.
-
-Examples of wildcard permissions are:
-
-  ```
-  admin:add,update,delete
-  admin:add
-  admin:*
-  employee:add,delete
-  employee:delete
-  employee:*
-  ```
+`printer:query`, `printer:query,delete`, `printer:*`.
 
 * Require Permissions
 

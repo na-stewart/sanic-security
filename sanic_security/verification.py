@@ -27,7 +27,7 @@ async def request_two_step_verification(
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await session_factory.get("twostep", request, account)
+    two_step_session = await session_factory.get("two-step", request, account)
     return two_step_session
 
 

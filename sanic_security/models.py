@@ -25,11 +25,11 @@ class BaseModel(Model):
 
     Attributes:
         id (int): Primary key of model.
-        uid (bytes): Recommended identifier to be used for filtering or retrieval.
+        uid (bytes): Unique identifier.
         account (Account): Parent account associated with this model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): This attribute allows you to mark a model as deleted and filter it from queries without removing it from the database.
+        deleted (bool): Renders this account filterable without removing from the database.
     """
 
     id = fields.IntField(pk=True)
@@ -81,9 +81,9 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
-        password (bytes): Password of account for protection. Must be set using the hash_password method found in the utils module.
+        password (bytes): Password of account for protection. Must be set using the hash_password method.
         disabled (bool): Renders the account unusable but available.
-        verified (bool): Determines if the account needs verification before use.
+        verified (bool): Renders the account unusable until verified via two-step verification or other method.
     """
 
     username = fields.CharField(max_length=32)
@@ -179,7 +179,7 @@ class Session(BaseModel):
 
     Attributes:
         expiration_date (datetime): Time the session expires and can no longer be used.
-        valid (bool): Used to determine if a session can be utilized or not.
+        valid (bool): Renders the session accessible but unusable.
         ip (str): IP address of client creating session.
         cache_path (str): Session cache path.
     """
@@ -187,7 +187,6 @@ class Session(BaseModel):
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
-    cache_path = "./resources/security-cache/session/"
 
     def json(self):
         return {
@@ -449,17 +448,17 @@ class AuthenticationSession(Session):
 
 class SessionFactory:
     """
-    Prevents human error when creating sessions.
+    Used to create and retrieve a session with pre-determined values.
     """
 
     async def get(
         self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
-         Creates and returns a session with all of the fulfilled requirements.
+        Creates and returns a session with all of the fulfilled requirements.
 
         Args:
-            session_type (str): The type of session being retrieved. Available types are: captcha, twostep, and authentication.
+            session_type (str): The type of session being retrieved. Available types are: captcha, two-step, and authentication.
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
             kwargs: Extra arguments applied during session creation.
@@ -478,7 +477,7 @@ class SessionFactory:
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(minutes=1),
             )
-        elif session_type == "twostep":
+        elif session_type == "two-step":
             return await TwoStepSession.create(
                 **kwargs,
                 code=await TwoStepSession.get_random_code(),

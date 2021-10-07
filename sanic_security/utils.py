@@ -29,7 +29,7 @@ def hash_password(password: str) -> bytes:
 
 def get_ip(request: Request) -> str:
     """
-    Retrieves ip address from request.
+    Retrieves ip address from client request.
 
     Args:
         request (Request): Sanic request parameter.
