@@ -96,8 +96,8 @@ First you have to create a configuration file called security.ini in the working
 [SECURITY]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=captcha.ttf
-cache_path = ./resources/security-cache
-session_samesite = strict
+cache_path=./resources/security-cache
+session_samesite=strict
 
 [TORTOISE]
 username=example
