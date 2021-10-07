@@ -349,7 +349,7 @@ async def on_require_roles(request, authentication_session):
 
 ## Testing
 
-* Install the test Sanic Security pip package:
+* Install the Sanic Security test pip package:
 
 ```shell
 pip3 install sanic-security test
