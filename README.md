@@ -324,10 +324,10 @@ async def on_verification(request, two_step_session):
 
 Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
 
-Role-based access control (RBAC) is a policy-neutral access-control mechanism defined around roles and privileges. 
+Role-based permissions is a policy-neutral access-control mechanism defined around roles and privileges. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`, `printer:query,delete`, `printer:*`.
+`printer:query`, `printer:query,delete`, and/or `printer:*`.
 
 * Require Permissions
 
