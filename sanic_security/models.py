@@ -247,7 +247,7 @@ class Session(BaseModel):
         Transforms session into jwt and then is stored in a cookie.
 
         Args:
-            response (HTTPResponse): Sanic response object used to store JWT into a cookie on the client.
+            response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
             tag (str): Identifier applied to encoded session cookie.
         """
         payload = {
