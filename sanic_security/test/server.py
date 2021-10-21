@@ -1,3 +1,6 @@
+import functools
+
+import bcrypt
 from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
 
@@ -17,8 +20,8 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.exceptions import SecurityError
 from sanic_security.lib.tortoise import initialize_security_orm
-from sanic_security.models import Account, Role, Permission
-from sanic_security.utils import json, hash_password
+from sanic_security.models import Account, Role, Permission, SessionFactory
+from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -26,6 +29,7 @@ from sanic_security.verification import (
 )
 
 app = Sanic(__name__)
+session_factory = SessionFactory()
 
 
 @app.post("api/test/auth/register")
@@ -225,7 +229,7 @@ async def on_account_creation(request):
         account = await Account.create(
             username="test",
             email=request.form.get("email"),
-            password=hash_password("testtest"),
+            password=bcrypt.hashpw("testtest".encode("utf-8"), bcrypt.gensalt()),
             verified=True,
             disabled=False,
         )

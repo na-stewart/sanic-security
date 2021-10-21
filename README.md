@@ -98,6 +98,7 @@ secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
 captcha_font=captcha.ttf
 cache_path=./resources/security-cache
 session_samesite=strict
+session_secure = true
 
 [TORTOISE]
 username=example
