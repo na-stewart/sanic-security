@@ -98,7 +98,7 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
-        password (bytes): Password of account for protection. Must be set using the hash_password method.
+        password (bytes): Password of account for protection. Must be hashed via bcrypt.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
     """
@@ -262,8 +262,8 @@ class Session(BaseModel):
         )
         response.cookies[cookie]["httponly"] = True
         response.cookies[cookie]["samesite"] = config["SECURITY"]["session_samesite"]
-        response.cookies[cookie]["secure"] = (
-            config["SECURITY"]["session_samesite"] != "strict"
+        response.cookies[cookie]["secure"] = config["SECURITY"].getboolean(
+            "session_secure"
         )
 
     @classmethod

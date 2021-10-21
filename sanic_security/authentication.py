@@ -1,6 +1,7 @@
 import functools
 import re
 
+import bcrypt
 from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
@@ -10,7 +11,7 @@ from sanic_security.exceptions import (
     SessionError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
-from sanic_security.utils import hash_password, get_ip
+from sanic_security.utils import get_ip
 
 """
 Copyright (C) 2021 Aidan Stewart
@@ -69,7 +70,9 @@ async def register(
         account = await Account.create(
             email=request.form.get("email").lower(),
             username=request.form.get("username"),
-            password=hash_password(request.form.get("password")),
+            password=bcrypt.hashpw(
+                request.form.get("password").encode("utf-8"), bcrypt.gensalt()
+            ),
             phone=request.form.get("phone"),
             verified=verified,
             disabled=disabled,
@@ -103,7 +106,8 @@ async def login(
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    if account.password == hash_password(request.form.get("password")):
+
+    if bcrypt.checkpw(request.form.get("password").encode("utf-8"), account.password):
         account.validate()
         return await session_factory.get(
             "authentication", request, account, two_factor=two_factor

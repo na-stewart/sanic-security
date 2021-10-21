@@ -1,4 +1,3 @@
-import hashlib
 import os
 from configparser import ConfigParser
 
@@ -24,24 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>
 
 config = ConfigParser()
 config.read("./security.ini")
-
-
-def hash_password(password: str) -> bytes:
-    """
-    Securely hashes password to be stored.
-
-    Args:
-        password (str): Password to be hashed.
-
-    Returns:
-        hashed_password
-    """
-    return hashlib.pbkdf2_hmac(
-        "sha512",
-        password.encode("utf-8"),
-        config["SECURITY"]["SECRET"].encode("utf-8"),
-        100000,
-    )
 
 
 def get_ip(request: Request) -> str:
