@@ -1,5 +1,3 @@
-import functools
-
 from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
