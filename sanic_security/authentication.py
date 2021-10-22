@@ -56,7 +56,7 @@ async def register(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
         raise AccountError("Please use a valid email such as you@mail.com.", 400)
-    if not re.search(r"^[a-z0-9_-]{3,32}$", request.form.get("username")):
+    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
         raise AccountError(
             "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
             400,

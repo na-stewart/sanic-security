@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU General Public License v3.0",
-    version="1.2.0.0",
+    version="1.2.0.1",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
