@@ -98,7 +98,7 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
-        password (bytes): Password of account for protection. Must be hashed via Argon.
+        password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
     """
