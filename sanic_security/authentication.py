@@ -1,7 +1,8 @@
 import functools
 import re
 
-import bcrypt
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
@@ -31,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
 session_factory = SessionFactory()
+password_hasher = PasswordHasher()
 
 
 async def register(
@@ -70,9 +72,7 @@ async def register(
         account = await Account.create(
             email=request.form.get("email").lower(),
             username=request.form.get("username"),
-            password=bcrypt.hashpw(
-                request.form.get("password").encode("utf-8"), bcrypt.gensalt()
-            ),
+            password=password_hasher.hash(request.form.get("password")),
             phone=request.form.get("phone"),
             verified=verified,
             disabled=disabled,
@@ -106,13 +106,16 @@ async def login(
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-
-    if bcrypt.checkpw(request.form.get("password").encode("utf-8"), account.password):
+    try:
+        password_hasher.verify(account.password, request.form.get("password"))
+        if password_hasher.check_needs_rehash(account.password):
+            account.password = password_hasher.hash(request.form.get("password"))
+            await account.save(update_fields=["password"])
         account.validate()
         return await session_factory.get(
             "authentication", request, account, two_factor=two_factor
         )
-    else:
+    except VerifyMismatchError:
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
         )

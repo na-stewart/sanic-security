@@ -98,7 +98,7 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
-        password (bytes): Password of account for protection. Must be hashed via bcrypt.
+        password (bytes): Password of account for protection. Must be hashed via argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
     """
@@ -106,7 +106,7 @@ class Account(BaseModel):
     username = fields.CharField(max_length=32)
     email = fields.CharField(unique=True, max_length=255)
     phone = fields.CharField(unique=True, max_length=14, null=True)
-    password = fields.BinaryField()
+    password = fields.CharField(max_length=255)
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
 

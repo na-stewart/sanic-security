@@ -13,15 +13,15 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU General Public License v3.0",
-    version="1.1.0.1",
+    version="1.2.0.0",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
         "tortoise-orm>=0.17.0",
         "pyjwt>=1.7.0",
         "captcha",
-        "aiofiles>=0.3.0",
-        "bcrypt>=3.1.0"
+        "aiofiles>=0.3.0"
+        "argon2-cffi>=20.1.0"
     ],
     platforms="any",
 )

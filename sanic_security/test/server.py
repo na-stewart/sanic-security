@@ -1,6 +1,6 @@
 import functools
 
-import bcrypt
+from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.exceptions import IntegrityError
 
@@ -30,6 +30,7 @@ from sanic_security.verification import (
 
 app = Sanic(__name__)
 session_factory = SessionFactory()
+password_hasher = PasswordHasher()
 
 
 @app.post("api/test/auth/register")
@@ -229,7 +230,7 @@ async def on_account_creation(request):
         account = await Account.create(
             username="test",
             email=request.form.get("email"),
-            password=bcrypt.hashpw("testtest".encode("utf-8"), bcrypt.gensalt()),
+            password=password_hasher.hash("testtest"),
             verified=True,
             disabled=False,
         )
