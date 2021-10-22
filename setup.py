@@ -21,7 +21,7 @@ setup(
         "pyjwt>=1.7.0",
         "captcha",
         "aiofiles>=0.3.0",
-        "bcrypt"
+        "bcrypt>=3.1.0"
     ],
     platforms="any",
 )
