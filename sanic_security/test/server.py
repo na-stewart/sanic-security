@@ -242,7 +242,7 @@ async def on_account_creation(request):
 
 @app.exception(SecurityError)
 async def on_error(request, exception):
-    return exception.response
+    return exception.json_response
 
 
 initialize_security_orm(app)
