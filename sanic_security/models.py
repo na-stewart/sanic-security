@@ -242,13 +242,12 @@ class Session(BaseModel):
             )
             raise SessionError("Unrecognised location.", 401)
 
-    def encode(self, response: HTTPResponse, tag: str = "sec"):
+    def encode(self, response: HTTPResponse):
         """
         Transforms session into jwt and then is stored in a cookie.
 
         Args:
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
-            tag (str): Identifier applied to encoded session cookie.
         """
         payload = {
             "date_created": str(self.date_created),
@@ -256,7 +255,7 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
-        cookie = f"{tag}_{self.__class__.__name__}"
+        cookie = f"{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
             payload, config["SECURITY"]["secret"], "HS256"
         )
@@ -267,13 +266,12 @@ class Session(BaseModel):
         )
 
     @classmethod
-    def decode_raw(cls, request: Request, tag: str = "sec") -> dict:
+    def decode_raw(cls, request: Request) -> dict:
         """
         Decodes JWT token from client cookie into a python dict.
 
         Args:
             request (Request): Sanic request parameter.
-            tag (str): Identifier found applied to encoded session cookie.
 
         Returns:
             session_dict
@@ -281,7 +279,7 @@ class Session(BaseModel):
         Raises:
             SessionError
         """
-        cookie = request.cookies.get(f"{tag}_{cls.__name__}")
+        cookie = request.cookies.get(f"{cls.__name__.lower()[:4]}_session")
         try:
             if not cookie:
                 raise SessionError(f"No session provided by client.", 400)
@@ -291,13 +289,12 @@ class Session(BaseModel):
             raise SessionError(str(e), 400)
 
     @classmethod
-    async def decode(cls, request: Request, tag: str = "sec"):
+    async def decode(cls, request: Request):
         """
         Decodes JWT token from client cookie to a Sanic Security session.
 
         Args:
             request (Request): Sanic request parameter.
-            tag (str): Identifier found applied to encoded session cookie.
 
         Returns:
             session
@@ -306,7 +303,7 @@ class Session(BaseModel):
             NotFoundError
             SessionError
         """
-        decoded = cls.decode_raw(request, tag)
+        decoded = cls.decode_raw(request)
         try:
             decoded_session = (
                 await cls.filter(uid=decoded["uid"]).prefetch_related("account").get()
