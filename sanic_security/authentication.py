@@ -83,8 +83,14 @@ async def register(
             raise AccountError("This account already exists.", 409)
         else:
             raise ie
-    except ValidationError:
-        raise AccountError("Email, username, or phone number is invalid.", 400)
+    except ValidationError as ve:
+        if "Length of" in ve.args[0]:
+            raise AccountError(
+                "One or more of your account registration values has too many characters.",
+                400,
+            )
+        else:
+            raise ve
 
 
 async def login(
