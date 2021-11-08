@@ -26,7 +26,7 @@ from sanic_security.verification import (
     verify_account,
 )
 
-app = Sanic(__name__)
+app = Sanic("test")
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
