@@ -118,6 +118,8 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
 ```
 
+If you're initializing Tortoise yourself, you can remove the `TORTOISE` section in the configuration as well as `initialize_security_orm(app)`.
+
 The tables in the below examples represent example request `form-data`.
 
 ## Authentication
