@@ -5,8 +5,8 @@ import random
 import string
 import uuid
 
-import aiofiles
 import jwt
+from aiofile import async_open
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
@@ -384,9 +384,7 @@ class TwoStepSession(VerificationSession):
     @classmethod
     async def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache_path}/verification"):
-            async with aiofiles.open(
-                f"{cls.cache_path}/verification/codes.txt", mode="w"
-            ) as f:
+            async with async_open(f"{cls.cache_path}/verification/codes.txt", 'w') as f:
                 for i in range(100):
                     code = "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
@@ -397,9 +395,7 @@ class TwoStepSession(VerificationSession):
     @classmethod
     async def get_random_code(cls):
         await cls._initialize_cache()
-        async with aiofiles.open(
-            f"{cls.cache_path}/verification/codes.txt", mode="r"
-        ) as f:
+        async with async_open(f"{cls.cache_path}/verification/codes.txt", 'r') as f:
             codes = await f.read()
             return random.choice(codes.split())
 
@@ -415,13 +411,12 @@ class CaptchaSession(VerificationSession):
     @classmethod
     async def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache_path}/captcha"):
-            loop = asyncio.get_running_loop()
             image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
                 )
-                await loop.run_in_executor(
+                await asyncio.get_running_loop().run_in_executor(
                     None,
                     image.write,
                     code,
