@@ -384,7 +384,7 @@ class TwoStepSession(VerificationSession):
     @classmethod
     async def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache_path}/verification"):
-            async with async_open(f"{cls.cache_path}/verification/codes.txt", 'w') as f:
+            async with async_open(f"{cls.cache_path}/verification/codes.txt", "w") as f:
                 for i in range(100):
                     code = "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
@@ -395,7 +395,7 @@ class TwoStepSession(VerificationSession):
     @classmethod
     async def get_random_code(cls):
         await cls._initialize_cache()
-        async with async_open(f"{cls.cache_path}/verification/codes.txt", 'r') as f:
+        async with async_open(f"{cls.cache_path}/verification/codes.txt", "r") as f:
             codes = await f.read()
             return random.choice(codes.split())
 
