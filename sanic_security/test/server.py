@@ -69,12 +69,16 @@ async def on_login(request):
     Login to an account with an email and password.
     """
     account = await Account.get_via_email(request.form.get("email"))
-    authentication_session = await login(request, account, two_factor=request.form.get("two_factor") == "true")
+    authentication_session = await login(
+        request, account, two_factor=request.form.get("two_factor") == "true"
+    )
     if request.form.get("two_factor") == "true":
         two_step_session = await request_two_step_verification(
             request, authentication_session.account
         )
-        response = json("Login successful! Second factor required.", two_step_session.code)
+        response = json(
+            "Login successful! Second factor required.", two_step_session.code
+        )
         two_step_session.encode(response)
     else:
         response = json("Login successful!", account.json())
@@ -165,7 +169,7 @@ async def on_permissions_authorization(request, authentication_session):
     Permissions authorization.
     """
     if not await Permission.filter(
-            wildcard="admin:create", account=authentication_session.account
+        wildcard="admin:create", account=authentication_session.account
     ).exists():
         await assign_permission("admin:create", authentication_session.account)
     await check_permissions(request, request.form.get("permissions"))
@@ -178,7 +182,9 @@ async def on_roles_authorization(request, authentication_session):
     """
     Roles authorization.
     """
-    if not await Role.filter(name="Admin", account=authentication_session.account).exists():
+    if not await Role.filter(
+        name="Admin", account=authentication_session.account
+    ).exists():
         await assign_role("Admin", authentication_session.account)
     await check_roles(request, request.form.get("roles"))
     return text("Account permitted.")
