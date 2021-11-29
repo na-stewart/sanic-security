@@ -95,10 +95,13 @@ First you have to create a configuration file called security.ini in the working
 ```ini
 [SECURITY]
 secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
-captcha_font=captcha.ttf
-cache_path=./resources/security-cache
+cache=./resources/security-cache
 session_samesite=strict
-session_secure=true
+session_secure=false
+captcha_session_expiration=60
+captcha_font=captcha.ttf
+two_step_session_expiration=300
+authentication_session_expiration=2592000
 
 [TORTOISE]
 username=example
