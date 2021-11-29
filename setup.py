@@ -20,7 +20,6 @@ setup(
         "tortoise-orm>=0.17.0",
         "pyjwt>=1.7.0",
         "captcha",
-        "aiofile>=3.2.0",
         "argon2-cffi>=20.1.0",
     ],
     platforms="any",

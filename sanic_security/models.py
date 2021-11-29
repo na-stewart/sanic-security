@@ -6,7 +6,6 @@ import string
 import uuid
 
 import jwt
-from aiofile import async_open
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
@@ -198,7 +197,6 @@ class Session(BaseModel):
         expiration_date (datetime): Time the session expires and can no longer be used.
         valid (bool): Renders the session accessible but unusable.
         ip (str): IP address of client creating session.
-        cache_path (str): Session cache path.
     """
 
     expiration_date = fields.DatetimeField(null=True)
@@ -323,21 +321,22 @@ class VerificationSession(Session):
     Attributes:
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
         code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
+        cache (str): Session cache path.
     """
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
-    cache_path = config["SECURITY"]["cache_path"]
+    cache = config["SECURITY"]["cache"]
 
     @classmethod
-    async def _initialize_cache(cls):
+    def _initialize_cache(cls):
         """
         Creates verification session cache and generates required files.
         """
         raise NotImplementedError()
 
     @classmethod
-    async def get_random_code(cls) -> str:
+    def get_random_code(cls) -> str:
         """
         Retrieves a random cached verification session code.
         """
@@ -382,22 +381,21 @@ class TwoStepSession(VerificationSession):
     """
 
     @classmethod
-    async def _initialize_cache(cls):
-        if not dir_exists(f"{cls.cache_path}/verification"):
-            async with async_open(f"{cls.cache_path}/verification/codes.txt", "w") as f:
+    def _initialize_cache(cls):
+        if not dir_exists(f"{cls.cache}/verification"):
+            with open(f"{cls.cache}/verification/codes.txt", "w") as f:
                 for i in range(100):
                     code = "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
                     )
-                    await f.write(code + " ")
+                    f.write(f"{code} ")
             logger.info("Two-step session cache initialised")
 
     @classmethod
-    async def get_random_code(cls):
-        await cls._initialize_cache()
-        async with async_open(f"{cls.cache_path}/verification/codes.txt", "r") as f:
-            codes = await f.read()
-            return random.choice(codes.split())
+    def get_random_code(cls):
+        cls._initialize_cache()
+        with open(f"{cls.cache}/verification/codes.txt", "r") as f:
+            return random.choice(f.read().split())
 
     class Meta:
         table = "two_step_session"
@@ -409,25 +407,20 @@ class CaptchaSession(VerificationSession):
     """
 
     @classmethod
-    async def _initialize_cache(cls):
-        if not dir_exists(f"{cls.cache_path}/captcha"):
+    def _initialize_cache(cls):
+        if not dir_exists(f"{cls.cache}/captcha"):
             image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
                 )
-                await asyncio.get_running_loop().run_in_executor(
-                    None,
-                    image.write,
-                    code,
-                    f"{cls.cache_path}/captcha/{code}.png",
-                )
+                image.write(code, f"{cls.cache}/captcha/{code}.png")
             logger.info("Captcha session cache initialised")
 
     @classmethod
-    async def get_random_code(cls):
-        await cls._initialize_cache()
-        return random.choice(os.listdir(f"{cls.cache_path}/captcha")).split(".")[0]
+    def get_random_code(cls):
+        cls._initialize_cache()
+        return random.choice(os.listdir(f"{cls.cache}/captcha")).split(".")[0]
 
     async def get_image(self) -> HTTPResponse:
         """
@@ -436,7 +429,7 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        return await file(f"{self.cache_path}/captcha/{self.code}.png")
+        return await file(f"{self.cache}/captcha/{self.code}.png")
 
     class Meta:
         table = "captcha_session"
@@ -483,18 +476,22 @@ class SessionFactory:
             return await CaptchaSession.create(
                 **kwargs,
                 ip=get_ip(request),
-                code=await CaptchaSession.get_random_code(),
+                code=CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(minutes=1),
+                + datetime.timedelta(
+                    seconds=config["SECURITY"].getint("captcha_session_expiration")
+                ),
             )
         elif session_type == "two-step":
             return await TwoStepSession.create(
                 **kwargs,
-                code=await TwoStepSession.get_random_code(),
+                code=TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(minutes=5),
+                + datetime.timedelta(
+                    seconds=config["SECURITY"].getint("two_step_session_expiration")
+                ),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -502,7 +499,11 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(days=30),
+                + datetime.timedelta(
+                    seconds=config["SECURITY"].getint(
+                        "authentication_session_expiration"
+                    )
+                ),
             )
         else:
             raise ValueError("Invalid session type.")
