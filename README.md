@@ -252,18 +252,9 @@ Captcha challenge example:
 @app.post("api/captcha/request")
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
-    response = json("Captcha request successful!", captcha_session.json())
+    response = await captcha_session.get_image()
     captcha_session.encode(response)
     return response
-```
-
-* Captcha Image
-
-```python
-@app.get("api/captcha/img")
-async def on_captcha_img(request):
-    captcha_session = await CaptchaSession.decode(request)
-    return await captcha_session.get_image()
 ```
 
 * Requires Captcha

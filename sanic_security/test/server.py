@@ -34,7 +34,7 @@ password_hasher = PasswordHasher()
 @app.post("api/test/auth/register")
 async def on_register(request):
     """
-    Register an account with email and password. If unverified, a two_step session code is provided in the response.
+    Register an account with email and password.
     """
     account = await register(
         request,
@@ -52,38 +52,6 @@ async def on_register(request):
     return response
 
 
-@app.post("api/test/auth/login/two-factor")
-async def on_login_with_two_factor_authentication(request):
-    """
-    Login with a two-factor requirement.
-    """
-    authentication_session = await login(request, two_factor=True)
-    two_step_session = await request_two_step_verification(
-        request, authentication_session.account
-    )
-    response = json(
-        "Login successful! A second factor is now required to be authenticated.",
-        two_step_session.code,
-    )
-    authentication_session.encode(response)
-    two_step_session.encode(response)
-    return response
-
-
-@app.post("api/test/auth/login/second-factor")
-@requires_two_step_verification()
-async def on_login_second_factor(request, two_step_verification):
-    """
-    Removes the second factor requirement from the client authentication session when the two-step verification attempt
-    is successful.
-    """
-    authentication_session = await on_second_factor(request)
-    response = json(
-        "Second factor attempt successful!", authentication_session.account.json()
-    )
-    return response
-
-
 @app.post("api/test/auth/verify")
 async def on_verify(request):
     """
@@ -98,12 +66,33 @@ async def on_verify(request):
 @app.post("api/test/auth/login")
 async def on_login(request):
     """
-    Login to an account with an email and password. Authentication session is then created and encoded.
+    Login to an account with an email and password.
     """
     account = await Account.get_via_email(request.form.get("email"))
-    authentication_session = await login(request, account)
-    response = json("Login successful!", account.json())
+    authentication_session = await login(request, account, two_factor=request.form.get("two_factor") == "true")
+    if request.form.get("two_factor") == "true":
+        two_step_session = await request_two_step_verification(
+            request, authentication_session.account
+        )
+        response = json("Login successful! Second factor required.", two_step_session.code)
+        two_step_session.encode(response)
+    else:
+        response = json("Login successful!", account.json())
     authentication_session.encode(response)
+    return response
+
+
+@app.post("api/test/auth/login/second-factor")
+@requires_two_step_verification()
+async def on_login_second_factor(request, two_step_verification):
+    """
+    Removes the second factor requirement from the client authentication session when the two-step verification attempt
+    is successful.
+    """
+    authentication_session = await on_second_factor(request)
+    response = json(
+        "Second factor attempt successful!", authentication_session.account.json()
+    )
     return response
 
 
@@ -169,52 +158,28 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-@app.post("api/test/auth/perms/assign")
-@requires_authentication()
-async def on_authorization_assign_perms(request, authentication_session):
-    """
-    Permissions assigned to logged in account.
-    """
-    response = text("Account assigned permissions.")
-    if not await Permission.filter(
-        wildcard="admin:create", account=authentication_session.account
-    ).exists():
-        await assign_permission("admin:create", authentication_session.account)
-    else:
-        response = text("Account already assigned permissions.")
-    return response
-
-
 @app.post("api/test/auth/perms")
-async def on_permissions_authorization(request):
+@requires_authentication()
+async def on_permissions_authorization(request, authentication_session):
     """
     Permissions authorization.
     """
+    if not await Permission.filter(
+            wildcard="admin:create", account=authentication_session.account
+    ).exists():
+        await assign_permission("admin:create", authentication_session.account)
     await check_permissions(request, request.form.get("permissions"))
     return text("Account permitted.")
 
 
-@app.post("api/test/auth/roles/assign")
-@requires_authentication()
-async def on_authorization_assign_role(request, authentication_session):
-    """
-    Roles assigned to client.
-    """
-    response = text("Account assigned role.")
-    if not await Role.filter(
-        name="Admin", account=authentication_session.account
-    ).exists():
-        await assign_role("Admin", authentication_session.account)
-    else:
-        response = text("Account already assigned role.")
-    return response
-
-
 @app.post("api/test/auth/roles")
-async def on_roles_authorization(request):
+@requires_authentication()
+async def on_roles_authorization(request, authentication_session):
     """
     Roles authorization.
     """
+    if not await Role.filter(name="Admin", account=authentication_session.account).exists():
+        await assign_role("Admin", authentication_session.account)
     await check_roles(request, request.form.get("roles"))
     return text("Account permitted.")
 
@@ -222,7 +187,7 @@ async def on_roles_authorization(request):
 @app.post("api/test/account")
 async def on_account_creation(request):
     """
-    Easily creates a usable account.
+    Creates a usable account.
     """
     try:
         account = await Account.create(
