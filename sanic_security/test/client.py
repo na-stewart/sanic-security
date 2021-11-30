@@ -181,7 +181,7 @@ class LoginTest(TestCase):
             data={"email": "two_factor@login.com"},
         )
         login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login/two-factor",
+            "http://127.0.0.1:8000/api/test/auth/login",
             data={
                 "email": "two_factor@login.com",
                 "password": "testtest",
