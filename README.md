@@ -240,7 +240,7 @@ async def on_authenticated(request, authentication_session):
 
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file's path in security.ini.
+You must download a .ttf font for captcha challenges and define the file's path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
