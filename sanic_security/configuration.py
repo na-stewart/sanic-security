@@ -1,7 +1,20 @@
-class Config(object):
-    def __init__(self, initial_data):
-        for key in initial_data:
-            setattr(self, key, initial_data[key])
+class Config(dict):
+
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError()
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError()
 
 
 config = Config(
@@ -14,5 +27,6 @@ config = Config(
         "captcha_font": "captcha.ttf",
         "two_step_session_expiration": 300,
         "authentication_session_expiration": 2592000,
+        "two_factor_overrride": False
     }
 )

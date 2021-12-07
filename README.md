@@ -95,7 +95,6 @@ You can also use the update() method like on regular dictionaries.
 config.secret = "This is a big secret. Shhhhh"
 config["captcha_font"] = "./resources/captcha.ttf"
 ```
-
 Below are the configuration default values:
 
 Key | Value |
@@ -107,7 +106,7 @@ Key | Value |
 **captcha_font** | captcha.ttf
 **two_step_session_expiration** | 300
 **authentication_session_expiration** | 2592000
-
+**second_factor_override** | False
 
 ## Usage
 

@@ -7,6 +7,7 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
+from sanic_security.configuration import config
 from sanic_security.exceptions import (
     AccountError,
     SessionError,
@@ -36,7 +37,7 @@ password_hasher = PasswordHasher()
 
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+        request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account.
@@ -53,7 +54,7 @@ async def register(
         AccountError
     """
     if not re.search(
-        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
+            r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
         raise AccountError("Please use a valid email such as you@mail.com.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
@@ -62,7 +63,7 @@ async def register(
             400,
         )
     if request.form.get("phone") and not re.search(
-        r"^[0-9]{11,14}$", request.form.get("phone")
+            r"^[0-9]{11,14}$", request.form.get("phone")
     ):
         raise AccountError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -94,7 +95,7 @@ async def register(
 
 
 async def login(
-    request: Request, account: Account = None, two_factor=False
+        request: Request, account: Account = None, two_factor: bool = config.second_factor_overrride
 ) -> AuthenticationSession:
     """
     Login with email and password. Authentication session expires after 30 days.
