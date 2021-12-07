@@ -13,8 +13,9 @@ from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
+from sanic_security.configuration import config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, dir_exists, config
+from sanic_security.utils import get_ip, dir_exists
 
 """
 Copyright (C) 2021 Aidan Stewart
@@ -253,14 +254,10 @@ class Session(BaseModel):
             "ip": self.ip,
         }
         cookie = f"{self.__class__.__name__.lower()[:4]}_session"
-        response.cookies[cookie] = jwt.encode(
-            payload, config["SECURITY"]["secret"], "HS256"
-        )
+        response.cookies[cookie] = jwt.encode(payload, config.secret, "HS256")
         response.cookies[cookie]["httponly"] = True
-        response.cookies[cookie]["samesite"] = config["SECURITY"]["session_samesite"]
-        response.cookies[cookie]["secure"] = config["SECURITY"].getboolean(
-            "session_secure"
-        )
+        response.cookies[cookie]["samesite"] = config.session_samesite
+        response.cookies[cookie]["secure"] = config.session_secure
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
@@ -281,7 +278,7 @@ class Session(BaseModel):
             if not cookie:
                 raise SessionError(f"No session provided by client.", 400)
             else:
-                return jwt.decode(cookie, config["SECURITY"]["secret"], "HS256")
+                return jwt.decode(cookie, config.secret, "HS256")
         except DecodeError as e:
             raise SessionError(str(e), 400)
 
@@ -325,7 +322,7 @@ class VerificationSession(Session):
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
-    cache = config["SECURITY"]["cache"]
+    cache = config.cache
 
     @classmethod
     def _initialize_cache(cls):
@@ -408,7 +405,7 @@ class CaptchaSession(VerificationSession):
     @classmethod
     def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache}/captcha"):
-            image = ImageCaptcha(190, 90, fonts=[config["SECURITY"]["captcha_font"]])
+            image = ImageCaptcha(190, 90, fonts=[config.captcha_font])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
@@ -477,9 +474,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=config["SECURITY"].getint("captcha_session_expiration")
-                ),
+                + datetime.timedelta(seconds=config.captcha_session_expiration),
             )
         elif session_type == "two-step":
             return await TwoStepSession.create(
@@ -488,9 +483,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=config["SECURITY"].getint("two_step_session_expiration")
-                ),
+                + datetime.timedelta(seconds=config.two_step_session_expiration),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -498,11 +491,7 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=config["SECURITY"].getint(
-                        "authentication_session_expiration"
-                    )
-                ),
+                + datetime.timedelta(seconds=config.authentication_session_expiration),
             )
         else:
             raise ValueError("Invalid session type.")

@@ -32,6 +32,7 @@
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
+  * [Configuration](#configuration)
 * [Usage](#usage)
     * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
@@ -76,7 +77,6 @@ In order to get started, please install pip.
 sudo apt-get install python3-pip
 ```
 
-
 ### Installation
 
 * Install the Sanic Security pip package.
@@ -84,44 +84,45 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
+### Configuration
+
+The Sanic Security configuration object is merely an object that can be modified either using dot-notation or like a 
+dictionary.
+
+You can also use the update() method like on regular dictionaries.
+
+```python
+config.secret = "This is a big secret. Shhhhh"
+config["captcha_font"] = "./resources/captcha.ttf"
+```
+
+Below are the configuration default values:
+
+Key | Value |
+--- | --- |
+**secret** | This is a big secret. Shhhhh
+**session_samesite** | "strict"
+**session_secure** | False
+**captcha_session_expiration** | 60
+**captcha_font** | captcha.ttf
+**two_step_session_expiration** | 300
+**authentication_session_expiration** | 2592000
+
+
 ## Usage
 
 Sanic Security setup and implementation is easy.
 
 ### Initial Setup
 
-First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents:
-
-```ini
-[SECURITY]
-secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
-cache=./resources/security-cache
-session_samesite=strict
-session_secure=false
-captcha_session_expiration=60
-captcha_font=captcha.ttf
-two_step_session_expiration=300
-authentication_session_expiration=2592000
-
-[TORTOISE]
-username=example
-password=8UVbijLUGYfUtItAi
-endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
-schema=exampleschema
-models=sanic_security.models, example.models
-engine=mysql
-generate=true
-```
-
-Once you've configured Sanic Security, you can initialize Sanic with the example below:
+You can initialize Sanic with the example below:
 
 ```python
-initialize_security_orm(app)
+config.secret = "This is a big secret. Shhhhh" #Must be changed to a personal secret.
+register_tortoise(app, db_url="sqlite://:memory:", modules={"models": ["sanic_security.models", "example.models"]}, generate_schemas=True)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
 ```
-
-If you're initializing Tortoise yourself, you can remove the `TORTOISE` section in the configuration as well as `initialize_security_orm(app)`.
 
 The tables in the below examples represent example request `form-data`.
 
