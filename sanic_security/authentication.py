@@ -14,22 +14,6 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
 
-"""
-Copyright (C) 2021 Aidan Stewart
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>
-"""
 
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
@@ -79,14 +63,14 @@ async def register(
         )
         return account
     except IntegrityError as ie:
-        if ie.args[0].args[0] == 1062:
+        if "UNIQUE constraint" in str(ie):
             raise AccountError("This account already exists.", 409)
         else:
             raise ie
     except ValidationError as ve:
-        if "Length of" in ve.args[0]:
+        if "Length of" in str(ve):
             raise AccountError(
-                "One or more of your account registration values has too many characters.",
+                "Too many characters used during account registration.",
                 400,
             )
         else:
@@ -94,7 +78,7 @@ async def register(
 
 
 async def login(
-    request: Request, account: Account = None, two_factor=False
+    request: Request, account: Account = None, two_factor: bool = False
 ) -> AuthenticationSession:
     """
     Login with email and password. Authentication session expires after 30 days.

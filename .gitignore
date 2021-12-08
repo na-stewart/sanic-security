@@ -1,13 +1,10 @@
 # Project exclude paths
 /venv/
-/security.ini
 /build/
 /dist/
-/resources/
+/security-cache/
 /html/
 /sanic_security_test.egg-info/
 /sanic_security.egg-info/
 .idea
-/requirements.txt
-/sanic.crt
-/sanic.key
+/sanic_security/lib/

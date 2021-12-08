@@ -32,8 +32,8 @@
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
+  * [Configuration](#configuration)
 * [Usage](#usage)
-    * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
@@ -62,7 +62,7 @@ This repository has been starred by Sanic's core maintainer:
 
 [![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
 
-Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for more documentation.
+Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -76,7 +76,6 @@ In order to get started, please install pip.
 sudo apt-get install python3-pip
 ```
 
-
 ### Installation
 
 * Install the Sanic Security pip package.
@@ -84,41 +83,43 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
-## Usage
+### Configuration
 
-Sanic Security setup and implementation is easy.
+Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
+dictionary.
 
-### Initial Setup
-
-First you have to create a configuration file called security.ini in the working directory. Below is an example of its contents:
-
-```ini
-[SECURITY]
-secret=05jF8cSMAdjlXcXeS2ZJUHg7Tbyu
-captcha_font=captcha.ttf
-cache_path=./resources/security-cache
-session_samesite=strict
-session_secure=true
-
-[TORTOISE]
-username=example
-password=8UVbijLUGYfUtItAi
-endpoint=example.cweAenuBY6b.us-north-1.rds.amazonaws.com
-schema=exampleschema
-models=sanic_security.models, example.models
-engine=mysql
-generate=true
-```
-
-Once you've configured Sanic Security, you can initialize Sanic with the example below:
+For example: 
 
 ```python
-initialize_security_orm(app)
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+from sanic_security.configuration import config
+
+config.SECRET = "This is a big secret. Shhhhh"
+config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
 ```
 
-If you're initializing Tortoise yourself, you can remove the `TORTOISE` section in the configuration as well as `initialize_security_orm(app)`.
+You can also use the update() method like on regular dictionaries.
+
+* Default configuration values:
+
+Key | Value |
+--- | --- |
+**SECRET** | This is a big secret. Shhhhh
+**CACHE** | ./security-cache
+**SESSION_SAMESITE** | strict
+**SESSION_SECURE** | False
+**SESSION_HTTPONLY** | True
+**SESSION_DOMAIN** | None
+**SESSION_EXPIRES_ON_CLIENT** | False
+**SESSION_PREFIX** | token
+**SESSION_ENCODING_ALGORITHM** | HS256
+**CAPTCHA_SESSION_EXPIRATION** | 60
+**CAPTCHA_FONT** | captcha.ttf
+**TWO_STEP_SESSION_EXPIRATION** | 200
+**AUTHENTICATION_SESSION_EXPIRATION** | 2692000
+
+## Usage
+
+Sanic Security implementation is easy.
 
 The tables in the below examples represent example request `form-data`.
 
@@ -236,7 +237,7 @@ async def on_authenticated(request, authentication_session):
 
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file's path in security.ini.
+You must download a .ttf font for captcha challenges and define the file's path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
@@ -252,18 +253,9 @@ Captcha challenge example:
 @app.post("api/captcha/request")
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
-    response = json("Captcha request successful!", captcha_session.json())
+    response = await captcha_session.get_image()
     captcha_session.encode(response)
     return response
-```
-
-* Captcha Image
-
-```python
-@app.get("api/captcha/img")
-async def on_captcha_img(request):
-    captcha_session = await CaptchaSession.decode(request)
-    return await captcha_session.get_image()
 ```
 
 * Requires Captcha
@@ -360,13 +352,38 @@ pip3 install httpx
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/client.py`) and wait for results.
+* Run the unit test client (`test/unit.py`) and wait for results.
 
 ## Tortoise
 
 Sanic Security uses [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations.
 
 Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
+
+* Initialise your models and database like so: 
+
+```python
+async def init():
+    # Here we create a SQLite DB using file "db.sqlite3"
+    # also specify the app name of "models"
+    # which contain models from "app.models"
+    await Tortoise.init(
+        db_url='sqlite://db.sqlite3',
+        modules={'models': ['sanic_security.models', 'app.models']}
+    )
+    # Generate the schema
+    await Tortoise.generate_schemas()
+```
+
+or
+
+```python
+from tortoise.contrib.sanic import register_tortoise
+
+register_tortoise(
+    app, db_url="sqlite://:memory:", modules={"models": ["app.models", "sanic_security. models"]}, generate_schemas=True
+)
+```
 
 * Define your models like so:
 

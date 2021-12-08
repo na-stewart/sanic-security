@@ -45,7 +45,7 @@ class RegistrationTest(TestCase):
 
     def test_invalid_registration(self):
         """
-        Registration with an intentionally invalid email, username, phone, and with an already existent email.
+        Registration with an intentionally invalid email, username, and phone.
         """
         invalid_email_registration_response = self.register(
             "invalidregister.com", False, True
@@ -60,21 +60,17 @@ class RegistrationTest(TestCase):
             invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
         invalid_username_registration_response = self.register(
-            "invaliduser@register.com", False, True, username="_inval!d_"
+            "invaliduser@register.com", False, True, username="_inVal!d_"
         )
         assert (
             invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "exists@register.com"},
-        )
-        account_exists_registration_response = self.register(
-            "exists@register.com", False, True
+        too_many_characters_registration_response = self.register(
+            "toolonguser@register.com", False, True, username="thisusernameistoolongtoberegisteredwith"
         )
         assert (
-            account_exists_registration_response.status_code == 409
-        ), account_exists_registration_response.text
+                too_many_characters_registration_response.status_code == 400
+        ), too_many_characters_registration_response.text
 
     def test_registration_disabled(self):
         """
@@ -191,8 +187,12 @@ class LoginTest(TestCase):
             data={"email": "two_factor@login.com"},
         )
         login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login/two-factor",
-            data={"email": "two_factor@login.com", "password": "testtest"},
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={
+                "email": "two_factor@login.com",
+                "password": "testtest",
+                "two_factor": True,
+            },
         )
         assert login_response.status_code == 200, login_response.text
         second_factor_response = self.client.post(
@@ -274,6 +274,7 @@ class VerificationTest(TestCase):
                 "verified": False,
             },
         )
+        assert registration_response.status_code == 200, registration_response.text
         verify_account_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/verify",
             data={"code": json.loads(registration_response.text)["data"]},
@@ -304,7 +305,6 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "roles@authorization.com", "password": "testtest"},
         )
-        self.client.post("http://127.0.0.1:8000/api/test/auth/roles/assign")
         permitted_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Admin"}
         )
@@ -330,7 +330,6 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "perms@authorization.com", "password": "testtest"},
         )
-        self.client.post("http://127.0.0.1:8000/api/test/auth/perms/assign")
         permitted_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/perms",
             data={"permissions": "admin:create"},
