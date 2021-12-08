@@ -92,7 +92,7 @@ dictionary.
 You can also use the update() method like on regular dictionaries.
 
 ```python
-config.secret = "This is a big secret. Shhhhh"
+config.SECRET = "This is a big secret. Shhhhh"
 config["captcha_font"] = "./resources/captcha.ttf"
 ```
 Below are the configuration default values:
@@ -117,10 +117,11 @@ Sanic Security setup and implementation is easy.
 You can initialize Sanic with the example below:
 
 ```python
-config.secret = "This is a big secret. Shhhhh" #Must be changed to a personal secret.
-register_tortoise(app, db_url="sqlite://:memory:", modules={"models": ["sanic_security.models", "example.models"]}, generate_schemas=True)
+config.SECRET = "This is a big secret. Shhhhh"  # Must be changed to a personal secret.
+register_tortoise(app, db_url="sqlite://:memory:", modules={"models": ["sanic_security.models", "example.models"]},
+                  generate_schemas=True)
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
+  app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
 ```
 
 The tables in the below examples represent example request `form-data`.

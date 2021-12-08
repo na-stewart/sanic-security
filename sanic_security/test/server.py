@@ -1,6 +1,5 @@
 from argon2 import PasswordHasher
 from sanic import Sanic, text
-from tortoise.contrib.sanic import register_tortoise
 from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
@@ -17,7 +16,6 @@ from sanic_security.authorization import (
     check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
-from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, Role, Permission, SessionFactory
 from sanic_security.utils import json
@@ -216,14 +214,6 @@ async def on_account_creation(request):
 async def on_error(request, exception):
     return exception.json_response
 
-
-config.secret = "This is a big secret. Shhhhh"
-register_tortoise(
-    app,
-    db_url="sqlite://:memory:",
-    modules={"models": ["models"]},
-    generate_schemas=True,
-)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
