@@ -63,14 +63,14 @@ async def register(
         )
         return account
     except IntegrityError as ie:
-        if ie.args[0].args[0] == 1062:
+        if "UNIQUE constraint" in str(ie):
             raise AccountError("This account already exists.", 409)
         else:
             raise ie
     except ValidationError as ve:
-        if "Length of" in ve.args[0]:
+        if "Length of" in str(ve):
             raise AccountError(
-                "One or more of your account registration values has too many characters.",
+                "Too many characters used during account registration.",
                 400,
             )
         else:
