@@ -1,6 +1,6 @@
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
-    "CACHE": "./resources/security-cache",
+    "CACHE": "./security-cache",
     "SESSION_SAMESITE": "strict",
     "SESSION_SECURE": False,
     "SESSION_HTTPONLY": True,

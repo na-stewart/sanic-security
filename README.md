@@ -99,7 +99,23 @@ config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
 
 You can also use the update() method like on regular dictionaries.
 
-[Default configuration values](https://security.sunsetdeveloper.com/configuration.html) can be found in the documentation.
+* Default configuration values:
+
+Key | Value |
+--- | --- |
+**SECRET** | This is a big secret. Shhhhh
+**CACHE** | ./security-cache
+**SESSION_SAMESITE** | strict
+**SESSION_SECURE** | False
+**SESSION_HTTPONLY** | True
+**SESSION_DOMAIN** | None
+**SESSION_EXPIRES_ON_CLIENT** | False
+**SESSION_PREFIX** | token
+**SESSION_ENCODING_ALGORITHM** | HS256
+**CAPTCHA_SESSION_EXPIRATION** | 60
+**CAPTCHA_FONT** | captcha.ttf
+**TWO_STEP_SESSION_EXPIRATION** | 200
+**AUTHENTICATION_SESSION_EXPIRATION** | 2692000
 
 ## Usage
 
