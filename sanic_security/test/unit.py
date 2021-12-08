@@ -65,6 +65,12 @@ class RegistrationTest(TestCase):
         assert (
             invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
+        too_many_characters_registration_response = self.register(
+            "toolonguser@register.com", False, True, username="thisusernameistoolongtoberegisteredwith"
+        )
+        assert (
+                too_many_characters_registration_response.status_code == 400
+        ), too_many_characters_registration_response.text
 
     def test_registration_disabled(self):
         """
