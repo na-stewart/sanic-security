@@ -254,7 +254,9 @@ class Session(BaseModel):
             "ip": self.ip,
         }
         cookie = f"{self.__class__.__name__.lower()[:4]}_session"
-        response.cookies[cookie] = jwt.encode(payload, config.SECRET, config.JWT_ENCODING_ALGORITHM)
+        response.cookies[cookie] = jwt.encode(
+            payload, config.SECRET, config.JWT_ENCODING_ALGORITHM
+        )
         response.cookies[cookie]["httponly"] = config.SESSION_HTTPONLY
         response.cookies[cookie]["samesite"] = config.SESSION_SAMESITE
         response.cookies[cookie]["secure"] = config.SESSION_SECURE

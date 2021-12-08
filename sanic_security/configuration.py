@@ -9,8 +9,7 @@ DEFAULT_CONFIG = {
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "TWO_FACTOR_OVERRIDE": False,
-    "JWT_ENCODING_ALGORITHM": "HS256"
-
+    "JWT_ENCODING_ALGORITHM": "HS256",
 }
 
 
@@ -30,6 +29,7 @@ class Config(dict):
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
         JWT_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to JWT.
     """
+
     SECRET: str
     CACHE: str
     SESSION_SAMESITE: str
