@@ -34,7 +34,6 @@
   * [Installation](#installation)
   * [Configuration](#configuration)
 * [Usage](#usage)
-    * [Initial Setup](#initial-setup)
     * [Authentication](#authentication)
     * [Captcha](#captcha)
     * [Two Step Verification](#two-step-verification)
@@ -86,43 +85,25 @@ pip3 install sanic-security
 
 ### Configuration
 
-The Sanic Security configuration object is merely an object that can be modified either using dot-notation or like a 
+Configuration is merely an object that can be modified either using dot-notation or like a 
 dictionary.
+
+For example: 
+
+```python
+from sanic_security.configuration import config
+
+config.SECRET = "This is a big secret. Shhhhh"
+config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
+```
 
 You can also use the update() method like on regular dictionaries.
 
-```python
-config.SECRET = "This is a big secret. Shhhhh"
-config["captcha_font"] = "./resources/captcha.ttf"
-```
-Below are the configuration default values:
-
-Key | Value |
---- | --- |
-**secret** | This is a big secret. Shhhhh
-**session_samesite** | "strict"
-**session_secure** | False
-**captcha_session_expiration** | 60
-**captcha_font** | captcha.ttf
-**two_step_session_expiration** | 300
-**authentication_session_expiration** | 2592000
-**second_factor_override** | False
+[Default configuration values](https://security.sunsetdeveloper.com/configuration.html) can be found in the documentation.
 
 ## Usage
 
-Sanic Security setup and implementation is easy.
-
-### Initial Setup
-
-You can initialize Sanic with the example below:
-
-```python
-config.SECRET = "This is a big secret. Shhhhh"  # Must be changed to a personal secret.
-register_tortoise(app, db_url="sqlite://:memory:", modules={"models": ["sanic_security.models", "example.models"]},
-                  generate_schemas=True)
-if __name__ == "__main__":
-  app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
-```
+Sanic Security implementation is easy.
 
 The tables in the below examples represent example request `form-data`.
 
@@ -355,13 +336,36 @@ pip3 install httpx
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/client.py`) and wait for results.
+* Run the unit test client (`test/unit.py`) and wait for results.
 
 ## Tortoise
 
 Sanic Security uses [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations.
 
 Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
+
+* Initialise your models and database like so: 
+
+```python
+async def init():
+    # Here we create a SQLite DB using file "db.sqlite3"
+    # also specify the app name of "models"
+    # which contain models from "app.models"
+    await Tortoise.init(
+        db_url='sqlite://db.sqlite3',
+        modules={'models': ['sanic_security.models', 'app.models']}
+    )
+    # Generate the schema
+    await Tortoise.generate_schemas()
+```
+
+or
+
+```python
+register_tortoise(
+    app, db_url="sqlite://:memory:", modules={"models": ["app.models", "sanic_security. models"]}, generate_schemas=True
+)
+```
 
 * Define your models like so:
 
