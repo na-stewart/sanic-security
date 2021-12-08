@@ -21,12 +21,14 @@ DEFAULT_CONFIG = {
     "SESSION_SAMESITE": "strict",
     "SESSION_SECURE": False,
     "SESSION_HTTPONLY": True,
+    "SESSION_DOMAIN": "",
+    "SESSION_ENCODING_ALGORITHM": "HS256",
+    "SESSION_EXPIRES_ON_CLIENT": False,
     "CAPTCHA_SESSION_EXPIRATION": 60,
     "CAPTCHA_FONT": "captcha.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "TWO_FACTOR_OVERRIDE": False,
-    "JWT_ENCODING_ALGORITHM": "HS256",
 }
 
 
@@ -40,6 +42,8 @@ class Config(dict):
         SESSION_SAMESITE (str): The SameSite attribute of session cookies.
         SESSION_SECURE (bool): The Secure attribute of session cookies.
         SESSION_HTTPONLY (bool): The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
+        SESSION_DOMAIN (bool): The Domain attribute of session cookies.
+        SESSION_EXPIRES_ON_CLIENT: If checked, session cookies expire on the client’s browser.
         CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration.
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
@@ -52,11 +56,13 @@ class Config(dict):
     SESSION_SAMESITE: str
     SESSION_SECURE: bool
     SESSION_HTTPONLY: bool
+    SESSION_DOMAIN: bool
+    SESSION_EXPIRES_ON_CLIENT: bool
+    SESSION_ENCODING_ALGORITHM: str
     CAPTCHA_SESSION_EXPIRATION: int
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
-    JWT_ENCODING_ALGORITHM: str
 
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
