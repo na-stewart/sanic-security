@@ -1,5 +1,6 @@
 from argon2 import PasswordHasher
 from sanic import Sanic, text
+from tortoise.contrib.sanic import register_tortoise
 from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
@@ -168,7 +169,7 @@ async def on_permissions_authorization(request, authentication_session):
     Permissions authorization.
     """
     if not await Permission.filter(
-        wildcard="admin:create", account=authentication_session.account
+            wildcard="admin:create", account=authentication_session.account
     ).exists():
         await assign_permission("admin:create", authentication_session.account)
     await check_permissions(request, request.form.get("permissions"))
@@ -182,7 +183,7 @@ async def on_roles_authorization(request, authentication_session):
     Roles authorization.
     """
     if not await Role.filter(
-        name="Admin", account=authentication_session.account
+            name="Admin", account=authentication_session.account
     ).exists():
         await assign_role("Admin", authentication_session.account)
     await check_roles(request, request.form.get("roles"))
@@ -215,5 +216,8 @@ async def on_error(request, exception):
     return exception.json_response
 
 
+register_tortoise(
+    app, db_url="sqlite://:memory:", modules={"models": ["sanic_security.models"]}, generate_schemas=True
+)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)

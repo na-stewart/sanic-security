@@ -253,15 +253,18 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
-        cookie = f"{self.__class__.__name__.lower()[:4]}_session"
+        cookie = f"{config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
             payload, config.SECRET, config.SESSION_ENCODING_ALGORITHM
         )
         response.cookies[cookie]["httponly"] = config.SESSION_HTTPONLY
         response.cookies[cookie]["samesite"] = config.SESSION_SAMESITE
         response.cookies[cookie]["secure"] = config.SESSION_SECURE
-        response.cookies[cookie]["domain"] = config.SESSION_DOMAIN
-        response.cookies[cookie]["expires"] = self.expiration_date if config.SESSION_EXPIRES_ON_CLIENT else None
+        if config.SESSION_EXPIRES_ON_CLIENT:
+            response.cookies[cookie]["expires"] = self.expiration_date
+        if config.SESSION_DOMAIN:
+            response.cookies[cookie]["domain"] = config.SESSION_DOMAIN
+
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
@@ -277,7 +280,7 @@ class Session(BaseModel):
         Raises:
             SessionError
         """
-        cookie = request.cookies.get(f"{cls.__name__.lower()[:4]}_session")
+        cookie = request.cookies.get(f"{config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session")
         try:
             if not cookie:
                 raise SessionError(f"No session provided by client.", 400)
