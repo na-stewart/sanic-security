@@ -85,7 +85,7 @@ pip3 install sanic-security
 
 ### Configuration
 
-Configuration is merely an object that can be modified either using dot-notation or like a 
+Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
 dictionary.
 
 For example: 
