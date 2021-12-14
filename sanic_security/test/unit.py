@@ -1,7 +1,10 @@
 import json
+import os
 from unittest import TestCase
 
 import httpx
+
+from sanic_security.configuration import config
 
 
 class RegistrationTest(TestCase):
@@ -16,12 +19,12 @@ class RegistrationTest(TestCase):
         self.client.close()
 
     def register(
-        self,
-        email: str,
-        disabled: bool,
-        verified: bool,
-        username: str = "test",
-        phone: str = None,
+            self,
+            email: str,
+            disabled: bool,
+            verified: bool,
+            username: str = "test",
+            phone: str = None,
     ):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
@@ -51,19 +54,19 @@ class RegistrationTest(TestCase):
             "invalidregister.com", False, True
         )
         assert (
-            invalid_email_registration_response.status_code == 400
+                invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
         invalid_phone_registration_response = self.register(
             "invalidnum@register.com", False, True, phone="218183186"
         )
         assert (
-            invalid_phone_registration_response.status_code == 400
+                invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
         invalid_username_registration_response = self.register(
             "invaliduser@register.com", False, True, username="_inVal!d_"
         )
         assert (
-            invalid_username_registration_response.status_code == 400
+                invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
         too_many_characters_registration_response = self.register(
             "toolonguser@register.com",
@@ -72,7 +75,7 @@ class RegistrationTest(TestCase):
             username="thisusernameistoolongtoberegisteredwith",
         )
         assert (
-            too_many_characters_registration_response.status_code == 400
+                too_many_characters_registration_response.status_code == 400
         ), too_many_characters_registration_response.text
 
     def test_registration_disabled(self):
@@ -152,14 +155,14 @@ class LoginTest(TestCase):
             data={"email": "incorrectpass@login.com", "password": "incorrecttest"},
         )
         assert (
-            incorrect_password_login_response.status_code == 401
+                incorrect_password_login_response.status_code == 401
         ), incorrect_password_login_response.text
         unavailable_account_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "unavailable@login.com", "password": "testtest"},
         )
         assert (
-            unavailable_account_login_response.status_code == 404
+                unavailable_account_login_response.status_code == 404
         ), unavailable_account_login_response
 
     def test_logout(self):
@@ -228,14 +231,14 @@ class VerificationTest(TestCase):
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
-            captcha_request_response.status_code == 200
+                captcha_request_response.status_code == 200
         ), captcha_request_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
         )
         assert (
-            captcha_attempt_response.status_code == 200
+                captcha_attempt_response.status_code == 200
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
@@ -251,7 +254,7 @@ class VerificationTest(TestCase):
             data={"email": "two_step@verification.com"},
         )
         assert (
-            two_step_verification_request_response.status_code == 200
+                two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step",
@@ -260,7 +263,7 @@ class VerificationTest(TestCase):
             },
         )
         assert (
-            two_step_verification_attempt_response.status_code == 200
+                two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text
 
     def test_account_verification(self):
@@ -312,13 +315,13 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Admin"}
         )
         assert (
-            permitted_authorization_response.status_code == 200
+                permitted_authorization_response.status_code == 200
         ), permitted_authorization_response.text
         prohibited_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Owner"}
         )
         assert (
-            prohibited_authorization_response.status_code == 403
+                prohibited_authorization_response.status_code == 403
         ), prohibited_authorization_response.text
 
     def test_permissions_authorization(self):
@@ -338,12 +341,26 @@ class AuthorizationTest(TestCase):
             data={"permissions": "admin:create"},
         )
         assert (
-            permitted_authorization_response.status_code == 200
+                permitted_authorization_response.status_code == 200
         ), permitted_authorization_response.text
         prohibited_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/perms",
             data={"permissions": "admin:update"},
         )
         assert (
-            prohibited_authorization_response.status_code == 403
+                prohibited_authorization_response.status_code == 403
         ), prohibited_authorization_response.text
+
+
+class ConfigurationTest(TestCase):
+    """
+    Tests configuration.
+    """
+
+    def test_environment_load(self):
+        """
+        Config loads environment variables.
+        """
+        os.environ['SANIC_SECURITY_SECRET'] = 'test'
+        config.load_environment_variables()
+        assert config.SECRET == "test"

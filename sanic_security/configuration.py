@@ -17,7 +17,6 @@ DEFAULT_CONFIG = {
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "ALLOW_LOGIN_WITH_USERNAME": False,
-    "LOAD_ENV": "SANIC_SECURITY_",
 }
 
 
@@ -40,7 +39,6 @@ class Config(dict):
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
-        LOAD_ENV (str): Any environment variables defined with the LOAD_ENV prefix will be applied to the config.
     """
 
     SECRET: str
@@ -57,14 +55,20 @@ class Config(dict):
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
     ALLOW_LOGIN_WITH_USERNAME: bool
-    LOAD_ENV: str
 
-    def load_environment_variables(self):
+    def load_environment_variables(self, load_env="SANIC_SECURITY_"):
+        """
+        Any environment variables defined with the prefix argument will be applied to the config.
+
+        Args:
+            load_env (str):  Prefix being used to apply environment variables into the config.
+        """
+
         for key, value in environ.items():
-            if not key.startswith(self.LOAD_ENV):
+            if not key.startswith(load_env):
                 continue
 
-            _, config_key = key.split(self.LOAD_ENV, 1)
+            _, config_key = key.split(load_env, 1)
 
             for converter in (int, float, str_to_bool, str):
                 try:
