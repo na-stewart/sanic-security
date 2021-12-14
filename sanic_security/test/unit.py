@@ -357,7 +357,7 @@ class ConfigurationTest(TestCase):
     Tests configuration.
     """
 
-    def test_environment_load(self):
+    def test_environment_variable_load(self):
         """
         Config loads environment variables.
         """
