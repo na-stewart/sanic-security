@@ -7,9 +7,11 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
+from sanic_security.configuration import config
 from sanic_security.exceptions import (
     AccountError,
     SessionError,
+    NotFoundError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
@@ -95,7 +97,13 @@ async def login(
         AccountError
     """
     if not account:
-        account = await Account.get_via_email(request.form.get("email"))
+        try:
+            account = await Account.get_via_email(request.form.get("email"))
+        except NotFoundError as e:
+            if config.ALLOW_LOGIN_WITH_USERNAME:
+                account = await Account.get_via_username(request.form.get("username"))
+            else:
+                raise e
     try:
         password_hasher.verify(account.password, request.form.get("password"))
         if password_hasher.check_needs_rehash(account.password):

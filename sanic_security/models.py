@@ -13,7 +13,7 @@ from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
-from sanic_security.configuration import config
+from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, dir_exists
 
@@ -253,19 +253,17 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
-        cookie = (
-            f"{config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
-        )
+        cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
-            payload, config.SECRET, config.SESSION_ENCODING_ALGORITHM
+            payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
-        response.cookies[cookie]["httponly"] = config.SESSION_HTTPONLY
-        response.cookies[cookie]["samesite"] = config.SESSION_SAMESITE
-        response.cookies[cookie]["secure"] = config.SESSION_SECURE
-        if config.SESSION_EXPIRES_ON_CLIENT:
+        response.cookies[cookie]["httponly"] = security_config.SESSION_HTTPONLY
+        response.cookies[cookie]["samesite"] = security_config.SESSION_SAMESITE
+        response.cookies[cookie]["secure"] = security_config.SESSION_SECURE
+        if security_config.SESSION_EXPIRES_ON_CLIENT:
             response.cookies[cookie]["expires"] = self.expiration_date
-        if config.SESSION_DOMAIN:
-            response.cookies[cookie]["domain"] = config.SESSION_DOMAIN
+        if security_config.SESSION_DOMAIN:
+            response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
@@ -282,14 +280,16 @@ class Session(BaseModel):
             SessionError
         """
         cookie = request.cookies.get(
-            f"{config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
+            f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
         )
         try:
             if not cookie:
                 raise SessionError(f"No session provided by client.", 400)
             else:
                 return jwt.decode(
-                    cookie, config.SECRET, config.SESSION_ENCODING_ALGORITHM
+                    cookie,
+                    security_config.SECRET,
+                    security_config.SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
             raise SessionError(str(e), 400)
@@ -334,7 +334,7 @@ class VerificationSession(Session):
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
-    cache = config.CACHE
+    cache = security_config.CACHE
 
     @classmethod
     def _initialize_cache(cls):
@@ -417,7 +417,7 @@ class CaptchaSession(VerificationSession):
     @classmethod
     def _initialize_cache(cls):
         if not dir_exists(f"{cls.cache}/captcha"):
-            image = ImageCaptcha(190, 90, fonts=[config.CAPTCHA_FONT])
+            image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
@@ -486,7 +486,9 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=config.CAPTCHA_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.CAPTCHA_SESSION_EXPIRATION
+                ),
             )
         elif session_type == "two-step":
             return await TwoStepSession.create(
@@ -495,7 +497,9 @@ class SessionFactory:
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=config.TWO_STEP_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.TWO_STEP_SESSION_EXPIRATION
+                ),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -503,7 +507,9 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=config.AUTHENTICATION_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
+                ),
             )
         else:
             raise ValueError("Invalid session type.")

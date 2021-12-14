@@ -1,7 +1,10 @@
 import json
+import os
 from unittest import TestCase
 
 import httpx
+
+from sanic_security.configuration import config
 
 
 class RegistrationTest(TestCase):
@@ -66,10 +69,13 @@ class RegistrationTest(TestCase):
             invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
         too_many_characters_registration_response = self.register(
-            "toolonguser@register.com", False, True, username="thisusernameistoolongtoberegisteredwith"
+            "toolonguser@register.com",
+            False,
+            True,
+            username="thisusernameistoolongtoberegisteredwith",
         )
         assert (
-                too_many_characters_registration_response.status_code == 400
+            too_many_characters_registration_response.status_code == 400
         ), too_many_characters_registration_response.text
 
     def test_registration_disabled(self):
@@ -133,6 +139,20 @@ class LoginTest(TestCase):
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "emailpass@login.com", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+
+    def test_login_with_username(self):
+        """
+        Login with a username instead of an email and password.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "userpass@login.com", "username": "username_login_test"},
+        )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"username": "username_login_test", "password": "testtest"},
         )
         assert login_response.status_code == 200, login_response.text
 
@@ -344,3 +364,17 @@ class AuthorizationTest(TestCase):
         assert (
             prohibited_authorization_response.status_code == 403
         ), prohibited_authorization_response.text
+
+
+class ConfigurationTest(TestCase):
+    """
+    Tests configuration.
+    """
+
+    def test_environment_variable_load(self):
+        """
+        Config loads environment variables.
+        """
+        os.environ["SANIC_SECURITY_SECRET"] = "test"
+        config.load_environment_variables()
+        assert config.SECRET == "test"

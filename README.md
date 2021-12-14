@@ -99,6 +99,11 @@ config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
 
 You can also use the update() method like on regular dictionaries.
 
+Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the Config. For example, setting 
+SANIC_SECURITY_SECRET will be loaded by the application automatically and fed into the SECRET config variable.
+
+You can load environment variables with a different prefix via calling the `config.load_environment_variables("new_prefix_")` method.
+
 * Default configuration values:
 
 Key | Value |
@@ -116,6 +121,7 @@ Key | Value |
 **CAPTCHA_FONT** | captcha.ttf
 **TWO_STEP_SESSION_EXPIRATION** | 200
 **AUTHENTICATION_SESSION_EXPIRATION** | 2692000
+**ALLOW_LOGIN_WITH_USERNAME** | False
 
 ## Usage
 

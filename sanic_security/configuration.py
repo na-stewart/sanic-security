@@ -1,3 +1,7 @@
+from os import environ
+
+from sanic.utils import str_to_bool
+
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "CACHE": "./security-cache",
@@ -12,6 +16,7 @@ DEFAULT_CONFIG = {
     "CAPTCHA_FONT": "captcha.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
+    "ALLOW_LOGIN_WITH_USERNAME": False,
 }
 
 
@@ -33,6 +38,7 @@ class Config(dict):
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
+        ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
     """
 
     SECRET: str
@@ -48,10 +54,33 @@ class Config(dict):
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
+    ALLOW_LOGIN_WITH_USERNAME: bool
+
+    def load_environment_variables(self, load_env="SANIC_SECURITY_"):
+        """
+        Any environment variables defined with the prefix argument will be applied to the config.
+
+        Args:
+            load_env (str):  Prefix being used to apply environment variables into the config.
+        """
+
+        for key, value in environ.items():
+            if not key.startswith(load_env):
+                continue
+
+            _, config_key = key.split(load_env, 1)
+
+            for converter in (int, float, str_to_bool, str):
+                try:
+                    self[config_key] = converter(value)
+                    break
+                except ValueError:
+                    pass
 
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
         self.__dict__ = self
+        self.load_environment_variables()
 
 
 config = Config()
