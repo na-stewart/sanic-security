@@ -1,3 +1,7 @@
+from os import environ
+
+from sanic.utils import str_to_bool
+
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "CACHE": "./security-cache",
@@ -13,7 +17,7 @@ DEFAULT_CONFIG = {
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "ALLOW_LOGIN_WITH_USERNAME": False,
-    "LOAD_ENV": "SANIC_SECURITY_"
+    "LOAD_ENV": "SANIC_SECURITY_",
 }
 
 
@@ -55,14 +59,24 @@ class Config(dict):
     ALLOW_LOGIN_WITH_USERNAME: bool
     LOAD_ENV: str
 
-    def load_env(self):
+    def load_environment_variables(self):
+        for key, value in environ.items():
+            if not key.startswith(self.LOAD_ENV):
+                continue
 
+            _, config_key = key.split(self.LOAD_ENV, 1)
 
-
+            for converter in (int, float, str_to_bool, str):
+                try:
+                    self[config_key] = converter(value)
+                    break
+                except ValueError:
+                    pass
 
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
         self.__dict__ = self
+        self.load_environment_variables()
 
 
 config = Config()
