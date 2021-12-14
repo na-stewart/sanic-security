@@ -99,7 +99,8 @@ config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
 
 You can also use the update() method like on regular dictionaries.
 
-
+Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the Config. For example, setting 
+SANIC_SECURITY_SECRET will be loaded by the application automatically and fed into the SECRET config variable.
 
 * Default configuration values:
 
