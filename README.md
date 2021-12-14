@@ -99,6 +99,8 @@ config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
 
 You can also use the update() method like on regular dictionaries.
 
+
+
 * Default configuration values:
 
 Key | Value |
@@ -116,6 +118,8 @@ Key | Value |
 **CAPTCHA_FONT** | captcha.ttf
 **TWO_STEP_SESSION_EXPIRATION** | 200
 **AUTHENTICATION_SESSION_EXPIRATION** | 2692000
+**ALLOW_LOGIN_WITH_USERNAME** | False
+**LOAD_ENV** | SANIC_SECURITY_
 
 ## Usage
 

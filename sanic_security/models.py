@@ -253,9 +253,7 @@ class Session(BaseModel):
             "uid": str(self.uid),
             "ip": self.ip,
         }
-        cookie = (
-            f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
-        )
+        cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
@@ -289,7 +287,9 @@ class Session(BaseModel):
                 raise SessionError(f"No session provided by client.", 400)
             else:
                 return jwt.decode(
-                    cookie, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
+                    cookie,
+                    security_config.SECRET,
+                    security_config.SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
             raise SessionError(str(e), 400)
@@ -486,7 +486,9 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.CAPTCHA_SESSION_EXPIRATION
+                ),
             )
         elif session_type == "two-step":
             return await TwoStepSession.create(
@@ -495,7 +497,9 @@ class SessionFactory:
                 ip=get_ip(request),
                 account=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=security_config.TWO_STEP_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.TWO_STEP_SESSION_EXPIRATION
+                ),
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -503,7 +507,9 @@ class SessionFactory:
                 account=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION),
+                + datetime.timedelta(
+                    seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
+                ),
             )
         else:
             raise ValueError("Invalid session type.")

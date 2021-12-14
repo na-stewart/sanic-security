@@ -12,6 +12,8 @@ DEFAULT_CONFIG = {
     "CAPTCHA_FONT": "captcha.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
+    "ALLOW_LOGIN_WITH_USERNAME": False,
+    "LOAD_ENV": "SANIC_SECURITY_"
 }
 
 
@@ -33,6 +35,8 @@ class Config(dict):
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
+        ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
+        LOAD_ENV (str): Any environment variables defined with the LOAD_ENV prefix will be applied to the config.
     """
 
     SECRET: str
@@ -48,6 +52,13 @@ class Config(dict):
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
+    ALLOW_LOGIN_WITH_USERNAME: bool
+    LOAD_ENV: str
+
+    def load_env(self):
+
+
+
 
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)

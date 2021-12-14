@@ -7,6 +7,7 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
+from sanic_security.configuration import config
 from sanic_security.exceptions import (
     AccountError,
     SessionError,
@@ -96,6 +97,8 @@ async def login(
     """
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
+        if config.ALLOW_LOGIN_WITH_USERNAME and not account:
+            account = Account.get_via_username(request.form.get("username"))
     try:
         password_hasher.verify(account.password, request.form.get("password"))
         if password_hasher.check_needs_rehash(account.password):
