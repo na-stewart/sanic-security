@@ -142,6 +142,20 @@ class LoginTest(TestCase):
         )
         assert login_response.status_code == 200, login_response.text
 
+    def test_login_with_username(self):
+        """
+        Login with a username instead of an email and password.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "userpass@login.com", "username": "username_login_test"},
+        )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"username": "username_login_test", "password": "testtest"},
+        )
+        assert login_response.status_code == 200, login_response.text
+
     def test_invalid_login(self):
         """
         Login with an intentionally incorrect password and into a non existent account.

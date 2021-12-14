@@ -17,6 +17,7 @@ from sanic_security.authorization import (
     check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
+from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, Role, Permission, SessionFactory
 from sanic_security.utils import json
@@ -68,9 +69,8 @@ async def on_login(request):
     """
     Login to an account with an email and password.
     """
-    account = await Account.get_via_email(request.form.get("email"))
     authentication_session = await login(
-        request, account, two_factor=request.form.get("two_factor") == "true"
+        request, two_factor=request.form.get("two_factor") == "true"
     )
     if request.form.get("two_factor") == "true":
         two_step_session = await request_two_step_verification(
@@ -81,7 +81,7 @@ async def on_login(request):
         )
         two_step_session.encode(response)
     else:
-        response = json("Login successful!", account.json())
+        response = json("Login successful!", authentication_session.account.json())
     authentication_session.encode(response)
     return response
 
@@ -196,8 +196,11 @@ async def on_account_creation(request):
     Creates a usable account.
     """
     try:
+        username = "test"
+        if request.form.get("username"):
+            username = request.form.get("username")
         account = await Account.create(
-            username="test",
+            username=username,
             email=request.form.get("email"),
             password=password_hasher.hash("testtest"),
             verified=True,
@@ -216,11 +219,13 @@ async def on_error(request, exception):
     return exception.json_response
 
 
+config.ALLOW_LOGIN_WITH_USERNAME = True
 register_tortoise(
     app,
     db_url="sqlite://:memory:",
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
