@@ -39,7 +39,7 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Testing](#testing)
-* [Tortoise](#tortoise)
+    * [Tortoise](#tortoise)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -420,6 +420,8 @@ await Tournament.create(name='Another Tournament')
 tour = await Tournament.filter(name__contains='Another').first()
 print(tour.name)
 ```
+
+*Support for SQLAlchemy coming soon.*
 
 <!-- ROADMAP -->
 ## Roadmap
