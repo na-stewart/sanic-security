@@ -391,7 +391,10 @@ or
 from tortoise.contrib.sanic import register_tortoise
 
 register_tortoise(
-    app, db_url="sqlite://:memory:", modules={"models": ["app.models", "sanic_security.models"]}, generate_schemas=True
+    app, 
+    db_url="sqlite://:memory:", 
+    modules={"models": ["app.models", "sanic_security.models"]}, 
+    generate_schemas=True
 )
 ```
 
