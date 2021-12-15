@@ -106,23 +106,23 @@ You can load environment variables with a different prefix via calling the `conf
 
 * Default configuration values:
 
-Key | Value |
---- | --- |
-**SECRET** | This is a big secret. Shhhhh
-**CACHE** | ./security-cache
-**SESSION_SAMESITE** | strict
-**SESSION_SECURE** | False
-**SESSION_HTTPONLY** | True
-**SESSION_DOMAIN** | None
-**SESSION_EXPIRES_ON_CLIENT** | False
-**SESSION_PREFIX** | token
-**SESSION_ENCODING_ALGORITHM** | HS256
-**CAPTCHA_SESSION_EXPIRATION** | 60
-**CAPTCHA_FONT** | captcha.ttf
-**TWO_STEP_SESSION_EXPIRATION** | 200
-**AUTHENTICATION_SESSION_EXPIRATION** | 2692000
-**ALLOW_LOGIN_WITH_USERNAME** | False
-**DATABASE_URL** | sqlite://:memory:
+Key | Value | Description |
+--- | --- |  --- |
+**SECRET** | This is a big secret. Shhhhh | The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
+**CACHE** | ./security-cache | The path used for caching.
+**SESSION_SAMESITE** | strict | The SameSite attribute of session cookies.
+**SESSION_SECURE** | False | The Secure attribute of session cookies.
+**SESSION_HTTPONLY** | True | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
+**SESSION_DOMAIN** | None | The Domain attribute of session cookies.
+**SESSION_EXPIRES_ON_CLIENT** | False | If checked: when session cookies expire, they are removed on the client’s browser.
+**SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode sessions to JWT.
+**SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
+**CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation.
+**CAPTCHA_FONT** | captcha.ttf | The file path to the font being used for captcha generation.
+**TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation.
+**AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation.
+**ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
+**DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use. Intended to prevent the database url from being hardcoded. 
 
 ## Usage
 

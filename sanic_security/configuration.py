@@ -32,15 +32,15 @@ class Config(dict):
         SESSION_SECURE (bool): The Secure attribute of session cookies.
         SESSION_HTTPONLY (bool): The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
         SESSION_DOMAIN (bool): The Domain attribute of session cookies.
-        SESSION_EXPIRES_ON_CLIENT: If checked, session cookies expire on the client’s browser.
-        SESSION_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to JWT.
-        SESSION_PREFIX (str): Prefix attached to the beginning ofs session cookies.
-        CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration.
+        SESSION_EXPIRES_ON_CLIENT: If checked: when session cookies expire, they are removed on the client’s browser.
+        SESSION_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to a JWT.
+        SESSION_PREFIX (str): Prefix attached to the beginning of session cookies.
+        CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration on creation.
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
-        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
-        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
+        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation
+        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
-        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use. Intended to prevent hardcoding of the database url.
+        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use. Intended to prevent the database url from being hardcoded.
     """
 
     SECRET: str
