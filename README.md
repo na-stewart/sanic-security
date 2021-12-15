@@ -114,7 +114,7 @@ Key | Value | Description |
 **SESSION_SECURE** | False | The Secure attribute of session cookies.
 **SESSION_HTTPONLY** | True | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
 **SESSION_DOMAIN** | None | The Domain attribute of session cookies.
-**SESSION_EXPIRES_ON_CLIENT** | False | If checked: when session cookies expire, they are removed on the client’s browser.
+**SESSION_EXPIRES_ON_CLIENT** | False | If true: when session cookies expire, they are removed on the client’s browser.
 **SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode sessions to a JWT.
 **SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
 **CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation.
@@ -217,7 +217,7 @@ Key | Value |
 ```python
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
-async def on_login_second_factor(request, two_step_verification):
+async def on_login_second_factor(request, two_step_session):
   authentication_session = await on_second_factor(request)
   response = json("Second factor attempt successful! You may now be authenticated!",
                   authentication_session.account.json())
