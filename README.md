@@ -137,8 +137,8 @@ Phone can be null or empty.
 
 Key | Value |
 --- | --- |
-**username** | test 
-**email** | test@test.com 
+**username** | example 
+**email** | example@example.com 
 **phone** | 19811354186
 **password** | testpass
 **captcha** | Aj8HgD
@@ -172,8 +172,10 @@ async def on_verify(request):
 
 Key | Value |
 --- | --- |
-**email** | test@test.com
-**password** | testpass
+**email** | example@example.com
+**password** | examplepass
+
+You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
 @app.post("api/auth/login")
@@ -188,9 +190,10 @@ async def on_login(request):
 
 Key | Value |
 --- | --- |
-**email** | test@test.com
-**password** | testpass
+**email** | example@example.com
+**password** | example
 
+You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
 @app.post("api/auth/login")
@@ -283,7 +286,7 @@ async def on_captcha_attempt(request, captcha_session):
 
 Key | Value |
 --- | --- |
-**email** | test@test.com
+**email** | example@example.com
 **captcha** | Aj8HgD
 
 ```python
