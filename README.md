@@ -122,7 +122,7 @@ Key | Value | Description |
 **TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation.
 **AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation.
 **ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
-**DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use. Intended to prevent database url from being hardcoded. 
+**DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use.
 
 ## Usage
 
