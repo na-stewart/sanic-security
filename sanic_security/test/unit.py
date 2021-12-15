@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import httpx
 
-from sanic_security.configuration import config
+from sanic_security.configuration import Config
 
 
 class RegistrationTest(TestCase):
@@ -376,5 +376,6 @@ class ConfigurationTest(TestCase):
         Config loads environment variables.
         """
         os.environ["SANIC_SECURITY_SECRET"] = "test"
-        config.load_environment_variables()
-        assert config.SECRET == "test"
+        security_config = Config()
+        security_config.load_environment_variables()
+        assert security_config.SECRET == "test"

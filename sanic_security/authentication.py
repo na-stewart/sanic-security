@@ -7,7 +7,7 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError, ValidationError
 
-from sanic_security.configuration import config
+from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     AccountError,
     SessionError,
@@ -100,7 +100,7 @@ async def login(
         try:
             account = await Account.get_via_email(request.form.get("email"))
         except NotFoundError as e:
-            if config.ALLOW_LOGIN_WITH_USERNAME:
+            if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(request.form.get("username"))
             else:
                 raise e

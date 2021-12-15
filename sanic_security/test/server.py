@@ -17,7 +17,7 @@ from sanic_security.authorization import (
     check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
-from sanic_security.configuration import config
+from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, Role, Permission, SessionFactory
 from sanic_security.utils import json
@@ -219,7 +219,7 @@ async def on_error(request, exception):
     return exception.json_response
 
 
-config.ALLOW_LOGIN_WITH_USERNAME = True
+security_config.ALLOW_LOGIN_WITH_USERNAME = True
 register_tortoise(
     app,
     db_url="sqlite://:memory:",
