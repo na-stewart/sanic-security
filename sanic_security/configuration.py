@@ -17,6 +17,7 @@ DEFAULT_CONFIG = {
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "ALLOW_LOGIN_WITH_USERNAME": False,
+    "DATABASE_URL": "sqlite://:memory:",
 }
 
 
@@ -39,6 +40,7 @@ class Config(dict):
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
+        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use.
     """
 
     SECRET: str
@@ -55,6 +57,7 @@ class Config(dict):
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
     ALLOW_LOGIN_WITH_USERNAME: bool
+    DATABASE_URL: str
 
     def load_environment_variables(self, load_env="SANIC_SECURITY_"):
         """

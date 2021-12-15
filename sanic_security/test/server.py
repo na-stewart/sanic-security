@@ -222,7 +222,7 @@ async def on_error(request, exception):
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
 register_tortoise(
     app,
-    db_url="sqlite://:memory:",
+    db_url=security_config.DATABASE_URL,
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )  # Use your own database credentials here.
