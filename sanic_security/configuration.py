@@ -40,7 +40,7 @@ class Config(dict):
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
-        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use.
+        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use. Intended to prevent hardcoding of the database url.
     """
 
     SECRET: str
