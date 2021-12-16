@@ -378,7 +378,7 @@ async def init():
     # also specify the app name of "models"
     # which contain models from "app.models"
     await Tortoise.init(
-        db_url='sqlite://db.sqlite3',
+        db_url=config.DATABASE_URL,
         modules={'models': ['sanic_security.models', 'app.models']}
     )
     # Generate the schema
@@ -388,11 +388,9 @@ async def init():
 or
 
 ```python
-from tortoise.contrib.sanic import register_tortoise
-
 register_tortoise(
     app, 
-    db_url="sqlite://:memory:", 
+    db_url=config.DATABASE_URL, 
     modules={"models": ["app.models", "sanic_security.models"]}, 
     generate_schemas=True
 )
