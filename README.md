@@ -378,7 +378,6 @@ async def init():
         db_url=config.DATABASE_URL,
         modules={'models': ['sanic_security.models', 'app.models']}
     )
-    # Generate the schema
     await Tortoise.generate_schemas()
 ```
 
