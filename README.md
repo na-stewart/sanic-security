@@ -374,9 +374,6 @@ Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
 
 ```python
 async def init():
-    # Here we create a SQLite DB using file "db.sqlite3"
-    # also specify the app name of "models"
-    # which contain models from "app.models"
     await Tortoise.init(
         db_url=config.DATABASE_URL,
         modules={'models': ['sanic_security.models', 'app.models']}
