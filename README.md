@@ -117,10 +117,10 @@ Key | Value | Description |
 **SESSION_EXPIRES_ON_CLIENT** | False | When true, session cookies are removed from the clients browser when the session expires.
 **SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode sessions to a JWT.
 **SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
-**CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation.
+**CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
 **CAPTCHA_FONT** | captcha.ttf | The file path to the font being used for captcha generation.
-**TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation.
-**AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation.
+**TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
+**AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
 **ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
 **DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use.
 

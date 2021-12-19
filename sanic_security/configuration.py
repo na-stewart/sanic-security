@@ -35,10 +35,10 @@ class Config(dict):
         SESSION_EXPIRES_ON_CLIENT: When true, session cookies are removed from the clients browser when the session expires.
         SESSION_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to a JWT.
         SESSION_PREFIX (str): Prefix attached to the beginning of session cookies.
-        CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration on creation.
+        CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
-        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation
-        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation.
+        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
+        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
         DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use.
     """
