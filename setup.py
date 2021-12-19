@@ -8,7 +8,7 @@ setup(
     name="sanic-security",
     author="sunset-developer",
     author_email="aidanstewart@sunsetdeveloper.com",
-    description="An effective, simple, and async security library for Sanic.",
+    description="An effective, simple, and async security library for the Sanic framework.",
     url="https://github.com/sunset-developer/sanic-security",
     long_description=long_description,
     long_description_content_type="text/markdown",
