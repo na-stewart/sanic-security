@@ -220,6 +220,7 @@ async def on_error(request, exception):
 
 
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
+security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 register_tortoise(
     app,
     db_url=security_config.DATABASE_URL,
