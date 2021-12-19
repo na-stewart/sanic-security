@@ -445,9 +445,15 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 <!-- Versioning -->
 ## Versioning
 
-**0.0.0.0**
+**0.0.0**
 
-Major.Minor.Revision.Patch
+Given a version number MAJOR.MINOR.PATCH, increment the:
+
+MAJOR version when you make incompatible API changes,
+MINOR version when you add functionality in a backwards compatible manner, and
+PATCH version when you make backwards compatible bug fixes.
+
+[https://semver.org/](https://semver.org/)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
