@@ -486,9 +486,9 @@ class SessionFactory:
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=security_config.CAPTCHA_SESSION_EXPIRATION
-                ) if security_config.CAPTCHA_SESSION_EXPIRATION != 0 else None,
+                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
+                if security_config.CAPTCHA_SESSION_EXPIRATION != 0
+                else None,
             )
         elif session_type == "two-step":
             return await TwoStepSession.create(
@@ -499,7 +499,9 @@ class SessionFactory:
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(
                     seconds=security_config.TWO_STEP_SESSION_EXPIRATION
-                ) if security_config.TWO_STEP_SESSION_EXPIRATION != 0 else None,
+                )
+                if security_config.TWO_STEP_SESSION_EXPIRATION != 0
+                else None,
             )
         elif session_type == "authentication":
             return await AuthenticationSession.create(
@@ -509,7 +511,9 @@ class SessionFactory:
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(
                     seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
-                ) if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0 else None
+                )
+                if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
+                else None,
             )
         else:
             raise ValueError("Invalid session type.")
