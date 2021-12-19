@@ -447,9 +447,9 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 **0.0.0**
 
-* MAJOR version when you make incompatible API changes,
+* MAJOR version when you make incompatible API changes.
 
-* MINOR version when you add functionality in a backwards compatible manner, and
+* MINOR version when you add functionality in a backwards compatible manner.
 
 * PATCH version when you make backwards compatible bug fixes.
 
