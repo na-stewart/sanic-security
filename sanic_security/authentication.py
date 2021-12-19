@@ -83,7 +83,7 @@ async def login(
     request: Request, account: Account = None, two_factor: bool = False
 ) -> AuthenticationSession:
     """
-    Login with email and password. Authentication session expires after 30 days.
+    Login with email or username (if enabled) and password.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, password.
