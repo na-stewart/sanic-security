@@ -387,7 +387,7 @@ or
 register_tortoise(
     app, 
     db_url=config.DATABASE_URL, 
-    modules={"models": ["app.models", "sanic_security.models"]}, 
+    modules={"models": ["sanic_security.models", "app.models"]}, 
     generate_schemas=True
 )
 ```
@@ -447,11 +447,11 @@ Distributed under the GNU General Public License v3.0. See `LICENSE` for more in
 
 **0.0.0**
 
-Given a version number MAJOR.MINOR.PATCH, increment the:
+* MAJOR version when you make incompatible API changes,
 
-MAJOR version when you make incompatible API changes,
-MINOR version when you add functionality in a backwards compatible manner, and
-PATCH version when you make backwards compatible bug fixes.
+* MINOR version when you add functionality in a backwards compatible manner, and
+
+* PATCH version when you make backwards compatible bug fixes.
 
 [https://semver.org/](https://semver.org/)
 
