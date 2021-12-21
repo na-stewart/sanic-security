@@ -6,10 +6,11 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-[![Conda](https://anaconda.org/conda-forge/sanic-security/badges/installer/conda.svg)](https://anaconda.org/conda-forge/sanic-security)
-[![Conda Downloads](https://anaconda.org/conda-forge/sanic-security/badges/downloads.svg)](https://anaconda.org/conda-forge/sanic-security)
+
 [![Downloads](https://pepy.tech/badge/sanic-security)](https://pepy.tech/project/sanic-security)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Conda](https://anaconda.org/conda-forge/sanic-security/badges/installer/conda.svg)](https://anaconda.org/conda-forge/sanic-security)
+[![Conda Downloads](https://anaconda.org/conda-forge/sanic-security/badges/downloads.svg)](https://anaconda.org/conda-forge/sanic-security)
 
 
 <!-- PROJECT LOGO -->
