@@ -227,6 +227,6 @@ register_tortoise(
     db_url=security_config.DATABASE_URL,
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
-)  # Use your own database credentials here.
+)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True, workers=4)
