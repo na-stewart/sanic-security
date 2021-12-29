@@ -83,7 +83,7 @@ pip3 install sanic-security
 
 * Install the Sanic Security pip package with development dependencies
 ```shell
-pip3 install sanic-security [dev]
+pip3 install sanic-security[dev]
 ````
 
 ### Configuration
