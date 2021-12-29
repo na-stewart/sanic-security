@@ -22,5 +22,8 @@ setup(
         "captcha",
         "argon2-cffi>=20.1.0",
     ],
+    extras_require={
+        "dev": ["httpx>=0.13.0", "black", "sanic>=21.3.0"],
+    },
     platforms="any",
 )
