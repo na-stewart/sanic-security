@@ -81,6 +81,11 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
+* Install the Sanic Security pip package with development dependencies
+```shell
+pip3 install sanic-security [dev]
+````
+
 ### Configuration
 
 Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
@@ -351,12 +356,6 @@ async def on_require_roles(request, authentication_session):
 ```
 
 ## Testing
-
-* Install httpx:
-
-```shell
-pip3 install httpx
-```
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
