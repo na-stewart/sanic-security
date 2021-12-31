@@ -41,16 +41,12 @@ class BaseModel(Model):
 
     Attributes:
         id (int): Primary key of model.
-        uid (bytes): Unique identifier.
-        account (Account): Parent account associated with this model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
         deleted (bool): Renders this account filterable without removing from the database.
     """
 
     id = fields.IntField(pk=True)
-    uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
-    account = fields.ForeignKeyField("models.Account", null=True)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
@@ -109,11 +105,13 @@ class Account(BaseModel):
     password = fields.CharField(max_length=255)
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
-    roles = fields.ManyToManyField('models.Role', related_name='roles', through='account_role')
+    roles = fields.ManyToManyField(
+        "models.Role", related_name="roles", through="account_role"
+    )
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "email": self.email,
@@ -199,21 +197,25 @@ class Session(BaseModel):
         expiration_date (datetime): Time the session expires and can no longer be used.
         valid (bool): Renders the session accessible but unusable.
         ip (str): IP address of client creating session.
+        token (uuid): Token stored on the client's browser in a cookie for identification.
+        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
+        bearer (Account): Account associated with this session.
     """
 
     expiration_date = fields.DatetimeField(null=True)
     valid = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    bearer = fields.ForeignKeyField("models.Account")
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "account": self.account.email
-            if isinstance(self.account, Account)
-            else None,
+            "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
             "valid": self.valid,
         }
 
@@ -236,9 +238,9 @@ class Session(BaseModel):
             SessionError
         """
         ip = get_ip(request)
-        if not await self.filter(ip=ip, account=self.account).exists():
+        if not await self.filter(ip=ip, account=self.bearer).exists():
             logger.warning(
-                f"Client ({self.account.email}/{ip}) ip address is unrecognised"
+                f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
             raise SessionError("Unrecognised location.", 401)
 
@@ -250,9 +252,11 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
+            "id": self.id,
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
-            "uid": str(self.uid),
+            "token": str(self.token),
+            "refresh_token": str(self.token),
             "ip": self.ip,
         }
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
@@ -311,10 +315,10 @@ class Session(BaseModel):
             NotFoundError
             SessionError
         """
-        decoded = cls.decode_raw(request)
+        decoded_raw = cls.decode_raw(request)
         try:
             decoded_session = (
-                await cls.filter(uid=decoded["uid"]).prefetch_related("account").get()
+                await cls.filter(id=decoded_raw["id"]).prefetch_related("account").get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -372,7 +376,7 @@ class VerificationSession(Session):
                 raise SessionError("The value provided does not match.", 401)
             else:
                 logger.warning(
-                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 self.valid = False
                 await self.save(update_fields=["valid"])
@@ -527,6 +531,8 @@ class Role(BaseModel):
 
     Attributes:
         name (str): Name of the role.
+        description (str): Description of the role.
+        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
     name = fields.CharField(max_length=255)
@@ -535,10 +541,10 @@ class Role(BaseModel):
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "name": self.name,
             "description": self.description,
-            "permissions": self.permissions
+            "permissions": self.permissions,
         }

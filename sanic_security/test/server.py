@@ -12,14 +12,13 @@ from sanic_security.authentication import (
 )
 from sanic_security.authorization import (
     assign_role,
-    assign_permission,
     check_permissions,
     check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account, Role, Permission, SessionFactory
+from sanic_security.models import Account, Role, SessionFactory
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -162,30 +161,20 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-@app.post("api/test/auth/perms")
+@app.post("api/test/authorize")
 @requires_authentication()
-async def on_permissions_authorization(request, authentication_session):
+async def on_authorization(request, authentication_session):
     """
     Permissions authorization.
     """
-    if not await Permission.filter(
-        wildcard="admin:create", account=authentication_session.account
-    ).exists():
-        await assign_permission("admin:create", authentication_session.account)
+    if not await Role.filter(name="Admin").exists():
+        await assign_role(
+            "Admin",r
+            "Role used for testing.",
+            "admin:create",
+            authentication_session.account,
+        )
     await check_permissions(request, request.form.get("permissions"))
-    return text("Account permitted.")
-
-
-@app.post("api/test/auth/roles")
-@requires_authentication()
-async def on_roles_authorization(request, authentication_session):
-    """
-    Roles authorization.
-    """
-    if not await Role.filter(
-        name="Admin", account=authentication_session.account
-    ).exists():
-        await assign_role("Admin", authentication_session.account)
     await check_roles(request, request.form.get("roles"))
     return text("Account permitted.")
 

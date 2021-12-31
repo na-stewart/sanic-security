@@ -326,40 +326,15 @@ class AuthorizationTest(TestCase):
             data={"email": "roles@authorization.com", "password": "testtest"},
         )
         permitted_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Admin"}
+            "http://127.0.0.1:8000/api/test/authorize",
+            data={"roles": "Admin", "permissions": "admin:create"},
         )
         assert (
             permitted_authorization_response.status_code == 200
         ), permitted_authorization_response.text
         prohibited_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/roles", data={"roles": "Owner"}
-        )
-        assert (
-            prohibited_authorization_response.status_code == 403
-        ), prohibited_authorization_response.text
-
-    def test_permissions_authorization(self):
-        """
-        Authorization with wildcard permissions.
-        """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "perms@authorization.com"},
-        )
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            data={"email": "perms@authorization.com", "password": "testtest"},
-        )
-        permitted_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/perms",
-            data={"permissions": "admin:create"},
-        )
-        assert (
-            permitted_authorization_response.status_code == 200
-        ), permitted_authorization_response.text
-        prohibited_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/perms",
-            data={"permissions": "admin:update"},
+            "http://127.0.0.1:8000/api/test/authorize",
+            data={"roles": "Owner", "permissions": "admin:update"},
         )
         assert (
             prohibited_authorization_response.status_code == 403
