@@ -50,9 +50,9 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Login, registration, and authentication
-* Two-step verification
+* Login, registration, and authentication (including access/refresh tokens)
 * Two-factor authentication
+* Two-step verification
 * Captcha
 * Wildcard and role based authorization
 
@@ -153,8 +153,10 @@ Key | Value |
 async def on_register(request, captcha_session):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Registration successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Registration successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
 ```
@@ -169,7 +171,9 @@ Key | Value |
 @app.post("api/auth/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json("You have verified your account and may login!", two_step_session.account.json())
+    return json(
+        "You have verified your account and may login!", two_step_session.bearer.json()
+    )
 ```
 
 * Login
@@ -185,7 +189,7 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/auth/login")
 async def on_login(request):
     authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.account.json())
+    response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 ```
@@ -203,9 +207,16 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/auth/login")
 async def on_two_factor_login(request):
     authentication_session = await login(request, two_factor=True)
-    two_step_session = await request_two_step_verification(request, authentication_session.account)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
+    two_step_session = await request_two_step_verification(
+        request, authentication_session.bearer
+    )
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json(
+        "Login successful! A second factor is now required to be authenticated.",
+        authentication_session.bearer.json(),
+    )
     authentication_session.encode(response)
     two_step_session.encode(response)
     return response
@@ -221,10 +232,12 @@ Key | Value |
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_login_second_factor(request, two_step_session):
-  authentication_session = await on_second_factor(request)
-  response = json("Second factor attempt successful! You may now be authenticated!",
-                  authentication_session.account.json())
-  return response
+    authentication_session = await on_second_factor(request)
+    response = json(
+        "Second factor attempt successful! You may now be authenticated!",
+        authentication_session.bearer.json(),
+    )
+    return response
 ```
 
 * Logout
@@ -234,8 +247,15 @@ async def on_login_second_factor(request, two_step_session):
 @requires_authentication()
 async def on_logout(request, authentication_session):
     await logout(authentication_session)
-    response = json("Logout successful!", authentication_session.account.json())
+    response = json("Logout successful!", authentication_session.bearer.json())
     return response
+```
+
+* Refresh Authentication
+
+A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
+
+```python
 ```
 
 * Requires Authentication
@@ -244,9 +264,13 @@ async def on_logout(request, authentication_session):
 @app.post("api/auth")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
-                authentication_session.account.json())
+    return json(
+        f"Hello {authentication_session.bearer.username}! You have been authenticated.",
+        authentication_session.bearer.json(),
+    )
 ```
+
+
 
 ## Captcha
 
@@ -298,8 +322,10 @@ Key | Value |
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Verification request successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Verification request successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
 ```
@@ -310,8 +336,10 @@ async def on_request_verification(request, captcha_session):
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
     two_step_session = await TwoStepSession.decode(request)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    return json("Verification code resend successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
 * Requires Two-step Verification
@@ -324,7 +352,9 @@ Key | Value |
 @app.post("api/verification")
 @requires_two_step_verification()
 async def on_verification(request, two_step_session):
-    response = json("Two-step verification attempt successful!", two_step_session.account.json())
+    response = json(
+        "Two-step verification attempt successful!", two_step_session.bearer.json()
+    )
     return response
 ```
 
@@ -336,6 +366,10 @@ Role-based permissions is a policy-neutral access-control mechanism defined arou
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`, `printer:query,delete`, and/or `printer:*`.
+
+* Assign Role
+
+https://security.sunsetdeveloper.com/authorization.html#sanic_security.authorization.assign_role
 
 * Require Permissions
 
@@ -373,7 +407,7 @@ Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
 async def init():
     await Tortoise.init(
         db_url=config.DATABASE_URL,
-        modules={'models': ['sanic_security.models', 'app.models']}
+        modules={"models": ["sanic_security.models", "app.models"]},
     )
     await Tortoise.generate_schemas()
 ```
@@ -382,10 +416,10 @@ or
 
 ```python
 register_tortoise(
-    app, 
-    db_url=config.DATABASE_URL, 
-    modules={"models": ["sanic_security.models", "app.models"]}, 
-    generate_schemas=True
+    app,
+    db_url=config.DATABASE_URL,
+    modules={"models": ["sanic_security.models", "app.models"]},
+    generate_schemas=True,
 )
 ```
 
@@ -394,6 +428,7 @@ register_tortoise(
 ```python
 from tortoise.models import Model
 from tortoise import fields
+
 
 class Tournament(Model):
     id = fields.IntField(pk=True)
@@ -404,14 +439,14 @@ class Tournament(Model):
 
 ```python
 # Create instance by save
-tournament = Tournament(name='New Tournament')
+tournament = Tournament(name="New Tournament")
 await tournament.save()
 
 # Or by .create()
-await Tournament.create(name='Another Tournament')
+await Tournament.create(name="Another Tournament")
 
 # Now search for a record
-tour = await Tournament.filter(name__contains='Another').first()
+tour = await Tournament.filter(name__contains="Another").first()
 print(tour.name)
 ```
 
