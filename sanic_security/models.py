@@ -325,7 +325,7 @@ class Session(BaseModel):
         decoded_session = await cls.filter(
             refresh_token=decoded_raw["refresh_token"]
         ).get()
-        if decoded_session.active:
+        if decoded_session.active and not decoded_session.deleted:
             decoded_session.active = False
             await decoded_session.save(update_fields=["active"])
             return decoded_session
