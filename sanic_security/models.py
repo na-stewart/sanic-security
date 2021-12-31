@@ -100,6 +100,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
+        roles (list): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
@@ -108,6 +109,7 @@ class Account(BaseModel):
     password = fields.CharField(max_length=255)
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
+    roles = fields.ManyToManyField('models.Role', related_name='roles', through='account_role')
 
     def json(self):
         return {
@@ -521,13 +523,15 @@ class SessionFactory:
 
 class Role(BaseModel):
     """
-    Assigned to an account to authorize an action. Used for role based authorization.
+    Assigned to an account to authorize an action.
 
     Attributes:
         name (str): Name of the role.
     """
 
     name = fields.CharField(max_length=255)
+    description = fields.CharField(max_length=255)
+    permissions = fields.CharField(max_length=255)
 
     def json(self):
         return {
@@ -535,23 +539,6 @@ class Role(BaseModel):
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "name": self.name,
-        }
-
-
-class Permission(BaseModel):
-    """
-    Assigned to an account to authorize an action. Used for wildcard based authorization.
-
-    Attributes:
-        wildcard (str): The wildcard for this permission.
-    """
-
-    wildcard = fields.CharField(max_length=255)
-
-    def json(self):
-        return {
-            "uid": str(self.uid),
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "wildcard": self.wildcard,
+            "description": self.description,
+            "permissions": self.permissions
         }
