@@ -301,12 +301,13 @@ class Session(BaseModel):
             raise SessionError(str(e), 400)
 
     @classmethod
-    async def decode(cls, request: Request):
+    async def decode(cls, request: Request, id_override: int = None):
         """
         Decodes JWT token from client cookie to a Sanic Security session.
 
         Args:
             request (Request): Sanic request parameter.
+            id_override (int): For retrieving session data from the database via an id instead of a client cookie.
 
         Returns:
             session
@@ -315,10 +316,13 @@ class Session(BaseModel):
             NotFoundError
             SessionError
         """
-        decoded_raw = cls.decode_raw(request)
         try:
             decoded_session = (
-                await cls.filter(id=decoded_raw["id"]).prefetch_related("account").get()
+                await cls.filter(
+                    id=cls.decode_raw(request)["id"] if not id_override else id_override
+                )
+                .prefetch_related("account")
+                .get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")

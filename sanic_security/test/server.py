@@ -169,7 +169,7 @@ async def on_authorization(request, authentication_session):
     """
     if not await Role.filter(name="Admin").exists():
         await assign_role(
-            "Admin",r
+            "Admin",
             "Role used for testing.",
             "admin:create",
             authentication_session.account,
