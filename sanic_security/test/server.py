@@ -59,7 +59,7 @@ async def on_verify(request):
     """
     two_step_session = await verify_account(request)
     return json(
-        "You have verified your account and may login!", two_step_session.account.json()
+        "You have verified your account and may login!", two_step_session.bearer.json()
     )
 
 
@@ -73,14 +73,14 @@ async def on_login(request):
     )
     if request.form.get("two_factor") == "true":
         two_step_session = await request_two_step_verification(
-            request, authentication_session.account
+            request, authentication_session.bearer
         )
         response = json(
             "Login successful! Second factor required.", two_step_session.code
         )
         two_step_session.encode(response)
     else:
-        response = json("Login successful!", authentication_session.account.json())
+        response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 
@@ -94,7 +94,7 @@ async def on_login_second_factor(request, two_step_verification):
     """
     authentication_session = await on_second_factor(request)
     response = json(
-        "Second factor attempt successful!", authentication_session.account.json()
+        "Second factor attempt successful!", authentication_session.bearer.json()
     )
     return response
 
@@ -106,7 +106,7 @@ async def on_logout(request, authentication_session):
     Logout of currently logged in account.
     """
     await logout(authentication_session)
-    response = json("Logout successful!", authentication_session.account.json())
+    response = json("Logout successful!", authentication_session.bearer.json())
     return response
 
 
@@ -116,7 +116,7 @@ async def on_authenticate(request, authentication_session):
     """
     Check if current authentication session is valid.
     """
-    response = json("Authenticated!", authentication_session.account.json())
+    response = json("Authenticated!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 
@@ -172,7 +172,7 @@ async def on_authorization(request, authentication_session):
             "Admin",
             "Role used for testing.",
             "admin:create",
-            authentication_session.account,
+            authentication_session.bearer,
         )
     await check_permissions(request, request.form.get("permissions"))
     await check_roles(request, request.form.get("roles"))
@@ -213,7 +213,7 @@ security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 security_config.SESSION_EXPIRES_ON_CLIENT = True
 register_tortoise(
     app,
-    db_url=security_config.DATABASE_URL,
+    db_url=security_config.TEST_DATABASE_URL,
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )

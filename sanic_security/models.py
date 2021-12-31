@@ -17,23 +17,6 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, dir_exists
 
-"""
-Copyright (C) 2021 Aidan Stewart
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>
-"""
-
 
 class BaseModel(Model):
     """
@@ -207,7 +190,7 @@ class Session(BaseModel):
     ip = fields.CharField(max_length=16)
     token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
-    bearer = fields.ForeignKeyField("models.Account")
+    bearer = fields.ForeignKeyField("models.Account", null=True)
 
     def json(self):
         return {
@@ -223,8 +206,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+                self.expiration_date
+                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.valid:
@@ -238,7 +221,7 @@ class Session(BaseModel):
             SessionError
         """
         ip = get_ip(request)
-        if not await self.filter(ip=ip, account=self.bearer).exists():
+        if not await self.filter(ip=ip, bearer=self.bearer).exists():
             logger.warning(
                 f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
@@ -321,8 +304,8 @@ class Session(BaseModel):
                 await cls.filter(
                     id=cls.decode_raw(request)["id"] if not id_override else id_override
                 )
-                .prefetch_related("account")
-                .get()
+                    .prefetch_related("bearer")
+                    .get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -473,7 +456,7 @@ class SessionFactory:
     """
 
     async def get(
-        self, session_type: str, request: Request, account: Account = None, **kwargs
+            self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
         Creates and returns a session with all of the fulfilled requirements.
@@ -495,8 +478,9 @@ class SessionFactory:
                 **kwargs,
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
+                bearer=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
+                                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
                 if security_config.CAPTCHA_SESSION_EXPIRATION != 0
                 else None,
             )
@@ -505,9 +489,9 @@ class SessionFactory:
                 **kwargs,
                 code=TwoStepSession.get_random_code(),
                 ip=get_ip(request),
-                account=account,
+                bearer=account,
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
+                                + datetime.timedelta(
                     seconds=security_config.TWO_STEP_SESSION_EXPIRATION
                 )
                 if security_config.TWO_STEP_SESSION_EXPIRATION != 0
@@ -516,10 +500,10 @@ class SessionFactory:
         elif session_type == "authentication":
             return await AuthenticationSession.create(
                 **kwargs,
-                account=account,
+                bearer=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
+                                + datetime.timedelta(
                     seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
                 )
                 if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
