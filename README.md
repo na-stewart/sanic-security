@@ -393,7 +393,7 @@ async def on_require_roles(request, authentication_session):
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/unit.py`) and wait for results.
+* Run the unit test client (`test/tests.py`) and wait for results.
 
 ## Tortoise
 
@@ -406,7 +406,7 @@ Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
 ```python
 async def init():
     await Tortoise.init(
-        db_url=config.DATABASE_URL,
+        db_url="sqlite://db.sqlite3",
         modules={"models": ["sanic_security.models", "app.models"]},
     )
     await Tortoise.generate_schemas()
@@ -417,7 +417,7 @@ or
 ```python
 register_tortoise(
     app,
-    db_url=config.DATABASE_URL,
+    db_url="sqlite://db.sqlite3",
     modules={"models": ["sanic_security.models", "app.models"]},
     generate_schemas=True,
 )
