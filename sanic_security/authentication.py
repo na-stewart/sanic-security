@@ -16,7 +16,6 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
 
-
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
@@ -118,6 +117,23 @@ async def login(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
         )
         raise AccountError("Incorrect password.", 401)
+
+
+async def refresh(request: Request, two_factor: bool = False) -> AuthenticationSession:
+    """
+    Refresh expired client authentication session without having to login.
+
+    Args:
+        request (Request): Sanic request parameter.
+        two_factor: enables or disables second factor requirement for the new authentication session.
+
+    Returns:
+        authentication_session
+    """
+    authentication_session = await AuthenticationSession.redeem(request)
+    return await session_factory.get(
+        "authentication", request, authentication_session.bearer, two_factor=two_factor
+    )
 
 
 async def on_second_factor(request: Request) -> AuthenticationSession:

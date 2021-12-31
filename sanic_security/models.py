@@ -52,7 +52,7 @@ class BaseModel(Model):
 
                 def json(self):
                     return {
-                        'uid': str(self.uid),
+                        'id': id,
                         'date_created': str(self.date_created),
                         'date_updated': str(self.date_updated),
                         'email': self.email,
@@ -178,7 +178,7 @@ class Session(BaseModel):
 
     Attributes:
         expiration_date (datetime): Time the session expires and can no longer be used.
-        valid (bool): Renders the session accessible but unusable.
+        active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
         refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
@@ -186,7 +186,7 @@ class Session(BaseModel):
     """
 
     expiration_date = fields.DatetimeField(null=True)
-    valid = fields.BooleanField(default=True)
+    active = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
@@ -199,19 +199,19 @@ class Session(BaseModel):
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
-            "valid": self.valid,
+            "active": self.active,
         }
 
     def validate(self):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-                self.expiration_date
-                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+            self.expiration_date
+            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
-        elif not self.valid:
-            raise InvalidError()
+        elif not self.active:
+            raise DeactivatedError()
 
     async def crosscheck_location(self, request):
         """
@@ -237,6 +237,7 @@ class Session(BaseModel):
         payload = {
             "id": self.id,
             "date_created": str(self.date_created),
+            "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "token": str(self.token),
             "refresh_token": str(self.token),
@@ -284,13 +285,12 @@ class Session(BaseModel):
             raise SessionError(str(e), 400)
 
     @classmethod
-    async def decode(cls, request: Request, id_override: int = None):
+    async def decode(cls, request: Request):
         """
-        Decodes JWT token from client cookie to a Sanic Security session.
+        Decodes session JWT from client cookie to a Sanic Security session.
 
         Args:
             request (Request): Sanic request parameter.
-            id_override (int): For retrieving session data from the database via an id instead of a client cookie.
 
         Returns:
             session
@@ -300,12 +300,11 @@ class Session(BaseModel):
             SessionError
         """
         try:
+            decoded_raw = cls.decode_raw(request)
             decoded_session = (
-                await cls.filter(
-                    id=cls.decode_raw(request)["id"] if not id_override else id_override
-                )
-                    .prefetch_related("bearer")
-                    .get()
+                await cls.filter(token=decoded_raw["token"])
+                .prefetch_related("bearer")
+                .get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -313,6 +312,28 @@ class Session(BaseModel):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    async def redeem(cls, request: Request):
+        """
+        Redeems client refresh token and deactivates the session associated to the decoded session JWT so the refresh token cannot be used again.
+
+        Args:
+            request (Request): Sanic request parameter.
+        """
+        decoded_raw = cls.decode_raw(request)
+        decoded_session = await cls.filter(
+            refresh_token=decoded_raw["refresh_token"]
+        ).get()
+        if decoded_session.active:
+            decoded_session.active = False
+            await decoded_session.save(update_fields=["active"])
+            return decoded_session
+        else:
+            logger.warning(
+                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+            )
+            raise DeactivatedError("Invalid refresh token.")
 
 
 class VerificationSession(Session):
@@ -367,7 +388,7 @@ class VerificationSession(Session):
                 )
                 self.valid = False
                 await self.save(update_fields=["valid"])
-                raise InvalidError()
+                raise DeactivatedError()
         else:
             self.valid = False
             await self.save(update_fields=["valid"])
@@ -456,7 +477,7 @@ class SessionFactory:
     """
 
     async def get(
-            self, session_type: str, request: Request, account: Account = None, **kwargs
+        self, session_type: str, request: Request, account: Account = None, **kwargs
     ):
         """
         Creates and returns a session with all of the fulfilled requirements.
@@ -465,6 +486,7 @@ class SessionFactory:
             session_type (str): The type of session being retrieved. Available types are: captcha, two-step, and authentication.
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
+            use_refresh_token (bool) Create new session if client session refresh token is valid.
             kwargs: Extra arguments applied during session creation.
 
         Returns:
@@ -480,7 +502,7 @@ class SessionFactory:
                 code=CaptchaSession.get_random_code(),
                 bearer=account,
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
+                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
                 if security_config.CAPTCHA_SESSION_EXPIRATION != 0
                 else None,
             )
@@ -491,7 +513,7 @@ class SessionFactory:
                 ip=get_ip(request),
                 bearer=account,
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(
+                + datetime.timedelta(
                     seconds=security_config.TWO_STEP_SESSION_EXPIRATION
                 )
                 if security_config.TWO_STEP_SESSION_EXPIRATION != 0
@@ -503,7 +525,7 @@ class SessionFactory:
                 bearer=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
-                                + datetime.timedelta(
+                + datetime.timedelta(
                     seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
                 )
                 if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
@@ -525,7 +547,7 @@ class Role(BaseModel):
 
     name = fields.CharField(max_length=255)
     description = fields.CharField(max_length=255)
-    permissions = fields.CharField(max_length=255)
+    permissions = fields.CharField(max_length=255, null=True)
 
     def json(self):
         return {

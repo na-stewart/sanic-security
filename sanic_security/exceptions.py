@@ -50,9 +50,9 @@ class SessionError(SecurityError):
         super().__init__(message, code)
 
 
-class InvalidError(SessionError):
-    def __init__(self):
-        super().__init__("Session is invalid.", 401)
+class DeactivatedError(SessionError):
+    def __init__(self, message="Session is deactivated."):
+        super().__init__(message, 401)
 
 
 class ExpiredError(SessionError):
