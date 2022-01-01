@@ -542,7 +542,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query, printer:query,delete).
+        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query,printer:query,delete).
     """
 
     name = fields.CharField(max_length=255)

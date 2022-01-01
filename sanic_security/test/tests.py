@@ -225,6 +225,12 @@ class LoginTest(TestCase):
         )
         assert authenticate_response.status_code == 200, authenticate_response.text
 
+    def test_session_refresh(self):
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "refresh@login.com"},
+        )
+
 
 class VerificationTest(TestCase):
     """

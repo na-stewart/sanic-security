@@ -84,6 +84,9 @@ async def on_login(request):
     authentication_session.encode(response)
     return response
 
+@app.post("api/test/auth/refresh")
+async def on_refresh(request):
+
 
 @app.post("api/test/auth/login/second-factor")
 @requires_two_step_verification()
