@@ -256,6 +256,15 @@ async def on_logout(request, authentication_session):
 A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
 
 ```python
+@app.post("api/auth/refresh")
+async def on_refresh(request):
+    refreshed_authentication_session = await refresh(request)
+    response = json(
+        "Authentication session refreshed!",
+        refreshed_authentication_session.bearer.json(),
+    )
+    refreshed_authentication_session.encode(response)
+    return response
 ```
 
 * Requires Authentication

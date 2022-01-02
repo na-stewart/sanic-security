@@ -9,6 +9,7 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
+    refresh,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -84,9 +85,6 @@ async def on_login(request):
     authentication_session.encode(response)
     return response
 
-@app.post("api/test/auth/refresh")
-async def on_refresh(request):
-
 
 @app.post("api/test/auth/login/second-factor")
 @requires_two_step_verification()
@@ -98,6 +96,20 @@ async def on_login_second_factor(request, two_step_verification):
     authentication_session = await on_second_factor(request)
     response = json(
         "Second factor attempt successful!", authentication_session.bearer.json()
+    )
+    return response
+
+
+@app.post("api/test/auth/refresh")
+async def on_refresh(request):
+    """
+    Refresh client authentication session with a new session via the session's refresh token. However, the new authentication
+    session is never encoded.
+    """
+    refreshed_authentication_session = await refresh(request)
+    response = json(
+        "Authentication session refreshed!",
+        refreshed_authentication_session.bearer.json(),
     )
     return response
 

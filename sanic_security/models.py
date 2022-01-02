@@ -240,7 +240,7 @@ class Session(BaseModel):
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "token": str(self.token),
-            "refresh_token": str(self.token),
+            "refresh_token": str(self.refresh_token),
             "ip": self.ip,
         }
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
@@ -322,18 +322,23 @@ class Session(BaseModel):
             request (Request): Sanic request parameter.
         """
         decoded_raw = cls.decode_raw(request)
-        decoded_session = await cls.filter(
-            refresh_token=decoded_raw["refresh_token"]
-        ).get()
-        if decoded_session.active and not decoded_session.deleted:
-            decoded_session.active = False
-            await decoded_session.save(update_fields=["active"])
-            return decoded_session
-        else:
-            logger.warning(
-                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+        try:
+            decoded_session = (
+                await cls.filter(refresh_token=decoded_raw["refresh_token"])
+                .prefetch_related("bearer")
+                .get()
             )
-            raise DeactivatedError("Invalid refresh token.")
+            if decoded_session.active and not decoded_session.deleted:
+                decoded_session.active = False
+                await decoded_session.save(update_fields=["active"])
+                return decoded_session
+            else:
+                logger.warning(
+                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                )
+                raise DeactivatedError("Invalid refresh token.")
+        except DoesNotExist:
+            raise NotFoundError("Session could not be found.")
 
 
 class VerificationSession(Session):
@@ -386,12 +391,12 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                self.valid = False
-                await self.save(update_fields=["valid"])
+                self.active = False
+                await self.save(update_fields=["active"])
                 raise DeactivatedError()
         else:
-            self.valid = False
-            await self.save(update_fields=["valid"])
+            self.active = False
+            await self.save(update_fields=["active"])
 
     class Meta:
         abstract = True

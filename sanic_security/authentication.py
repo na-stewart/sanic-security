@@ -154,13 +154,13 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
 
 async def logout(authentication_session: AuthenticationSession):
     """
-    Invalidates client's authentication session and revokes access.
+    Deactivates client's authentication session and revokes access.
 
     Args:
         authentication_session (AuthenticationSession): Authentication session being invalidated and logged out from.
     """
-    authentication_session.valid = False
-    await authentication_session.save(update_fields=["valid"])
+    authentication_session.active = False
+    await authentication_session.save(update_fields=["active"])
 
 
 async def authenticate(request: Request) -> AuthenticationSession:

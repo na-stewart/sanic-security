@@ -226,10 +226,33 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_session_refresh(self):
+        """
+        Refresh client authentication session with a new session via the session's refresh token. Due to the fact
+        that the new session isn't encoded, attempting to refresh again will result in an error as a refresh token
+        should only be used once.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "refresh@login.com"},
         )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={
+                "email": "refresh@login.com",
+                "password": "testtest",
+            },
+        )
+        assert login_response.status_code == 200, login_response.text
+        refresh_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/refresh"
+        )
+        assert refresh_response.status_code == 200, refresh_response.text
+        invalid_refresh_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/refresh"
+        )
+        assert (
+            invalid_refresh_response.status_code == 401
+        ), invalid_refresh_response.text
 
 
 class VerificationTest(TestCase):

@@ -69,7 +69,6 @@ class Config(dict):
         Args:
             load_env (str):  Prefix being used to apply environment variables into the config.
         """
-
         for key, value in environ.items():
             if not key.startswith(load_env):
                 continue
