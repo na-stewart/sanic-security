@@ -366,7 +366,7 @@ async def on_verification(request, two_step_session):
 
 ## Authorization
 
-Sanic Security used role based authorization with wildcard permissions.
+Sanic Security uses role based authorization with wildcard permissions.
 
 Roles are created for various job functions. The permissions to perform certain operations are assigned to specific roles. 
 Users are assigned particular roles, and through those role assignments acquire the permissions needed to perform 
