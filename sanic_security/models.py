@@ -79,7 +79,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
-        roles (ManyToManyRelation): Roles associated with this account.
+        roles (ManyToMany): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
