@@ -53,7 +53,7 @@ This library contains a variety of features including:
 * Two-factor authentication
 * Two-step verification
 * Captcha
-* Wildcard and role based authorization
+* Role based authorization with wildcard permissions
 
 This repository has been starred by Sanic's core maintainer:
 
