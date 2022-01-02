@@ -38,7 +38,6 @@
     * [Authorization](#authorization)
     * [Testing](#testing)
     * [Tortoise](#tortoise)
-* [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
 * [Versioning](#Versioning)
@@ -131,7 +130,7 @@ Key | Value | Description |
 
 Sanic Security implementation is easy.
 
-The tables in the below examples represent example request `form-data`.
+The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
 
@@ -251,7 +250,7 @@ async def on_logout(request, authentication_session):
     return response
 ```
 
-* Refresh
+* Refresh Authentication
 
 A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
 
@@ -367,9 +366,13 @@ async def on_verification(request, two_step_session):
 
 ## Authorization
 
-Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
+Sanic Security used role based authorization with wildcard permissions.
 
-Role-based permissions is a policy-neutral access-control mechanism defined around roles and privileges. 
+Roles are created for various job functions. The permissions to perform certain operations are assigned to specific roles. 
+Users are assigned particular roles, and through those role assignments acquire the permissions needed to perform 
+particular system functions. Since users are not assigned permissions directly, but only acquire them through their 
+role (or roles), management of individual user rights becomes a matter of simply assigning appropriate roles to the 
+user's account; this simplifies common operations, such as adding a user, or changing a user's department. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`, `printer:query,delete`, and/or `printer:*`.
@@ -465,10 +468,6 @@ print(tour.name)
 
 *Support for SQLAlchemy coming soon.*
 
-<!-- ROADMAP -->
-## Roadmap
-
-Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 <!-- CONTRIBUTING -->
 ## Contributing
