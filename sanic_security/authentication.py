@@ -1,5 +1,6 @@
 import functools
 import re
+import traceback
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -53,6 +54,11 @@ async def register(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
             400,
         )
+    if not re.search(r"^\w{8,100}$", request.form.get("password")):
+        raise AccountError(
+            "Password must have more than 8 characters and must be less than 100 characters.",
+            400,
+        )
     try:
         account = await Account.create(
             email=request.form.get("email").lower(),
@@ -63,19 +69,12 @@ async def register(
             disabled=disabled,
         )
         return account
-    except IntegrityError as ie:
-        if "UNIQUE constraint" in str(ie):
-            raise AccountError("This account already exists.", 409)
-        else:
-            raise ie
-    except ValidationError as ve:
-        if "Length of" in str(ve):
-            raise AccountError(
-                "Too many characters used during account registration.",
-                400,
-            )
-        else:
-            raise ve
+    except IntegrityError as e:
+        traceback.print_exception(type(e), e, e.__traceback__)
+        raise AccountError(
+            "Could not register account. Please use a unique email and phone.",
+            400,
+        )
 
 
 async def login(
@@ -119,7 +118,9 @@ async def login(
         raise AccountError("Incorrect password.", 401)
 
 
-async def refresh(request: Request, two_factor: bool = False) -> AuthenticationSession:
+async def refresh_authentication(
+    request: Request, two_factor: bool = False
+) -> AuthenticationSession:
     """
     Refresh expired client authentication session without having to login.
 

@@ -9,7 +9,7 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
-    refresh,
+    refresh_authentication,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -104,9 +104,10 @@ async def on_login_second_factor(request, two_step_verification):
 async def on_refresh(request):
     """
     Refresh client authentication session with a new session via the session's refresh token. However, the new authentication
-    session is never encoded.
+    session is never encoded. Due to the fact  that the new session isn't encoded, attempting to refresh again will
+    result in an error as a refresh token should only be used once.
     """
-    refreshed_authentication_session = await refresh(request)
+    refreshed_authentication_session = await refresh_authentication(request)
     response = json(
         "Authentication session refreshed!",
         refreshed_authentication_session.bearer.json(),
@@ -176,22 +177,30 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-@app.post("api/test/authorize")
+@app.post("api/test/auth/roles")
 @requires_authentication()
 async def on_authorization(request, authentication_session):
     """
     Permissions authorization.
     """
-    if not await Role.filter(name="Admin").exists():
-        await assign_role(
-            "Admin",
-            "Role used for testing.",
-            "admin:create",
-            authentication_session.bearer,
+    await check_roles(request, request.form.get("role"))
+    if request.form.get("permissions_required"):
+        await check_permissions(
+            request, *request.form.get("permissions_required").split(", ")
         )
-    await check_permissions(request, request.form.get("permissions"))
-    await check_roles(request, request.form.get("roles"))
     return text("Account permitted.")
+
+
+@app.post("api/test/auth/roles/assign")
+@requires_authentication()
+async def on_role_assign(request, authentication_session):
+    await assign_role(
+        request.form.get("name"),
+        "Role used for testing.",
+        request.form.get("permissions"),
+        authentication_session.bearer,
+    )
+    return text("Role assigned.")
 
 
 @app.post("api/test/account")

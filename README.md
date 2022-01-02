@@ -258,7 +258,7 @@ A refresh token is used that lets the client retrieve a new authentication sessi
 ```python
 @app.post("api/auth/refresh")
 async def on_refresh(request):
-    refreshed_authentication_session = await refresh(request)
+    refreshed_authentication_session = await refresh_authentication(request)
     response = json(
         "Authentication session refreshed!",
         refreshed_authentication_session.bearer.json(),
@@ -278,8 +278,6 @@ async def on_authenticated(request, authentication_session):
         authentication_session.bearer.json(),
     )
 ```
-
-
 
 ## Captcha
 
@@ -378,24 +376,30 @@ Wildcard permissions support the concept of multiple levels or parts. For exampl
 
 * Assign Role
 
-https://security.sunsetdeveloper.com/authorization.html#sanic_security.authorization.assign_role
+```python
+await assign_role(
+    "Chat Room Moderator",
+    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
+    "channels:view,delete, account:suspend,mute, voice:*",
+    bearer,
+)
+```
 
 * Require Permissions
 
 ```python
-@app.post("api/auth/perms")
-@require_permissions("admin:update", "employee:add")
-async def on_require_perms(request, authentication_session):
-    return text("Account permitted.")
+@app.post("api/channel/view")
+@require_permissions("channels:view", "voice:*")
+async def on_voice_chat_control(request, authentication_session):
+    return text("Voice chat is now being controlled.")
 ```
-
 * Require Roles
 
 ```python
-@app.post("api/auth/roles")
-@require_roles("Admin", "Moderator")
-async def on_require_roles(request, authentication_session):
-    return text("Account permitted.")
+@app.post("api/account/suspend")
+@require_roles("Chat Room Moderator")
+async def on_suspend_account(request, authentication_session):
+    return text("Account successfully suspended.")
 ```
 
 ## Testing

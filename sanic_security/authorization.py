@@ -31,18 +31,15 @@ async def check_permissions(
     """
     authentication_session = await authenticate(request)
     async for account_role in authentication_session.bearer.roles:
-        for required_permission in required_permissions:
-            for permission in account_role.permissions.split(","):
-                if fnmatch(required_permission, permission):
-                    break
-            else:
-                logging.warning(
-                    f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient permissions."
-                )
-                raise AuthorizationError(
-                    "Insufficient permissions required for this action."
-                )
-    return authentication_session
+        for required_permission, role_permission in zip(
+            required_permissions, account_role.permissions.split(", ")
+        ):
+            if fnmatch(required_permission, role_permission):
+                return authentication_session
+    logging.warning(
+        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient permissions."
+    )
+    raise AuthorizationError("Insufficient permissions required for this action.")
 
 
 async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
@@ -64,13 +61,11 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     authentication_session = await authenticate(request)
     async for account_role in authentication_session.bearer.roles:
         if account_role.name in required_roles:
-            break
-    else:
-        logging.warning(
-            f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient roles."
-        )
-        raise AuthorizationError("Insufficient roles required for this action.")
-    return authentication_session
+            return authentication_session
+    logging.warning(
+        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient roles."
+    )
+    raise AuthorizationError("Insufficient roles required for this action.")
 
 
 def require_permissions(*required_permissions: str):
@@ -148,7 +143,7 @@ async def assign_role(
     Args:
         name (str):  The name of the role associated with the account.
         description (str):  The description of the role associated with the account.
-        permissions (str):  The permissions of the role associated with the account. Must be separated via comma and in wildcard format.
+        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         account (Account): the account associated with the created role.
     """
     try:

@@ -227,9 +227,7 @@ class LoginTest(TestCase):
 
     def test_session_refresh(self):
         """
-        Refresh client authentication session with a new session via the session's refresh token. Due to the fact
-        that the new session isn't encoded, attempting to refresh again will result in an error as a refresh token
-        should only be used once.
+        Refresh client authentication session with a new session via the session's refresh token.
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
@@ -342,6 +340,46 @@ class AuthorizationTest(TestCase):
     def tearDown(self):
         self.client.close()
 
+    def test_permissions_authorization(self):
+        """
+        Authorization with permissions.
+        """
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={"email": "permissions@authorization.com"},
+        )
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            data={"email": "permissions@authorization.com", "password": "testtest"},
+        )
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles/assign",
+            data={
+                "name": "AuthTestRole",
+                "permissions": "perm1:create,add, perm2:delete",
+            },
+        )
+        permitted_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "AuthTestRole",
+                "permissions_required": "perm1:create,add, perm2:*",
+            },
+        )
+        assert (
+            permitted_authorization_response.status_code == 200
+        ), permitted_authorization_response.text
+        prohibited_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "AuthTestRole",
+                "permissions_required": "perm2:add, perm1:delete",
+            },
+        )
+        assert (
+            prohibited_authorization_response.status_code == 403
+        ), prohibited_authorization_response.text
+
     def test_roles_authorization(self):
         """
         Authorization with roles.
@@ -354,16 +392,22 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/login",
             data={"email": "roles@authorization.com", "password": "testtest"},
         )
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles/assign",
+            data={"name": "AuthTestRole"},
+        )
         permitted_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/authorize",
-            data={"roles": "Admin", "permissions": "admin:create"},
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "AuthTestRole",
+            },
         )
         assert (
             permitted_authorization_response.status_code == 200
         ), permitted_authorization_response.text
         prohibited_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/authorize",
-            data={"roles": "Owner", "permissions": "admin:update"},
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={"role": "InvalidRole"},
         )
         assert (
             prohibited_authorization_response.status_code == 403
