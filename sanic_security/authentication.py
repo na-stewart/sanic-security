@@ -6,7 +6,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, ValidationError
+from tortoise.exceptions import IntegrityError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
@@ -158,7 +158,7 @@ async def logout(authentication_session: AuthenticationSession):
     Deactivates client's authentication session and revokes access.
 
     Args:
-        authentication_session (AuthenticationSession): Authentication session being invalidated and logged out from.
+        authentication_session (AuthenticationSession): Authentication session being deactivated and logged out from.
     """
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])

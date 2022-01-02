@@ -26,7 +26,7 @@ class BaseModel(Model):
         id (int): Primary key of model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): Renders this account filterable without removing from the database.
+        deleted (bool): Renders the model filterable without removing from the database.
     """
 
     id = fields.IntField(pk=True)
@@ -79,7 +79,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
-        roles (list): Roles associated with this account.
+        roles (ManyToManyRelation): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
@@ -491,7 +491,6 @@ class SessionFactory:
             session_type (str): The type of session being retrieved. Available types are: captcha, two-step, and authentication.
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
-            use_refresh_token (bool) Create new session if client session refresh token is valid.
             kwargs: Extra arguments applied during session creation.
 
         Returns:
@@ -547,7 +546,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query,printer:query,delete).
+        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
     name = fields.CharField(max_length=255)

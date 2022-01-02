@@ -194,6 +194,9 @@ async def on_authorization(request, authentication_session):
 @app.post("api/test/auth/roles/assign")
 @requires_authentication()
 async def on_role_assign(request, authentication_session):
+    """
+    Assigns authenticated account a role.
+    """
     await assign_role(
         request.form.get("name"),
         "Role used for testing.",
