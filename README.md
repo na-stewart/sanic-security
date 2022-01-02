@@ -38,7 +38,6 @@
     * [Authorization](#authorization)
     * [Testing](#testing)
     * [Tortoise](#tortoise)
-* [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
 * [Versioning](#Versioning)
@@ -50,11 +49,11 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Login, registration, and authentication
-* Two-step verification
+* Login, registration, and authentication (including access/refresh tokens)
 * Two-factor authentication
+* Two-step verification
 * Captcha
-* Wildcard and role based authorization
+* Role based authorization with wildcard permissions
 
 This repository has been starred by Sanic's core maintainer:
 
@@ -125,13 +124,13 @@ Key | Value | Description |
 **TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
 **AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
 **ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
-**DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use.
+**TEST_DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use for testing.
 
 ## Usage
 
 Sanic Security implementation is easy.
 
-The tables in the below examples represent example request `form-data`.
+The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
 
@@ -153,8 +152,10 @@ Key | Value |
 async def on_register(request, captcha_session):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Registration successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Registration successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
 ```
@@ -169,7 +170,9 @@ Key | Value |
 @app.post("api/auth/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json("You have verified your account and may login!", two_step_session.account.json())
+    return json(
+        "You have verified your account and may login!", two_step_session.bearer.json()
+    )
 ```
 
 * Login
@@ -185,7 +188,7 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/auth/login")
 async def on_login(request):
     authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.account.json())
+    response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 ```
@@ -203,9 +206,16 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/auth/login")
 async def on_two_factor_login(request):
     authentication_session = await login(request, two_factor=True)
-    two_step_session = await request_two_step_verification(request, authentication_session.account)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Login successful! A second factor is now required to be authenticated.", authentication_session.account.json())
+    two_step_session = await request_two_step_verification(
+        request, authentication_session.bearer
+    )
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json(
+        "Login successful! A second factor is now required to be authenticated.",
+        authentication_session.bearer.json(),
+    )
     authentication_session.encode(response)
     two_step_session.encode(response)
     return response
@@ -221,10 +231,12 @@ Key | Value |
 @app.post("api/auth/login/second-factor")
 @requires_two_step_verification()
 async def on_login_second_factor(request, two_step_session):
-  authentication_session = await on_second_factor(request)
-  response = json("Second factor attempt successful! You may now be authenticated!",
-                  authentication_session.account.json())
-  return response
+    authentication_session = await on_second_factor(request)
+    response = json(
+        "Second factor attempt successful! You may now be authenticated!",
+        authentication_session.bearer.json(),
+    )
+    return response
 ```
 
 * Logout
@@ -234,7 +246,23 @@ async def on_login_second_factor(request, two_step_session):
 @requires_authentication()
 async def on_logout(request, authentication_session):
     await logout(authentication_session)
-    response = json("Logout successful!", authentication_session.account.json())
+    response = json("Logout successful!", authentication_session.bearer.json())
+    return response
+```
+
+* Refresh Authentication
+
+A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
+
+```python
+@app.post("api/auth/refresh")
+async def on_refresh(request):
+    refreshed_authentication_session = await refresh_authentication(request)
+    response = json(
+        "Authentication session refreshed!",
+        refreshed_authentication_session.bearer.json(),
+    )
+    refreshed_authentication_session.encode(response)
     return response
 ```
 
@@ -244,8 +272,10 @@ async def on_logout(request, authentication_session):
 @app.post("api/auth")
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
-    return json(f"Hello {authentication_session.account.username}! You have been authenticated.", 
-                authentication_session.account.json())
+    return json(
+        f"Hello {authentication_session.bearer.username}! You have been authenticated.",
+        authentication_session.bearer.json(),
+    )
 ```
 
 ## Captcha
@@ -298,8 +328,10 @@ Key | Value |
 @requires_captcha()
 async def on_request_verification(request, captcha_session):
     two_step_session = await request_two_step_verification(request)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    response = json("Verification request successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Verification request successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
 ```
@@ -310,8 +342,10 @@ async def on_request_verification(request, captcha_session):
 @app.post("api/verification/resend")
 async def on_resend_verification(request):
     two_step_session = await TwoStepSession.decode(request)
-    await email_code(two_step_session.code) #Custom method for emailing verification code.
-    return json("Verification code resend successful!", two_step_session.account.json())
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
 * Requires Two-step Verification
@@ -324,42 +358,61 @@ Key | Value |
 @app.post("api/verification")
 @requires_two_step_verification()
 async def on_verification(request, two_step_session):
-    response = json("Two-step verification attempt successful!", two_step_session.account.json())
+    response = json(
+        "Two-step verification attempt successful!", two_step_session.bearer.json()
+    )
     return response
 ```
 
 ## Authorization
 
-Sanic Security comes with two protocols for authorization: role based and wildcard based permissions.
+Sanic Security uses role based authorization with wildcard permissions.
 
-Role-based permissions is a policy-neutral access-control mechanism defined around roles and privileges. 
+Roles are created for various job functions. The permissions to perform certain operations are assigned to specific roles. 
+Users are assigned particular roles, and through those role assignments acquire the permissions needed to perform 
+particular system functions. Since users are not assigned permissions directly, but only acquire them through their 
+role (or roles), management of individual user rights becomes a matter of simply assigning appropriate roles to the 
+user's account; this simplifies common operations, such as adding a user, or changing a user's department. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`, `printer:query,delete`, and/or `printer:*`.
 
+* Assign Role
+
+```python
+await assign_role(
+    "Chat Room Moderator",
+    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
+    "channels:view,delete, account:suspend,mute, voice:*",
+    bearer,
+)
+```
+
 * Require Permissions
 
 ```python
-@app.post("api/auth/perms")
-@require_permissions("admin:update", "employee:add")
-async def on_require_perms(request, authentication_session):
-    return text("Account permitted.")
+@app.post("api/channel/view")
+@require_permissions("channels:view", "voice:*")
+async def on_voice_chat_control(request, authentication_session):
+    return text("Voice chat is now being controlled.")
 ```
 
 * Require Roles
 
 ```python
-@app.post("api/auth/roles")
-@require_roles("Admin", "Moderator")
-async def on_require_roles(request, authentication_session):
-    return text("Account permitted.")
+@app.post("api/account/suspend")
+@require_roles("Chat Room Moderator")
+async def on_suspend_account(request, authentication_session):
+    return text("Account successfully suspended.")
 ```
 
 ## Testing
 
+* Set the `TEST_DATABASE_URL` configuration value.
+
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/unit.py`) and wait for results.
+* Run the unit test client (`test/tests.py`) and wait for results.
 
 ## Tortoise
 
@@ -372,8 +425,8 @@ Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
 ```python
 async def init():
     await Tortoise.init(
-        db_url=config.DATABASE_URL,
-        modules={'models': ['sanic_security.models', 'app.models']}
+        db_url="sqlite://db.sqlite3",
+        modules={"models": ["sanic_security.models", "app.models"]},
     )
     await Tortoise.generate_schemas()
 ```
@@ -382,10 +435,10 @@ or
 
 ```python
 register_tortoise(
-    app, 
-    db_url=config.DATABASE_URL, 
-    modules={"models": ["sanic_security.models", "app.models"]}, 
-    generate_schemas=True
+    app,
+    db_url="sqlite://db.sqlite3",
+    modules={"models": ["sanic_security.models", "app.models"]},
+    generate_schemas=True,
 )
 ```
 
@@ -394,6 +447,7 @@ register_tortoise(
 ```python
 from tortoise.models import Model
 from tortoise import fields
+
 
 class Tournament(Model):
     id = fields.IntField(pk=True)
@@ -404,23 +458,19 @@ class Tournament(Model):
 
 ```python
 # Create instance by save
-tournament = Tournament(name='New Tournament')
+tournament = Tournament(name="New Tournament")
 await tournament.save()
 
 # Or by .create()
-await Tournament.create(name='Another Tournament')
+await Tournament.create(name="Another Tournament")
 
 # Now search for a record
-tour = await Tournament.filter(name__contains='Another').first()
+tour = await Tournament.filter(name__contains="Another").first()
 print(tour.name)
 ```
 
 *Support for SQLAlchemy coming soon.*
 
-<!-- ROADMAP -->
-## Roadmap
-
-Keep up with Sanic Security's [Trello](https://trello.com/b/aRKzFlRL/amy-rose) board for a list of proposed features, known issues, and in progress development.
 
 <!-- CONTRIBUTING -->
 ## Contributing

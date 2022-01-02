@@ -1,11 +1,12 @@
 import functools
 import re
+import traceback
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, ValidationError
+from tortoise.exceptions import IntegrityError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
@@ -15,7 +16,6 @@ from sanic_security.exceptions import (
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
-
 
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
@@ -54,6 +54,11 @@ async def register(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
             400,
         )
+    if not re.search(r"^\w{8,100}$", request.form.get("password")):
+        raise AccountError(
+            "Password must have more than 8 characters and must be less than 100 characters.",
+            400,
+        )
     try:
         account = await Account.create(
             email=request.form.get("email").lower(),
@@ -64,19 +69,12 @@ async def register(
             disabled=disabled,
         )
         return account
-    except IntegrityError as ie:
-        if "UNIQUE constraint" in str(ie):
-            raise AccountError("This account already exists.", 409)
-        else:
-            raise ie
-    except ValidationError as ve:
-        if "Length of" in str(ve):
-            raise AccountError(
-                "Too many characters used during account registration.",
-                400,
-            )
-        else:
-            raise ve
+    except IntegrityError as e:
+        traceback.print_exception(type(e), e, e.__traceback__)
+        raise AccountError(
+            "Could not register account. Please use a unique email and phone.",
+            400,
+        )
 
 
 async def login(
@@ -120,6 +118,25 @@ async def login(
         raise AccountError("Incorrect password.", 401)
 
 
+async def refresh_authentication(
+    request: Request, two_factor: bool = False
+) -> AuthenticationSession:
+    """
+    Refresh expired client authentication session without having to login.
+
+    Args:
+        request (Request): Sanic request parameter.
+        two_factor: enables or disables second factor requirement for the new authentication session.
+
+    Returns:
+        authentication_session
+    """
+    authentication_session = await AuthenticationSession.redeem(request)
+    return await session_factory.get(
+        "authentication", request, authentication_session.bearer, two_factor=two_factor
+    )
+
+
 async def on_second_factor(request: Request) -> AuthenticationSession:
     """
     Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
@@ -138,13 +155,13 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
 
 async def logout(authentication_session: AuthenticationSession):
     """
-    Invalidates client's authentication session and revokes access.
+    Deactivates client's authentication session and revokes access.
 
     Args:
-        authentication_session (AuthenticationSession): Authentication session being invalidated and logged out from.
+        authentication_session (AuthenticationSession): Authentication session being deactivated and logged out from.
     """
-    authentication_session.valid = False
-    await authentication_session.save(update_fields=["valid"])
+    authentication_session.active = False
+    await authentication_session.save(update_fields=["active"])
 
 
 async def authenticate(request: Request) -> AuthenticationSession:
@@ -163,7 +180,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
     """
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
-    authentication_session.account.validate()
+    authentication_session.bearer.validate()
     if authentication_session.two_factor:
         raise SessionError("A second factor is required for this session.", 401)
     await authentication_session.crosscheck_location(request)

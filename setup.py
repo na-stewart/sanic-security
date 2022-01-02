@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU General Public License v3.0",
-    version="1.3.3",
+    version="1.4.0",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
@@ -23,7 +23,7 @@ setup(
         "argon2-cffi>=20.1.0",
     ],
     extras_require={
-        "dev": ["httpx>=0.13.0", "black", "sanic>=21.3.0"],
+        "dev": ["httpx>=0.13.0", "black", "blacken-docs", "sanic>=21.3.0"],
     },
     platforms="any",
 )

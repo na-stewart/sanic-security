@@ -17,23 +17,6 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, dir_exists
 
-"""
-Copyright (C) 2021 Aidan Stewart
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>
-"""
-
 
 class BaseModel(Model):
     """
@@ -41,16 +24,12 @@ class BaseModel(Model):
 
     Attributes:
         id (int): Primary key of model.
-        uid (bytes): Unique identifier.
-        account (Account): Parent account associated with this model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): Renders this account filterable without removing from the database.
+        deleted (bool): Renders the model filterable without removing from the database.
     """
 
     id = fields.IntField(pk=True)
-    uid = fields.UUIDField(unique=True, default=uuid.uuid1, max_length=36)
-    account = fields.ForeignKeyField("models.Account", null=True)
     date_created = fields.DatetimeField(auto_now_add=True)
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
@@ -73,7 +52,7 @@ class BaseModel(Model):
 
                 def json(self):
                     return {
-                        'uid': str(self.uid),
+                        'id': id,
                         'date_created': str(self.date_created),
                         'date_updated': str(self.date_updated),
                         'email': self.email,
@@ -100,6 +79,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
+        roles (ManyToMany): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
@@ -108,10 +88,13 @@ class Account(BaseModel):
     password = fields.CharField(max_length=255)
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
+    roles = fields.ManyToManyField(
+        "models.Role", related_name="roles", through="account_role"
+    )
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "email": self.email,
@@ -195,24 +178,28 @@ class Session(BaseModel):
 
     Attributes:
         expiration_date (datetime): Time the session expires and can no longer be used.
-        valid (bool): Renders the session accessible but unusable.
+        active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
+        token (uuid): Token stored on the client's browser in a cookie for identification.
+        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
+        bearer (Account): Account associated with this session.
     """
 
     expiration_date = fields.DatetimeField(null=True)
-    valid = fields.BooleanField(default=True)
+    active = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
+    token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    bearer = fields.ForeignKeyField("models.Account", null=True)
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "account": self.account.email
-            if isinstance(self.account, Account)
-            else None,
-            "valid": self.valid,
+            "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
+            "active": self.active,
         }
 
     def validate(self):
@@ -223,8 +210,8 @@ class Session(BaseModel):
             and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
-        elif not self.valid:
-            raise InvalidError()
+        elif not self.active:
+            raise DeactivatedError()
 
     async def crosscheck_location(self, request):
         """
@@ -234,9 +221,9 @@ class Session(BaseModel):
             SessionError
         """
         ip = get_ip(request)
-        if not await self.filter(ip=ip, account=self.account).exists():
+        if not await self.filter(ip=ip, bearer=self.bearer).exists():
             logger.warning(
-                f"Client ({self.account.email}/{ip}) ip address is unrecognised"
+                f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
             raise SessionError("Unrecognised location.", 401)
 
@@ -248,9 +235,12 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
+            "id": self.id,
             "date_created": str(self.date_created),
+            "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "uid": str(self.uid),
+            "token": str(self.token),
+            "refresh_token": str(self.refresh_token),
             "ip": self.ip,
         }
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
@@ -297,7 +287,7 @@ class Session(BaseModel):
     @classmethod
     async def decode(cls, request: Request):
         """
-        Decodes JWT token from client cookie to a Sanic Security session.
+        Decodes session JWT from client cookie to a Sanic Security session.
 
         Args:
             request (Request): Sanic request parameter.
@@ -309,10 +299,12 @@ class Session(BaseModel):
             NotFoundError
             SessionError
         """
-        decoded = cls.decode_raw(request)
         try:
+            decoded_raw = cls.decode_raw(request)
             decoded_session = (
-                await cls.filter(uid=decoded["uid"]).prefetch_related("account").get()
+                await cls.filter(token=decoded_raw["token"])
+                .prefetch_related("bearer")
+                .get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -320,6 +312,33 @@ class Session(BaseModel):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    async def redeem(cls, request: Request):
+        """
+        Redeems client refresh token and deactivates the session associated to the decoded session JWT so the refresh token cannot be used again.
+
+        Args:
+            request (Request): Sanic request parameter.
+        """
+        decoded_raw = cls.decode_raw(request)
+        try:
+            decoded_session = (
+                await cls.filter(refresh_token=decoded_raw["refresh_token"])
+                .prefetch_related("bearer")
+                .get()
+            )
+            if decoded_session.active and not decoded_session.deleted:
+                decoded_session.active = False
+                await decoded_session.save(update_fields=["active"])
+                return decoded_session
+            else:
+                logger.warning(
+                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                )
+                raise DeactivatedError("Invalid refresh token.")
+        except DoesNotExist:
+            raise NotFoundError("Session could not be found.")
 
 
 class VerificationSession(Session):
@@ -370,14 +389,14 @@ class VerificationSession(Session):
                 raise SessionError("The value provided does not match.", 401)
             else:
                 logger.warning(
-                    f"Client ({self.account.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                self.valid = False
-                await self.save(update_fields=["valid"])
-                raise InvalidError()
+                self.active = False
+                await self.save(update_fields=["active"])
+                raise DeactivatedError()
         else:
-            self.valid = False
-            await self.save(update_fields=["valid"])
+            self.active = False
+            await self.save(update_fields=["active"])
 
     class Meta:
         abstract = True
@@ -485,6 +504,7 @@ class SessionFactory:
                 **kwargs,
                 ip=get_ip(request),
                 code=CaptchaSession.get_random_code(),
+                bearer=account,
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
                 if security_config.CAPTCHA_SESSION_EXPIRATION != 0
@@ -495,7 +515,7 @@ class SessionFactory:
                 **kwargs,
                 code=TwoStepSession.get_random_code(),
                 ip=get_ip(request),
-                account=account,
+                bearer=account,
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(
                     seconds=security_config.TWO_STEP_SESSION_EXPIRATION
@@ -506,7 +526,7 @@ class SessionFactory:
         elif session_type == "authentication":
             return await AuthenticationSession.create(
                 **kwargs,
-                account=account,
+                bearer=account,
                 ip=get_ip(request),
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(
@@ -521,37 +541,24 @@ class SessionFactory:
 
 class Role(BaseModel):
     """
-    Assigned to an account to authorize an action. Used for role based authorization.
+    Assigned to an account to authorize an action.
 
     Attributes:
         name (str): Name of the role.
+        description (str): Description of the role.
+        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
     name = fields.CharField(max_length=255)
+    description = fields.CharField(max_length=255)
+    permissions = fields.CharField(max_length=255, null=True)
 
     def json(self):
         return {
-            "uid": str(self.uid),
+            "id": self.id,
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "name": self.name,
-        }
-
-
-class Permission(BaseModel):
-    """
-    Assigned to an account to authorize an action. Used for wildcard based authorization.
-
-    Attributes:
-        wildcard (str): The wildcard for this permission.
-    """
-
-    wildcard = fields.CharField(max_length=255)
-
-    def json(self):
-        return {
-            "uid": str(self.uid),
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "wildcard": self.wildcard,
+            "description": self.description,
+            "permissions": self.permissions,
         }

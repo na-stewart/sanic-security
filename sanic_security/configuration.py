@@ -16,8 +16,9 @@ DEFAULT_CONFIG = {
     "CAPTCHA_FONT": "captcha.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
+    "AUTHENTICATION_SESSION_REFRESH": True,
     "ALLOW_LOGIN_WITH_USERNAME": False,
-    "DATABASE_URL": "sqlite://:memory:",
+    "TEST_DATABASE_URL": "sqlite://:memory:",
 }
 
 
@@ -39,8 +40,9 @@ class Config(dict):
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
+        AUTHENTICATION_SESSION_REFRESH (bool): A refresh token can be used to generate a new session instead of reauthenticating.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
-        DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use.
+        TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
     """
 
     SECRET: str
@@ -56,8 +58,9 @@ class Config(dict):
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
+    AUTHENTICATION_SESSION_REFRESH: bool
     ALLOW_LOGIN_WITH_USERNAME: bool
-    DATABASE_URL: str
+    TEST_DATABASE_URL: str
 
     def load_environment_variables(self, load_env="SANIC_SECURITY_"):
         """
@@ -66,7 +69,6 @@ class Config(dict):
         Args:
             load_env (str):  Prefix being used to apply environment variables into the config.
         """
-
         for key, value in environ.items():
             if not key.startswith(load_env):
                 continue

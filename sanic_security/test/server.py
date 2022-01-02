@@ -9,17 +9,17 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
+    refresh_authentication,
 )
 from sanic_security.authorization import (
     assign_role,
-    assign_permission,
     check_permissions,
     check_roles,
 )
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account, Role, Permission, SessionFactory
+from sanic_security.models import Account, Role, SessionFactory
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -60,7 +60,7 @@ async def on_verify(request):
     """
     two_step_session = await verify_account(request)
     return json(
-        "You have verified your account and may login!", two_step_session.account.json()
+        "You have verified your account and may login!", two_step_session.bearer.json()
     )
 
 
@@ -74,14 +74,14 @@ async def on_login(request):
     )
     if request.form.get("two_factor") == "true":
         two_step_session = await request_two_step_verification(
-            request, authentication_session.account
+            request, authentication_session.bearer
         )
         response = json(
             "Login successful! Second factor required.", two_step_session.code
         )
         two_step_session.encode(response)
     else:
-        response = json("Login successful!", authentication_session.account.json())
+        response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 
@@ -95,7 +95,22 @@ async def on_login_second_factor(request, two_step_verification):
     """
     authentication_session = await on_second_factor(request)
     response = json(
-        "Second factor attempt successful!", authentication_session.account.json()
+        "Second factor attempt successful!", authentication_session.bearer.json()
+    )
+    return response
+
+
+@app.post("api/test/auth/refresh")
+async def on_refresh(request):
+    """
+    Refresh client authentication session with a new session via the session's refresh token. However, the new authentication
+    session is never encoded. Due to the fact  that the new session isn't encoded, attempting to refresh again will
+    result in an error as a refresh token should only be used once.
+    """
+    refreshed_authentication_session = await refresh_authentication(request)
+    response = json(
+        "Authentication session refreshed!",
+        refreshed_authentication_session.bearer.json(),
     )
     return response
 
@@ -107,7 +122,7 @@ async def on_logout(request, authentication_session):
     Logout of currently logged in account.
     """
     await logout(authentication_session)
-    response = json("Logout successful!", authentication_session.account.json())
+    response = json("Logout successful!", authentication_session.bearer.json())
     return response
 
 
@@ -117,7 +132,7 @@ async def on_authenticate(request, authentication_session):
     """
     Check if current authentication session is valid.
     """
-    response = json("Authenticated!", authentication_session.account.json())
+    response = json("Authenticated!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 
@@ -162,32 +177,33 @@ async def on_verification_attempt(request, two_step_session):
     return json("Two step verification attempt successful!", two_step_session.json())
 
 
-@app.post("api/test/auth/perms")
+@app.post("api/test/auth/roles")
 @requires_authentication()
-async def on_permissions_authorization(request, authentication_session):
+async def on_authorization(request, authentication_session):
     """
     Permissions authorization.
     """
-    if not await Permission.filter(
-        wildcard="admin:create", account=authentication_session.account
-    ).exists():
-        await assign_permission("admin:create", authentication_session.account)
-    await check_permissions(request, request.form.get("permissions"))
+    await check_roles(request, request.form.get("role"))
+    if request.form.get("permissions_required"):
+        await check_permissions(
+            request, *request.form.get("permissions_required").split(", ")
+        )
     return text("Account permitted.")
 
 
-@app.post("api/test/auth/roles")
+@app.post("api/test/auth/roles/assign")
 @requires_authentication()
-async def on_roles_authorization(request, authentication_session):
+async def on_role_assign(request, authentication_session):
     """
-    Roles authorization.
+    Assigns authenticated account a role.
     """
-    if not await Role.filter(
-        name="Admin", account=authentication_session.account
-    ).exists():
-        await assign_role("Admin", authentication_session.account)
-    await check_roles(request, request.form.get("roles"))
-    return text("Account permitted.")
+    await assign_role(
+        request.form.get("name"),
+        "Role used for testing.",
+        request.form.get("permissions"),
+        authentication_session.bearer,
+    )
+    return text("Role assigned.")
 
 
 @app.post("api/test/account")
@@ -220,11 +236,11 @@ async def on_error(request, exception):
 
 
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
-security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 security_config.SESSION_EXPIRES_ON_CLIENT = True
+security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 register_tortoise(
     app,
-    db_url=security_config.DATABASE_URL,
+    db_url=security_config.TEST_DATABASE_URL,
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
