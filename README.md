@@ -408,6 +408,8 @@ async def on_suspend_account(request, authentication_session):
 
 ## Testing
 
+* Set the `TEST_DATABASE_URL` configuration value.
+
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
 * Run the unit test client (`test/tests.py`) and wait for results.
