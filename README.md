@@ -396,6 +396,7 @@ await assign_role(
 async def on_voice_chat_control(request, authentication_session):
     return text("Voice chat is now being controlled.")
 ```
+
 * Require Roles
 
 ```python
