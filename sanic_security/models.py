@@ -221,10 +221,12 @@ class Session(BaseModel):
             SessionError
         """
         ip = get_ip(request)
-        if not await self.filter(ip=ip, bearer=self.bearer).exists():
+        if not await self.filter(ip=ip, bearer=self.bearer, deleted=False).exists():
             logger.warning(
                 f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
+            self.active = False
+            await self.save(update_fields=["active"])
             raise SessionError("Unrecognised location.", 401)
 
     def encode(self, response: HTTPResponse):
@@ -336,6 +338,7 @@ class Session(BaseModel):
                 logger.warning(
                     f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
                 )
+                await cls.filter(bearer=decoded_session.bearer, active=True, deleted=False).update(active=False)
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
