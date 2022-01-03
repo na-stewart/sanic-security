@@ -336,7 +336,9 @@ class Session(BaseModel):
                 logger.warning(
                     f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
                 )
-                await cls.filter(bearer=decoded_session.bearer, active=True, deleted=False).update(active=False)
+                await cls.filter(
+                    bearer=decoded_session.bearer, active=True, deleted=False
+                ).update(active=False)
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
