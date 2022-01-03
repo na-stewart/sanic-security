@@ -183,7 +183,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session.bearer.validate()
     if authentication_session.two_factor:
         raise SessionError("A second factor is required for this session.", 401)
-    await authentication_session.crosscheck_location(request)
+    await authentication_session.validate_location(request)
     return authentication_session
 
 

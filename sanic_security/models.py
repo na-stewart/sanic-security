@@ -213,7 +213,7 @@ class Session(BaseModel):
         elif not self.active:
             raise DeactivatedError()
 
-    async def crosscheck_location(self, request):
+    async def validate_location(self, request):
         """
         Checks if client using session is in a known location (ip address).
 
@@ -221,7 +221,7 @@ class Session(BaseModel):
             SessionError
         """
         ip = get_ip(request)
-        if not await self.filter(ip=ip, bearer=self.bearer).exists():
+        if not await self.filter(ip=ip, bearer=self.bearer, deleted=False).exists():
             logger.warning(
                 f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
@@ -336,6 +336,7 @@ class Session(BaseModel):
                 logger.warning(
                     f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
                 )
+                await cls.filter(bearer=decoded_session.bearer, active=True, deleted=False).update(active=False)
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -381,7 +382,7 @@ class VerificationSession(Session):
             SessionError
             InvalidError
         """
-        await self.crosscheck_location(request)
+        await self.validate_location(request)
         if self.code != code:
             if self.attempts < 5:
                 self.attempts += 1
