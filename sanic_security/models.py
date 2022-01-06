@@ -422,7 +422,6 @@ class VerificationSession(Session):
         if maxed_out_attempts:
             raise ChallengeError("The maximum amount of attempts has been reached.")
 
-
     class Meta:
         abstract = True
 
