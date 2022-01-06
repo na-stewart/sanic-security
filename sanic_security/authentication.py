@@ -99,17 +99,17 @@ async def login(
     if request.headers.get("Authorization"):
         authorization_type, credentials = request.headers.get("Authorization").split()
         if authorization_type == "Basic":
-            username, password = base64.b64decode(credentials).decode().split(":")
+            email_or_username, password = base64.b64decode(credentials).decode().split(":")
         else:
             raise SecurityError("Invalid authorization type.", 400)
     else:
         raise SecurityError("Credentials not provided. .", 400)
     if not account:
         try:
-            account = await Account.get_via_email(username)
+            account = await Account.get_via_email(email_or_username)
         except NotFoundError as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
-                account = await Account.get_via_username(username)
+                account = await Account.get_via_username(email_or_username)
             else:
                 raise e
     try:
