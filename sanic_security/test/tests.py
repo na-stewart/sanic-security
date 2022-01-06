@@ -48,7 +48,7 @@ class RegistrationTest(TestCase):
 
     def test_invalid_registration(self):
         """
-        Registration with an intentionally invalid email, username, and phone.
+        Registration with an intentionally invalid email, username, password, and phone.
         """
         invalid_email_registration_response = self.register(
             "invalidregister.com", False, True

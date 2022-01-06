@@ -54,7 +54,7 @@ async def register(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
             400,
         )
-    if not re.search(r"^\w{8,100}$", request.form.get("password")):
+    if 100 > len(request.form.get("password")) > 8:
         raise AccountError(
             "Password must have more than 8 characters and must be less than 100 characters.",
             400,
@@ -183,7 +183,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session.bearer.validate()
     if authentication_session.two_factor:
         raise SessionError("A second factor is required for this session.", 401)
-    await authentication_session.validate_location(request)
+    await authentication_session.check_client_location(request)
     return authentication_session
 
 

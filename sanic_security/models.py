@@ -213,9 +213,9 @@ class Session(BaseModel):
         elif not self.active:
             raise DeactivatedError()
 
-    async def validate_location(self, request):
+    async def check_client_location(self, request):
         """
-        Checks if client using session is in a known location (ip address).
+        Checks if client ip address has been used previously within other sessions.
 
         Raises:
             SessionError
@@ -225,7 +225,7 @@ class Session(BaseModel):
             logger.warning(
                 f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
             )
-            raise SessionError("Unrecognised location.", 401)
+            raise UnrecognisedLocationError()
 
     def encode(self, response: HTTPResponse):
         """
@@ -384,7 +384,7 @@ class VerificationSession(Session):
             SessionError
             InvalidError
         """
-        await self.validate_location(request)
+        await self.check_client_location(request)
         if self.code != code:
             if self.attempts < 5:
                 self.attempts += 1
