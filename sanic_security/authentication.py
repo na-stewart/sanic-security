@@ -1,3 +1,4 @@
+import base64
 import functools
 import re
 import traceback
@@ -13,6 +14,7 @@ from sanic_security.exceptions import (
     AccountError,
     SessionError,
     NotFoundError,
+    SecurityError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
@@ -84,7 +86,7 @@ async def login(
     Login with email or username (if enabled) and password.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username (if enabled), password.
+        request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
         account (Account): Account being logged into. If None, an account is retrieved via email in the request form-data.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
@@ -94,18 +96,26 @@ async def login(
     Raises:
         AccountError
     """
+    if request.headers.get("Authorization"):
+        authorization_type, credentials = request.headers.get("Authorization").split()
+        if authorization_type == "Basic":
+            username, password = base64.b64decode(credentials).decode().split(":")
+        else:
+            raise SecurityError("Invalid authorization type.", 400)
+    else:
+        raise SecurityError("Credentials not provided. .", 400)
     if not account:
         try:
-            account = await Account.get_via_email(request.form.get("email"))
+            account = await Account.get_via_email(username)
         except NotFoundError as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
-                account = await Account.get_via_username(request.form.get("username"))
+                account = await Account.get_via_username(username)
             else:
                 raise e
     try:
-        password_hasher.verify(account.password, request.form.get("password"))
+        password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
-            account.password = password_hasher.hash(request.form.get("password"))
+            account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
         return await session_factory.get(

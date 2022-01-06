@@ -274,7 +274,7 @@ class Session(BaseModel):
         )
         try:
             if not cookie:
-                raise SessionError(f"No session provided by client.", 400)
+                raise SessionError("Session token not provided.", 400)
             else:
                 return jwt.decode(
                     cookie,

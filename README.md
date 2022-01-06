@@ -177,10 +177,9 @@ async def on_verify(request):
 
 * Login
 
-Key | Value |
---- | --- |
-**email** | example@example.com
-**password** | examplepass
+Login credentials are retrieved via the Authorization header. Credentials are constructed by first combining the 
+username and the password with a colon (aladdin:opensesame), and then by encoding the resulting string in base64 
+(YWxhZGRpbjpvcGVuc2VzYW1l). Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`.
 
 You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
@@ -194,13 +193,6 @@ async def on_login(request):
 ```
 
 * Login (With two-factor authentication)
-
-Key | Value |
---- | --- |
-**email** | example@example.com
-**password** | example
-
-You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
 @app.post("api/auth/login")
