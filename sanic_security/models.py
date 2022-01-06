@@ -218,7 +218,7 @@ class Session(BaseModel):
         Checks if client ip address has been used previously within other sessions.
 
         Raises:
-            SessionError
+            UnrecognisedLocationError
         """
         ip = get_ip(request)
         if not await self.filter(ip=ip, bearer=self.bearer, deleted=False).exists():
