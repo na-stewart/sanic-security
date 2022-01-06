@@ -99,7 +99,9 @@ async def login(
     if request.headers.get("Authorization"):
         authorization_type, credentials = request.headers.get("Authorization").split()
         if authorization_type == "Basic":
-            email_or_username, password = base64.b64decode(credentials).decode().split(":")
+            email_or_username, password = (
+                base64.b64decode(credentials).decode().split(":")
+            )
         else:
             raise SecurityError("Invalid authorization type.", 400)
     else:
