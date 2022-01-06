@@ -128,7 +128,12 @@ Key | Value | Description |
 
 ## Usage
 
-Sanic Security implementation is easy.
+Sanic Security's authentication and verification functionality is session based.
+
+A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha).
+The session data is then encoded into JWT and stored on a cookie on the user’s browser. While the user stays logged in, 
+the cookie would be sent along with every subsequent request. The server can then compare the session stored on the cookie
+against the session information stored in the database to verify user’s identity and sends response with the corresponding state.
 
 The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
