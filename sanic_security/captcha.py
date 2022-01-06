@@ -34,6 +34,7 @@ async def captcha(request: Request) -> CaptchaSession:
         DeactivatedError
         JWTDecodeError
         NotFoundError
+        ChallengeError
 
     Returns:
         captcha_session
@@ -62,6 +63,7 @@ def requires_captcha():
         DeactivatedError
         JWTDecodeError
         NotFoundError
+        ChallengeError
     """
 
     def wrapper(func):
