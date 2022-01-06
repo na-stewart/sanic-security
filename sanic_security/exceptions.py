@@ -50,6 +50,11 @@ class SessionError(SecurityError):
         super().__init__(message, code)
 
 
+class JWTDecodeError(SessionError):
+    def __init__(self, message):
+        super().__init__(message, 400)
+
+
 class DeactivatedError(SessionError):
     def __init__(self, message="Session is deactivated."):
         super().__init__(message, 401)
@@ -67,6 +72,16 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired", 401)
 
 
+class ChallengeError(SessionError):
+    def __init__(self, message):
+        super().__init__(message, 401)
+
+
 class AuthorizationError(SecurityError):
     def __init__(self, message):
         super().__init__(message, 403)
+
+
+class CredentialsError(SecurityError):
+    def __init__(self, message):
+        super().__init__(message, 400)

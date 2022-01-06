@@ -22,6 +22,9 @@ async def request_two_step_verification(
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
 
+    Raises:
+        NotFoundError
+
     Returns:
          two_step_session
     """
@@ -39,8 +42,15 @@ async def two_step_verification(request: Request) -> TwoStepSession:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
 
     Raises:
-        SessionError
-        AccountError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
+        UnrecognisedLocationError
+        ChallengeError
 
     Returns:
          two_step_session
@@ -48,7 +58,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     two_step_session.bearer.validate()
-    await two_step_session.crosscheck_code(request, request.form.get("code"))
+    await two_step_session.check_code(request, request.form.get("code"))
     return two_step_session
 
 
@@ -63,7 +73,13 @@ async def verify_account(
         two_step_session (TwoStepSession): Two-step session associated with the account being verified. If None, a two-step session is retrieved via client by decoding.
 
     Raises:
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnrecognisedLocationError
+        ChallengeError
         AccountError
 
     Returns:
@@ -74,7 +90,7 @@ async def verify_account(
     if two_step_session.bearer.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
-    await two_step_session.crosscheck_code(request, request.form.get("code"))
+    await two_step_session.check_code(request, request.form.get("code"))
     two_step_session.bearer.verified = True
     await two_step_session.bearer.save(update_fields=["verified"])
     return two_step_session
@@ -94,7 +110,13 @@ def requires_two_step_verification():
                 return response
 
     Raises:
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnrecognisedLocationError
+        ChallengeError
         AccountError
     """
 

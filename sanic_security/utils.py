@@ -43,6 +43,9 @@ def json(message: str, data, status_code: int = 200) -> HTTPResponse:
         message (int): Message describing data or relaying human readable information.
         data (Any): Raw information to be used by client.
         status_code (int): HTTP response code.
+
+    Returns:
+        json
     """
     return sanic_json(
         {"message": message, "code": status_code, "data": data}, status=status_code

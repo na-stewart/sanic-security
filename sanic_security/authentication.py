@@ -14,7 +14,7 @@ from sanic_security.exceptions import (
     AccountError,
     SessionError,
     NotFoundError,
-    SecurityError,
+    CredentialsError,
 )
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
@@ -87,14 +87,15 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into. If None, an account is retrieved via email in the request form-data.
+        account (Account): Account being logged into. If None, an account is retrieved via credentials found in the authorization header.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
         authentication_session
 
     Raises:
-        AccountError
+        CredentialsError
+        NotFoundError
     """
     if request.headers.get("Authorization"):
         authorization_type, credentials = request.headers.get("Authorization").split()
@@ -103,9 +104,9 @@ async def login(
                 base64.b64decode(credentials).decode().split(":")
             )
         else:
-            raise SecurityError("Invalid authorization type.", 400)
+            raise CredentialsError("Invalid authorization type.")
     else:
-        raise SecurityError("Credentials not provided. .", 400)
+        raise CredentialsError("Credentials not provided.")
     if not account:
         try:
             account = await Account.get_via_email(email_or_username)
@@ -127,7 +128,7 @@ async def login(
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
         )
-        raise AccountError("Incorrect password.", 401)
+        raise CredentialsError("Incorrect password.")
 
 
 async def refresh_authentication(
@@ -139,6 +140,11 @@ async def refresh_authentication(
     Args:
         request (Request): Sanic request parameter.
         two_factor: enables or disables second factor requirement for the new authentication session.
+
+    Raises:
+        DeactivatedError
+        NotFoundError
+        JWTDecodeError
 
     Returns:
         authentication_session
@@ -155,6 +161,10 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
 
     Args:
         request (Request): Sanic request parameter.
+
+    Raises:
+        NotFoundError
+        JWTDecodeError
 
     Returns:
         authentication_session
@@ -187,14 +197,19 @@ async def authenticate(request: Request) -> AuthenticationSession:
         authentication_session
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
     """
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
     authentication_session.bearer.validate()
     if authentication_session.two_factor:
-        raise SessionError("A second factor is required for this session.", 401)
+        raise SessionError("A second factor is required.", 401)
     await authentication_session.check_client_location(request)
     return authentication_session
 
@@ -212,8 +227,13 @@ def requires_authentication():
                 return text('User is authenticated!')
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
     """
 
     def wrapper(func):

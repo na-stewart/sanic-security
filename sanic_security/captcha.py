@@ -29,14 +29,18 @@ async def captcha(request: Request) -> CaptchaSession:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
 
     Raises:
-        SessionError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        JWTDecodeError
+        NotFoundError
 
     Returns:
         captcha_session
     """
     captcha_session = await CaptchaSession.decode(request)
     captcha_session.validate()
-    await captcha_session.crosscheck_code(request, request.form.get("captcha"))
+    await captcha_session.check_code(request, request.form.get("captcha"))
     return captcha_session
 
 
@@ -51,8 +55,13 @@ def requires_captcha():
             @requires_captcha()
             async def on_captcha_attempt(request, captcha_session):
                 return json("Captcha attempt successful!", captcha_session.json())
+
     Raises:
-        SessionError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        JWTDecodeError
+        NotFoundError
     """
 
     def wrapper(func):

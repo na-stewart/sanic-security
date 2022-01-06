@@ -13,7 +13,7 @@ from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
-from sanic_security.configuration import config as security_config
+from sanic_security.configuration import config as security_config, config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, dir_exists
 
@@ -36,7 +36,7 @@ class BaseModel(Model):
 
     def validate(self):
         """
-        Raises an error with respect to variable values.
+        Raises an error with respect to state.
 
         Raises:
             SecurityError
@@ -79,7 +79,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
-        roles (ManyToMany): Roles associated with this account.
+        roles (ManyToManyRelation): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
@@ -104,6 +104,14 @@ class Account(BaseModel):
         }
 
     def validate(self):
+        """
+        Raises an error with respect to account state.
+
+        Raises:
+            DeletedError
+            UnverifiedError
+            DisabledError
+        """
         if self.deleted:
             raise DeletedError("Account has been deleted.")
         elif not self.verified:
@@ -174,7 +182,7 @@ class Account(BaseModel):
 
 class Session(BaseModel):
     """
-    Used for client identification and validation. Base session model that all session models derive from.
+    Used for client identification and verification. Base session model that all session models derive from.
 
     Attributes:
         expiration_date (datetime): Time the session expires and can no longer be used.
@@ -203,6 +211,14 @@ class Session(BaseModel):
         }
 
     def validate(self):
+        """
+        Raises an error with respect to session state.
+
+        Raises:
+            DeletedError
+            ExpiredError
+            DeactivatedError
+        """
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
@@ -267,14 +283,14 @@ class Session(BaseModel):
             session_dict
 
         Raises:
-            SessionError
+            JWTDecodeError
         """
         cookie = request.cookies.get(
             f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
         )
         try:
             if not cookie:
-                raise SessionError("Session token not provided.", 400)
+                raise JWTDecodeError("Session token not provided.")
             else:
                 return jwt.decode(
                     cookie,
@@ -282,7 +298,7 @@ class Session(BaseModel):
                     security_config.SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
-            raise SessionError(str(e), 400)
+            raise JWTDecodeError(str(e))
 
     @classmethod
     async def decode(cls, request: Request):
@@ -296,8 +312,8 @@ class Session(BaseModel):
             session
 
         Raises:
+            JWTDecodeError
             NotFoundError
-            SessionError
         """
         try:
             decoded_raw = cls.decode_raw(request)
@@ -320,6 +336,11 @@ class Session(BaseModel):
 
         Args:
             request (Request): Sanic request parameter.
+
+        Raises:
+            DeactivatedError
+            NotFoundError
+            JWTDecodeError
         """
         decoded_raw = cls.decode_raw(request)
         try:
@@ -372,7 +393,7 @@ class VerificationSession(Session):
         """
         raise NotImplementedError()
 
-    async def crosscheck_code(self, request: Request, code: str):
+    async def check_code(self, request: Request, code: str):
         """
         Used to check if code passed is equivalent to the session code.
 
@@ -381,25 +402,26 @@ class VerificationSession(Session):
             request (Request): Sanic request parameter.
 
         Raises:
-            SessionError
-            InvalidError
+            ChallengeError
+            UnrecognisedLocationError
         """
         await self.check_client_location(request)
+        maxed_out_attempts = False
         if self.code != code:
-            if self.attempts < 5:
+            if self.attempts <= config.MAXIMUM_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
-                raise SessionError("The value provided does not match.", 401)
+                raise ChallengeError("The value provided does not match.")
             else:
                 logger.warning(
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                self.active = False
-                await self.save(update_fields=["active"])
-                raise DeactivatedError()
-        else:
-            self.active = False
-            await self.save(update_fields=["active"])
+                maxed_out_attempts = True
+        self.active = False
+        await self.save(update_fields=["active"])
+        if maxed_out_attempts:
+            raise ChallengeError("The maximum amount of attempts has been reached.")
+
 
     class Meta:
         abstract = True
@@ -555,6 +577,9 @@ class Role(BaseModel):
     name = fields.CharField(max_length=255)
     description = fields.CharField(max_length=255)
     permissions = fields.CharField(max_length=255, null=True)
+
+    def validate(self):
+        raise NotImplementedError()
 
     def json(self):
         return {

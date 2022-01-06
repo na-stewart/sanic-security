@@ -25,8 +25,13 @@ async def check_permissions(
         authentication_session
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
         AuthorizationError
     """
     authentication_session = await authenticate(request)
@@ -54,8 +59,13 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         authentication_session
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
         AuthorizationError
     """
     authentication_session = await authenticate(request)
@@ -84,8 +94,13 @@ def require_permissions(*required_permissions: str):
                 return text("Account permitted.")
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
         AuthorizationError
     """
 
@@ -118,8 +133,13 @@ def require_roles(*required_roles: str):
                 return text("Account permitted")
 
     Raises:
-        AccountError
-        SessionError
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        UnverifiedError
+        DisabledError
         AuthorizationError
     """
 

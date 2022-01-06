@@ -119,6 +119,7 @@ Key | Value | Description |
 **SESSION_EXPIRES_ON_CLIENT** | False | When true, session cookies are removed from the clients browser when the session expires.
 **SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode sessions to a JWT.
 **SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
+**MAXIMUM_CHALLENGE_ATTEMPTS** | 5 | The maximum amount of session challenge attempts allowed.
 **CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
 **CAPTCHA_FONT** | captcha.ttf | The file path to the font being used for captcha generation.
 **TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
