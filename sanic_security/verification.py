@@ -117,7 +117,6 @@ def requires_two_step_verification():
         DeactivatedError
         UnrecognisedLocationError
         ChallengeError
-        AccountError
     """
 
     def wrapper(func):
