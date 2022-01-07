@@ -417,10 +417,10 @@ class VerificationSession(Session):
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 maxed_out_attempts = True
-        self.active = False
-        await self.save(update_fields=["active"])
         if maxed_out_attempts:
             raise ChallengeError("The maximum amount of attempts has been reached.")
+        self.active = False
+        await self.save(update_fields=["active"])
 
     class Meta:
         abstract = True
