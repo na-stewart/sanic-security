@@ -12,7 +12,7 @@ DEFAULT_CONFIG = {
     "SESSION_EXPIRES_ON_CLIENT": False,
     "SESSION_PREFIX": "token",
     "SESSION_ENCODING_ALGORITHM": "HS256",
-    "MAXIMUM_CHALLENGE_ATTEMPTS": 5,
+    "MAX_CHALLENGE_ATTEMPTS": 5,
     "CAPTCHA_SESSION_EXPIRATION": 60,
     "CAPTCHA_FONT": "captcha.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
@@ -37,7 +37,7 @@ class Config(dict):
         SESSION_EXPIRES_ON_CLIENT: When true, session cookies are removed from the clients browser when the session expires.
         SESSION_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to a JWT.
         SESSION_PREFIX (str): Prefix attached to the beginning of session cookies.
-        MAXIMUM_CHALLENGE_ATTEMPTS (str): The maximum amount of session challenge attempts allowed.
+        MAX_CHALLENGE_ATTEMPTS (str): The maximum amount of session challenge attempts allowed.
         CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
@@ -56,7 +56,7 @@ class Config(dict):
     SESSION_EXPIRES_ON_CLIENT: bool
     SESSION_ENCODING_ALGORITHM: str
     SESSION_PREFIX: str
-    MAXIMUM_CHALLENGE_ATTEMPTS: int
+    MAX_CHALLENGE_ATTEMPTS: int
     CAPTCHA_SESSION_EXPIRATION: int
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
