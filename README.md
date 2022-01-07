@@ -80,9 +80,9 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
-* Install the Sanic Security pip package with development dependencies.
+* Fork Sanic Security and install development dependencies.
 ```shell
-pip3 install sanic-security[dev]
+pip3 install -e ".[dev]"
 ````
 
 ### Configuration
