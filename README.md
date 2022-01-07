@@ -291,7 +291,7 @@ Captcha challenge example:
 * Request Captcha
 
 ```python
-@app.post("api/captcha/request")
+@app.get("api/captcha")
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
     response = await captcha_session.get_image()
