@@ -13,7 +13,7 @@ from sanic.response import HTTPResponse, file
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
-from sanic_security.configuration import config as security_config, config
+from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, dir_exists
 
@@ -407,7 +407,7 @@ class VerificationSession(Session):
         """
         await self.check_client_location(request)
         if self.code != code:
-            if self.attempts < config.MAX_CHALLENGE_ATTEMPTS:
+            if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError("The value provided does not match.")
