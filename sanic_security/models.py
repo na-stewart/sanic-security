@@ -406,9 +406,8 @@ class VerificationSession(Session):
             UnrecognisedLocationError
         """
         await self.check_client_location(request)
-        maxed_out_attempts = False
         if self.code != code:
-            if self.attempts < config.MAXIMUM_CHALLENGE_ATTEMPTS:
+            if self.attempts < config.MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError("The value provided does not match.")
@@ -416,11 +415,12 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                maxed_out_attempts = True
-        if maxed_out_attempts:
-            raise ChallengeError("The maximum amount of attempts has been reached.")
-        self.active = False
-        await self.save(update_fields=["active"])
+                self.active = False
+                await self.save(update_fields=["active"])
+                raise ChallengeError("The maximum amount of attempts has been reached.")
+        else:
+            self.active = False
+            await self.save(update_fields=["active"])
 
     class Meta:
         abstract = True

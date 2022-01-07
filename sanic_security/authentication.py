@@ -128,7 +128,7 @@ async def login(
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
         )
-        raise CredentialsError("Incorrect password.")
+        raise CredentialsError("Incorrect password.", 401)
 
 
 async def refresh_authentication(
