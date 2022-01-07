@@ -408,7 +408,7 @@ class VerificationSession(Session):
         await self.check_client_location(request)
         maxed_out_attempts = False
         if self.code != code:
-            if self.attempts <= config.MAXIMUM_CHALLENGE_ATTEMPTS:
+            if self.attempts < config.MAXIMUM_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError("The value provided does not match.")
