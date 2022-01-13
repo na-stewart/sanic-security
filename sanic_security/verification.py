@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import AccountError, NotFoundError, DeactivatedError, JWTDecodeError
+from sanic_security.exceptions import AccountError, DeactivatedError, JWTDecodeError
 from sanic_security.models import (
     Account,
     TwoStepSession,
@@ -13,7 +13,7 @@ session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
-        request: Request, account: Account = None
+    request: Request, account: Account = None
 ) -> TwoStepSession:
     """
     Creates a two-step session associated with an account.
@@ -67,7 +67,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
 
 
 async def verify_account(
-        request: Request, two_step_session: TwoStepSession = None
+    request: Request, two_step_session: TwoStepSession = None
 ) -> TwoStepSession:
     """
     Verifies account with two-step session code.
