@@ -332,7 +332,7 @@ class Session(BaseModel):
     @classmethod
     async def redeem(cls, request: Request):
         """
-        Redeems client refresh token and deactivates the session associated to the decoded session JWT so the refresh token cannot be used again.
+        Redeems client refresh token and deactivates it so the refresh token cannot be used again.
 
         Args:
             request (Request): Sanic request parameter.
