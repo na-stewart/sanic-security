@@ -171,7 +171,7 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
-    if authentication_session.two_factor:
+    if not authentication_session.two_factor:
         raise SessionError("Session already verified.")
     authentication_session.two_factor = False
     await authentication_session.save(update_fields=["two_factor"])
