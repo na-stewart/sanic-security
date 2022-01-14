@@ -330,12 +330,13 @@ class Session(BaseModel):
         abstract = True
 
     @classmethod
-    async def redeem(cls, request: Request):
+    async def redeem(cls, request: Request, reuse_protection: bool = True):
         """
         Redeems client refresh token and deactivates it so the refresh token cannot be used again.
 
         Args:
             request (Request): Sanic request parameter.
+            reuse_protection (bool): Deactivates all sessions associated with bearer when a previously-used refresh token is being reused.
 
         Raises:
             DeactivatedError
@@ -354,12 +355,13 @@ class Session(BaseModel):
                 await decoded_session.save(update_fields=["active"])
                 return decoded_session
             else:
-                logger.warning(
-                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
-                )
-                await cls.filter(
-                    bearer=decoded_session.bearer, active=True, deleted=False
-                ).update(active=False)
+                if reuse_protection:
+                    await cls.filter(
+                        bearer=decoded_session.bearer, active=True, deleted=False
+                    ).update(active=False)
+                    logger.warning(
+                        f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                    )
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -415,8 +417,6 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                self.active = False
-                await self.save(update_fields=["active"])
                 raise ChallengeError("The maximum amount of attempts has been reached.")
         else:
             self.active = False

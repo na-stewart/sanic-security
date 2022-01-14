@@ -2,7 +2,7 @@ import functools
 
 from sanic import Request
 
-from sanic_security.exceptions import JWTDecodeError, NotFoundError
+from sanic_security.exceptions import SessionError
 from sanic_security.models import CaptchaSession, SessionFactory
 
 session_factory = SessionFactory()
@@ -19,11 +19,8 @@ async def request_captcha(request: Request) -> CaptchaSession:
         captcha_session
     """
     try:
-        captcha_session = await CaptchaSession.decode(request)
-        if captcha_session.active:
-            captcha_session.active = False
-            await captcha_session.save(update_fields=["active"])
-    except JWTDecodeError or NotFoundError:
+        await CaptchaSession.redeem(request, False)  # Deactivates previous session.
+    except SessionError:
         pass
     return await session_factory.get("captcha", request)
 

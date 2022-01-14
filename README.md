@@ -334,6 +334,22 @@ async def on_request_verification(request, captcha_session):
     return response
 ```
 
+* Refresh Two-step Verification
+
+A refresh token is used that lets the client retrieve a new two-step session.
+
+```python
+@app.post("api/verification/refresh")
+async def on_refresh_verification(request):
+    two_step_session = await refresh_two_step_verification(request)
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Verification refresh successful!", two_step_session.bearer.json())
+    two_step_session.encode(response)
+    return response
+```
+
 * Resend Two-step Verification Code
 
 ```python

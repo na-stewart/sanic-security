@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
+from sanic_security.exceptions import AccountError
 from sanic_security.models import (
     Account,
     TwoStepSession,
@@ -28,16 +28,31 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
-    try:
-        two_step_session = await TwoStepSession.decode(request)
-        if two_step_session.active:
-            two_step_session.active = False
-            await two_step_session.save(update_fields=["active"])
-    except JWTDecodeError or NotFoundError:
-        pass
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
+    return two_step_session
+
+
+async def refresh_two_step_verification(request: Request) -> TwoStepSession:
+    """
+    Refresh expired or maxed out client two-step session.
+
+    Args:
+        request (Request): Sanic request parameter.
+
+    Raises:
+        DeactivatedError
+        NotFoundError
+        JWTDecodeError
+
+    Returns:
+         two_step_session
+    """
+    two_step_session = await TwoStepSession.redeem(request)
+    two_step_session = await session_factory.get(
+        "two-step", request, two_step_session.bearer
+    )
     return two_step_session
 
 
