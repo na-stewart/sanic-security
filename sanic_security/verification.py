@@ -29,13 +29,11 @@ async def request_two_step_verification(
          two_step_session
     """
     try:
-        two_step_session = await TwoStepSession.redeem(
-            request
-        )  # Deactivates previous session.
-        account = two_step_session.bearer
+        await TwoStepSession.redeem(request)  # Deactivates previous session.
     except JWTDecodeError or DeactivatedError:
-        if not account:
-            account = await Account.get_via_email(request.form.get("email"))
+        pass
+    if not account:
+        account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
     return two_step_session
 
