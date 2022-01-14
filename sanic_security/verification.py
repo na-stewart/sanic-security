@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import AccountError, JWTDecodeError, DeactivatedError
+from sanic_security.exceptions import AccountError, SessionError
 from sanic_security.models import (
     Account,
     TwoStepSession,
@@ -30,7 +30,7 @@ async def request_two_step_verification(
     """
     try:
         await TwoStepSession.redeem(request)  # Deactivates previous session.
-    except JWTDecodeError or DeactivatedError:
+    except SessionError:
         pass
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
