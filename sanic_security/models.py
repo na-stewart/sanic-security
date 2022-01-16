@@ -405,6 +405,7 @@ class VerificationSession(Session):
 
         Raises:
             ChallengeError
+            MaxedOutChallengeError
             UnrecognisedLocationError
         """
         await self.check_client_location(request)
@@ -417,7 +418,7 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                raise ChallengeError("The maximum amount of attempts has been reached.")
+                raise MaxedOutChallengeError()
         else:
             self.active = False
             await self.save(update_fields=["active"])

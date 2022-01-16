@@ -77,6 +77,11 @@ class ChallengeError(SessionError):
         super().__init__(message, 401)
 
 
+class MaxedOutChallengeError(ChallengeError):
+    def __init__(self):
+        super().__init__("The maximum amount of attempts has been reached.")
+
+
 class AuthorizationError(SecurityError):
     def __init__(self, message):
         super().__init__(message, 403)

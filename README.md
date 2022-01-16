@@ -317,7 +317,7 @@ async def on_captcha_attempt(request, captcha_session):
 * Request Two-step Verification
 
 Requesting verification should occur conditionally. For example, you would request two-step verification during a
-successful register attempt for account verification. 
+successful register attempt for account verification or during a successful login attempt for two-factor authentication.
 
 Key | Value |
 --- | --- |

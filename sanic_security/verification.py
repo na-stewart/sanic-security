@@ -73,6 +73,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
         DisabledError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
 
     Returns:
          two_step_session
@@ -102,6 +103,7 @@ async def verify_account(
         DeactivatedError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
         AccountError
 
     Returns:
@@ -139,6 +141,7 @@ def requires_two_step_verification():
         DeactivatedError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
     """
 
     def wrapper(func):
