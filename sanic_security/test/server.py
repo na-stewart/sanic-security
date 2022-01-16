@@ -173,10 +173,11 @@ async def on_request_verification(request):
 async def on_refresh_verification(request):
     """
     Two-step verification is refreshed with a new session via the client session's refresh token with code in the response.
+    However, the new two-step session is never encoded. Due to the fact that the new session isn't encoded,
+    attempting to refresh again will result in an error as a refresh token should only be used once.
     """
     two_step_session = await refresh_two_step_verification(request)
     response = json("Verification refresh successful!", two_step_session.code)
-    two_step_session.encode(response)
     return response
 
 
