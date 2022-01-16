@@ -341,7 +341,7 @@ async def on_request_verification(request, captcha_session):
 
 A refresh token is used that lets the client retrieve a new two-step session.
 
-You would refresh two-step verification if the client's existing two-step verification session has expired or the maximum amount of challenge attempts has been reached.
+Refresh two-step verification if the client's existing two-step verification session has expired or the maximum amount of challenge attempts has been reached.
 
 ```python
 @app.post("api/verification/refresh")
