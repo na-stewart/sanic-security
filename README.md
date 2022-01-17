@@ -334,22 +334,6 @@ async def on_request_verification(request, captcha_session):
     return response
 ```
 
-* Refresh Two-step Verification
-
-Refresh two-step verification if the client's existing two-step verification session has expired or been maxed out.
-
-```python
-@app.post("api/verification/refresh")
-async def on_refresh_verification(request):
-    two_step_session = await request_two_step_verification(request, refresh=True)
-    await email_code(
-        two_step_session.code
-    )  # Custom method for emailing verification code.
-    response = json("Verification refresh successful!", two_step_session.bearer.json())
-    two_step_session.encode(response)
-    return response
-```
-
 * Resend Two-step Verification Code
 
 ```python
