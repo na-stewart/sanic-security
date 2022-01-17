@@ -19,7 +19,9 @@ async def request_captcha(request: Request) -> CaptchaSession:
         captcha_session
     """
     try:
-        await CaptchaSession.redeem(request, False)  # Deactivates client's existing session.
+        await CaptchaSession.redeem(
+            request, False
+        )  # Deactivates client's existing session.
     except SessionError:
         pass
     return await session_factory.get("captcha", request)

@@ -25,7 +25,6 @@ from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
     verify_account,
-    refresh_two_step_verification,
 )
 
 app = Sanic("test")
@@ -161,23 +160,15 @@ async def on_captcha_attempt(request, captcha_session):
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
     """
-    Two-step verification is requested with code in the response.
+    Two-step verification is requested with code in the response. If refresh is true however, the new two-step session
+    is never encoded. Due to the fact that the new session isn't encoded, attempting to refresh again will result in an
+    error as a refresh token should only be used once.
     """
-    two_step_session = await request_two_step_verification(request)
+    refresh = request.form.get("refresh") == "true"
+    two_step_session = await request_two_step_verification(request, refresh)
     response = json("Verification request successful!", two_step_session.code)
-    two_step_session.encode(response)
-    return response
-
-
-@app.post("api/test/two-step/refresh")
-async def on_refresh_verification(request):
-    """
-    Two-step verification is refreshed with a new session via the client session's refresh token with code in the response.
-    However, the new two-step session is never encoded. Due to the fact that the new session isn't encoded,
-    attempting to refresh again will result in an error as a refresh token should only be used once.
-    """
-    two_step_session = await refresh_two_step_verification(request)
-    response = json("Verification refresh successful!", two_step_session.code)
+    if not refresh:
+        two_step_session.encode(response)
     return response
 
 
