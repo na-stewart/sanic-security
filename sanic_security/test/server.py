@@ -165,7 +165,7 @@ async def on_request_verification(request):
     error as a refresh token should only be used once.
     """
     refresh = request.form.get("refresh") == "true"
-    two_step_session = await request_two_step_verification(request, refresh)
+    two_step_session = await request_two_step_verification(request, refresh=refresh)
     response = json("Verification request successful!", two_step_session.code)
     if not refresh:
         two_step_session.encode(response)
