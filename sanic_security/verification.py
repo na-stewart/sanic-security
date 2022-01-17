@@ -22,7 +22,6 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
-        refresh (bool): Deactivates the client's existing two-step session and A refreshed two-step session is returned.
 
     Raises:
         NotFoundError
