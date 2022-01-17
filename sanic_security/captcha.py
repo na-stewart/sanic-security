@@ -1,4 +1,5 @@
 import functools
+from contextlib import suppress
 
 from sanic import Request
 
@@ -18,14 +19,12 @@ async def request_captcha(request: Request) -> CaptchaSession:
     Returns:
         captcha_session
     """
-    try:
+    with suppress(NotFoundError, JWTDecodeError):
         captcha_session = await CaptchaSession.decode(request)
         captcha_session.active = False
         await captcha_session.save(
             update_fields=["active"]
         )  # Deactivates client's existing session.
-    except NotFoundError or JWTDecodeError:
-        pass
     return await session_factory.get("captcha", request)
 
 

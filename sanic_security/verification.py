@@ -1,4 +1,5 @@
 import functools
+from contextlib import suppress
 
 from sanic.request import Request
 
@@ -29,14 +30,12 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
-    try:
+    with suppress(NotFoundError, JWTDecodeError):
         two_step_session = await TwoStepSession.decode(request)
         two_step_session.active = False
         await two_step_session.save(
             update_fields=["active"]
         )  # Deactivates client's existing session.
-    except NotFoundError or JWTDecodeError:
-        pass
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
