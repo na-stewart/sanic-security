@@ -24,7 +24,9 @@ async def request_two_step_verification(
         refresh (bool): Deactivates the client's existing two-step session and A refreshed two-step session is returned.
 
     Raises:
+        DeactivatedError
         NotFoundError
+        JWTDecodeError
 
     Returns:
          two_step_session
