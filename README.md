@@ -316,11 +316,6 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification
 
-
-Request verification if the client may not have a previously existing two-step session. For example, request verification
-during a successful registration attempt for account verification or a successful login attempt for two-factor authentication.
-
-
 Key | Value |
 --- | --- |
 **email** | example@example.com
