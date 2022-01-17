@@ -87,7 +87,7 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into. If None, an account is retrieved via credentials found in the authorization header.
+        account (Account): Account being logged into. If None, an account is retrieved via credentials in the authorization header.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
@@ -191,7 +191,7 @@ async def logout(authentication_session: AuthenticationSession):
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Used to determine if the client is authenticated.
+    Authenticates client.
 
     Args:
         request (Request): Sanic request parameter.
@@ -219,7 +219,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication():
     """
-    Used to determine if the client is authenticated.
+    Authenticates client.
 
     Example:
         This method is not called directly and instead used as a decorator:
