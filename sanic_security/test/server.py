@@ -160,15 +160,11 @@ async def on_captcha_attempt(request, captcha_session):
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
     """
-    Two-step verification is requested with code in the response. If refresh is true however, the new two-step session
-    is never encoded. Due to the fact that the new session isn't encoded, attempting to refresh again will result in an
-    error as a refresh token should only be used once.
+    Two-step verification is requested with code in the response.
     """
-    refresh = request.form.get("refresh") == "true"
-    two_step_session = await request_two_step_verification(request, refresh=refresh)
+    two_step_session = await request_two_step_verification(request)
     response = json("Verification request successful!", two_step_session.code)
-    if not refresh:
-        two_step_session.encode(response)
+    two_step_session.encode(response)
     return response
 
 

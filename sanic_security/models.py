@@ -329,43 +329,6 @@ class Session(BaseModel):
     class Meta:
         abstract = True
 
-    @classmethod
-    async def redeem(cls, request: Request, reuse_protection: bool = True):
-        """
-        Redeems client refresh token and deactivates it so the refresh token cannot be used again.
-
-        Args:
-            request (Request): Sanic request parameter.
-            reuse_protection (bool): Deactivates all sessions associated with bearer when a previously-used refresh token is being reused.
-
-        Raises:
-            DeactivatedError
-            NotFoundError
-            JWTDecodeError
-        """
-        decoded_raw = cls.decode_raw(request)
-        try:
-            decoded_session = (
-                await cls.filter(refresh_token=decoded_raw["refresh_token"])
-                .prefetch_related("bearer")
-                .get()
-            )
-            if decoded_session.active and not decoded_session.deleted:
-                decoded_session.active = False
-                await decoded_session.save(update_fields=["active"])
-                return decoded_session
-            else:
-                if reuse_protection:
-                    await cls.filter(
-                        bearer=decoded_session.bearer, active=True, deleted=False
-                    ).update(active=False)
-                    logger.warning(
-                        f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
-                    )
-                raise DeactivatedError("Invalid refresh token.")
-        except DoesNotExist:
-            raise NotFoundError("Session could not be found.")
-
 
 class VerificationSession(Session):
     """
@@ -496,6 +459,43 @@ class AuthenticationSession(Session):
     """
 
     two_factor = fields.BooleanField(default=False)
+
+    @classmethod
+    async def redeem(cls, request: Request, reuse_protection: bool = True):
+        """
+        Redeems client refresh token and deactivates it so the refresh token cannot be used again.
+
+        Args:
+            request (Request): Sanic request parameter.
+            reuse_protection (bool): Deactivates all sessions associated with bearer when a previously-used refresh token is being reused.
+
+        Raises:
+            DeactivatedError
+            NotFoundError
+            JWTDecodeError
+        """
+        decoded_raw = cls.decode_raw(request)
+        try:
+            decoded_session = (
+                await cls.filter(refresh_token=decoded_raw["refresh_token"])
+                .prefetch_related("bearer")
+                .get()
+            )
+            if decoded_session.active and not decoded_session.deleted:
+                decoded_session.active = False
+                await decoded_session.save(update_fields=["active"])
+                return decoded_session
+            else:
+                if reuse_protection:
+                    await cls.filter(
+                        bearer=decoded_session.bearer, active=True, deleted=False
+                    ).update(active=False)
+                    logger.warning(
+                        f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                    )
+                raise DeactivatedError("Invalid refresh token.")
+        except DoesNotExist:
+            raise NotFoundError("Session could not be found.")
 
     class Meta:
         table = "authentication_session"

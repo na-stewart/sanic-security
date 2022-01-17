@@ -2,7 +2,7 @@ import functools
 
 from sanic.request import Request
 
-from sanic_security.exceptions import AccountError
+from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
 from sanic_security.models import (
     Account,
     TwoStepSession,
@@ -13,7 +13,7 @@ session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
-    request: Request, account: Account = None, refresh: bool = False
+    request: Request, account: Account = None
 ) -> TwoStepSession:
     """
     Creates a two-step session.
@@ -24,19 +24,21 @@ async def request_two_step_verification(
         refresh (bool): Deactivates the client's existing two-step session and A refreshed two-step session is returned.
 
     Raises:
-        DeactivatedError
         NotFoundError
-        JWTDecodeError
 
     Returns:
          two_step_session
     """
-    if refresh:
-        two_step_session = await TwoStepSession.redeem(request)
-        account = two_step_session.bearer
-    else:
-        if not account:
-            account = await Account.get_via_email(request.form.get("email"))
+    try:
+        two_step_session = await TwoStepSession.decode(request)
+        two_step_session.active = False
+        await two_step_session.save(
+            update_fields=["active"]
+        )  # Deactivates client's existing session.
+    except NotFoundError or JWTDecodeError:
+        pass
+    if not account:
+        account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
     return two_step_session
 

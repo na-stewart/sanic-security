@@ -303,29 +303,6 @@ class VerificationTest(TestCase):
             two_step_verification_attempt_response.status_code == 200
         ), two_step_verification_attempt_response.text
 
-    def test_verification_refresh(self):
-        """
-        Refresh client two-step session with a new session via the session's refresh token.
-        """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "refresh@verification.com"},
-        )
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/two-step/request",
-            data={"email": "refresh@verification.com"},
-        )
-        refresh_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/two-step/request", data={"refresh": True}
-        )
-        assert refresh_response.status_code == 200, refresh_response.text
-        invalid_refresh_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/two-step/request", data={"refresh": True}
-        )
-        assert (
-            invalid_refresh_response.status_code == 401
-        ), invalid_refresh_response.text
-
     def test_account_verification(self):
         """
         Account registration and verification process with successful login.
