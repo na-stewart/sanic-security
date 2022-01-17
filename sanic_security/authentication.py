@@ -71,9 +71,7 @@ async def register(
             disabled=disabled,
         )
         return account
-    except IntegrityError as e:
-        if request.app.debug:
-            traceback.print_exception(type(e), e, e.__traceback__)
+    except IntegrityError:
         raise CredentialsError(
             "Could not register account. Please use unique account credentials.",
             400,
