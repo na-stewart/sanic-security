@@ -316,8 +316,10 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification
 
-Requesting verification should occur conditionally. For example, you would request two-step verification if a 
-registration attempt was successful for account verification.
+
+Request verification if the client may not have a previously existing two-step session. For example, request verification
+during a successful registration attempt for account verification or a successful login attempt for two-factor authentication.
+
 
 Key | Value |
 --- | --- |
@@ -339,7 +341,7 @@ async def on_request_verification(request, captcha_session):
 
 * Refresh Two-step Verification
 
-Refresh two-step verification if the client's existing two-step verification session has expired or maxed out.
+Refresh two-step verification if the client's existing two-step verification session has expired or been maxed out.
 
 ```python
 @app.post("api/verification/refresh")
