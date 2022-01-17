@@ -135,7 +135,7 @@ async def refresh_authentication(
     request: Request, two_factor: bool = False
 ) -> AuthenticationSession:
     """
-    Refresh expired client authentication session without having to login.
+    Refresh expired authentication session without having to ask the user to login again.
 
     Args:
         request (Request): Sanic request parameter.

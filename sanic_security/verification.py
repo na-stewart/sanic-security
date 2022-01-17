@@ -13,7 +13,7 @@ session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
-    request: Request, account: Account = None
+    request: Request, account: Account = None, refresh: bool = False
 ) -> TwoStepSession:
     """
     Creates a two-step session associated with an account.
@@ -21,6 +21,7 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
         account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
+        refresh (bool): Deactivates the client's existing expired two-step session. The refresh token is used to retrieve a new two-step session.
 
     Raises:
         NotFoundError
@@ -28,31 +29,13 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
-    if not account:
-        account = await Account.get_via_email(request.form.get("email"))
+    if refresh:
+        two_step_session = await TwoStepSession.redeem(request)
+        account = two_step_session.bearer
+    else:
+        if not account:
+            account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
-    return two_step_session
-
-
-async def refresh_two_step_verification(request: Request) -> TwoStepSession:
-    """
-    Refresh expired or maxed out client two-step session.
-
-    Args:
-        request (Request): Sanic request parameter.
-
-    Raises:
-        DeactivatedError
-        NotFoundError
-        JWTDecodeError
-
-    Returns:
-         two_step_session
-    """
-    two_step_session = await TwoStepSession.redeem(request)
-    two_step_session = await session_factory.get(
-        "two-step", request, two_step_session.bearer
-    )
     return two_step_session
 
 
