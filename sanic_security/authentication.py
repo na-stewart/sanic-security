@@ -43,21 +43,21 @@ async def register(
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
-        raise AccountError("Please use a valid email such as you@mail.com.", 400)
+        raise CredentialsError("Please use a valid email such as you@mail.com.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
-        raise AccountError(
+        raise CredentialsError(
             "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
             400,
         )
     if request.form.get("phone") and not re.search(
         r"^[0-9]{11,14}$", request.form.get("phone")
     ):
-        raise AccountError(
+        raise CredentialsError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
             400,
         )
     if 100 > len(request.form.get("password")) > 8:
-        raise AccountError(
+        raise CredentialsError(
             "Password must have more than 8 characters and must be less than 100 characters.",
             400,
         )
@@ -73,8 +73,8 @@ async def register(
         return account
     except IntegrityError as e:
         traceback.print_exception(type(e), e, e.__traceback__)
-        raise AccountError(
-            "Could not register account. Please use a unique email and phone.",
+        raise CredentialsError(
+            "Could not register account. Please use unique account credentials.",
             400,
         )
 
