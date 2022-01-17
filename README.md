@@ -339,8 +339,6 @@ async def on_request_verification(request, captcha_session):
 
 * Refresh Two-step Verification
 
-A refresh token is used that lets the client retrieve a new two-step session.
-
 Refresh two-step verification if the client's existing two-step verification session has expired or the maximum amount of challenge attempts has been reached.
 
 ```python
