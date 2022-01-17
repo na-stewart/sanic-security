@@ -38,7 +38,7 @@ async def register(
         account
 
     Raises:
-        AccountError
+        CredentialsError
     """
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
