@@ -1,7 +1,6 @@
 import base64
 import functools
 import re
-import traceback
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -11,7 +10,6 @@ from tortoise.exceptions import IntegrityError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
-    AccountError,
     SessionError,
     NotFoundError,
     CredentialsError,
