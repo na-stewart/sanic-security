@@ -85,6 +85,14 @@ pip3 install sanic-security
 pip3 install -e ".[dev]"
 ````
 
+* Install the Sanic Security pip package with the `cryptography` dependency.
+
+This will be required for encoding and decoding JWT's with RSA. 
+
+```shell
+pip3 install -e ".[crypto]"
+````
+
 ### Configuration
 
 Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
@@ -111,6 +119,7 @@ You can load environment variables with a different prefix via calling the `conf
 Key | Value | Description |
 --- | --- |  --- |
 **SECRET** | This is a big secret. Shhhhh | The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
+**PUBLIC_SECRET** | None | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
 **CACHE** | ./security-cache | The path used for caching.
 **SESSION_SAMESITE** | strict | The SameSite attribute of session cookies.
 **SESSION_SECURE** | False | The Secure attribute of session cookies.

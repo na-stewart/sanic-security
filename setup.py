@@ -24,6 +24,7 @@ setup(
     ],
     extras_require={
         "dev": ["httpx>=0.13.0", "black", "blacken-docs", "sanic>=21.3.0", "pdoc3"],
+        "crypto": ["cryptography>=3.3.1"]
     },
     platforms="any",
 )
