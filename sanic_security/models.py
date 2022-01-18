@@ -341,12 +341,11 @@ class VerificationSession(Session):
     Attributes:
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
         code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
-        cache (str): Session cache path.
     """
 
     attempts = fields.IntField(default=0)
     code = fields.CharField(max_length=10, null=True)
-    cache = security_config.CACHE
+    _cache = security_config.CACHE
 
     @classmethod
     def _initialize_cache(cls) -> None:
@@ -401,8 +400,8 @@ class TwoStepSession(VerificationSession):
 
     @classmethod
     def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{cls.cache}/verification"):
-            with open(f"{cls.cache}/verification/codes.txt", "w") as f:
+        if not dir_exists(f"{cls._cache}/verification"):
+            with open(f"{cls._cache}/verification/codes.txt", "w") as f:
                 for i in range(100):
                     code = "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
@@ -413,7 +412,7 @@ class TwoStepSession(VerificationSession):
     @classmethod
     def get_random_code(cls) -> str:
         cls._initialize_cache()
-        with open(f"{cls.cache}/verification/codes.txt", "r") as f:
+        with open(f"{cls._cache}/verification/codes.txt", "r") as f:
             return random.choice(f.read().split())
 
     class Meta:
@@ -427,19 +426,19 @@ class CaptchaSession(VerificationSession):
 
     @classmethod
     def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{cls.cache}/captcha"):
+        if not dir_exists(f"{cls._cache}/captcha"):
             image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
                 )
-                image.write(code, f"{cls.cache}/captcha/{code}.png")
+                image.write(code, f"{cls._cache}/captcha/{code}.png")
             logger.info("Captcha session cache initialised")
 
     @classmethod
     def get_random_code(cls) -> str:
         cls._initialize_cache()
-        return random.choice(os.listdir(f"{cls.cache}/captcha")).split(".")[0]
+        return random.choice(os.listdir(f"{cls._cache}/captcha")).split(".")[0]
 
     async def get_image(self) -> HTTPResponse:
         """
@@ -448,7 +447,7 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        return await file(f"{self.cache}/captcha/{self.code}.png")
+        return await file(f"{self._cache}/captcha/{self.code}.png")
 
     class Meta:
         table = "captcha_session"
