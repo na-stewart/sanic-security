@@ -134,7 +134,7 @@ async def refresh_authentication(
 
     Args:
         request (Request): Sanic request parameter.
-        two_factor: enables or disables second factor requirement for the new authentication session.
+        two_factor: Enables or disables second factor requirement for the new authentication session.
 
     Raises:
         DeactivatedError
@@ -173,7 +173,7 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
     return authentication_session
 
 
-async def logout(authentication_session: AuthenticationSession):
+async def logout(authentication_session: AuthenticationSession) -> None:
     """
     Deactivates client's authentication session and revokes access.
 

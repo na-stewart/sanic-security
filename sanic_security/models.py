@@ -35,7 +35,7 @@ class BaseModel(Model):
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to state.
 
@@ -93,7 +93,7 @@ class Account(BaseModel):
         "models.Role", related_name="roles", through="account_role"
     )
 
-    def json(self):
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),
@@ -104,7 +104,7 @@ class Account(BaseModel):
             "verified": self.verified,
         }
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to account state.
 
@@ -204,7 +204,7 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def json(self):
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),
@@ -214,7 +214,7 @@ class Session(BaseModel):
             "active": self.active,
         }
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to session state.
 
@@ -233,7 +233,7 @@ class Session(BaseModel):
         elif not self.active:
             raise DeactivatedError()
 
-    async def check_client_location(self, request):
+    async def check_client_location(self, request) -> None:
         """
         Checks if client ip address has been used previously within other sessions.
 
@@ -349,7 +349,7 @@ class VerificationSession(Session):
     cache = security_config.CACHE
 
     @classmethod
-    def _initialize_cache(cls):
+    def _initialize_cache(cls) -> None:
         """
         Creates verification session cache and generates required files.
         """
@@ -362,7 +362,7 @@ class VerificationSession(Session):
         """
         raise NotImplementedError()
 
-    async def check_code(self, request: Request, code: str):
+    async def check_code(self, request: Request, code: str) -> None:
         """
         Used to check if code passed is equivalent to the session code.
 
@@ -400,7 +400,7 @@ class TwoStepSession(VerificationSession):
     """
 
     @classmethod
-    def _initialize_cache(cls):
+    def _initialize_cache(cls) -> None:
         if not dir_exists(f"{cls.cache}/verification"):
             with open(f"{cls.cache}/verification/codes.txt", "w") as f:
                 for i in range(100):
@@ -411,7 +411,7 @@ class TwoStepSession(VerificationSession):
             logger.info("Two-step session cache initialised")
 
     @classmethod
-    def get_random_code(cls):
+    def get_random_code(cls) -> str:
         cls._initialize_cache()
         with open(f"{cls.cache}/verification/codes.txt", "r") as f:
             return random.choice(f.read().split())
@@ -426,7 +426,7 @@ class CaptchaSession(VerificationSession):
     """
 
     @classmethod
-    def _initialize_cache(cls):
+    def _initialize_cache(cls) -> None:
         if not dir_exists(f"{cls.cache}/captcha"):
             image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
             for i in range(100):
@@ -437,7 +437,7 @@ class CaptchaSession(VerificationSession):
             logger.info("Captcha session cache initialised")
 
     @classmethod
-    def get_random_code(cls):
+    def get_random_code(cls) -> str:
         cls._initialize_cache()
         return random.choice(os.listdir(f"{cls.cache}/captcha")).split(".")[0]
 
@@ -511,7 +511,7 @@ class AuthenticationSession(Session):
 
 class SessionFactory:
     """
-    Used to create and retrieve a session with pre-determined values.
+    Used to create and retrieve a session with pre-set values.
     """
 
     async def get(
@@ -586,10 +586,10 @@ class Role(BaseModel):
     description = fields.CharField(max_length=255)
     permissions = fields.CharField(max_length=255, null=True)
 
-    def validate(self):
+    def validate(self) -> None:
         raise NotImplementedError()
 
-    def json(self):
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),
