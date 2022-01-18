@@ -8,7 +8,7 @@ class SecurityError(SanicException):
     Sanic Security related error.
 
     Attributes:
-        json_response (HTTPResponse): Security Error json response.
+        json_response (HTTPResponse): Security error json response.
 
     Args:
         message (str): Human readable error message.
