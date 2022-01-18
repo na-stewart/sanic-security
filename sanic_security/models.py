@@ -191,7 +191,7 @@ class Session(BaseModel):
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
         bearer (Account): Account associated with this session.
-        ctx (SimpleNamespace): Store whatever additional information you need about the session.
+        ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
     expiration_date = fields.DatetimeField(null=True)
