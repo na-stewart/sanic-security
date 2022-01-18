@@ -3,6 +3,7 @@ import os
 import random
 import string
 import uuid
+from types import SimpleNamespace
 
 import jwt
 from captcha.image import ImageCaptcha
@@ -189,16 +190,19 @@ class Session(BaseModel):
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
-        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
         bearer (Account): Account associated with this session.
+        ctx (SimpleNamespace): Store whatever additional information you need about the session.
     """
 
     expiration_date = fields.DatetimeField(null=True)
     active = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
-    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     bearer = fields.ForeignKeyField("models.Account", null=True)
+    ctx = SimpleNamespace()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def json(self):
         return {
@@ -256,9 +260,10 @@ class Session(BaseModel):
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "token": str(self.token),
-            "refresh_token": str(self.refresh_token),
             "ip": self.ip,
+            **self.ctx.__dict__,
         }
+        print(payload)
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
@@ -456,9 +461,15 @@ class AuthenticationSession(Session):
 
     Attributes:
         two_factor (bool): Determines if authentication session requires a second factor to be used for authentication.
+        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
     """
 
     two_factor = fields.BooleanField(default=False)
+    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.ctx.refresh_token = str(self.refresh_token)
 
     @classmethod
     async def redeem(cls, request: Request, reuse_protection: bool = True):
