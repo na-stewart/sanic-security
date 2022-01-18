@@ -471,13 +471,12 @@ class AuthenticationSession(Session):
         self.ctx.refresh_token = str(self.refresh_token)
 
     @classmethod
-    async def redeem(cls, request: Request, reuse_protection: bool = True):
+    async def redeem(cls, request: Request):
         """
         Redeems client refresh token and deactivates it so the refresh token cannot be used again.
 
         Args:
             request (Request): Sanic request parameter.
-            reuse_protection (bool): Deactivates all sessions associated with bearer when a previously-used refresh token is being reused.
 
         Raises:
             DeactivatedError
@@ -496,13 +495,12 @@ class AuthenticationSession(Session):
                 await decoded_session.save(update_fields=["active"])
                 return decoded_session
             else:
-                if reuse_protection:
-                    await cls.filter(
-                        bearer=decoded_session.bearer, active=True, deleted=False
-                    ).update(active=False)
-                    logger.warning(
-                        f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
-                    )
+                await cls.filter(
+                    bearer=decoded_session.bearer, active=True, deleted=False
+                ).update(active=False)
+                logger.warning(
+                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                )
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
