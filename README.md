@@ -410,7 +410,7 @@ async def on_suspend_account(request, authentication_session):
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/tests.py`) and wait for results.
+* Run the unit test client (`test/tests.py`) for results.
 
 ## Tortoise
 
