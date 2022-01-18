@@ -263,7 +263,6 @@ class Session(BaseModel):
             "ip": self.ip,
             **self.ctx.__dict__,
         }
-        print(payload)
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
