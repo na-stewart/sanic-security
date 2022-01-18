@@ -22,7 +22,7 @@ def dir_exists(path: str) -> bool:
     Checks if path exists and isn't empty. Creates new path if neither of these conditions are met.
 
     Args:
-         path (str): Path being checked.
+        path (str): Path being checked.
 
     Returns:
         exists
