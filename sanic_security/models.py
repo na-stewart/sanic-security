@@ -3,6 +3,7 @@ import os
 import random
 import string
 import uuid
+from types import SimpleNamespace
 
 import jwt
 from captcha.image import ImageCaptcha
@@ -34,7 +35,7 @@ class BaseModel(Model):
     date_updated = fields.DatetimeField(auto_now=True)
     deleted = fields.BooleanField(default=False)
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to state.
 
@@ -92,7 +93,7 @@ class Account(BaseModel):
         "models.Role", related_name="roles", through="account_role"
     )
 
-    def json(self):
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),
@@ -103,7 +104,7 @@ class Account(BaseModel):
             "verified": self.verified,
         }
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to account state.
 
@@ -189,18 +190,21 @@ class Session(BaseModel):
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
-        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
         bearer (Account): Account associated with this session.
+        ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
     expiration_date = fields.DatetimeField(null=True)
     active = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
-    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     bearer = fields.ForeignKeyField("models.Account", null=True)
+    ctx = SimpleNamespace()
 
-    def json(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),
@@ -210,7 +214,7 @@ class Session(BaseModel):
             "active": self.active,
         }
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Raises an error with respect to session state.
 
@@ -229,7 +233,7 @@ class Session(BaseModel):
         elif not self.active:
             raise DeactivatedError()
 
-    async def check_client_location(self, request):
+    async def check_client_location(self, request) -> None:
         """
         Checks if client ip address has been used previously within other sessions.
 
@@ -256,8 +260,8 @@ class Session(BaseModel):
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "token": str(self.token),
-            "refresh_token": str(self.refresh_token),
             "ip": self.ip,
+            **self.ctx.__dict__,
         }
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         response.cookies[cookie] = jwt.encode(
@@ -329,6 +333,142 @@ class Session(BaseModel):
     class Meta:
         abstract = True
 
+
+class VerificationSession(Session):
+    """
+    Used for a client verification method that requires some form of code, challenge, or key.
+
+    Attributes:
+        attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
+        code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
+    """
+
+    attempts = fields.IntField(default=0)
+    code = fields.CharField(max_length=10, null=True)
+    _cache = security_config.CACHE
+
+    @classmethod
+    def _initialize_cache(cls) -> None:
+        """
+        Creates verification session cache and generates required files.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def get_random_code(cls) -> str:
+        """
+        Retrieves a random cached verification session code.
+        """
+        raise NotImplementedError()
+
+    async def check_code(self, request: Request, code: str) -> None:
+        """
+        Used to check if code passed is equivalent to the session code.
+
+        Args:
+            code (str): Code being cross-checked with session code.
+            request (Request): Sanic request parameter.
+
+        Raises:
+            ChallengeError
+            MaxedOutChallengeError
+            UnrecognisedLocationError
+        """
+        await self.check_client_location(request)
+        if self.code != code:
+            if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
+                self.attempts += 1
+                await self.save(update_fields=["attempts"])
+                raise ChallengeError("The value provided does not match.")
+            else:
+                logger.warning(
+                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                )
+                raise MaxedOutChallengeError()
+        else:
+            self.active = False
+            await self.save(update_fields=["active"])
+
+    class Meta:
+        abstract = True
+
+
+class TwoStepSession(VerificationSession):
+    """
+    Validates a client using a code sent via email or text.
+    """
+
+    @classmethod
+    def _initialize_cache(cls) -> None:
+        if not dir_exists(f"{cls._cache}/verification"):
+            with open(f"{cls._cache}/verification/codes.txt", "w") as f:
+                for i in range(100):
+                    code = "".join(
+                        random.choices(string.ascii_letters + string.digits, k=10)
+                    )
+                    f.write(f"{code} ")
+            logger.info("Two-step session cache initialised")
+
+    @classmethod
+    def get_random_code(cls) -> str:
+        cls._initialize_cache()
+        with open(f"{cls._cache}/verification/codes.txt", "r") as f:
+            return random.choice(f.read().split())
+
+    class Meta:
+        table = "two_step_session"
+
+
+class CaptchaSession(VerificationSession):
+    """
+    Validates a client as human with a captcha challenge.
+    """
+
+    @classmethod
+    def _initialize_cache(cls) -> None:
+        if not dir_exists(f"{cls._cache}/captcha"):
+            image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
+            for i in range(100):
+                code = "".join(
+                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
+                )
+                image.write(code, f"{cls._cache}/captcha/{code}.png")
+            logger.info("Captcha session cache initialised")
+
+    @classmethod
+    def get_random_code(cls) -> str:
+        cls._initialize_cache()
+        return random.choice(os.listdir(f"{cls._cache}/captcha")).split(".")[0]
+
+    async def get_image(self) -> HTTPResponse:
+        """
+        Retrieves captcha image file.
+
+        Returns:
+            captcha_image
+        """
+        return await file(f"{self._cache}/captcha/{self.code}.png")
+
+    class Meta:
+        table = "captcha_session"
+
+
+class AuthenticationSession(Session):
+    """
+    Used to authenticate a client and provide access to a user's account.
+
+    Attributes:
+        two_factor (bool): Determines if authentication session requires a second factor to be used for authentication.
+        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
+    """
+
+    two_factor = fields.BooleanField(default=False)
+    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.ctx.refresh_token = str(self.refresh_token)
+
     @classmethod
     async def redeem(cls, request: Request):
         """
@@ -354,147 +494,15 @@ class Session(BaseModel):
                 await decoded_session.save(update_fields=["active"])
                 return decoded_session
             else:
-                logger.warning(
-                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
-                )
                 await cls.filter(
                     bearer=decoded_session.bearer, active=True, deleted=False
                 ).update(active=False)
+                logger.warning(
+                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+                )
                 raise DeactivatedError("Invalid refresh token.")
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
-
-
-class VerificationSession(Session):
-    """
-    Used for a client verification method that requires some form of code, challenge, or key.
-
-    Attributes:
-        attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
-        code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
-        cache (str): Session cache path.
-    """
-
-    attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=10, null=True)
-    cache = security_config.CACHE
-
-    @classmethod
-    def _initialize_cache(cls):
-        """
-        Creates verification session cache and generates required files.
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def get_random_code(cls) -> str:
-        """
-        Retrieves a random cached verification session code.
-        """
-        raise NotImplementedError()
-
-    async def check_code(self, request: Request, code: str):
-        """
-        Used to check if code passed is equivalent to the session code.
-
-        Args:
-            code (str): Code being cross-checked with session code.
-            request (Request): Sanic request parameter.
-
-        Raises:
-            ChallengeError
-            UnrecognisedLocationError
-        """
-        await self.check_client_location(request)
-        if self.code != code:
-            if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
-                self.attempts += 1
-                await self.save(update_fields=["attempts"])
-                raise ChallengeError("The value provided does not match.")
-            else:
-                logger.warning(
-                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
-                )
-                self.active = False
-                await self.save(update_fields=["active"])
-                raise ChallengeError("The maximum amount of attempts has been reached.")
-        else:
-            self.active = False
-            await self.save(update_fields=["active"])
-
-    class Meta:
-        abstract = True
-
-
-class TwoStepSession(VerificationSession):
-    """
-    Validates a client using a code sent via email or text.
-    """
-
-    @classmethod
-    def _initialize_cache(cls):
-        if not dir_exists(f"{cls.cache}/verification"):
-            with open(f"{cls.cache}/verification/codes.txt", "w") as f:
-                for i in range(100):
-                    code = "".join(
-                        random.choices(string.ascii_letters + string.digits, k=10)
-                    )
-                    f.write(f"{code} ")
-            logger.info("Two-step session cache initialised")
-
-    @classmethod
-    def get_random_code(cls):
-        cls._initialize_cache()
-        with open(f"{cls.cache}/verification/codes.txt", "r") as f:
-            return random.choice(f.read().split())
-
-    class Meta:
-        table = "two_step_session"
-
-
-class CaptchaSession(VerificationSession):
-    """
-    Validates a client as human with a captcha challenge.
-    """
-
-    @classmethod
-    def _initialize_cache(cls):
-        if not dir_exists(f"{cls.cache}/captcha"):
-            image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
-            for i in range(100):
-                code = "".join(
-                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
-                )
-                image.write(code, f"{cls.cache}/captcha/{code}.png")
-            logger.info("Captcha session cache initialised")
-
-    @classmethod
-    def get_random_code(cls):
-        cls._initialize_cache()
-        return random.choice(os.listdir(f"{cls.cache}/captcha")).split(".")[0]
-
-    async def get_image(self) -> HTTPResponse:
-        """
-        Retrieves captcha image file.
-
-        Returns:
-            captcha_image
-        """
-        return await file(f"{self.cache}/captcha/{self.code}.png")
-
-    class Meta:
-        table = "captcha_session"
-
-
-class AuthenticationSession(Session):
-    """
-    Used to authenticate a client and provide access to a user's account.
-
-    Attributes:
-        two_factor (bool): Determines if authentication session requires a second factor to be used for authentication.
-    """
-
-    two_factor = fields.BooleanField(default=False)
 
     class Meta:
         table = "authentication_session"
@@ -502,7 +510,7 @@ class AuthenticationSession(Session):
 
 class SessionFactory:
     """
-    Used to create and retrieve a session with pre-determined values.
+    Used to create and retrieve a session with pre-set values.
     """
 
     async def get(
@@ -577,10 +585,10 @@ class Role(BaseModel):
     description = fields.CharField(max_length=255)
     permissions = fields.CharField(max_length=255, null=True)
 
-    def validate(self):
+    def validate(self) -> None:
         raise NotImplementedError()
 
-    def json(self):
+    def json(self) -> dict:
         return {
             "id": self.id,
             "date_created": str(self.date_created),

@@ -1,7 +1,6 @@
 import base64
 import functools
 import re
-import traceback
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -11,7 +10,6 @@ from tortoise.exceptions import IntegrityError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
-    AccountError,
     SessionError,
     NotFoundError,
     CredentialsError,
@@ -38,26 +36,26 @@ async def register(
         account
 
     Raises:
-        AccountError
+        CredentialsError
     """
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
-        raise AccountError("Please use a valid email such as you@mail.com.", 400)
+        raise CredentialsError("Please use a valid email such as you@mail.com.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
-        raise AccountError(
+        raise CredentialsError(
             "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
             400,
         )
     if request.form.get("phone") and not re.search(
         r"^[0-9]{11,14}$", request.form.get("phone")
     ):
-        raise AccountError(
+        raise CredentialsError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
             400,
         )
     if 100 > len(request.form.get("password")) > 8:
-        raise AccountError(
+        raise CredentialsError(
             "Password must have more than 8 characters and must be less than 100 characters.",
             400,
         )
@@ -71,10 +69,9 @@ async def register(
             disabled=disabled,
         )
         return account
-    except IntegrityError as e:
-        traceback.print_exception(type(e), e, e.__traceback__)
-        raise AccountError(
-            "Could not register account. Please use a unique email and phone.",
+    except IntegrityError:
+        raise CredentialsError(
+            "Could not register account. Please use unique account credentials.",
             400,
         )
 
@@ -87,7 +84,7 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into. If None, an account is retrieved via credentials found in the authorization header.
+        account (Account): Account being logged into. If None, an account is retrieved via credentials in the authorization header.
         two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
@@ -104,17 +101,15 @@ async def login(
                 base64.b64decode(credentials).decode().split(":")
             )
         else:
-            raise CredentialsError("Invalid authorization type.")
+            raise CredentialsError("Invalid authorization header type.")
     else:
         raise CredentialsError("Credentials not provided.")
     if not account:
         try:
             account = await Account.get_via_email(email_or_username)
-        except NotFoundError as e:
+        except NotFoundError:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(email_or_username)
-            else:
-                raise e
     try:
         password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
@@ -135,11 +130,11 @@ async def refresh_authentication(
     request: Request, two_factor: bool = False
 ) -> AuthenticationSession:
     """
-    Refresh expired client authentication session without having to login.
+    Refresh expired authentication session without having to ask the user to login again.
 
     Args:
         request (Request): Sanic request parameter.
-        two_factor: enables or disables second factor requirement for the new authentication session.
+        two_factor: Enables or disables second factor requirement for the new authentication session.
 
     Raises:
         DeactivatedError
@@ -178,7 +173,7 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
     return authentication_session
 
 
-async def logout(authentication_session: AuthenticationSession):
+async def logout(authentication_session: AuthenticationSession) -> None:
     """
     Deactivates client's authentication session and revokes access.
 
@@ -191,7 +186,7 @@ async def logout(authentication_session: AuthenticationSession):
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Used to determine if the client is authenticated.
+    Authenticates client.
 
     Args:
         request (Request): Sanic request parameter.
@@ -219,7 +214,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication():
     """
-    Used to determine if the client is authenticated.
+    Authenticates client.
 
     Example:
         This method is not called directly and instead used as a decorator:

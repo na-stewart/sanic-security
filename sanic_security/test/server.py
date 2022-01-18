@@ -103,8 +103,8 @@ async def on_login_second_factor(request, two_step_verification):
 @app.post("api/test/auth/refresh")
 async def on_refresh(request):
     """
-    Refresh client authentication session with a new session via the session's refresh token. However, the new authentication
-    session is never encoded. Due to the fact  that the new session isn't encoded, attempting to refresh again will
+    Refresh client authentication session with a new session via the client session's refresh token. However, the new authentication
+    session is never encoded. Due to the fact that the new session isn't encoded, attempting to refresh again will
     result in an error as a refresh token should only be used once.
     """
     refreshed_authentication_session = await refresh_authentication(request)

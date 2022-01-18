@@ -65,7 +65,7 @@ class Config(dict):
     ALLOW_LOGIN_WITH_USERNAME: bool
     TEST_DATABASE_URL: str
 
-    def load_environment_variables(self, load_env="SANIC_SECURITY_"):
+    def load_environment_variables(self, load_env="SANIC_SECURITY_") -> None:
         """
         Any environment variables defined with the prefix argument will be applied to the config.
 

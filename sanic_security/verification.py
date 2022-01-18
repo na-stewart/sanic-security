@@ -1,4 +1,5 @@
 import functools
+from contextlib import suppress
 
 from sanic.request import Request
 
@@ -16,7 +17,7 @@ async def request_two_step_verification(
     request: Request, account: Account = None
 ) -> TwoStepSession:
     """
-    Creates a two-step session associated with an account.
+    Creates a two-step session.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
@@ -28,13 +29,12 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
-    try:
+    with suppress(NotFoundError, JWTDecodeError):
         two_step_session = await TwoStepSession.decode(request)
-        if two_step_session.active:
-            two_step_session.active = False
-            await two_step_session.save(update_fields=["active"])
-    except JWTDecodeError or NotFoundError:
-        pass
+        two_step_session.active = False
+        await two_step_session.save(
+            update_fields=["active"]
+        )  # Deactivates client's existing session.
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await session_factory.get("two-step", request, account)
@@ -58,6 +58,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
         DisabledError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
 
     Returns:
          two_step_session
@@ -87,6 +88,7 @@ async def verify_account(
         DeactivatedError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
         AccountError
 
     Returns:
@@ -124,6 +126,7 @@ def requires_two_step_verification():
         DeactivatedError
         UnrecognisedLocationError
         ChallengeError
+        MaxedOutChallengeError
     """
 
     def wrapper(func):

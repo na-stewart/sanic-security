@@ -8,7 +8,7 @@ class SecurityError(SanicException):
     Sanic Security related error.
 
     Attributes:
-        json_response (HTTPResponse): Security Error json response.
+        json_response (HTTPResponse): Security error json response.
 
     Args:
         message (str): Human readable error message.
@@ -75,6 +75,11 @@ class ExpiredError(SessionError):
 class ChallengeError(SessionError):
     def __init__(self, message):
         super().__init__(message, 401)
+
+
+class MaxedOutChallengeError(ChallengeError):
+    def __init__(self):
+        super().__init__("The maximum amount of attempts has been reached.")
 
 
 class AuthorizationError(SecurityError):

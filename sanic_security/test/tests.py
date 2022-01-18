@@ -224,7 +224,7 @@ class LoginTest(TestCase):
         )
         assert authenticate_response.status_code == 200, authenticate_response.text
 
-    def test_session_refresh(self):
+    def test_authentication_refresh(self):
         """
         Refresh client authentication session with a new session via the session's refresh token.
         """
