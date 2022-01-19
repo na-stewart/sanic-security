@@ -56,7 +56,7 @@ async def register(
         )
     if 100 > len(request.form.get("password")) > 8:
         raise CredentialsError(
-            "Password must have more than 8 characters and must be less than 100 characters.",
+            "Password must be more than 8 characters and must be less than 100 characters.",
             400,
         )
     try:
