@@ -80,17 +80,17 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
+* Install the Sanic Security pip package with the `cryptography` dependency included.
+
+This is required when encoding and decoding JWT's with a private and public key.
+
+```shell
+pip3 install sanic-security[crypto]
+````
+
 * For developers, fork Sanic Security and install development dependencies.
 ```shell
 pip3 install -e ".[dev]"
-````
-
-* Install the Sanic Security pip package with the `cryptography` dependency.
-
-This will be required for encoding and decoding JWT's with RSA. 
-
-```shell
-pip3 install -e ".[crypto]"
 ````
 
 ### Configuration
