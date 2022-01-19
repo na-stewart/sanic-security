@@ -82,7 +82,7 @@ pip3 install sanic-security
 
 * Install the Sanic Security pip package with the `cryptography` dependency included.
 
-This is required when encoding and decoding JWT's with a private and public key.
+This is required when encoding and decoding JWTs with a private and public key.
 
 ```shell
 pip3 install sanic-security[crypto]
