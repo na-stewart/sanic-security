@@ -126,7 +126,7 @@ Key | Value | Description |
 **SESSION_HTTPONLY** | True | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
 **SESSION_DOMAIN** | None | The Domain attribute of session cookies.
 **SESSION_EXPIRES_ON_CLIENT** | False | When true, session cookies are removed from the clients browser when the session expires.
-**SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode sessions to a JWT.
+**SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode and decode session JWTs.
 **SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
 **MAX_CHALLENGE_ATTEMPTS** | 5 | The maximum amount of session challenge attempts allowed.
 **CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
