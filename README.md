@@ -80,6 +80,14 @@ sudo apt-get install python3-pip
 pip3 install sanic-security
 ````
 
+* Install the Sanic Security pip package with the `cryptography` dependency included.
+
+This is required when encoding and decoding JWT's with a private and public key.
+
+```shell
+pip3 install sanic-security[crypto]
+````
+
 * For developers, fork Sanic Security and install development dependencies.
 ```shell
 pip3 install -e ".[dev]"
@@ -111,6 +119,7 @@ You can load environment variables with a different prefix via calling the `conf
 Key | Value | Description |
 --- | --- |  --- |
 **SECRET** | This is a big secret. Shhhhh | The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
+**PUBLIC_SECRET** | None | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
 **CACHE** | ./security-cache | The path used for caching.
 **SESSION_SAMESITE** | strict | The SameSite attribute of session cookies.
 **SESSION_SECURE** | False | The Secure attribute of session cookies.

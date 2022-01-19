@@ -4,6 +4,7 @@ from sanic.utils import str_to_bool
 
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
+    "PUBLIC_SECRET": None,
     "CACHE": "./security-cache",
     "SESSION_SAMESITE": "strict",
     "SESSION_SECURE": False,
@@ -29,6 +30,7 @@ class Config(dict):
 
     Attributes:
         SECRET (str): The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
+        PUBLIC_SECRET (str): The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
         CACHE (str): The path used for caching.
         SESSION_SAMESITE (str): The SameSite attribute of session cookies.
         SESSION_SECURE (bool): The Secure attribute of session cookies.
@@ -48,6 +50,7 @@ class Config(dict):
     """
 
     SECRET: str
+    PUBLIC_SECRET: str
     CACHE: str
     SESSION_SAMESITE: str
     SESSION_SECURE: bool

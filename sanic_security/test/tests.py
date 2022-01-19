@@ -141,6 +141,10 @@ class LoginTest(TestCase):
             auth=("emailpass@login.com", "testtest"),
         )
         assert login_response.status_code == 200, login_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_login_with_username(self):
         """
@@ -155,6 +159,10 @@ class LoginTest(TestCase):
             auth=("username_login_test", "testtest"),
         )
         assert login_response.status_code == 200, login_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_invalid_login(self):
         """
@@ -293,6 +301,13 @@ class VerificationTest(TestCase):
         assert (
             two_step_verification_request_response.status_code == 200
         ), two_step_verification_request_response.text
+        two_step_verification_invalid_attempt_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/two-step",
+            data={"code": "123xyz"},
+        )
+        assert (
+            two_step_verification_invalid_attempt_response == 401
+        ), two_step_verification_invalid_attempt_response.text
         two_step_verification_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step",
             data={
