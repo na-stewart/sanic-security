@@ -23,8 +23,15 @@ setup(
         "argon2-cffi>=20.1.0",
     ],
     extras_require={
-        "dev": ["httpx>=0.13.0", "black", "blacken-docs", "sanic>=21.3.0", "pdoc3"],
-        "crypto": ["cryptography>=3.3.1"]
+        "dev": [
+            "httpx>=0.13.0",
+            "black",
+            "blacken-docs",
+            "sanic>=21.3.0",
+            "pdoc3",
+            "cryptography>=3.3.1",
+        ],
+        "crypto": ["cryptography>=3.3.1"],
     },
     platforms="any",
 )
