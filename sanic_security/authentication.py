@@ -17,10 +17,6 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
 
-session_factory = SessionFactory()
-password_hasher = PasswordHasher()
-
-
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2021 Aidan Stewart
@@ -39,9 +35,12 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+session_factory = SessionFactory()
+password_hasher = PasswordHasher()
+
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+        request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account.
@@ -58,7 +57,7 @@ async def register(
         CredentialsError
     """
     if not re.search(
-        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
+            r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
         raise CredentialsError("Please use a valid email such as you@mail.com.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
@@ -67,7 +66,7 @@ async def register(
             400,
         )
     if request.form.get("phone") and not re.search(
-        r"^[0-9]{11,14}$", request.form.get("phone")
+            r"^[0-9]{11,14}$", request.form.get("phone")
     ):
         raise CredentialsError(
             "Please use a valid phone format such as 15621435489 or 19498963648018.",
@@ -96,7 +95,7 @@ async def register(
 
 
 async def login(
-    request: Request, account: Account = None, two_factor: bool = False
+        request: Request, account: Account = None, two_factor: bool = False
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
@@ -146,7 +145,7 @@ async def login(
 
 
 async def refresh_authentication(
-    request: Request, two_factor: bool = False
+        request: Request, two_factor: bool = False
 ) -> AuthenticationSession:
     """
     Refresh expired authentication session without having to ask the user to login again.
