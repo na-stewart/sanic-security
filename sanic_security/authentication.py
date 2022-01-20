@@ -17,6 +17,7 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, SessionFactory, AuthenticationSession
 from sanic_security.utils import get_ip
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2021 Aidan Stewart
@@ -34,6 +35,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
