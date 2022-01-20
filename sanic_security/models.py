@@ -80,7 +80,7 @@ class Account(BaseModel):
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
-        roles (ManyToManyRelation): Roles associated with this account.
+        roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
     username = fields.CharField(max_length=32)
@@ -89,8 +89,8 @@ class Account(BaseModel):
     password = fields.CharField(max_length=255)
     disabled = fields.BooleanField(default=False)
     verified = fields.BooleanField(default=False)
-    roles = fields.ManyToManyField(
-        "models.Role", related_name="roles", through="account_role"
+    roles: fields.ManyToManyRelation["Role"] = fields.ManyToManyField(
+        "models.Role", through="account_role"
     )
 
     def json(self) -> dict:
@@ -135,7 +135,7 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(email=email).get()
+            account = await Account.filter(email=email, deleted=False).get()
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this email does not exist.")
@@ -155,7 +155,7 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(username=username).get()
+            account = await Account.filter(username=username, deleted=False).get()
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this username does not exist.")
@@ -175,7 +175,7 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(phone=phone).get()
+            account = await Account.filter(phone=phone, deleted=False).get()
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this phone number does not exist.")
@@ -190,7 +190,7 @@ class Session(BaseModel):
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
-        bearer (Account): Account associated with this session.
+        bearer (ForeignKeyRelation[Account]): Account associated with this session.
         ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
@@ -198,7 +198,9 @@ class Session(BaseModel):
     active = fields.BooleanField(default=True)
     ip = fields.CharField(max_length=16)
     token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
-    bearer = fields.ForeignKeyField("models.Account", null=True)
+    bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
+        "models.Account", null=True
+    )
     ctx = SimpleNamespace()
 
     def __init__(self, **kwargs):
