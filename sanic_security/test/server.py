@@ -27,10 +27,6 @@ from sanic_security.verification import (
     verify_account,
 )
 
-app = Sanic("test")
-session_factory = SessionFactory()
-password_hasher = PasswordHasher()
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -49,6 +45,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
+
+app = Sanic("test")
+session_factory = SessionFactory()
+password_hasher = PasswordHasher()
 
 
 @app.post("api/test/auth/register")
