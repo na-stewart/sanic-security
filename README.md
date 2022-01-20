@@ -82,7 +82,9 @@ pip3 install sanic-security
 
 * Install the Sanic Security pip package with the `cryptography` dependency included.
 
-This is required when encoding and decoding JWTs with a private and public key.
+If you are planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
+the public and private secrets), you will need to install the `cryptography` library. This can be installed explicitly, or 
+as a required extra in the `sanic-security` requirement.
 
 ```shell
 pip3 install sanic-security[crypto]
@@ -118,7 +120,7 @@ You can load environment variables with a different prefix via calling the `conf
 
 Key | Value | Description |
 --- | --- |  --- |
-**SECRET** | This is a big secret. Shhhhh | The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
+**SECRET** | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
 **PUBLIC_SECRET** | None | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
 **CACHE** | ./security-cache | The path used for caching.
 **SESSION_SAMESITE** | strict | The SameSite attribute of session cookies.
@@ -382,8 +384,7 @@ role (or roles), management of individual user rights becomes a matter of simply
 user's account; this simplifies common operations, such as adding a user, or changing a user's department. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`, `printer:query,delete`, and/or `printer:*`.
-
+`printer:query`, `printer:query,delete`, or `printer:*`. Inspired by [Apache Shiro](https://shiro.apache.org/permissions.html#multiple-parts).
 * Assign Role
 
 ```python
@@ -476,7 +477,7 @@ tour = await Tournament.filter(name__contains="Another").first()
 print(tour.name)
 ```
 
-*Support for SQLAlchemy coming soon.*
+*Support for SQLAlchemy and more coming soon.*
 
 
 <!-- CONTRIBUTING -->
