@@ -366,7 +366,7 @@ class AuthorizationTest(TestCase):
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles/assign",
             data={
-                "name": "AuthTestRole",
+                "name": "AuthTestPerms",
                 "permissions": "perm1:create,add, perm2:delete",
             },
         )
