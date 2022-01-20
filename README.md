@@ -83,7 +83,7 @@ pip3 install sanic-security
 * Install the Sanic Security pip package with the `cryptography` dependency included.
 
 If you are planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
-the public and private secrets), you will need to install the `cryptography` library. This can be installed explicitly, or 
+the public secret and private secret), you will need to install the `cryptography` library. This can be installed explicitly, or 
 as a required extra in the `sanic-security` requirement.
 
 ```shell
