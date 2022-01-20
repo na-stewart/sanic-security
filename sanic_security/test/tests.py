@@ -152,7 +152,7 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "userpass@login.com", "username": "username_login_test"},
+            data={"email": "userpass@login.com", "username": "username_test"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
