@@ -373,7 +373,7 @@ class AuthorizationTest(TestCase):
         permitted_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
-                "role": "AuthTestRole",
+                "role": "AuthTestPerms",
                 "permissions_required": "perm1:create,add, perm2:*",
             },
         )
@@ -383,7 +383,7 @@ class AuthorizationTest(TestCase):
         prohibited_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
-                "role": "AuthTestRole",
+                "role": "AuthTestPerms",
                 "permissions_required": "perm2:add, perm1:delete",
             },
         )
