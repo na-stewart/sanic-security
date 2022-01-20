@@ -35,9 +35,10 @@ async def check_permissions(
         AuthorizationError
     """
     authentication_session = await authenticate(request)
-    async for account_role in authentication_session.bearer.roles:
+    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    for role in roles:
         for required_permission, role_permission in zip(
-            required_permissions, account_role.permissions.split(", ")
+            required_permissions, role.permissions.split(", ")
         ):
             if fnmatch(required_permission, role_permission):
                 return authentication_session
@@ -69,8 +70,9 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         AuthorizationError
     """
     authentication_session = await authenticate(request)
-    async for account_role in authentication_session.bearer.roles:
-        if account_role.name in required_roles:
+    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    for role in roles:
+        if role.name in required_roles:
             return authentication_session
     logging.warning(
         f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient roles."
