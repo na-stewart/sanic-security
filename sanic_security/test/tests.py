@@ -156,7 +156,7 @@ class LoginTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("username_login_test", "testtest"),
+            auth=("username_test", "testtest"),
         )
         assert login_response.status_code == 200, login_response.text
         authenticate_response = self.client.post(
