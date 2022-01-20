@@ -6,8 +6,6 @@ from sanic import Request
 from sanic_security.exceptions import NotFoundError, JWTDecodeError
 from sanic_security.models import CaptchaSession, SessionFactory
 
-session_factory = SessionFactory()
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -26,6 +24,9 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
+
+session_factory = SessionFactory()
 
 
 async def request_captcha(request: Request) -> CaptchaSession:
