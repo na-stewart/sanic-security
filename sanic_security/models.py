@@ -285,9 +285,13 @@ class Session(BaseModel):
             **self.ctx.__dict__,
         }
         cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
-        response.cookies[cookie] = jwt.encode(
+        encoded_session = jwt.encode(
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
+        if isinstance(encoded_session, bytes):
+            response.cookies[cookie] = encoded_session.decode()
+        elif isinstance(encoded_session, str):
+            response.cookies[cookie] = encoded_session
         response.cookies[cookie]["httponly"] = security_config.SESSION_HTTPONLY
         response.cookies[cookie]["samesite"] = security_config.SESSION_SAMESITE
         response.cookies[cookie]["secure"] = security_config.SESSION_SECURE
