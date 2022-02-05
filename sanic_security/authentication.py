@@ -127,9 +127,11 @@ async def login(
     if not account:
         try:
             account = await Account.get_via_email(email_or_username)
-        except NotFoundError:
+        except NotFoundError as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(email_or_username)
+            else:
+                raise e
     try:
         password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
