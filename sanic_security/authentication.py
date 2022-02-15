@@ -44,9 +44,6 @@ password_hasher = PasswordHasher()
 def generate_initial_admin(app: Sanic):
     """
     Creates the initial admin account that can be logged into and has complete authoritative access.
-
-    Raises:
-        AccountError
     """
 
     @app.listener("before_server_start")
