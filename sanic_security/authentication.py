@@ -4,6 +4,7 @@ import re
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import IntegrityError
@@ -14,7 +15,7 @@ from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
 )
-from sanic_security.models import Account, SessionFactory, AuthenticationSession
+from sanic_security.models import Account, SessionFactory, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 
@@ -36,9 +37,33 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-
 session_factory = SessionFactory()
 password_hasher = PasswordHasher()
+
+
+def generate_initial_admin(app: Sanic):
+    """
+    Creates the initial admin account that can be logged into.
+
+    Raises:
+        AccountError
+    """
+
+    @app.listener("before_server_start")
+    async def generate(app, loop):
+        if not await Account.filter(email=security_config.INITIAL_ADMIN_EMAIL).exists():
+            account = await Account.create(
+                username="Admin",
+                email=security_config.INITIAL_ADMIN_EMAIL,
+                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
+                verified=True,
+            )
+            role = await Role.create(
+                description="Has the ability to control any aspect of the API. Assign sparingly.",
+                permissions="*:*",
+                name="Admin",
+            )
+            await account.roles.add(role)
 
 
 async def register(
@@ -91,8 +116,8 @@ async def register(
         return account
     except IntegrityError:
         raise CredentialsError(
-            "Could not register account. Please use unique account credentials.",
-            400,
+            "An account with these credentials may already exists.",
+            409,
         )
 
 

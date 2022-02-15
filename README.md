@@ -136,6 +136,8 @@ Key | Value | Description |
 **TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
 **AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
 **ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
+**INITIAL_ADMIN_EMAIL** | admin@example.com | Email used when generating the initial admin account.
+**INITIAL_ADMIN_PASSWORD** | admin123 | Password used when generating the initial admin account.
 **TEST_DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use for testing.
 
 ## Usage
@@ -150,6 +152,17 @@ against the session information stored in the database to verify user’s identi
 The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
+
+* Initial Admin Generation
+
+The initial admin account can be logged into and has complete authoritative access. The credentials for this account 
+are set via config.
+
+```python
+generate_initial_admin(app)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000)
+```
 
 * Registration
 

@@ -40,6 +40,8 @@ DEFAULT_CONFIG = {
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "AUTHENTICATION_SESSION_REFRESH": True,
     "ALLOW_LOGIN_WITH_USERNAME": False,
+    "INITIAL_ADMIN_EMAIL": "admin@example.com",
+    "INITIAL_ADMIN_PASSWORD": "admin123",
     "TEST_DATABASE_URL": "sqlite://:memory:",
 }
 
@@ -66,6 +68,8 @@ class Config(dict):
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
         AUTHENTICATION_SESSION_REFRESH (bool): A refresh token can be used to generate a new session instead of reauthenticating.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
+        INITIAL_ADMIN_EMAIL (str): Email used when generating the initial admin account.
+        INITIAL_ADMIN_PASSWORD (str) Password used when generating the initial admin account.
         TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
     """
 
@@ -86,6 +90,8 @@ class Config(dict):
     AUTHENTICATION_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_REFRESH: bool
     ALLOW_LOGIN_WITH_USERNAME: bool
+    INITIAL_ADMIN_EMAIL: str
+    INITIAL_ADMIN_PASSWORD: str
     TEST_DATABASE_URL: str
 
     def load_environment_variables(self, load_env="SANIC_SECURITY_") -> None:

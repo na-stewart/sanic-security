@@ -10,6 +10,7 @@ from sanic_security.authentication import (
     requires_authentication,
     logout,
     refresh_authentication,
+    generate_initial_admin,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -291,5 +292,6 @@ register_tortoise(
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
+generate_initial_admin(app)
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True, workers=1)
+    app.run(host="127.0.0.1", port=8000, workers=1, debug=True)

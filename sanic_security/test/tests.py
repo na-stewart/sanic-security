@@ -275,6 +275,26 @@ class LoginTest(TestCase):
             invalid_refresh_response.status_code == 401
         ), invalid_refresh_response.text
 
+    def test_initial_admin_login(self):
+        """
+        Initial admin account login and authorization.
+        """
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            auth=("admin@example.com", "admin123"),
+        )
+        assert login_response.status_code == 200, login_response.text
+        permitted_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "Admin",
+                "permissions_required": "perm1:create,add, perm2:*",
+            },
+        )
+        assert (
+            permitted_authorization_response.status_code == 200
+        ), permitted_authorization_response.text
+
 
 class VerificationTest(TestCase):
     """
