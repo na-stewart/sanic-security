@@ -155,8 +155,8 @@ The tables in the below examples represent example request `form-data` (https://
 
 * Initial Admin Generation
 
-The initial admin account can be logged into and has complete authoritative access. The credentials for this account 
-are set via config.
+The initial admin account is generated on startup, can be logged into, and has complete authoritative access.
+The credentials for this account are set via config.
 
 ```python
 generate_initial_admin(app)
