@@ -123,7 +123,7 @@ async def register(
         return account
     except IntegrityError:
         raise CredentialsError(
-            "An account with these credentials may already exists.",
+            "An account with these credentials may already exist.",
             409,
         )
 
