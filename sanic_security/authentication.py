@@ -7,7 +7,7 @@ from argon2.exceptions import VerifyMismatchError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError
+from tortoise.exceptions import IntegrityError, DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
@@ -48,17 +48,26 @@ def generate_initial_admin(app: Sanic):
 
     @app.listener("before_server_start")
     async def generate(app, loop):
-        if not await Account.filter(email=security_config.INITIAL_ADMIN_EMAIL).exists():
-            account = await Account.create(
-                username="Admin",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
-                verified=True,
-            )
+        try:
+            role = await Role.filter(name="Head Admin").get()
+        except DoesNotExist:
             role = await Role.create(
                 description="Has the ability to control any aspect of the API. Assign sparingly.",
                 permissions="*:*",
-                name="Admin",
+                name="Head Admin",
+            )
+        try:
+            account = await Account.filter(username="Head Admin").get()
+            await account.fetch_related('roles')
+            if role not in account.roles:
+                await account.roles.add(role)
+                logger.warning("The initial admin account role \"Head Admin\" was removed and has been reinstated.")
+        except DoesNotExist:
+            account = await Account.create(
+                username="Head Admin",
+                email=security_config.INITIAL_ADMIN_EMAIL,
+                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
+                verified=True,
             )
             await account.roles.add(role)
             logger.info("Initial admin account generated.")
