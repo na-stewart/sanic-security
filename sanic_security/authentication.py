@@ -61,6 +61,7 @@ def generate_initial_admin(app: Sanic):
                 name="Admin",
             )
             await account.roles.add(role)
+            logger.info("Initial admin account generated.")
 
 
 async def register(
