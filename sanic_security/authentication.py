@@ -58,10 +58,12 @@ def generate_initial_admin(app: Sanic):
             )
         try:
             account = await Account.filter(username="Head Admin").get()
-            await account.fetch_related('roles')
+            await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
-                logger.warning("The initial admin account role \"Head Admin\" was removed and has been reinstated.")
+                logger.warning(
+                    'The initial admin account role "Head Admin" was removed and has been reinstated.'
+                )
         except DoesNotExist:
             account = await Account.create(
                 username="Head Admin",
