@@ -46,7 +46,7 @@ def generate_initial_admin(app: Sanic):
     Creates the initial admin account that can be logged into and has complete authoritative access.
 
     Args:
-        app (Sanic): Sanic app.
+        app (Sanic): The main Sanic application instance.
     """
 
     @app.listener("before_server_start")
