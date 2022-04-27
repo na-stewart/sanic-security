@@ -268,7 +268,7 @@ class Session(BaseModel):
             )
             raise UnrecognisedLocationError()
 
-    def encode(self, response: HTTPResponse):
+    def encode(self, response: HTTPResponse) -> None:
         """
         Transforms session into jwt and then is stored in a cookie.
 
@@ -605,7 +605,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be seperated via comma and in wildcard format (printer:query, printer:query,delete).
+        permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
     name = fields.CharField(max_length=255)
