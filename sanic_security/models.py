@@ -430,14 +430,14 @@ class TwoStepSession(VerificationSession):
             with open(f"{security_config.CACHE}/verification/codes.txt", "w") as f:
                 for i in range(100):
                     code = "".join(random.choices(string.digits, k=6))
-                    f.write(f"{code} ")
+                    f.write(f"{code}\n")
             logger.info("Two-step session cache initialised")
 
     @classmethod
     def get_random_code(cls) -> str:
         cls._initialize_cache()
         with open(f"{security_config.CACHE}/verification/codes.txt", "r") as f:
-            return random.choice(f.read().split())
+            return random.choice(f.readlines())
 
     class Meta:
         table = "two_step_session"
