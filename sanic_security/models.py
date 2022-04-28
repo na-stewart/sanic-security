@@ -488,8 +488,8 @@ class AuthenticationSession(Session):
         refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
     """
 
-    two_factor = fields.BooleanField(default=False)
-    refresh_token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    two_factor: bool = fields.BooleanField(default=False)
+    refresh_token: uuid.UUID = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
