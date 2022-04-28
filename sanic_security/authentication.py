@@ -41,43 +41,6 @@ session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
 
-def generate_initial_admin(app: Sanic):
-    """
-    Creates the initial admin account that can be logged into and has complete authoritative access.
-
-    Args:
-        app (Sanic): The main Sanic application instance.
-    """
-
-    @app.listener("before_server_start")
-    async def generate(app, loop):
-        try:
-            role = await Role.filter(name="Head Admin").get()
-        except DoesNotExist:
-            role = await Role.create(
-                description="Has the ability to control any aspect of the API. Assign sparingly.",
-                permissions="*:*",
-                name="Head Admin",
-            )
-        try:
-            account = await Account.filter(username="Head Admin").get()
-            await account.fetch_related("roles")
-            if role not in account.roles:
-                await account.roles.add(role)
-                logger.warning(
-                    'The initial admin account role "Head Admin" was removed and has been reinstated.'
-                )
-        except DoesNotExist:
-            account = await Account.create(
-                username="Head Admin",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
-                verified=True,
-            )
-            await account.roles.add(role)
-            logger.info("Initial admin account generated.")
-
-
 async def register(
     request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:

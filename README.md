@@ -151,18 +151,15 @@ against the session information stored in the database to verify user’s identi
 
 The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
-## Authentication
-
-* Initial Admin Generation
-
-The initial admin account is generated on startup, can be logged into, and has complete authoritative access.
-The credentials for this account are set via config.
+You can create the initial administrator account via the example below. This account can be logged into and has complete authoritative access.
 
 ```python
 generate_initial_admin(app)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)
 ```
+
+## Authentication
 
 * Registration
 
