@@ -1,14 +1,7 @@
 import os
 
-from sanic import Sanic
-from sanic.log import logger
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
-from tortoise.exceptions import DoesNotExist
-
-from sanic_security.authentication import password_hasher
-from sanic_security.configuration import config as security_config
-from sanic_security.models import Role, Account
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -75,40 +68,3 @@ def json(message: str, data, status_code: int = 200) -> HTTPResponse:
     return sanic_json(
         {"message": message, "code": status_code, "data": data}, status=status_code
     )
-
-
-def generate_initial_admin(app: Sanic):
-    """
-    Creates the initial admin account that can be logged into and has complete authoritative access.
-
-    Args:
-        app (Sanic): The main Sanic application instance.
-    """
-
-    @app.listener("before_server_start")
-    async def generate(app, loop):
-        try:
-            role = await Role.filter(name="Head Admin").get()
-        except DoesNotExist:
-            role = await Role.create(
-                description="Has the ability to control any aspect of the API. Assign sparingly.",
-                permissions="*:*",
-                name="Head Admin",
-            )
-        try:
-            account = await Account.filter(username="Head Admin").get()
-            await account.fetch_related("roles")
-            if role not in account.roles:
-                await account.roles.add(role)
-                logger.warning(
-                    'The initial admin account role "Head Admin" was removed and has been reinstated.'
-                )
-        except DoesNotExist:
-            account = await Account.create(
-                username="Head Admin",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
-                verified=True,
-            )
-            await account.roles.add(role)
-            logger.info("Initial admin account generated.")

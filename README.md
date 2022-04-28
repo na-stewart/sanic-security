@@ -154,7 +154,7 @@ The tables in the below examples represent example request `form-data` (https://
 You can create the initial administrator account via the example below. This account can be logged into and has complete authoritative access.
 
 ```python
-generate_initial_admin(app)
+create_initial_admin_account(app)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)
 ```
