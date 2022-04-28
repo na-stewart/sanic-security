@@ -299,7 +299,8 @@ async def on_authenticated(request, authentication_session):
 
 ## Captcha
 
-You must download a .ttf font for captcha challenges and define the file's path in the configuration.
+A pre-existing font for captcha challenges is included with sanic-security. If you wanted to change the font, it's very easy to do so.
+You must simply download a .ttf font and define the file's path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
