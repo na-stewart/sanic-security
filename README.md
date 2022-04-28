@@ -490,9 +490,6 @@ tour = await Tournament.filter(name__contains="Another").first()
 print(tour.name)
 ```
 
-*Support for SQLAlchemy and more coming soon.*
-
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
