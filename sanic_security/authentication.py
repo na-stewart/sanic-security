@@ -266,7 +266,7 @@ def requires_authentication():
     return wrapper
 
 
-def create_initial_admin_account(app: Sanic):
+def create_initial_admin_account(app: Sanic) -> None:
     """
     Creates the initial admin account that can be logged into and has complete authoritative access.
 
