@@ -49,10 +49,10 @@ class BaseModel(Model):
         deleted (bool): Renders the model filterable without removing from the database.
     """
 
-    id = fields.IntField(pk=True)
-    date_created = fields.DatetimeField(auto_now_add=True)
-    date_updated = fields.DatetimeField(auto_now=True)
-    deleted = fields.BooleanField(default=False)
+    id: int = fields.IntField(pk=True)
+    date_created: datetime.datetime = fields.DatetimeField(auto_now_add=True)
+    date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
+    deleted: bool = fields.BooleanField(default=False)
 
     def validate(self) -> None:
         """
@@ -102,12 +102,12 @@ class Account(BaseModel):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    username = fields.CharField(max_length=32)
-    email = fields.CharField(unique=True, max_length=255)
-    phone = fields.CharField(unique=True, max_length=14, null=True)
-    password = fields.CharField(max_length=255)
-    disabled = fields.BooleanField(default=False)
-    verified = fields.BooleanField(default=False)
+    username: str = fields.CharField(max_length=32)
+    email: str = fields.CharField(unique=True, max_length=255)
+    phone: str = fields.CharField(unique=True, max_length=14, null=True)
+    password: str = fields.CharField(max_length=255)
+    disabled: bool = fields.BooleanField(default=False)
+    verified: bool = fields.BooleanField(default=False)
     roles: fields.ManyToManyRelation["Role"] = fields.ManyToManyField(
         "models.Role", through="account_role"
     )
@@ -213,10 +213,10 @@ class Session(BaseModel):
         ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
-    expiration_date = fields.DatetimeField(null=True)
-    active = fields.BooleanField(default=True)
-    ip = fields.CharField(max_length=16)
-    token = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    expiration_date: datetime.datetime = fields.DatetimeField(null=True)
+    active: bool = fields.BooleanField(default=True)
+    ip: str = fields.CharField(max_length=16)
+    token: uuid.UUID = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
         "models.Account", null=True
     )
@@ -370,9 +370,8 @@ class VerificationSession(Session):
         code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
     """
 
-    attempts = fields.IntField(default=0)
-    code = fields.CharField(max_length=10, null=True)
-    _cache = security_config.CACHE
+    attempts: int = fields.IntField(default=0)
+    code: str = fields.CharField(max_length=10, null=True)
 
     @classmethod
     def _initialize_cache(cls) -> None:
@@ -427,19 +426,17 @@ class TwoStepSession(VerificationSession):
 
     @classmethod
     def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{cls._cache}/verification"):
-            with open(f"{cls._cache}/verification/codes.txt", "w") as f:
+        if not dir_exists(f"{security_config.CACHE}/verification"):
+            with open(f"{security_config.CACHE}/verification/codes.txt", "w") as f:
                 for i in range(100):
-                    code = "".join(
-                        random.choices(string.ascii_letters + string.digits, k=10)
-                    )
+                    code = "".join(random.choices(string.digits, k=6))
                     f.write(f"{code} ")
             logger.info("Two-step session cache initialised")
 
     @classmethod
     def get_random_code(cls) -> str:
         cls._initialize_cache()
-        with open(f"{cls._cache}/verification/codes.txt", "r") as f:
+        with open(f"{security_config.CACHE}/verification/codes.txt", "r") as f:
             return random.choice(f.read().split())
 
     class Meta:
@@ -453,19 +450,21 @@ class CaptchaSession(VerificationSession):
 
     @classmethod
     def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{cls._cache}/captcha"):
+        if not dir_exists(f"{security_config.CACHE}/captcha"):
             image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
             for i in range(100):
                 code = "".join(
                     random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
                 )
-                image.write(code, f"{cls._cache}/captcha/{code}.png")
+                image.write(code, f"{security_config.CACHE}/captcha/{code}.png")
             logger.info("Captcha session cache initialised")
 
     @classmethod
     def get_random_code(cls) -> str:
         cls._initialize_cache()
-        return random.choice(os.listdir(f"{cls._cache}/captcha")).split(".")[0]
+        return random.choice(os.listdir(f"{security_config.CACHE}/captcha")).split(".")[
+            0
+        ]
 
     async def get_image(self) -> HTTPResponse:
         """
@@ -474,7 +473,7 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        return await file(f"{self._cache}/captcha/{self.code}.png")
+        return await file(f"{security_config.CACHE}/captcha/{self.code}.png")
 
     class Meta:
         table = "captcha_session"
@@ -608,9 +607,9 @@ class Role(BaseModel):
         permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
-    name = fields.CharField(max_length=255)
-    description = fields.CharField(max_length=255)
-    permissions = fields.CharField(max_length=255, null=True)
+    name: str = fields.CharField(max_length=255)
+    description: str = fields.CharField(max_length=255)
+    permissions: str = fields.CharField(max_length=255, null=True)
 
     def validate(self) -> None:
         raise NotImplementedError()
