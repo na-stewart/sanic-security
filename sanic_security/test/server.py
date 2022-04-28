@@ -9,7 +9,8 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
-    refresh_authentication, create_initial_admin_account,
+    refresh_authentication,
+    create_initial_admin_account,
 )
 from sanic_security.authorization import (
     assign_role,
