@@ -251,7 +251,7 @@ async def on_refresh(request):
 @requires_authentication()
 async def on_authenticated(request, authentication_session):
     return json(
-        f"Hello {authentication_session.bearer.username}! You have been authenticated.",
+        "You have been authenticated.",
         authentication_session.bearer.json(),
     )
 ```
