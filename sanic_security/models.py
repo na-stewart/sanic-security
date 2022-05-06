@@ -484,12 +484,12 @@ class AuthenticationSession(Session):
     Used to authenticate a client and provide access to a user's account.
 
     Attributes:
-        two_factor (bool): Determines if authentication session requires a second factor to be used for authentication.
         refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
     """
 
-    two_factor: bool = fields.BooleanField(default=False)
-    refresh_token: uuid.UUID = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
+    refresh_token: uuid.UUID = fields.UUIDField(
+        unique=True, default=uuid.uuid4, max_length=36
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

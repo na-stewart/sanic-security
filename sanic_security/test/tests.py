@@ -225,32 +225,6 @@ class LoginTest(TestCase):
         )
         assert authenticate_response.status_code == 401, authenticate_response.text
 
-    def test_login_two_factor(self):
-        """
-        Login with an email and password and require a second factor for successful authentication.
-        """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "two_factor@login.com"},
-        )
-        login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            data={
-                "two_factor": True,
-            },
-            auth=("two_factor@login.com", "testtest"),
-        )
-        assert login_response.status_code == 200, login_response.text
-        second_factor_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login/second-factor",
-            data={"code": json.loads(login_response.text)["data"]},
-        )
-        assert second_factor_response.status_code == 200, second_factor_response.text
-        authenticate_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth",
-        )
-        assert authenticate_response.status_code == 200, authenticate_response.text
-
     def test_authentication_refresh(self):
         """
         Refresh client authentication session with a new session via the session's refresh token.

@@ -5,7 +5,6 @@ from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
     login,
-    on_second_factor,
     register,
     requires_authentication,
     logout,
@@ -90,34 +89,9 @@ async def on_login(request):
     """
     Login to an account with an email and password.
     """
-    authentication_session = await login(
-        request, two_factor=request.form.get("two_factor") == "true"
-    )
-    if request.form.get("two_factor") == "true":
-        two_step_session = await request_two_step_verification(
-            request, authentication_session.bearer
-        )
-        response = json(
-            "Login successful! Second factor required.", two_step_session.code
-        )
-        two_step_session.encode(response)
-    else:
-        response = json("Login successful!", authentication_session.bearer.json())
+    authentication_session = await login(request)
+    response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
-    return response
-
-
-@app.post("api/test/auth/login/second-factor")
-@requires_two_step_verification()
-async def on_login_second_factor(request, two_step_verification):
-    """
-    Removes the second factor requirement from the client authentication session when the two-step verification attempt
-    is successful.
-    """
-    authentication_session = await on_second_factor(request)
-    response = json(
-        "Second factor attempt successful!", authentication_session.bearer.json()
-    )
     return response
 
 
@@ -137,12 +111,11 @@ async def on_refresh(request):
 
 
 @app.post("api/test/auth/logout")
-@requires_authentication()
-async def on_logout(request, authentication_session):
+async def on_logout(request):
     """
     Logout of currently logged in account.
     """
-    await logout(authentication_session)
+    authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.bearer.json())
     return response
 

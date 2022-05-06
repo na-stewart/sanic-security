@@ -50,7 +50,6 @@ Sanic Security is an authentication, authorization, and verification library des
 This library contains a variety of features including:
 
 * Login, registration, and authentication (including access/refresh tokens)
-* Two-factor authentication
 * Two-step verification
 * Captcha
 * Role based authorization with wildcard permissions
@@ -219,52 +218,12 @@ async def on_login(request):
     return response
 ```
 
-* Login (With two-factor authentication)
-
-```python
-@app.post("api/auth/login")
-async def on_two_factor_login(request):
-    authentication_session = await login(request, two_factor=True)
-    two_step_session = await request_two_step_verification(
-        request, authentication_session.bearer
-    )
-    await email_code(
-        two_step_session.code
-    )  # Custom method for emailing verification code.
-    response = json(
-        "Login successful! A second factor is now required to be authenticated.",
-        authentication_session.bearer.json(),
-    )
-    authentication_session.encode(response)
-    two_step_session.encode(response)
-    return response
-```
-
-* Second Factor
-
-Key | Value |
---- | --- |
-**code** | G8ha9nVae
-
-```python
-@app.post("api/auth/login/second-factor")
-@requires_two_step_verification()
-async def on_login_second_factor(request, two_step_session):
-    authentication_session = await on_second_factor(request)
-    response = json(
-        "Second factor attempt successful! You may now be authenticated!",
-        authentication_session.bearer.json(),
-    )
-    return response
-```
-
 * Logout
 
 ```python
 @app.post("api/auth/logout")
-@requires_authentication()
-async def on_logout(request, authentication_session):
-    await logout(authentication_session)
+async def on_logout(request):
+    authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.bearer.json())
     return response
 ```
@@ -276,12 +235,12 @@ A refresh token is used that lets the client retrieve a new authentication sessi
 ```python
 @app.post("api/auth/refresh")
 async def on_refresh(request):
-    refreshed_authentication_session = await refresh_authentication(request)
+    authentication_session = await refresh_authentication(request)
     response = json(
-        "Authentication session refreshed!",
-        refreshed_authentication_session.bearer.json(),
+        "Authentication renewed!",
+        authentication_session.bearer.json(),
     )
-    refreshed_authentication_session.encode(response)
+    authentication_session.encode(response)
     return response
 ```
 

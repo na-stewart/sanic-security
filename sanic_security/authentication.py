@@ -11,7 +11,6 @@ from tortoise.exceptions import IntegrityError, DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
-    SessionError,
     NotFoundError,
     CredentialsError,
 )
@@ -95,16 +94,13 @@ async def register(
         )
 
 
-async def login(
-    request: Request, account: Account = None, two_factor: bool = False
-) -> AuthenticationSession:
+async def login(request: Request, account: Account = None) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
         account (Account): Account being logged into. If None, an account is retrieved via credentials in the authorization header.
-        two_factor (bool): Enables or disables second factor requirement for the account's authentication session.
 
     Returns:
         authentication_session
@@ -137,9 +133,7 @@ async def login(
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        return await session_factory.get(
-            "authentication", request, account, two_factor=two_factor
-        )
+        return await session_factory.get("authentication", request, account)
     except VerifyMismatchError:
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
@@ -147,15 +141,12 @@ async def login(
         raise CredentialsError("Incorrect password.", 401)
 
 
-async def refresh_authentication(
-    request: Request, two_factor: bool = False
-) -> AuthenticationSession:
+async def refresh_authentication(request: Request) -> AuthenticationSession:
     """
     Refresh expired authentication session without having to ask the user to login again.
 
     Args:
         request (Request): Sanic request parameter.
-        two_factor (bool): Enables or disables second factor requirement for the new authentication session.
 
     Raises:
         DeactivatedError
@@ -167,13 +158,13 @@ async def refresh_authentication(
     """
     authentication_session = await AuthenticationSession.redeem(request)
     return await session_factory.get(
-        "authentication", request, authentication_session.bearer, two_factor=two_factor
+        "authentication", request, authentication_session.bearer
     )
 
 
-async def on_second_factor(request: Request) -> AuthenticationSession:
+async def logout(request: Request) -> AuthenticationSession:
     """
-    Removes the two-factor requirement from the client authentication session. To be used with some form of verification as the second factor.
+    Deactivates client's authentication session and revokes access.
 
     Args:
         request (Request): Sanic request parameter.
@@ -181,28 +172,14 @@ async def on_second_factor(request: Request) -> AuthenticationSession:
     Raises:
         NotFoundError
         JWTDecodeError
-        SessionError
 
     Returns:
         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
-    if not authentication_session.two_factor:
-        raise SessionError("Second factor requirement already met.")
-    authentication_session.two_factor = False
-    await authentication_session.save(update_fields=["two_factor"])
-    return authentication_session
-
-
-async def logout(authentication_session: AuthenticationSession) -> None:
-    """
-    Deactivates client's authentication session and revokes access.
-
-    Args:
-        authentication_session (AuthenticationSession): Authentication session being deactivated and logged out from.
-    """
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
+    return authentication_session
 
 
 async def authenticate(request: Request) -> AuthenticationSession:
@@ -227,8 +204,6 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
     authentication_session.bearer.validate()
-    if authentication_session.two_factor:
-        raise SessionError("A second factor is required.", 401)
     await authentication_session.check_client_location(request)
     return authentication_session
 

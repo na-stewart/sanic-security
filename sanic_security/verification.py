@@ -90,15 +90,12 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-async def verify_account(
-    request: Request, two_step_session: TwoStepSession = None
-) -> TwoStepSession:
+async def verify_account(request: Request) -> TwoStepSession:
     """
     Verifies account with two-step session code.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-        two_step_session (TwoStepSession): Two-step session associated with the account being verified. If None, a two-step session is retrieved via client by decoding.
 
     Raises:
         NotFoundError
@@ -114,8 +111,7 @@ async def verify_account(
     Returns:
          two_step_session
     """
-    if not two_step_session:
-        two_step_session = await TwoStepSession.decode(request)
+    two_step_session = await TwoStepSession.decode(request)
     if two_step_session.bearer.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
