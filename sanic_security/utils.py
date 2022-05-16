@@ -1,4 +1,6 @@
 import os
+import random
+import string
 
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
@@ -33,6 +35,16 @@ def get_ip(request: Request) -> str:
         ip
     """
     return request.remote_addr if request.remote_addr else request.ip
+
+
+def get_code() -> str:
+    """
+    Generates random code used for verification.
+
+    Returns:
+        code
+    """
+    return "".join(random.choices(string.digits + string.ascii_uppercase, k=6))
 
 
 def dir_exists(path: str) -> bool:

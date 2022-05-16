@@ -1,8 +1,6 @@
 import datetime
-import os
-import random
-import string
 import uuid
+from io import BytesIO
 from types import SimpleNamespace
 
 import jwt
@@ -10,14 +8,13 @@ from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
 from sanic.request import Request
-from sanic.response import HTTPResponse, file
+from sanic.response import HTTPResponse, raw
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, dir_exists
-
+from sanic_security.utils import get_ip, get_code
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -276,9 +273,7 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
-            "id": self.id,
             "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
             "token": str(self.token),
             "ip": self.ip,
@@ -371,21 +366,7 @@ class VerificationSession(Session):
     """
 
     attempts: int = fields.IntField(default=0)
-    code: str = fields.CharField(max_length=10, null=True)
-
-    @classmethod
-    def _initialize_cache(cls) -> None:
-        """
-        Creates verification session cache and generates required files.
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def get_random_code(cls) -> str:
-        """
-        Retrieves a random cached verification session code.
-        """
-        raise NotImplementedError()
+    code: str = fields.CharField(max_length=10, default=get_code, null=True)
 
     async def check_code(self, request: Request, code: str) -> None:
         """
@@ -424,21 +405,6 @@ class TwoStepSession(VerificationSession):
     Validates a client using a code sent via email or text.
     """
 
-    @classmethod
-    def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{security_config.CACHE}/verification"):
-            with open(f"{security_config.CACHE}/verification/codes.txt", "w") as f:
-                for i in range(100):
-                    code = "".join(random.choices(string.digits, k=6))
-                    f.write(f"{code}\n")
-            logger.info("Two-step session cache initialised")
-
-    @classmethod
-    def get_random_code(cls) -> str:
-        cls._initialize_cache()
-        with open(f"{security_config.CACHE}/verification/codes.txt", "r") as f:
-            return random.choice(f.readlines())
-
     class Meta:
         table = "two_step_session"
 
@@ -448,24 +414,6 @@ class CaptchaSession(VerificationSession):
     Validates a client as human with a captcha challenge.
     """
 
-    @classmethod
-    def _initialize_cache(cls) -> None:
-        if not dir_exists(f"{security_config.CACHE}/captcha"):
-            image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
-            for i in range(100):
-                code = "".join(
-                    random.choices("123456789qQeErRtTyYiIaAdDfFgGhHlLbBnN", k=6)
-                )
-                image.write(code, f"{security_config.CACHE}/captcha/{code}.png")
-            logger.info("Captcha session cache initialised")
-
-    @classmethod
-    def get_random_code(cls) -> str:
-        cls._initialize_cache()
-        return random.choice(os.listdir(f"{security_config.CACHE}/captcha")).split(".")[
-            0
-        ]
-
     async def get_image(self) -> HTTPResponse:
         """
         Retrieves captcha image file.
@@ -473,7 +421,10 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        return await file(f"{security_config.CACHE}/captcha/{self.code}.png")
+        image = ImageCaptcha(190, 90)
+        with BytesIO() as output:
+            image.generate_image(self.code).save(output, format='PNG')
+            return raw(output.getvalue(), content_type="image/png")
 
     class Meta:
         table = "captcha_session"
@@ -561,7 +512,6 @@ class SessionFactory:
             return await CaptchaSession.create(
                 **kwargs,
                 ip=get_ip(request),
-                code=CaptchaSession.get_random_code(),
                 bearer=account,
                 expiration_date=datetime.datetime.utcnow()
                 + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
@@ -571,7 +521,6 @@ class SessionFactory:
         elif session_type == "two-step":
             return await TwoStepSession.create(
                 **kwargs,
-                code=TwoStepSession.get_random_code(),
                 ip=get_ip(request),
                 bearer=account,
                 expiration_date=datetime.datetime.utcnow()

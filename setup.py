@@ -21,13 +21,13 @@ setup(
         "pyjwt>=1.7.0",
         "captcha",
         "argon2-cffi>=20.1.0",
+        "sanic>=21.3.0",
     ],
     extras_require={
         "dev": [
             "httpx>=0.13.0",
             "black",
             "blacken-docs",
-            "sanic>=21.3.0",
             "pdoc3",
             "cryptography>=3.3.1",
         ],

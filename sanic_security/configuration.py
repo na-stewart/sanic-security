@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "PUBLIC_SECRET": None,
-    "CACHE": "./security-cache",
     "SESSION_SAMESITE": "strict",
     "SESSION_SECURE": False,
     "SESSION_HTTPONLY": True,
@@ -53,7 +52,6 @@ class Config(dict):
     Attributes:
         SECRET (str): The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
         PUBLIC_SECRET (str): The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
-        CACHE (str): The path used for caching.
         SESSION_SAMESITE (str): The SameSite attribute of session cookies.
         SESSION_SECURE (bool): The Secure attribute of session cookies.
         SESSION_HTTPONLY (bool): The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
@@ -75,7 +73,6 @@ class Config(dict):
 
     SECRET: str
     PUBLIC_SECRET: str
-    CACHE: str
     SESSION_SAMESITE: str
     SESSION_SECURE: bool
     SESSION_HTTPONLY: bool
