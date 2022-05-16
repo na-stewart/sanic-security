@@ -14,7 +14,7 @@ from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
 )
-from sanic_security.models import Account, SessionFactory, AuthenticationSession, Role
+from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
@@ -35,7 +35,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
 
@@ -133,7 +132,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        return await session_factory.get("authentication", request, account)
+        return await AuthenticationSession.new(request, account)
     except VerifyMismatchError:
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
@@ -157,9 +156,7 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
         authentication_session
     """
     authentication_session = await AuthenticationSession.redeem(request)
-    return await session_factory.get(
-        "authentication", request, authentication_session.bearer
-    )
+    return await AuthenticationSession.new(request, authentication_session.bearer)
 
 
 async def logout(request: Request) -> AuthenticationSession:

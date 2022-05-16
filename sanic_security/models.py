@@ -222,6 +222,21 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @classmethod
+    def new(cls, request: Request, account: Account, **kwargs):
+        """
+        Creates session with pre-set values.
+
+        Args:
+            request (Request): Sanic request parameter.
+            account (Account): Account being associated to the session.
+            kwargs: Extra arguments applied during session creation.
+
+        Returns:
+            session
+        """
+        raise NotImplementedError()
+
     def json(self) -> dict:
         return {
             "id": self.id,
@@ -368,6 +383,10 @@ class VerificationSession(Session):
     attempts: int = fields.IntField(default=0)
     code: str = fields.CharField(max_length=10, default=get_code, null=True)
 
+    @classmethod
+    def new(cls, request: Request, account: Account, **kwargs):
+        raise NotImplementedError
+
     async def check_code(self, request: Request, code: str) -> None:
         """
         Used to check if code passed is equivalent to the session code.
@@ -405,6 +424,18 @@ class TwoStepSession(VerificationSession):
     Validates a client using a code sent via email or text.
     """
 
+    @classmethod
+    def new(cls, request: Request, account: Account, **kwargs):
+        return await TwoStepSession.create(
+            **kwargs,
+            ip=get_ip(request),
+            bearer=account,
+            expiration_date=datetime.datetime.utcnow()
+            + datetime.timedelta(seconds=security_config.TWO_STEP_SESSION_EXPIRATION)
+            if security_config.TWO_STEP_SESSION_EXPIRATION != 0
+            else None,
+        )
+
     class Meta:
         table = "two_step_session"
 
@@ -413,6 +444,17 @@ class CaptchaSession(VerificationSession):
     """
     Validates a client as human with a captcha challenge.
     """
+
+    @classmethod
+    def new(cls, request: Request, **kwargs):
+        return await CaptchaSession.create(
+            **kwargs,
+            ip=get_ip(request),
+            expiration_date=datetime.datetime.utcnow()
+            + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
+            if security_config.CAPTCHA_SESSION_EXPIRATION != 0
+            else None,
+        )
 
     async def get_image(self) -> HTTPResponse:
         """
@@ -445,6 +487,20 @@ class AuthenticationSession(Session):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ctx.refresh_token = str(self.refresh_token)
+
+    @classmethod
+    def new(cls, request: Request, account: Account, **kwargs):
+        return await AuthenticationSession.create(
+            **kwargs,
+            bearer=account,
+            ip=get_ip(request),
+            expiration_date=datetime.datetime.utcnow()
+            + datetime.timedelta(
+                seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
+            )
+            if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
+            else None,
+        )
 
     @classmethod
     async def redeem(cls, request: Request):
@@ -483,67 +539,6 @@ class AuthenticationSession(Session):
 
     class Meta:
         table = "authentication_session"
-
-
-class SessionFactory:
-    """
-    Used to create and retrieve a session with pre-set values.
-    """
-
-    async def get(
-        self, session_type: str, request: Request, account: Account = None, **kwargs
-    ):
-        """
-        Creates and returns a session with all of the fulfilled requirements.
-
-        Args:
-            session_type (str): The type of session being retrieved. Available types are: captcha, two-step, and authentication.
-            request (Request): Sanic request parameter.
-            account (Account): Account being associated to the session.
-            kwargs: Extra arguments applied during session creation.
-
-        Returns:
-            session
-
-        Raises:
-            ValueError
-        """
-        if session_type == "captcha":
-            return await CaptchaSession.create(
-                **kwargs,
-                ip=get_ip(request),
-                bearer=account,
-                expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
-                if security_config.CAPTCHA_SESSION_EXPIRATION != 0
-                else None,
-            )
-        elif session_type == "two-step":
-            return await TwoStepSession.create(
-                **kwargs,
-                ip=get_ip(request),
-                bearer=account,
-                expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=security_config.TWO_STEP_SESSION_EXPIRATION
-                )
-                if security_config.TWO_STEP_SESSION_EXPIRATION != 0
-                else None,
-            )
-        elif session_type == "authentication":
-            return await AuthenticationSession.create(
-                **kwargs,
-                bearer=account,
-                ip=get_ip(request),
-                expiration_date=datetime.datetime.utcnow()
-                + datetime.timedelta(
-                    seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
-                )
-                if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
-                else None,
-            )
-        else:
-            raise ValueError("Invalid session type.")
 
 
 class Role(BaseModel):
