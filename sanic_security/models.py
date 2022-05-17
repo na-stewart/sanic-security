@@ -465,7 +465,7 @@ class CaptchaSession(VerificationSession):
         """
         image = ImageCaptcha(190, 90)
         with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="PNG")
+            image.generate_image(self.code).save(output, format="JPEG")
             return raw(output.getvalue(), content_type="image/png")
 
     class Meta:
