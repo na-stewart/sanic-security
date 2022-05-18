@@ -552,7 +552,7 @@ class Role(BaseModel):
     """
 
     name: str = fields.CharField(max_length=255)
-    description: str = fields.CharField(max_length=255)
+    description: str = fields.CharField(max_length=255, null=True)
     permissions: str = fields.CharField(max_length=255, null=True)
 
     def validate(self) -> None:

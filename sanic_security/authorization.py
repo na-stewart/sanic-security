@@ -176,16 +176,16 @@ def require_roles(*required_roles: str):
 
 
 async def assign_role(
-    name: str, description: str, permissions: str, account: Account
+    name: str, account: Account, permissions: str = None, description: str = None
 ) -> Role:
     """
     Quick creation of a role associated with an account.
 
     Args:
         name (str):  The name of the role associated with the account.
-        description (str):  The description of the role associated with the account.
         permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         account (Account): the account associated with the created role.
+        description (str):  The description of the role associated with the account.
     """
     try:
         role = await Role.filter(name=name, permissions=permissions).get()
