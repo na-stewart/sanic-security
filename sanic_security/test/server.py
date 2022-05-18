@@ -191,9 +191,9 @@ async def on_role_assign(request, authentication_session):
     """
     await assign_role(
         request.form.get("name"),
-        "Role used for testing.",
-        request.form.get("permissions"),
         authentication_session.bearer,
+        request.form.get("permissions"),
+        "Role used for testing.",
     )
     return text("Role assigned.")
 

@@ -447,7 +447,7 @@ class ConfigurationTest(TestCase):
         """
         Config loads environment variables.
         """
-        os.environ["SANIC_SECURITY_SECRET"] = "test"
+        os.environ["SANIC_SECURITY_SECRET"] = "test-secret"
         security_config = Config()
         security_config.load_environment_variables()
-        assert security_config.SECRET == "test"
+        assert security_config.SECRET == "test-secret"
