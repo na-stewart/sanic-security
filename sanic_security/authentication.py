@@ -142,9 +142,8 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
 
 
 async def refresh_authentication(request: Request) -> AuthenticationSession:
-    # TODO redo documentation.
     """
-    Refresh expired authentication session without having to ask the user to login again.
+    Retrieve authentication session without having to ask the user to login again.
 
     Args:
         request (Request): Sanic request parameter.
