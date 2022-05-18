@@ -502,41 +502,6 @@ class AuthenticationSession(Session):
             else None,
         )
 
-    @classmethod
-    async def redeem(cls, request: Request):
-        """
-        Redeems client refresh token and deactivates it so the refresh token cannot be used again.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Raises:
-            DeactivatedError
-            NotFoundError
-            JWTDecodeError
-        """
-        decoded_raw = cls.decode_raw(request)
-        try:
-            decoded_session = (
-                await cls.filter(refresh_token=decoded_raw["refresh_token"])
-                .prefetch_related("bearer")
-                .get()
-            )
-            if decoded_session.active and not decoded_session.deleted:
-                decoded_session.active = False
-                await decoded_session.save(update_fields=["active"])
-                return decoded_session
-            else:
-                await cls.filter(
-                    bearer=decoded_session.bearer, active=True, deleted=False
-                ).update(active=False)
-                logger.warning(
-                    f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
-                )
-                raise DeactivatedError("Invalid refresh token.")
-        except DoesNotExist:
-            raise NotFoundError("Session could not be found.")
-
     class Meta:
         table = "authentication_session"
 

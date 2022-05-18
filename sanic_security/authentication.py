@@ -13,7 +13,7 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
-    SessionError,
+    SessionError, DeactivatedError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
@@ -142,6 +142,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
 
 
 async def refresh_authentication(request: Request) -> AuthenticationSession:
+    # TODO redo documentation.
     """
     Refresh expired authentication session without having to ask the user to login again.
 
@@ -156,8 +157,27 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
     Returns:
         authentication_session
     """
-    authentication_session = await AuthenticationSession.redeem(request)
-    return await AuthenticationSession.new(request, authentication_session.bearer)
+    decoded_raw = AuthenticationSession.decode_raw(request)
+    try:
+        decoded_session = (
+            await AuthenticationSession.filter(refresh_token=decoded_raw["refresh_token"])
+                .prefetch_related("bearer")
+                .get()
+        )
+        if decoded_session.active and not decoded_session.deleted:
+            decoded_session.active = False
+            await decoded_session.save(update_fields=["active"])
+        else:
+            await AuthenticationSession.filter(
+                bearer=decoded_session.bearer, active=True, deleted=False
+            ).update(active=False)
+            logger.warning(
+                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token."
+            )
+            raise DeactivatedError("Invalid refresh token.")
+    except DoesNotExist:
+        raise NotFoundError("Session could not be found.")
+    return await AuthenticationSession.new(request, decoded_session.bearer)
 
 
 async def logout(request: Request) -> AuthenticationSession:
