@@ -176,7 +176,7 @@ async def logout(request: Request) -> AuthenticationSession:
     """
     authentication_session = await AuthenticationSession.decode(request)
     if not authentication_session.active:
-        raise SessionError("Already logged out.")
+        raise SessionError("Already logged out.", 403)
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     return authentication_session
