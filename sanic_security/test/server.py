@@ -19,14 +19,13 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account, Role, SessionFactory
+from sanic_security.models import Account
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
     verify_account,
 )
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -48,7 +47,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 app = Sanic("test")
-session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
 
