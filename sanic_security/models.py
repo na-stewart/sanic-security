@@ -223,7 +223,7 @@ class Session(BaseModel):
         super().__init__(**kwargs)
 
     @classmethod
-    def new(cls, request: Request, account: Account, **kwargs):
+    async def new(cls, request: Request, account: Account, **kwargs):
         """
         Creates session with pre-set values.
 
@@ -384,7 +384,7 @@ class VerificationSession(Session):
     code: str = fields.CharField(max_length=10, default=get_code, null=True)
 
     @classmethod
-    def new(cls, request: Request, account: Account, **kwargs):
+    async def new(cls, request: Request, account: Account, **kwargs):
         raise NotImplementedError
 
     async def check_code(self, request: Request, code: str) -> None:
@@ -425,7 +425,7 @@ class TwoStepSession(VerificationSession):
     """
 
     @classmethod
-    def new(cls, request: Request, account: Account, **kwargs):
+    async def new(cls, request: Request, account: Account, **kwargs):
         return await TwoStepSession.create(
             **kwargs,
             ip=get_ip(request),
@@ -446,7 +446,7 @@ class CaptchaSession(VerificationSession):
     """
 
     @classmethod
-    def new(cls, request: Request, **kwargs):
+    async def new(cls, request: Request, **kwargs):
         return await CaptchaSession.create(
             **kwargs,
             ip=get_ip(request),
@@ -489,7 +489,7 @@ class AuthenticationSession(Session):
         self.ctx.refresh_token = str(self.refresh_token)
 
     @classmethod
-    def new(cls, request: Request, account: Account, **kwargs):
+    async def new(cls, request: Request, account: Account, **kwargs):
         return await AuthenticationSession.create(
             **kwargs,
             bearer=account,

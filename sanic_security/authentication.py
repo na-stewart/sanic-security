@@ -13,6 +13,7 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
+    SessionError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
@@ -174,6 +175,8 @@ async def logout(request: Request) -> AuthenticationSession:
         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
+    if not authentication_session.active:
+        raise SessionError("Already logged out.")
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     return authentication_session

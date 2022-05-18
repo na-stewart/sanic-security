@@ -7,7 +7,6 @@ from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundErro
 from sanic_security.models import (
     Account,
     TwoStepSession,
-    SessionFactory,
 )
 
 
@@ -28,9 +27,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
-
-session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
@@ -57,7 +53,7 @@ async def request_two_step_verification(
         )  # Deactivates client's existing session.
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await session_factory.get("two-step", request, account)
+    two_step_session = await TwoStepSession.new(request, account)
     return two_step_session
 
 
