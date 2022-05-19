@@ -230,7 +230,7 @@ async def on_logout(request):
 * Refresh Authentication
 
 A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
-A deactivated session cannot be refreshed.
+Keep in mind that a deactivated session cannot be refreshed.
 
 ```python
 @app.post("api/auth/refresh")
