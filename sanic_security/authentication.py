@@ -144,7 +144,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
 
 async def refresh_authentication(request: Request) -> AuthenticationSession:
     """
-    Retrieve authentication session without having to ask the user to login again.
+    Retrieves authentication session without having to ask the user to login again. Do not attempt to refresh a deactivated session.
 
     Args:
         request (Request): Sanic request parameter.
@@ -177,7 +177,7 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
                 f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token. "
                 f"Deactivating all sessions associated to the bearer."
             )
-            raise DeactivatedError()
+            raise DeactivatedError("You cannot use a deactivated session to obtain a new session.")
     except DoesNotExist:
         raise NotFoundError("Session could not be found.")
     return await AuthenticationSession.new(request, decoded_session.bearer)
