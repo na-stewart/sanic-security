@@ -174,8 +174,8 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
                 bearer=decoded_session.bearer, active=True, deleted=False
             ).update(active=False)
             logger.warning(
-                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) is using an invalid refresh token. "
-                f"Deactivating all sessions associated to the bearer."
+                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
+                f"with a deactivated session. Deactivating all sessions associated to the bearer."
             )
             raise DeactivatedError("You cannot use a deactivated session to obtain a new session.")
     except DoesNotExist:
