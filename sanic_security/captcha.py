@@ -37,8 +37,9 @@ async def request_captcha(request: Request) -> CaptchaSession:
     """
     with suppress(NotFoundError, JWTDecodeError):
         captcha_session = await CaptchaSession.decode(request)
-        captcha_session.active = False
-        await captcha_session.save(update_fields=["active"])
+        if captcha_session.active:
+            captcha_session.active = False
+            await captcha_session.save(update_fields=["active"])
     return await CaptchaSession.new(request)
 
 
