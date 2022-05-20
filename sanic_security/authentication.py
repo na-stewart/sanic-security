@@ -1,4 +1,5 @@
 import base64
+import datetime
 import functools
 import re
 
@@ -15,13 +16,14 @@ from sanic_security.exceptions import (
     CredentialsError,
     SessionError,
     DeactivatedError,
+    ExpiredError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -167,6 +169,12 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
             .get()
         )
         if decoded_session.active and not decoded_session.deleted:
+            if (
+                decoded_session.refresh_expiration_date
+                and datetime.datetime.now(datetime.timezone.utc)
+                >= decoded_session.refresh_expiration_date
+            ):
+                raise ExpiredError()
             decoded_session.active = False
             await decoded_session.save(update_fields=["active"])
         else:
@@ -177,7 +185,9 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
                 f"Client ({decoded_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
                 f"with a deactivated session. Deactivating all sessions associated to the bearer."
             )
-            raise DeactivatedError("You cannot use a deactivated session to obtain a new session.")
+            raise DeactivatedError(
+                "You cannot use a deactivated session to obtain a new session."
+            )
     except DoesNotExist:
         raise NotFoundError("Session could not be found.")
     return await AuthenticationSession.new(request, decoded_session.bearer)

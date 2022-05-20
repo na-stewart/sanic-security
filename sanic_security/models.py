@@ -14,11 +14,11 @@ from tortoise.exceptions import DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code
+from sanic_security.utils import get_ip, get_code, get_expiration_date
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -202,7 +202,7 @@ class Session(BaseModel):
     Used for client identification and verification. Base session model that all session models derive from.
 
     Attributes:
-        expiration_date (datetime): Time the session expires and can no longer be used.
+        expiration_date (datetime): Date and time the session expires and can no longer be used.
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         token (uuid): Token stored on the client's browser in a cookie for identification.
@@ -430,10 +430,9 @@ class TwoStepSession(VerificationSession):
             **kwargs,
             ip=get_ip(request),
             bearer=account,
-            expiration_date=datetime.datetime.utcnow()
-            + datetime.timedelta(seconds=security_config.TWO_STEP_SESSION_EXPIRATION)
-            if security_config.TWO_STEP_SESSION_EXPIRATION != 0
-            else None,
+            expiration_date=get_expiration_date(
+                security_config.TWO_STEP_SESSION_EXPIRATION
+            ),
         )
 
     class Meta:
@@ -450,10 +449,9 @@ class CaptchaSession(VerificationSession):
         return await CaptchaSession.create(
             **kwargs,
             ip=get_ip(request),
-            expiration_date=datetime.datetime.utcnow()
-            + datetime.timedelta(seconds=security_config.CAPTCHA_SESSION_EXPIRATION)
-            if security_config.CAPTCHA_SESSION_EXPIRATION != 0
-            else None,
+            expiration_date=get_expiration_date(
+                security_config.CAPTCHA_SESSION_EXPIRATION
+            ),
         )
 
     async def get_image(self) -> HTTPResponse:
@@ -477,9 +475,11 @@ class AuthenticationSession(Session):
     Used to authenticate a client and provide access to a user's account.
 
     Attributes:
+        refresh_expiration_date (datetime): Date and time the session can no longer be refreshed.
         refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
     """
 
+    refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
     refresh_token: uuid.UUID = fields.UUIDField(
         unique=True, default=uuid.uuid4, max_length=36
     )
@@ -494,12 +494,12 @@ class AuthenticationSession(Session):
             **kwargs,
             bearer=account,
             ip=get_ip(request),
-            expiration_date=datetime.datetime.utcnow()
-            + datetime.timedelta(
-                seconds=security_config.AUTHENTICATION_SESSION_EXPIRATION
-            )
-            if security_config.AUTHENTICATION_SESSION_EXPIRATION != 0
-            else None,
+            expiration_date=get_expiration_date(
+                security_config.AUTHENTICATION_SESSION_EXPIRATION
+            ),
+            refresh_expiration_date=get_expiration_date(
+                security_config.AUTHENTICATION_SESSION_EXPIRATION * 2
+            ),
         )
 
     class Meta:
