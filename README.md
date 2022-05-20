@@ -362,7 +362,7 @@ await assign_role(
     "Chat Room Moderator",
     account,
     "channels:view,delete, account:suspend,mute, voice:*",
-    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat."
+    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
 )
 ```
 
