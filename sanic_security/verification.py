@@ -48,9 +48,7 @@ async def request_two_step_verification(
     with suppress(NotFoundError, JWTDecodeError):
         two_step_session = await TwoStepSession.decode(request)
         two_step_session.active = False
-        await two_step_session.save(
-            update_fields=["active"]
-        )  # Deactivates client's existing session.
+        await two_step_session.save(update_fields=["active"])
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await TwoStepSession.new(request, account)
