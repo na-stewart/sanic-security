@@ -275,7 +275,7 @@ Captcha challenge example:
 @app.get("api/captcha")
 async def on_request_captcha(request):
     captcha_session = await request_captcha(request)
-    response = await captcha_session.get_image()
+    response = captcha_session.get_image()
     captcha_session.encode(response)
     return response
 ```
