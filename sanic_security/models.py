@@ -454,7 +454,7 @@ class CaptchaSession(VerificationSession):
             ),
         )
 
-    async def get_image(self) -> HTTPResponse:
+    def get_image(self) -> HTTPResponse:
         """
         Retrieves captcha image file.
 

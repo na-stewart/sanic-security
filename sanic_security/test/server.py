@@ -135,7 +135,7 @@ async def on_captcha_request(request):
     Request captcha with solution in the response.
     """
     captcha_session = await request_captcha(request)
-    response = json("Captcha request successful!", captcha_session.code)
+    response = captcha_session.get_image()
     captcha_session.encode(response)
     return response
 
