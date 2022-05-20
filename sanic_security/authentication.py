@@ -146,7 +146,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
 
 async def refresh_authentication(request: Request) -> AuthenticationSession:
     """
-    Retrieves authentication session without having to ask the user to login again. Do not attempt to refresh a deactivated session.
+    Retrieves new authentication session without having to ask the user to login again. Do not attempt to refresh a deactivated session.
 
     Args:
         request (Request): Sanic request parameter.
