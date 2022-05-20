@@ -79,13 +79,6 @@ class DeactivatedError(SessionError):
         super().__init__(message, 401)
 
 
-class UnrecognisedLocationError(SessionError):
-    def __init__(self):
-        super().__init__(
-            "Session is being accessed from an unrecognised location.", 401
-        )
-
-
 class ExpiredError(SessionError):
     def __init__(self):
         super().__init__("Session has expired", 401)

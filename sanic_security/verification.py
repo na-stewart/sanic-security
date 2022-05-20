@@ -71,7 +71,6 @@ async def two_step_verification(request: Request) -> TwoStepSession:
         DeactivatedError
         UnverifiedError
         DisabledError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
 
@@ -98,7 +97,6 @@ async def verify_account(request: Request) -> TwoStepSession:
         DeletedError
         ExpiredError
         DeactivatedError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
         AccountError
@@ -135,7 +133,6 @@ def requires_two_step_verification():
         DeletedError
         ExpiredError
         DeactivatedError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
     """
