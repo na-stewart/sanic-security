@@ -360,9 +360,9 @@ Wildcard permissions support the concept of multiple levels or parts. For exampl
 ```python
 await assign_role(
     "Chat Room Moderator",
-    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
-    "channels:view,delete, account:suspend,mute, voice:*",
     account,
+    "channels:view,delete, account:suspend,mute, voice:*",
+    "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat."
 )
 ```
 
