@@ -128,7 +128,7 @@ async def on_authenticate(request, authentication_session):
     return response
 
 
-@app.post("api/test/capt/request")
+@app.get("api/test/capt/request")
 async def on_captcha_request(request):
     """
     Request captcha with solution in the response.

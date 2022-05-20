@@ -285,7 +285,7 @@ class VerificationTest(TestCase):
         """
         Captcha request and attempt.
         """
-        captcha_request_response = self.client.post(
+        captcha_request_response = self.client.get(
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
