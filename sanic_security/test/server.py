@@ -139,7 +139,7 @@ async def on_captcha_request(request):
     return response
 
 
-@app.post("api/test/capt/image")
+@app.get("api/test/capt/image")
 async def on_captcha_image(request):
     """
     Request captcha captcha image.
