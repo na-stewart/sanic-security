@@ -189,7 +189,7 @@ async def on_register(request, captcha_session):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 187186 |
+| **code** | Aj8HgD |
 
 ```python
 @app.post("api/auth/verify")
@@ -331,7 +331,7 @@ async def on_resend_verification(request):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 187186 |
+| **code** | Aj8HgD |
 
 ```python
 @app.post("api/verification")
