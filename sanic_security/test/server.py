@@ -265,8 +265,6 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 """
 security_config.SESSION_ENCODING_ALGORITHM = "RS256"
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
-security_config.SESSION_EXPIRES_ON_CLIENT = True
-security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 register_tortoise(
     app,
     db_url=security_config.TEST_DATABASE_URL,
