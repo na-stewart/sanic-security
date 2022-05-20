@@ -183,8 +183,8 @@ async def assign_role(
 
     Args:
         name (str):  The name of the role associated with the account.
-        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         account (Account): the account associated with the created role.
+        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         description (str):  The description of the role associated with the account.
     """
     try:

@@ -238,7 +238,6 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
     authentication_session.bearer.validate()
-    await authentication_session.check_client_location(request)
     return authentication_session
 
 

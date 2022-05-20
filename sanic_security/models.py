@@ -266,20 +266,6 @@ class Session(BaseModel):
         elif not self.active:
             raise DeactivatedError()
 
-    async def check_client_location(self, request) -> None:
-        """
-        Checks if client ip address has been used previously within other sessions.
-
-        Raises:
-            UnrecognisedLocationError
-        """
-        ip = get_ip(request)
-        if not await self.filter(ip=ip, bearer=self.bearer, deleted=False).exists():
-            logger.warning(
-                f"Client ({self.bearer.email}/{ip}) ip address is unrecognised"
-            )
-            raise UnrecognisedLocationError()
-
     def encode(self, response: HTTPResponse) -> None:
         """
         Transforms session into jwt and then is stored in a cookie.
@@ -400,7 +386,6 @@ class VerificationSession(Session):
             MaxedOutChallengeError
             UnrecognisedLocationError
         """
-        await self.check_client_location(request)
         if self.code != code:
             if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
