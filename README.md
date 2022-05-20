@@ -354,7 +354,7 @@ role (or roles), management of individual user rights becomes a matter of simply
 user's account; this simplifies common operations, such as adding a user, or changing a user's department. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`, `printer:query,delete`, or `printer:*`. Inspired by [Apache Shiro](https://shiro.apache.org/permissions.html#multiple-parts).
+`printer:query`, `printer:query,delete`, or `printer:*`.
 * Assign Role
 
 ```python
