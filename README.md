@@ -168,7 +168,7 @@ Phone can be null or empty.
 | **username** | example             |
 | **email**    | example@example.com |
 | **phone**    | 19811354186         |
-| **password** | testpass            |
+| **password** | examplepass            |
 | **captcha**  | Aj8HgD              |
 
 ```python
