@@ -155,6 +155,7 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
         DeactivatedError
         NotFoundError
         JWTDecodeError
+        ExpiredError
 
     Returns:
         authentication_session
