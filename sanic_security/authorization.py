@@ -13,7 +13,7 @@ from sanic_security.utils import get_ip
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -176,16 +176,16 @@ def require_roles(*required_roles: str):
 
 
 async def assign_role(
-    name: str, description: str, permissions: str, account: Account
+    name: str, account: Account, permissions: str = None, description: str = None
 ) -> Role:
     """
     Quick creation of a role associated with an account.
 
     Args:
         name (str):  The name of the role associated with the account.
-        description (str):  The description of the role associated with the account.
-        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         account (Account): the account associated with the created role.
+        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
+        description (str):  The description of the role associated with the account.
     """
     try:
         role = await Role.filter(name=name, permissions=permissions).get()

@@ -9,7 +9,7 @@ from sanic_security.configuration import Config
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -285,7 +285,7 @@ class VerificationTest(TestCase):
         """
         Captcha request and attempt.
         """
-        captcha_request_response = self.client.post(
+        captcha_request_response = self.client.get(
             "http://127.0.0.1:8000/api/test/capt/request"
         )
         assert (
@@ -447,7 +447,7 @@ class ConfigurationTest(TestCase):
         """
         Config loads environment variables.
         """
-        os.environ["SANIC_SECURITY_SECRET"] = "test"
+        os.environ["SANIC_SECURITY_SECRET"] = "test-secret"
         security_config = Config()
         security_config.load_environment_variables()
-        assert security_config.SECRET == "test"
+        assert security_config.SECRET == "test-secret"

@@ -40,8 +40,8 @@
     * [Tortoise](#tortoise)
 * [Contributing](#contributing)
 * [License](#license)
-* [Versioning](#Versioning)
-
+* [Versioning](#versioning)
+* [Support](https://discord.gg/JHpZkMfKTJ)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -117,27 +117,26 @@ You can load environment variables with a different prefix via calling the `conf
 
 * Default configuration values:
 
-Key | Value | Description |
---- | --- |  --- |
-**SECRET** | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
-**PUBLIC_SECRET** | None | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
-**CACHE** | ./security-cache | The path used for caching.
-**SESSION_SAMESITE** | strict | The SameSite attribute of session cookies.
-**SESSION_SECURE** | False | The Secure attribute of session cookies.
-**SESSION_HTTPONLY** | True | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
-**SESSION_DOMAIN** | None | The Domain attribute of session cookies.
-**SESSION_EXPIRES_ON_CLIENT** | False | When true, session cookies are removed from the clients browser when the session expires.
-**SESSION_ENCODING_ALGORITHM** | HS256 | The algorithm used to encode and decode session JWTs.
-**SESSION_PREFIX** | token | Prefix attached to the beginning of session cookies.
-**MAX_CHALLENGE_ATTEMPTS** | 5 | The maximum amount of session challenge attempts allowed.
-**CAPTCHA_SESSION_EXPIRATION** | 60 | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
-**CAPTCHA_FONT** | captcha.ttf | The file path to the font being used for captcha generation.
-**TWO_STEP_SESSION_EXPIRATION** | 200 | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
-**AUTHENTICATION_SESSION_EXPIRATION** | 2692000 | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
-**ALLOW_LOGIN_WITH_USERNAME** | False | Allows login via username and email.
-**INITIAL_ADMIN_EMAIL** | admin@example.com | Email used when creating the initial admin account.
-**INITIAL_ADMIN_PASSWORD** | admin123 | Password used when creating the initial admin account.
-**TEST_DATABASE_URL** | sqlite://:memory: | Database URL for connecting to the database Sanic Security will use for testing.
+| Key                                   | Value                        | Description                                                                                                                      |
+|---------------------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| **SECRET**                            | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.               |
+| **PUBLIC_SECRET**                     | None                         | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.  |
+| **SESSION_SAMESITE**                  | strict                       | The SameSite attribute of session cookies.                                                                                       |
+| **SESSION_SECURE**                    | False                        | The Secure attribute of session cookies.                                                                                         |
+| **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing. |
+| **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                         |
+| **SESSION_EXPIRES_ON_CLIENT**         | False                        | When true, session cookies are removed from the clients browser when the session expires.                                        |
+| **SESSION_ENCODING_ALGORITHM**        | HS256                        | The algorithm used to encode and decode session JWTs.                                                                            |
+| **SESSION_PREFIX**                    | token                        | Prefix attached to the beginning of session cookies.                                                                             |
+| **MAX_CHALLENGE_ATTEMPTS**            | 5                            | The maximum amount of session challenge attempts allowed.                                                                        |
+| **CAPTCHA_SESSION_EXPIRATION**        | 60                           | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                         |
+| **CAPTCHA_FONT**                      | captcha.ttf                  | The file path to the font being used for captcha generation.                                                                     |
+| **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.                        |
+| **AUTHENTICATION_SESSION_EXPIRATION** | 2692000                      | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
+| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
+| **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
+| **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
+| **TEST_DATABASE_URL**                 | sqlite://:memory:            | Database URL for connecting to the database Sanic Security will use for testing.                                                 |
 
 ## Usage
 
@@ -164,13 +163,13 @@ if __name__ == "__main__":
 
 Phone can be null or empty.
 
-Key | Value |
---- | --- |
-**username** | example 
-**email** | example@example.com 
-**phone** | 19811354186
-**password** | testpass
-**captcha** | Aj8HgD
+| Key          | Value               |
+|--------------|---------------------|
+| **username** | example             |
+| **email**    | example@example.com |
+| **phone**    | 19811354186         |
+| **password** | testpass            |
+| **captcha**  | Aj8HgD              |
 
 ```python
 @app.post("api/auth/register")
@@ -188,9 +187,9 @@ async def on_register(request, captcha_session):
 
 * Verify Account
 
-Key | Value |
---- | --- |
-**code** | 187186
+| Key      | Value  |
+|----------|--------|
+| **code** | Aj8HgD |
 
 ```python
 @app.post("api/auth/verify")
@@ -231,6 +230,7 @@ async def on_logout(request):
 * Refresh Authentication
 
 A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
+Keep in mind that a deactivated session cannot be refreshed.
 
 ```python
 @app.post("api/auth/refresh")
@@ -282,9 +282,9 @@ async def on_request_captcha(request):
 
 * Requires Captcha
 
-Key | Value |
---- | --- |
-**captcha** | Aj8HgD
+| Key         | Value  |
+|-------------|--------|
+| **captcha** | Aj8HgD |
 
 ```python
 @app.post("api/captcha")
@@ -297,10 +297,10 @@ async def on_captcha_attempt(request, captcha_session):
 
 * Request Two-step Verification
 
-Key | Value |
---- | --- |
-**email** | example@example.com
-**captcha** | Aj8HgD
+| Key         | Value               |
+|-------------|---------------------|
+| **email**   | example@example.com |
+| **captcha** | Aj8HgD              |
 
 ```python
 @app.post("api/verification/request")
@@ -329,9 +329,9 @@ async def on_resend_verification(request):
 
 * Requires Two-step Verification
 
-Key | Value |
---- | --- |
-**code** | 187186
+| Key      | Value  |
+|----------|--------|
+| **code** | Aj8HgD |
 
 ```python
 @app.post("api/verification")
@@ -354,7 +354,7 @@ role (or roles), management of individual user rights becomes a matter of simply
 user's account; this simplifies common operations, such as adding a user, or changing a user's department. 
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
-`printer:query`, `printer:query,delete`, or `printer:*`. Inspired by [Apache Shiro](https://shiro.apache.org/permissions.html#multiple-parts).
+`printer:query`, `printer:query,delete`, or `printer:*`.
 * Assign Role
 
 ```python

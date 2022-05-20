@@ -4,12 +4,11 @@ from contextlib import suppress
 from sanic import Request
 
 from sanic_security.exceptions import NotFoundError, JWTDecodeError
-from sanic_security.models import CaptchaSession, SessionFactory
-
+from sanic_security.models import CaptchaSession
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -26,9 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-session_factory = SessionFactory()
-
-
 async def request_captcha(request: Request) -> CaptchaSession:
     """
     Creates a captcha session.
@@ -41,11 +37,10 @@ async def request_captcha(request: Request) -> CaptchaSession:
     """
     with suppress(NotFoundError, JWTDecodeError):
         captcha_session = await CaptchaSession.decode(request)
-        captcha_session.active = False
-        await captcha_session.save(
-            update_fields=["active"]
-        )  # Deactivates client's existing session.
-    return await session_factory.get("captcha", request)
+        if captcha_session.active:
+            captcha_session.active = False
+            await captcha_session.save(update_fields=["active"])
+    return await CaptchaSession.new(request)
 
 
 async def captcha(request: Request) -> CaptchaSession:

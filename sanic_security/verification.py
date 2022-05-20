@@ -7,13 +7,12 @@ from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundErro
 from sanic_security.models import (
     Account,
     TwoStepSession,
-    SessionFactory,
 )
 
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -28,9 +27,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
-
-session_factory = SessionFactory()
 
 
 async def request_two_step_verification(
@@ -51,13 +47,12 @@ async def request_two_step_verification(
     """
     with suppress(NotFoundError, JWTDecodeError):
         two_step_session = await TwoStepSession.decode(request)
-        two_step_session.active = False
-        await two_step_session.save(
-            update_fields=["active"]
-        )  # Deactivates client's existing session.
+        if two_step_session.active:
+            two_step_session.active = False
+            await two_step_session.save(update_fields=["active"])
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await session_factory.get("two-step", request, account)
+    two_step_session = await TwoStepSession.new(request, account)
     return two_step_session
 
 
@@ -76,7 +71,6 @@ async def two_step_verification(request: Request) -> TwoStepSession:
         DeactivatedError
         UnverifiedError
         DisabledError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
 
@@ -103,7 +97,6 @@ async def verify_account(request: Request) -> TwoStepSession:
         DeletedError
         ExpiredError
         DeactivatedError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
         AccountError
@@ -140,7 +133,6 @@ def requires_two_step_verification():
         DeletedError
         ExpiredError
         DeactivatedError
-        UnrecognisedLocationError
         ChallengeError
         MaxedOutChallengeError
     """

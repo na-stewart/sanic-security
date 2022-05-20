@@ -1,4 +1,5 @@
 import base64
+import datetime
 import functools
 import re
 
@@ -13,13 +14,16 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
+    SessionError,
+    DeactivatedError,
+    ExpiredError,
 )
-from sanic_security.models import Account, SessionFactory, AuthenticationSession, Role
+from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -35,7 +39,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
 
@@ -133,7 +136,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        return await session_factory.get("authentication", request, account)
+        return await AuthenticationSession.new(request, account)
     except VerifyMismatchError:
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
@@ -143,7 +146,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
 
 async def refresh_authentication(request: Request) -> AuthenticationSession:
     """
-    Refresh expired authentication session without having to ask the user to login again.
+    Retrieves new authentication session without having to ask the user to login again. Do not attempt to refresh a deactivated session.
 
     Args:
         request (Request): Sanic request parameter.
@@ -152,14 +155,43 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
         DeactivatedError
         NotFoundError
         JWTDecodeError
+        ExpiredError
 
     Returns:
         authentication_session
     """
-    authentication_session = await AuthenticationSession.redeem(request)
-    return await session_factory.get(
-        "authentication", request, authentication_session.bearer
-    )
+    decoded_raw = AuthenticationSession.decode_raw(request)
+    try:
+        decoded_session = (
+            await AuthenticationSession.filter(
+                refresh_token=decoded_raw["refresh_token"]
+            )
+            .prefetch_related("bearer")
+            .get()
+        )
+        if decoded_session.active and not decoded_session.deleted:
+            if (
+                decoded_session.refresh_expiration_date
+                and datetime.datetime.now(datetime.timezone.utc)
+                >= decoded_session.refresh_expiration_date
+            ):
+                raise ExpiredError()
+            decoded_session.active = False
+            await decoded_session.save(update_fields=["active"])
+        else:
+            await AuthenticationSession.filter(
+                bearer=decoded_session.bearer, active=True, deleted=False
+            ).update(active=False)
+            logger.warning(
+                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
+                f"with a deactivated session. Deactivating all sessions associated to the bearer."
+            )
+            raise DeactivatedError(
+                "You cannot use a deactivated session to obtain a new session."
+            )
+    except DoesNotExist:
+        raise NotFoundError("Session could not be found.")
+    return await AuthenticationSession.new(request, decoded_session.bearer)
 
 
 async def logout(request: Request) -> AuthenticationSession:
@@ -177,6 +209,8 @@ async def logout(request: Request) -> AuthenticationSession:
         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
+    if not authentication_session.active:
+        raise SessionError("Already logged out.", 403)
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     return authentication_session
@@ -204,7 +238,6 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
     authentication_session.bearer.validate()
-    await authentication_session.check_client_location(request)
     return authentication_session
 
 

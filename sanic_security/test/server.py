@@ -19,7 +19,7 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account, Role, SessionFactory
+from sanic_security.models import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -27,10 +27,9 @@ from sanic_security.verification import (
     verify_account,
 )
 
-
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -46,9 +45,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-
 app = Sanic("test")
-session_factory = SessionFactory()
 password_hasher = PasswordHasher()
 
 
@@ -131,13 +128,24 @@ async def on_authenticate(request, authentication_session):
     return response
 
 
-@app.post("api/test/capt/request")
+@app.get("api/test/capt/request")
 async def on_captcha_request(request):
     """
     Request captcha with solution in the response.
     """
     captcha_session = await request_captcha(request)
     response = json("Captcha request successful!", captcha_session.code)
+    captcha_session.encode(response)
+    return response
+
+
+@app.get("api/test/capt/image")
+async def on_captcha_image(request):
+    """
+    Request captcha captcha image.
+    """
+    captcha_session = await CaptchaSession.decode(request)
+    response = captcha_session.get_image()
     captcha_session.encode(response)
     return response
 
@@ -193,9 +201,9 @@ async def on_role_assign(request, authentication_session):
     """
     await assign_role(
         request.form.get("name"),
-        "Role used for testing.",
-        request.form.get("permissions"),
         authentication_session.bearer,
+        request.form.get("permissions"),
+        "Role used for testing.",
     )
     return text("Role assigned.")
 
@@ -257,8 +265,6 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 """
 security_config.SESSION_ENCODING_ALGORITHM = "RS256"
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
-security_config.SESSION_EXPIRES_ON_CLIENT = True
-security_config.AUTHENTICATION_SESSION_EXPIRATION = 0
 register_tortoise(
     app,
     db_url=security_config.TEST_DATABASE_URL,

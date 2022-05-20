@@ -5,7 +5,7 @@ from sanic_security.utils import json
 
 """
 An effective, simple, and async security library for the Sanic framework.
-Copyright (C) 2021 Aidan Stewart
+Copyright (C) 2020-present Aidan Stewart
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -77,13 +77,6 @@ class JWTDecodeError(SessionError):
 class DeactivatedError(SessionError):
     def __init__(self, message="Session is deactivated."):
         super().__init__(message, 401)
-
-
-class UnrecognisedLocationError(SessionError):
-    def __init__(self):
-        super().__init__(
-            "Session is being accessed from an unrecognised location.", 401
-        )
 
 
 class ExpiredError(SessionError):
