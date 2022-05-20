@@ -19,7 +19,7 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account
+from sanic_security.models import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -44,7 +44,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
 
 app = Sanic("test")
 password_hasher = PasswordHasher()
@@ -135,6 +134,17 @@ async def on_captcha_request(request):
     Request captcha with solution in the response.
     """
     captcha_session = await request_captcha(request)
+    response = json("Captcha request successful!", captcha_session.code)
+    captcha_session.encode(response)
+    return response
+
+
+@app.post("api/test/capt/image")
+async def on_captcha_image(request):
+    """
+    Request captcha captcha image.
+    """
+    captcha_session = await CaptchaSession.decode(request)
     response = captcha_session.get_image()
     captcha_session.encode(response)
     return response
