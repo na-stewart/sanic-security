@@ -40,8 +40,8 @@
     * [Tortoise](#tortoise)
 * [Contributing](#contributing)
 * [License](#license)
-* [Versioning](#Versioning)
-
+* [Versioning](#versioning)
+* [Support](https://discord.gg/JHpZkMfKTJ)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
