@@ -17,6 +17,7 @@ from sanic_security.exceptions import (
     SessionError,
     DeactivatedError,
     ExpiredError,
+    DeletedError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
@@ -160,38 +161,21 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
     Returns:
         authentication_session
     """
-    decoded_raw = AuthenticationSession.decode_raw(request)
+    authentication_session = await AuthenticationSession.decode_for_refresh(request)
     try:
-        decoded_session = (
-            await AuthenticationSession.filter(
-                refresh_token=decoded_raw["refresh_token"]
-            )
-            .prefetch_related("bearer")
-            .get()
+        authentication_session.validate_refresh()
+        authentication_session.active = False
+        await authentication_session.save(update_fields=["active"])
+        return await AuthenticationSession.new(request, authentication_session.bearer)
+    except DeactivatedError or DeletedError as e:
+        await AuthenticationSession.filter(
+            bearer=authentication_session.bearer, active=True, deleted=False
+        ).update(active=False)
+        logger.warning(
+            f"Client ({authentication_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
+            f"with a deactivated session. Deactivating all sessions associated to the bearer."
         )
-        if decoded_session.active and not decoded_session.deleted:
-            if (
-                decoded_session.refresh_expiration_date
-                and datetime.datetime.now(datetime.timezone.utc)
-                >= decoded_session.refresh_expiration_date
-            ):
-                raise ExpiredError()
-            decoded_session.active = False
-            await decoded_session.save(update_fields=["active"])
-        else:
-            await AuthenticationSession.filter(
-                bearer=decoded_session.bearer, active=True, deleted=False
-            ).update(active=False)
-            logger.warning(
-                f"Client ({decoded_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
-                f"with a deactivated session. Deactivating all sessions associated to the bearer."
-            )
-            raise DeactivatedError(
-                "You cannot use a deactivated session to obtain a new session."
-            )
-    except DoesNotExist:
-        raise NotFoundError("Session could not be found.")
-    return await AuthenticationSession.new(request, decoded_session.bearer)
+        raise e
 
 
 async def logout(request: Request) -> AuthenticationSession:
