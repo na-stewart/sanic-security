@@ -489,7 +489,7 @@ class AuthenticationSession(Session):
 
     def validate_refresh(self):
         """
-        Validates session refresh with respect to state.
+        Validates if the session can be refreshed.
 
         Raises:
             DeletedError
