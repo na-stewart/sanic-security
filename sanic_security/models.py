@@ -510,7 +510,7 @@ class AuthenticationSession(Session):
             )
 
     @classmethod
-    async def decode_for_refresh(cls, request: Request):
+    async def decode_to_refresh(cls, request: Request):
         """
         Decodes session JWT from client cookie to an authentication session via refresh token.
 

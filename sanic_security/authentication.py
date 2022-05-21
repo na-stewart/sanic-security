@@ -161,7 +161,7 @@ async def refresh_authentication(request: Request) -> AuthenticationSession:
     Returns:
         authentication_session
     """
-    authentication_session = await AuthenticationSession.decode_for_refresh(request)
+    authentication_session = await AuthenticationSession.decode_to_refresh(request)
     try:
         authentication_session.validate_refresh()
         authentication_session.active = False
