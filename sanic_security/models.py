@@ -458,20 +458,10 @@ class CaptchaSession(VerificationSession):
 class AuthenticationSession(Session):
     """
     Used to authenticate a client and provide access to a user's account.
-
-    Attributes:
-        refresh_expiration_date (datetime): Date and time the session can no longer be refreshed.
-        refresh_token (uuid): Token stored on the client's browser in a cookie for refreshing session.
     """
-
-    refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
-    refresh_token: uuid.UUID = fields.UUIDField(
-        unique=True, default=uuid.uuid4, max_length=36
-    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ctx.refresh_token = str(self.refresh_token)
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
