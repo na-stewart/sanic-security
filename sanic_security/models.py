@@ -460,9 +460,6 @@ class AuthenticationSession(Session):
     Used to authenticate a client and provide access to a user's account.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         return await AuthenticationSession.create(
