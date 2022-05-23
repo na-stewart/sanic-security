@@ -145,39 +145,6 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         raise CredentialsError("Incorrect password.", 401)
 
 
-async def refresh_authentication(request: Request) -> AuthenticationSession:
-    """
-    Retrieves new authentication session without having to ask the user to login again. Do not attempt to refresh a deactivated session.
-
-    Args:
-        request (Request): Sanic request parameter.
-
-    Raises:
-        DeactivatedError
-        NotFoundError
-        JWTDecodeError
-        ExpiredError
-
-    Returns:
-        authentication_session
-    """
-    authentication_session = await AuthenticationSession.decode_to_refresh(request)
-    try:
-        authentication_session.validate_refresh()
-        authentication_session.active = False
-        await authentication_session.save(update_fields=["active"])
-        return await AuthenticationSession.new(request, authentication_session.bearer)
-    except DeactivatedError or DeletedError as e:
-        await AuthenticationSession.filter(
-            bearer=authentication_session.bearer, active=True, deleted=False
-        ).update(active=False)
-        logger.warning(
-            f"Client ({authentication_session.bearer.email}/{get_ip(request)}) attempted to refresh authentication "
-            f"with a deactivated session. Deactivating all sessions associated to the bearer."
-        )
-        raise e
-
-
 async def logout(request: Request) -> AuthenticationSession:
     """
     Deactivates client's authentication session and revokes access.

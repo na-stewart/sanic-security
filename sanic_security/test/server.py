@@ -8,7 +8,6 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
-    refresh_authentication,
     create_initial_admin_account,
 )
 from sanic_security.authorization import (
@@ -89,21 +88,6 @@ async def on_login(request):
     authentication_session = await login(request)
     response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
-    return response
-
-
-@app.post("api/test/auth/refresh")
-async def on_refresh(request):
-    """
-    Refresh client authentication session with a new session via the client session's refresh token. However, the new authentication
-    session is never encoded. Due to the fact that the new session isn't encoded, attempting to refresh again will
-    result in an error as a refresh token should only be used once.
-    """
-    refreshed_authentication_session = await refresh_authentication(request)
-    response = json(
-        "Authentication session refreshed!",
-        refreshed_authentication_session.bearer.json(),
-    )
     return response
 
 

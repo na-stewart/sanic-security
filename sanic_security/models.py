@@ -487,57 +487,6 @@ class AuthenticationSession(Session):
             ),
         )
 
-    def validate_refresh(self):
-        """
-        Validates if the session can be refreshed.
-
-        Raises:
-            DeletedError
-            ExpiredError
-            DeactivatedError
-        """
-        if self.deleted:
-            raise DeletedError("Session has been deleted.")
-        elif (
-            self.refresh_expiration_date
-            and datetime.datetime.now(datetime.timezone.utc)
-            >= self.refresh_expiration_date
-        ):
-            raise ExpiredError()
-        elif not self.active:
-            raise DeactivatedError(
-                "You cannot use a deactivated session to obtain a new session."
-            )
-
-    @classmethod
-    async def decode_to_refresh(cls, request: Request):
-        """
-        Decodes session JWT from client cookie to an authentication session via refresh token.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Returns:
-            authentication_session
-
-        Raises:
-            JWTDecodeError
-            NotFoundError
-        """
-        try:
-            decoded_raw = cls.decode_raw(request)
-            decoded_session = (
-                await cls.filter(refresh_token=decoded_raw["refresh_token"])
-                .prefetch_related("bearer")
-                .get()
-            )
-        except DoesNotExist:
-            raise NotFoundError("Session could not be found.")
-        return decoded_session
-
-    class Meta:
-        table = "authentication_session"
-
 
 class Role(BaseModel):
     """
