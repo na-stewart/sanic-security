@@ -49,7 +49,7 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Login, registration, and authentication (including access/refresh tokens)
+* Login, registration, and authentication
 * Two-step verification
 * Captcha
 * Role based authorization with wildcard permissions
@@ -224,23 +224,6 @@ async def on_login(request):
 async def on_logout(request):
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.bearer.json())
-    return response
-```
-
-* Refresh Authentication
-
-A refresh token is used that lets the client retrieve a new authentication session without having to ask the user to log in again.
-Keep in mind that a deactivated session cannot be refreshed.
-
-```python
-@app.post("api/auth/refresh")
-async def on_refresh(request):
-    authentication_session = await refresh_authentication(request)
-    response = json(
-        "Authentication renewed!",
-        authentication_session.bearer.json(),
-    )
-    authentication_session.encode(response)
     return response
 ```
 
