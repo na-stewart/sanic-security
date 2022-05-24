@@ -222,7 +222,7 @@ return response
 ```python
 @app.post("api/auth")
 @requires_authentication()
-async def on_authenticated(request, authentication_session):
+async def on_authenticate(request, authentication_session):
     return json(
         "You have been authenticated.",
         authentication_session.bearer.json(),
