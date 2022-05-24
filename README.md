@@ -168,21 +168,17 @@ Phone can be null or empty.
 | **username** | example             |
 | **email**    | example@example.com |
 | **phone**    | 19811354186         |
-| **password** | examplepass            |
-| **captcha**  | Aj8HgD              |
+| **password** | examplepass         |
 
 ```python
-@app.post("api/auth/register")
-@requires_captcha()
-async def on_register(request, captcha_session):
-    account = await register(request)
-    two_step_session = await request_two_step_verification(request, account)
-    await email_code(
-        two_step_session.code
-    )  # Custom method for emailing verification code.
-    response = json("Registration successful!", two_step_session.bearer.json())
-    two_step_session.encode(response)
-    return response
+account = await register(request)
+two_step_session = await request_two_step_verification(request, account)
+await email_code(
+    two_step_session.code
+)  # Custom method for emailing verification code.
+response = json("Registration successful!", two_step_session.bearer.json())
+two_step_session.encode(response)
+return response
 ```
 
 * Verify Account
@@ -192,12 +188,10 @@ async def on_register(request, captcha_session):
 | **code** | Aj8HgD |
 
 ```python
-@app.post("api/auth/verify")
-async def on_verify(request):
-    two_step_session = await verify_account(request)
-    return json(
-        "You have verified your account and may login!", two_step_session.bearer.json()
-    )
+two_step_session = await verify_account(request)
+return json(
+    "You have verified your account and may login!", two_step_session.bearer.json()
+):
 ```
 
 * Login
@@ -209,10 +203,8 @@ username and the password with a colon (aladdin:opensesame), and then by encodin
 You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
-@app.post("api/auth/login")
-async def on_login(request):
-    authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.bearer.json())
+authentication_session = await login(request)
+response = json("Login successful!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
 ```
@@ -220,11 +212,9 @@ async def on_login(request):
 * Logout
 
 ```python
-@app.post("api/auth/logout")
-async def on_logout(request):
-    authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.bearer.json())
-    return response
+authentication_session = await logout(request)
+response = json("Logout successful!", authentication_session.bearer.json())
+return response
 ```
 
 * Requires Authentication
@@ -255,12 +245,10 @@ Captcha challenge example:
 * Request Captcha
 
 ```python
-@app.get("api/captcha")
-async def on_request_captcha(request):
-    captcha_session = await request_captcha(request)
-    response = captcha_session.get_image()
-    captcha_session.encode(response)
-    return response
+captcha_session = await request_captcha(request)
+response = captcha_session.get_image()
+captcha_session.encode(response)
+return response
 ```
 
 * Requires Captcha
@@ -272,7 +260,7 @@ async def on_request_captcha(request):
 ```python
 @app.post("api/captcha")
 @requires_captcha()
-async def on_captcha_attempt(request, captcha_session):
+async def on_captcha(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
 ```
 
@@ -283,31 +271,25 @@ async def on_captcha_attempt(request, captcha_session):
 | Key         | Value               |
 |-------------|---------------------|
 | **email**   | example@example.com |
-| **captcha** | Aj8HgD              |
 
 ```python
-@app.post("api/verification/request")
-@requires_captcha()
-async def on_request_verification(request, captcha_session):
-    two_step_session = await request_two_step_verification(request)
-    await email_code(
-        two_step_session.code
-    )  # Custom method for emailing verification code.
-    response = json("Verification request successful!", two_step_session.bearer.json())
-    two_step_session.encode(response)
-    return response
+two_step_session = await request_two_step_verification(request)
+await email_code(
+    two_step_session.code
+)  # Custom method for emailing verification code.
+response = json("Verification request successful!", two_step_session.bearer.json())
+two_step_session.encode(response)
+return response
 ```
 
 * Resend Two-step Verification Code
 
 ```python
-@app.post("api/verification/resend")
-async def on_resend_verification(request):
-    two_step_session = await TwoStepSession.decode(request)
-    await email_code(
-        two_step_session.code
-    )  # Custom method for emailing verification code.
-    return json("Verification code resend successful!", two_step_session.bearer.json())
+two_step_session = await TwoStepSession.decode(request)
+await email_code(
+    two_step_session.code
+)  # Custom method for emailing verification code.
+return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
 * Requires Two-step Verification
@@ -317,9 +299,9 @@ async def on_resend_verification(request):
 | **code** | Aj8HgD |
 
 ```python
-@app.post("api/verification")
+@app.post("api/verify")
 @requires_two_step_verification()
-async def on_verification(request, two_step_session):
+async def on_verify(request, two_step_session):
     response = json(
         "Two-step verification attempt successful!", two_step_session.bearer.json()
     )
