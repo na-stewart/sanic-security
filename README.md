@@ -205,8 +205,8 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 ```python
 authentication_session = await login(request)
 response = json("Login successful!", authentication_session.bearer.json())
-    authentication_session.encode(response)
-    return response
+authentication_session.encode(response)
+return response
 ```
 
 * Logout
