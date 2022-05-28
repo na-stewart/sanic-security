@@ -172,9 +172,7 @@ Phone can be null or empty.
 ```python
 account = await register(request)
 two_step_session = await request_two_step_verification(request, account)
-await email_code(
-    two_step_session.code
-)  # Custom method for emailing verification code.
+await email_code(two_step_session.code)  # Custom method for emailing verification code.
 response = json("Registration successful!", two_step_session.bearer.json())
 two_step_session.encode(response)
 return response
@@ -190,7 +188,7 @@ return response
 two_step_session = await verify_account(request)
 return json(
     "You have verified your account and may login!", two_step_session.bearer.json()
-):
+)
 ```
 
 * Login
@@ -273,9 +271,7 @@ async def on_captcha(request, captcha_session):
 
 ```python
 two_step_session = await request_two_step_verification(request)
-await email_code(
-    two_step_session.code
-)  # Custom method for emailing verification code.
+await email_code(two_step_session.code)  # Custom method for emailing verification code.
 response = json("Verification request successful!", two_step_session.bearer.json())
 two_step_session.encode(response)
 return response
@@ -285,9 +281,7 @@ return response
 
 ```python
 two_step_session = await TwoStepSession.decode(request)
-await email_code(
-    two_step_session.code
-)  # Custom method for emailing verification code.
+await email_code(two_step_session.code)  # Custom method for emailing verification code.
 return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
