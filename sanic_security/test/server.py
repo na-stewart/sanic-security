@@ -44,7 +44,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-app = Sanic("test")
+app = Sanic("security-test")
 password_hasher = PasswordHasher()
 
 
@@ -126,7 +126,7 @@ async def on_captcha_request(request):
 @app.get("api/test/capt/image")
 async def on_captcha_image(request):
     """
-    Request captcha captcha image.
+    Request captcha image.
     """
     captcha_session = await CaptchaSession.decode(request)
     response = captcha_session.get_image()
@@ -138,7 +138,7 @@ async def on_captcha_image(request):
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     """
-    Captcha challenge.
+    Attempt captcha.
     """
     return json("Captcha attempt successful!", captcha_session.json())
 
@@ -146,7 +146,7 @@ async def on_captcha_attempt(request, captcha_session):
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
     """
-    Two-step verification is requested with code in the response.
+    Request Two-step verification with code in the response.
     """
     two_step_session = await request_two_step_verification(request)
     response = json("Verification request successful!", two_step_session.code)
@@ -167,7 +167,7 @@ async def on_verification_attempt(request, two_step_session):
 @requires_authentication()
 async def on_authorization(request, authentication_session):
     """
-    Permissions authorization.
+    Check if client is authorized with sufficient roles and permissions.
     """
     await check_roles(request, request.form.get("role"))
     if request.form.get("permissions_required"):
@@ -181,7 +181,7 @@ async def on_authorization(request, authentication_session):
 @requires_authentication()
 async def on_role_assign(request, authentication_session):
     """
-    Assigns authenticated account a role.
+    Assign authenticated account a role.
     """
     await assign_role(
         request.form.get("name"),
@@ -189,13 +189,13 @@ async def on_role_assign(request, authentication_session):
         request.form.get("permissions"),
         "Role used for testing.",
     )
-    return text("Role assigned.")
+    return text("Role assigned.b")
 
 
 @app.post("api/test/account")
 async def on_account_creation(request):
     """
-    Creates a usable account.
+    Quick account creation.
     """
     try:
         username = "test"
@@ -210,9 +210,7 @@ async def on_account_creation(request):
         )
         response = json("Account creation successful!", account.json())
     except IntegrityError:
-        response = json(
-            "Account creation has failed due to an expected integrity error!", None
-        )
+        response = json("Account with these credentials already exist!", None)
     return response
 
 
