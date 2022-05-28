@@ -122,7 +122,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
                 base64.b64decode(credentials).decode().split(":")
             )
         else:
-            raise CredentialsError("Invalid authorization header type.")
+            raise CredentialsError("Invalid authorization type.")
     else:
         raise CredentialsError("Credentials not provided.")
     if not account:
