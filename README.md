@@ -67,10 +67,9 @@ In order to get started, please install pip.
 
 ### Prerequisites
 
-* pip
-```shell
-sudo apt-get install python3-pip
-```
+* Pip
+
+https://pypi.org/
 
 ### Installation
 

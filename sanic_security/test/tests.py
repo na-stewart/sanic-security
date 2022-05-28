@@ -137,7 +137,7 @@ class RegistrationTest(TestCase):
 
 class LoginTest(TestCase):
     """
-    Tests basic login, logout and two-factor authentication.
+    Tests login and logout.b
     """
 
     def setUp(self):
