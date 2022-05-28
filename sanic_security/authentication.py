@@ -60,6 +60,7 @@ async def register(
     Raises:
         CredentialsError
     """
+
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
@@ -81,21 +82,22 @@ async def register(
             "Password must be more than 8 characters and must be less than 100 characters.",
             400,
         )
-    try:
-        account = await Account.create(
-            email=request.form.get("email").lower(),
-            username=request.form.get("username"),
-            password=password_hasher.hash(request.form.get("password")),
-            phone=request.form.get("phone"),
-            verified=verified,
-            disabled=disabled,
-        )
-        return account
-    except IntegrityError:
-        raise CredentialsError(
-            "An account with these credentials may already exist.",
-            409,
-        )
+    if await Account.filter(email=request.form.get("email").lower()).exists():
+        raise CredentialsError("An account with this email already exists.")
+    if (
+        security_config.ALLOW_LOGIN_WITH_USERNAME
+        and await Account.filter(username=request.form.get("username")).exists()
+    ):
+        raise CredentialsError("An account with this username already exists.")
+    account = await Account.create(
+        email=request.form.get("email").lower(),
+        username=request.form.get("username"),
+        password=password_hasher.hash(request.form.get("password")),
+        phone=request.form.get("phone"),
+        verified=verified,
+        disabled=disabled,
+    )
+    return account
 
 
 async def login(request: Request, account: Account = None) -> AuthenticationSession:
