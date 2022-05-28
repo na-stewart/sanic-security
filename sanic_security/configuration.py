@@ -96,7 +96,7 @@ class Config(dict):
         Any environment variables defined with the prefix argument will be applied to the config.
 
         Args:
-            load_env (str):  Prefix being used to apply environment variables into the config.
+            load_env (str): Prefix being used to apply environment variables into the config.
         """
         for key, value in environ.items():
             if not key.startswith(load_env):

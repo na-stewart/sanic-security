@@ -33,7 +33,7 @@ async def request_two_step_verification(
     request: Request, account: Account = None
 ) -> TwoStepSession:
     """
-    Creates a two-step session.
+    Creates a two-step session and deactivates the client's current two-step session if found.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
@@ -86,7 +86,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
 
 async def verify_account(request: Request) -> TwoStepSession:
     """
-    Verifies account with two-step session code.
+    Verifies account via two-step session code.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.

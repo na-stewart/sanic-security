@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 async def request_captcha(request: Request) -> CaptchaSession:
     """
-    Creates a captcha session.
+    Creates a captcha session and deactivates the client's current captcha session if found.
 
     Args:
         request (Request): Sanic request parameter.

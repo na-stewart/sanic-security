@@ -47,7 +47,7 @@ async def register(
     request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
-    Registers a new account.
+    Registers a new account that can be logged into.
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
@@ -169,7 +169,7 @@ async def logout(request: Request) -> AuthenticationSession:
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Authenticates client.
+    Validates client.
 
     Args:
         request (Request): Sanic request parameter.
@@ -194,7 +194,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication():
     """
-    Authenticates client.
+    Validates client.
 
     Example:
         This method is not called directly and instead used as a decorator:
