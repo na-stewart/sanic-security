@@ -182,7 +182,7 @@ return response
 
 | Key      | Value  |
 |----------|--------|
-| **code** | Aj8HgD |
+| **code** | AJ8HGD |
 
 ```python
 two_step_session = await verify_account(request)
@@ -252,7 +252,7 @@ return response
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | Aj8HgD |
+| **captcha** | AJ8HGD |
 
 ```python
 @app.post("api/captcha")
@@ -289,7 +289,7 @@ return json("Verification code resend successful!", two_step_session.bearer.json
 
 | Key      | Value  |
 |----------|--------|
-| **code** | Aj8HgD |
+| **code** | AJ8HGD |
 
 ```python
 @app.post("api/verify")
