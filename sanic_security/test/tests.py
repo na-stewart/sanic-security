@@ -313,9 +313,9 @@ class VerificationTest(TestCase):
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
-                "username": "test",
+                "username": "account_verification",
                 "email": "account@verification.com",
-                "password": "account_verification",
+                "password": "testtest",
                 "disabled": False,
                 "verified": False,
             },
