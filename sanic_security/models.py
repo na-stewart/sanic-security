@@ -92,7 +92,7 @@ class Account(BaseModel):
     Attributes:
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
-        phone (str): Mobile phone number with country code included and can be used for verification. May be null or empty.
+        phone (str): Mobile phone number with country code included and can be used for verification. Can be null or empty.
         password (str): Password of account for protection. Must be hashed via Argon.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
@@ -268,7 +268,7 @@ class Session(BaseModel):
 
     def encode(self, response: HTTPResponse) -> None:
         """
-        Transforms session into jwt and then is stored in a cookie.
+        Transforms session into JWT and then is stored in a cookie.
 
         Args:
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.

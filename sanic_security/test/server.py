@@ -146,7 +146,7 @@ async def on_captcha_attempt(request, captcha_session):
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
     """
-    Request Two-step verification with code in the response.
+    Request two-step verification with code in the response.
     """
     two_step_session = await request_two_step_verification(request)
     response = json("Verification request successful!", two_step_session.code)

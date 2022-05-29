@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class RegistrationTest(TestCase):
     """
-    Tests registration and login responses based off of registration conditions.
+    Tests registration.
     """
 
     def setUp(self):
@@ -143,7 +143,7 @@ class RegistrationTest(TestCase):
 
 class LoginTest(TestCase):
     """
-    Tests login and logout.b
+    Tests login.
     """
 
     def setUp(self):
@@ -253,7 +253,7 @@ class LoginTest(TestCase):
 
 class VerificationTest(TestCase):
     """
-    Tests verification such as two-step verification and captcha.
+    Tests two-step verification and captcha.
     """
 
     def setUp(self):

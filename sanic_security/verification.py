@@ -132,8 +132,9 @@ def requires_two_step_verification():
         JWTDecodeError
         DeletedError
         ExpiredError
-        DisabledError
         DeactivatedError
+        UnverifiedError
+        DisabledError
         ChallengeError
         MaxedOutChallengeError
     """

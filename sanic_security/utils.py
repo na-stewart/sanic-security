@@ -40,7 +40,7 @@ def get_ip(request: Request) -> str:
 
 def get_code() -> str:
     """
-    Generates random code used for verification.
+    Generates random code to be used for verification.
 
     Returns:
         code
