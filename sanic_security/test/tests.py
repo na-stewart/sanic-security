@@ -61,7 +61,9 @@ class RegistrationTest(TestCase):
         """
         Registration and login.
         """
-        registration_response = self.register("emailpass@register.com", "emailpass", False, True)
+        registration_response = self.register(
+            "emailpass@register.com", "emailpass", False, True
+        )
         assert registration_response.status_code == 200, registration_response.text
 
     def test_invalid_registration(self):
@@ -100,7 +102,9 @@ class RegistrationTest(TestCase):
         """
         Registration and login with a disabled account.
         """
-        registration_response = self.register("disabled@register.com", "disabled", True, True)
+        registration_response = self.register(
+            "disabled@register.com", "disabled", True, True
+        )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
@@ -112,7 +116,9 @@ class RegistrationTest(TestCase):
         """
         Registration and login with an unverified account.
         """
-        registration_response = self.register("unverified@register.com", "unverified", False, False)
+        registration_response = self.register(
+            "unverified@register.com", "unverified", False, False
+        )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
@@ -125,7 +131,7 @@ class RegistrationTest(TestCase):
         Registration and login with an unverified and disabled account.
         """
         registration_response = self.register(
-            "unverified_disabled@register.com", "unverified_disabled",True, False
+            "unverified_disabled@register.com", "unverified_disabled", True, False
         )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
