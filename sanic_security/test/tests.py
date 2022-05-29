@@ -39,9 +39,9 @@ class RegistrationTest(TestCase):
     def register(
         self,
         email: str,
+        username: str,
         disabled: bool,
         verified: bool,
-        username: str = "test",
         phone: str = None,
     ):
         registration_response = self.client.post(
@@ -61,7 +61,7 @@ class RegistrationTest(TestCase):
         """
         Registration and login.
         """
-        registration_response = self.register("emailpass@register.com", False, True)
+        registration_response = self.register("emailpass@register.com", "emailpass", False, True)
         assert registration_response.status_code == 200, registration_response.text
 
     def test_invalid_registration(self):
@@ -75,22 +75,22 @@ class RegistrationTest(TestCase):
             invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
         invalid_phone_registration_response = self.register(
-            "invalidnum@register.com", False, True, phone="218183186"
+            "invalidnum@register.com", "invalidnum", False, True, phone="218183186"
         )
         assert (
             invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
         invalid_username_registration_response = self.register(
-            "invaliduser@register.com", False, True, username="_inVal!d_"
+            "invaliduser@register.com", "_inVal!d_", False, True
         )
         assert (
             invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
         too_many_characters_registration_response = self.register(
             "toolonguser@register.com",
+            "thisusernameistoolongtoberegisteredwith",
             False,
             True,
-            username="thisusernameistoolongtoberegisteredwith",
         )
         assert (
             too_many_characters_registration_response.status_code == 400
@@ -100,7 +100,7 @@ class RegistrationTest(TestCase):
         """
         Registration and login with a disabled account.
         """
-        registration_response = self.register("disabled@register.com", True, True)
+        registration_response = self.register("disabled@register.com", "disabled", True, True)
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
@@ -112,7 +112,7 @@ class RegistrationTest(TestCase):
         """
         Registration and login with an unverified account.
         """
-        registration_response = self.register("unverified@register.com", False, False)
+        registration_response = self.register("unverified@register.com", "unverified", False, False)
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
@@ -125,7 +125,7 @@ class RegistrationTest(TestCase):
         Registration and login with an unverified and disabled account.
         """
         registration_response = self.register(
-            "unverified_disabled@register.com", True, False
+            "unverified_disabled@register.com", "unverified_disabled",True, False
         )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
