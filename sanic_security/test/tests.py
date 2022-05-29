@@ -69,7 +69,7 @@ class RegistrationTest(TestCase):
         Registration with an intentionally invalid email, username, and phone.
         """
         invalid_email_registration_response = self.register(
-            "invalidregister.com", False, True
+            "invalidregister.com", "invalid", False, True
         )
         assert (
             invalid_email_registration_response.status_code == 400
@@ -315,7 +315,7 @@ class VerificationTest(TestCase):
             data={
                 "username": "test",
                 "email": "account@verification.com",
-                "password": "testtest",
+                "password": "account_verification",
                 "disabled": False,
                 "verified": False,
             },
