@@ -2,7 +2,6 @@ from sanic.exceptions import SanicException
 
 from sanic_security.utils import json
 
-
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -75,8 +74,8 @@ class JWTDecodeError(SessionError):
 
 
 class DeactivatedError(SessionError):
-    def __init__(self, message="Session is deactivated."):
-        super().__init__(message, 401)
+    def __init__(self, message="Session is deactivated.", code: int = 401):
+        super().__init__(message, code)
 
 
 class ExpiredError(SessionError):

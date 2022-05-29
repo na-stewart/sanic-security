@@ -114,6 +114,9 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
     Raises:
         CredentialsError
         NotFoundError
+        DeletedError
+        UnverifiedError
+        DisabledError
     """
     if request.headers.get("Authorization"):
         authorization_type, credentials = request.headers.get("Authorization").split()
@@ -157,13 +160,14 @@ async def logout(request: Request) -> AuthenticationSession:
     Raises:
         NotFoundError
         JWTDecodeError
+        DeactivatedError
 
     Returns:
         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
     if not authentication_session.active:
-        raise SessionError("Already logged out.", 403)
+        raise DeactivatedError("Already logged out.", 403)
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     return authentication_session
