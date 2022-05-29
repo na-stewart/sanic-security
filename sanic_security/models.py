@@ -384,7 +384,6 @@ class VerificationSession(Session):
         Raises:
             ChallengeError
             MaxedOutChallengeError
-            UnrecognisedLocationError
         """
         if self.code != code:
             if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
