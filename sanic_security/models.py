@@ -375,7 +375,7 @@ class VerificationSession(Session):
 
     async def check_code(self, request: Request, code: str) -> None:
         """
-        Used to check if code passed is equivalent to the session code.
+        Checks if code passed is equivalent to the session code.
 
         Args:
             code (str): Code being cross-checked with session code.
@@ -426,7 +426,7 @@ class TwoStepSession(VerificationSession):
 
 class CaptchaSession(VerificationSession):
     """
-    Validates a client as human with a captcha challenge.
+    Validates a client with a captcha challenge.
     """
 
     @classmethod
@@ -457,7 +457,7 @@ class CaptchaSession(VerificationSession):
 
 class AuthenticationSession(Session):
     """
-    Used to authenticate a client and provide access to a user's account.
+    Used to authenticate and identify a client.
     """
 
     @classmethod
