@@ -326,7 +326,7 @@ await assign_role(
 * Require Permissions
 
 ```python
-@app.post("api/channel/view")
+@app.post("api/channel/voice/control")
 @require_permissions("channels:view", "voice:*")
 async def on_voice_chat_control(request, authentication_session):
     return text("Voice chat is now being controlled.")
