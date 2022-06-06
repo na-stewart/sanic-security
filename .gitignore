@@ -8,3 +8,5 @@
 /sanic_security.egg-info/
 .idea
 /sanic_security/lib/
+.pyc
+.swp
