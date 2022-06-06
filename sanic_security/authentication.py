@@ -20,7 +20,7 @@ from sanic_security.exceptions import (
     ExpiredError,
     DeletedError,
 )
-from sanic_security.models import Account, AuthenticationSession, Role
+from sanic_security.orm.tortoise import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
