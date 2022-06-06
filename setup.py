@@ -12,7 +12,7 @@ setup(
     url="https://github.com/sunset-developer/sanic-security",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license="GNU General Public License v3.0",
+    license="GNU Affero General Public License v3.0",
     version="1.8.2",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",

@@ -26,7 +26,7 @@ DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "PUBLIC_SECRET": None,
     "SESSION_SAMESITE": "strict",
-    "SESSION_SECURE": False,
+    "SESSION_SECURE": True,
     "SESSION_HTTPONLY": True,
     "SESSION_DOMAIN": None,
     "SESSION_EXPIRES_ON_CLIENT": False,
