@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "sanic-security"
+version = "2.0.0"
+description = "An effective, simple, and async security library for the Sanic framework... minus the mandatory ORM"
+authors = ["Rob Dailey <rob@suspected.org>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+PyJWT = "^2.4.0"
+captcha = "^0.4"
+argon2-cffi = "^21.3.0"
+sanic = "^22.3.2"
+cryptography = {version = "^37.0.2", extras = ["crypto"]}
+tortoise-orm = {version = "^0.19.1", extras = ["tortoise"]}
+
+[tool.poetry.dev-dependencies]
+httpx = "^0.23.0"
+black = "^22.3.0"
+blacken-docs = "^1.12.1"
+pdoc3 = "^0.10.0"
+cryptography = "^37.0.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
