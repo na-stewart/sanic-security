@@ -1,14 +1,7 @@
-from sys import path as sys_path
-from os import path as os_path
-sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), "../.."))
+import pytest
 
-import json
-import os
-from unittest import TestCase
-
-import httpx
-
-from sanic_security.configuration import Config
+from sanic import Sanic
+from sanic_testing.reusable import ReusableClient
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -29,26 +22,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-class RegistrationTest(TestCase):
+@pytest.mark.usefixtures("app")
+class TestRegistration:
     """
     Tests registration.
     """
 
-    def setUp(self):
-        self.client = httpx.Client()
-
-    def tearDown(self):
-        self.client.close()
-
     def register(
         self,
+        client,
         email: str,
         username: str,
         disabled: bool,
         verified: bool,
         phone: str = None,
     ):
-        registration_response = self.client.post(
+        registration_response = client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
                 "username": username,
@@ -61,47 +50,52 @@ class RegistrationTest(TestCase):
         )
         return registration_response
 
-    def test_registration(self):
+    def test_registration(self, app: Sanic):
         """
         Registration and login.
         """
-        registration_response = self.register(
-            "emailpass@register.com", "emailpass", False, True
-        )
-        assert registration_response.status_code == 200, registration_response.text
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            registration_response = self.register(
+                _client, "emailpass@register.com", "emailpass", False, True
+            )
+            assert registration_response.status_code == 200, registration_response.text
 
     def test_invalid_registration(self):
         """
         Registration with an intentionally invalid email, username, and phone.
         """
-        invalid_email_registration_response = self.register(
-            "invalidregister.com", "invalid", False, True
-        )
-        assert (
-            invalid_email_registration_response.status_code == 400
-        ), invalid_email_registration_response.text
-        invalid_phone_registration_response = self.register(
-            "invalidnum@register.com", "invalidnum", False, True, phone="218183186"
-        )
-        assert (
-            invalid_phone_registration_response.status_code == 400
-        ), invalid_phone_registration_response.text
-        invalid_username_registration_response = self.register(
-            "invaliduser@register.com", "_inVal!d_", False, True
-        )
-        assert (
-            invalid_username_registration_response.status_code == 400
-        ), invalid_username_registration_response.text
-        too_many_characters_registration_response = self.register(
-            "toolonguser@register.com",
-            "thisusernameistoolongtoberegisteredwith",
-            False,
-            True,
-        )
-        assert (
-            too_many_characters_registration_response.status_code == 400
-        ), too_many_characters_registration_response.text
-
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            invalid_email_registration_response = self.register(
+                _client, "invalidregister.com", "invalid", False, True
+            )
+            assert (
+                invalid_email_registration_response.status_code == 400
+            ), invalid_email_registration_response.text
+            invalid_phone_registration_response = self.register(
+                _client, "invalidnum@register.com", "invalidnum", False, True, phone="218183186"
+            )
+            assert (
+                invalid_phone_registration_response.status_code == 400
+            ), invalid_phone_registration_response.text
+            invalid_username_registration_response = self.register(
+                _client, "invaliduser@register.com", "_inVal!d_", False, True
+            )
+            assert (
+                invalid_username_registration_response.status_code == 400
+            ), invalid_username_registration_response.text
+            too_many_characters_registration_response = self.register(
+                _client,
+                "toolonguser@register.com",
+                "thisusernameistoolongtoberegisteredwith",
+                False,
+                True,
+            )
+            assert (
+                too_many_characters_registration_response.status_code == 400
+            ), too_many_characters_registration_response.text
+    
     def test_registration_disabled(self):
         """
         Registration and login with a disabled account.
