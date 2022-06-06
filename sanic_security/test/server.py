@@ -1,7 +1,6 @@
 from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
-from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
     login,
@@ -17,7 +16,7 @@ from sanic_security.authorization import (
 )
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
-from sanic_security.exceptions import SecurityError
+from sanic_security.exceptions import SecurityError, IntegrityError
 from sanic_security.models import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (

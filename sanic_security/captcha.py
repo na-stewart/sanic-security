@@ -4,7 +4,7 @@ from contextlib import suppress
 from sanic import Request
 
 from sanic_security.exceptions import NotFoundError, JWTDecodeError
-from sanic_security.models import CaptchaSession
+from sanic_security.orm.tortoise import CaptchaSession
 
 """
 An effective, simple, and async security library for the Sanic framework.
