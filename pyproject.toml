@@ -12,6 +12,7 @@ argon2-cffi = "^21.3.0"
 cryptography = {version = "^37.0.2", extras = ["crypto"]}
 tortoise-orm = {version = "^0.19.1", extras = ["tortoise"]}
 sanic = "^22.3.2"
+sanic-ext = "^22.3.2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
