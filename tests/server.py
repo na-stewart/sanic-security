@@ -1,7 +1,10 @@
+from sys import path as sys_path
+from os import path as os_path
+sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), ".."))
+
 from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
-from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
     login,
@@ -17,8 +20,8 @@ from sanic_security.authorization import (
 )
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
-from sanic_security.exceptions import SecurityError
-from sanic_security.models import Account, CaptchaSession
+from sanic_security.exceptions import SecurityError, IntegrityError
+from sanic_security.orm.tortoise import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -250,7 +253,7 @@ security_config.ALLOW_LOGIN_WITH_USERNAME = True
 register_tortoise(
     app,
     db_url=security_config.TEST_DATABASE_URL,
-    modules={"models": ["sanic_security.models"]},
+    modules={"models": ["sanic_security.orm.tortoise"]},
     generate_schemas=True,
 )
 create_initial_admin_account(app)

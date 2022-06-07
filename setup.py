@@ -13,11 +13,10 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU General Public License v3.0",
-    version="1.8.2",
+    version="2.0.0",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
-        "tortoise-orm>=0.17.0",
         "pyjwt>=1.7.0",
         "captcha",
         "argon2-cffi>=20.1.0",
@@ -32,6 +31,7 @@ setup(
             "cryptography>=3.3.1",
         ],
         "crypto": ["cryptography>=3.3.1"],
+        "tortoise": ["tortoise-orm>=0.17.0"],
     },
     platforms="any",
 )

@@ -8,18 +8,20 @@ from argon2.exceptions import VerifyMismatchError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import IntegrityError, DoesNotExist
+
+from tortoise.exceptions import DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
+    IntegrityError,
     SessionError,
     DeactivatedError,
     ExpiredError,
     DeletedError,
 )
-from sanic_security.models import Account, AuthenticationSession, Role
+from sanic_security.orm.tortoise import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """

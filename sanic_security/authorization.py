@@ -2,12 +2,13 @@ import functools
 import logging
 from fnmatch import fnmatch
 
-from sanic.request import Request
 from tortoise.exceptions import DoesNotExist
+
+from sanic.request import Request
 
 from sanic_security.authentication import authenticate
 from sanic_security.exceptions import AuthorizationError
-from sanic_security.models import Role, Account, AuthenticationSession
+from sanic_security.orm.tortoise import Role, Account, AuthenticationSession
 from sanic_security.utils import get_ip
 
 

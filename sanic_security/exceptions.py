@@ -101,3 +101,8 @@ class AuthorizationError(SecurityError):
 class CredentialsError(SecurityError):
     def __init__(self, message, code=400):
         super().__init__(message, code)
+
+
+class IntegrityError(SecurityError):
+    def __init__(self, message, code=400):
+        super().__init__(message, code)

@@ -4,7 +4,7 @@ from contextlib import suppress
 from sanic.request import Request
 
 from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
-from sanic_security.models import (
+from sanic_security.orm.tortoise import (
     Account,
     TwoStepSession,
 )
