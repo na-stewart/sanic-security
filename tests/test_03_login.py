@@ -1,14 +1,7 @@
-from sys import path as sys_path
-from os import path as os_path
-sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), "../.."))
+import pytest
 
-import json
-import os
-from unittest import TestCase
-
-import httpx
-
-from sanic_security.configuration import Config
+from sanic import Sanic
+from sanic_testing.reusable import ReusableClient
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -29,111 +22,116 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-class LoginTest(TestCase):
+@pytest.mark.usefixtures("app")
+class TestLogin:
     """
     Tests login.
     """
 
-    def setUp(self):
-        self.client = httpx.Client()
-
-    def tearDown(self):
-        self.client.close()
-
-    def test_login(self):
+    def test_login(self, app: Sanic):
         """
         Login with an email and password.
         """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "emailpass@login.com"},
-        )
-        login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("emailpass@login.com", "testtest"),
-        )
-        assert login_response.status_code == 200, login_response.text
-        authenticate_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth",
-        )
-        assert authenticate_response.status_code == 200, authenticate_response.text
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            _client.post(
+                "/api/test/account",
+                data={"email": "emailpass@login.com"},
+            )
+            login_request, login_response = _client.post(
+                "/api/test/auth/login",
+                auth=("emailpass@login.com", "testtest"),
+            )
+            assert login_response.status == 200, login_response.text
+            authenticate_request, authenticate_response = _client.post(
+                "/api/test/auth",
+            )
+            assert authenticate_response.status == 200, authenticate_response.text
 
-    def test_login_with_username(self):
+    def test_login_with_username(self, app: Sanic):
         """
         Login with a username instead of an email and password.
         """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "userpass@login.com", "username": "username_test"},
-        )
-        login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("username_test", "testtest"),
-        )
-        assert login_response.status_code == 200, login_response.text
-        authenticate_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth",
-        )
-        assert authenticate_response.status_code == 200, authenticate_response.text
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            _client.post(
+                "/api/test/account",
+                data={"email": "userpass@login.com", "username": "username_test"},
+            )
+            login_request, login_response = _client.post(
+                "/api/test/auth/login",
+                auth=("username_test", "testtest"),
+            )
+            assert login_response.status == 200, login_response.text
+            authenticate_request, authenticate_response = _client.post(
+                "/api/test/auth",
+            )
+            assert authenticate_response.status == 200, authenticate_response.text
 
-    def test_invalid_login(self):
+    def test_invalid_login(self, app: Sanic):
         """
         Login with an intentionally incorrect password and into a non existent account.
         """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "incorrectpass@login.com"},
-        )
-        incorrect_password_login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("incorrectpass@login.com", "incorrecttest"),
-        )
-        assert (
-            incorrect_password_login_response.status_code == 401
-        ), incorrect_password_login_response.text
-        unavailable_account_login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unavailable@login.com", "testtest"),
-        )
-        assert (
-            unavailable_account_login_response.status_code == 404
-        ), unavailable_account_login_response
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            _client.post(
+                "/api/test/account",
+                data={"email": "incorrectpass@login.com"},
+            )
+            incorrect_password_login_request, incorrect_password_login_response = _client.post(
+                "/api/test/auth/login",
+                auth=("incorrectpass@login.com", "incorrecttest"),
+            )
+            assert (
+                incorrect_password_login_response.status == 401
+            ), incorrect_password_login_response.text
+            unavailable_account_login_request, unavailable_account_login_response = _client.post(
+                "/api/test/auth/login",
+                auth=("unavailable@login.com", "testtest"),
+            )
+            assert (
+                unavailable_account_login_response.status == 404
+            ), unavailable_account_login_response
 
-    def test_logout(self):
+    def test_logout(self, app: Sanic):
         """
         Logout of logged in account and attempt to authenticate.
         """
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/account",
-            data={"email": "logout@login.com"},
-        )
-        self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("logout@login.com", "testtest"),
-        )
-        logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
-        assert logout_response.status_code == 200, logout_response.text
-        authenticate_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth",
-        )
-        assert authenticate_response.status_code == 401, authenticate_response.text
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            _client.post(
+                "/api/test/account",
+                data={"email": "logout@login.com"},
+            )
+            _client.post(
+                "/api/test/auth/login",
+                auth=("logout@login.com", "testtest"),
+            )
+            logout_request, logout_response = _client.post("/api/test/auth/logout")
+            assert logout_response.status_code == 200, logout_response.text
+            authenticate_request, authenticate_response = _client.post(
+                "/api/test/auth",
+            )
+            assert authenticate_response.status == 401, authenticate_response.text
 
-    def test_initial_admin_login(self):
+    def test_initial_admin_login(self, app: Sanic):
         """
         Initial admin account login and authorization.
         """
-        login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("admin@example.com", "admin123"),
-        )
-        assert login_response.status_code == 200, login_response.text
-        permitted_authorization_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/roles",
-            data={
-                "role": "Head Admin",
-                "permissions_required": "perm1:create,add, perm2:*",
-            },
-        )
-        assert (
-            permitted_authorization_response.status_code == 200
-        ), permitted_authorization_response.text
+        _client = ReusableClient(app, host='127.0.0.1', port='8000')
+        with _client:
+            login_request, login_response = _client.post(
+                "/api/test/auth/login",
+                auth=("admin@example.com", "admin123"),
+            )
+            assert login_response.status_code == 200, login_response.text
+            permitted_authorization_request, permitted_authorization_response = _client.post(
+                "/api/test/auth/roles",
+                data={
+                    "role": "Head Admin",
+                    "permissions_required": "perm1:create,add, perm2:*",
+                },
+            )
+            assert (
+                permitted_authorization_response.status == 200
+            ), permitted_authorization_response.text
