@@ -247,6 +247,7 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 """
 security_config.SESSION_ENCODING_ALGORITHM = "RS256"
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
+security_config.SESSION_SECURE = False
 register_tortoise(
     app,
     db_url=security_config.TEST_DATABASE_URL,

@@ -120,7 +120,7 @@ You can load environment variables with a different prefix via calling the `conf
 | **SECRET**                            | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.               |
 | **PUBLIC_SECRET**                     | None                         | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.  |
 | **SESSION_SAMESITE**                  | strict                       | The SameSite attribute of session cookies.                                                                                       |
-| **SESSION_SECURE**                    | False                        | The Secure attribute of session cookies.                                                                                         |
+| **SESSION_SECURE**                    | True                         | The Secure attribute of session cookies.                                                                                         |
 | **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing. |
 | **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                         |
 | **SESSION_EXPIRES_ON_CLIENT**         | False                        | When true, session cookies are removed from the clients browser when the session expires.                                        |
@@ -134,7 +134,6 @@ You can load environment variables with a different prefix via calling the `conf
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
-| **TEST_DATABASE_URL**                 | sqlite://:memory:            | Database URL for connecting to the database Sanic Security will use for testing.                                                 |
 
 ## Usage
 
