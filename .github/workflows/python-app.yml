@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --no-warn-conflicts --upgrade pip
-          pip install flake8 pytest-cov
+          pip install flake8
         #----------------------------------------------
         #       load cached venv if cache exists
         #----------------------------------------------
