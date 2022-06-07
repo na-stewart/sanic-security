@@ -9,11 +9,12 @@ from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 
+from tortoise.exceptions import DoesNotExist
+
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
-    DoesNotExist,
     IntegrityError,
     SessionError,
     DeactivatedError,
