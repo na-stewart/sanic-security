@@ -21,16 +21,6 @@ def logger():
     return logger
 
 
-"""
-@pytest.fixture()
-def mock_mongodb(monkeypatch):
-    def mock_db_client(*args):
-        return AsyncMongoMockClient()
-    
-    monkeypatch.setattr(umongo_factory, "AsyncIOMotorClient", mock_db_client)
-"""
-
-
 @pytest.fixture
 def app():
     sanic_app = test_app
