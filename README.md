@@ -53,10 +53,6 @@ This library contains a variety of features including:
 * Captcha
 * Role based authorization with wildcard permissions
 
-This repository has been starred by Sanic's core maintainer:
-
-[![aphopkins](https://github.com/sunset-developer/sanic-security/blob/main/images/ahopkins.png)](https://github.com/ahopkins)
-
 Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for documentation.
 
 <!-- GETTING STARTED -->
