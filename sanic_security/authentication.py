@@ -87,7 +87,7 @@ async def register(
     if await Account.filter(email=request.form.get("email").lower()).exists():
         raise CredentialsError("An account with this email already exists.")
     if (
-        security_config.ALLOW_LOGIN_WITH_USERNAME
+        security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
         and await Account.filter(username=request.form.get("username")).exists()
     ):
         raise CredentialsError("An account with this username already exists.")
@@ -134,7 +134,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         try:
             account = await Account.get_via_email(email_or_username)
         except NotFoundError as e:
-            if security_config.ALLOW_LOGIN_WITH_USERNAME:
+            if security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(email_or_username)
             else:
                 raise e
@@ -262,8 +262,8 @@ def create_initial_admin_account(app: Sanic) -> None:
         except DoesNotExist:
             account = await Account.create(
                 username="Head Admin",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=PasswordHasher().hash(security_config.INITIAL_ADMIN_PASSWORD),
+                email=security_config.SANIC_SECURITY_INITIAL_ADMIN_EMAIL,
+                password=PasswordHasher().hash(security_config.SANIC_SECURITY_INITIAL_ADMIN_PASSWORD),
                 verified=True,
             )
             await account.roles.add(role)
