@@ -222,7 +222,7 @@ async def on_authenticate(request, authentication_session):
 
 ## Captcha
 
-A pre-existing font for captcha challenges is included in the sanic-security repository. You may set your own font by 
+A pre-existing font for captcha challenges is included in the Sanic Security repository. You may set your own font by 
 downloading a .ttf font and defining the file's path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
