@@ -6,6 +6,7 @@ from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
 
+from sanic_security import SanicSecurityExtension
 from sanic_security.authentication import (
     login,
     register,
@@ -49,6 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 app = Sanic("security-test")
 password_hasher = PasswordHasher()
+SanicSecurityExtension(app)
 
 
 @app.post("api/test/auth/register")
@@ -222,7 +224,7 @@ async def on_error(request, exception):
     return exception.json_response
 
 
-security_config.SECRET = """
+security_config.SANIC_SECURITY_SECRET = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU4vHCHEEZjdZIQRqwriFpeeoqMA1
 ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStfVn25+ZfSfKH+WYBUglZBmz/K6uW
@@ -240,7 +242,7 @@ mQ4BjbU1slel/eXlhomQpxoBCH3J/Ba9qd+uBql29QZMQXtKFg/mryjprapq8sUcbgazr9u1x+zJz9w+
 1G1CHHo/vq8zPNkVWmhciIUeHR3YJbw==
 -----END RSA PRIVATE KEY-----
 """
-security_config.PUBLIC_SECRET = """
+security_config.SANIC_SECURITY_PUBLIC_SECRET = """
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU
 4vHCHEEZjdZIQRqwriFpeeoqMA1ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStf
@@ -248,11 +250,12 @@ Vn25+ZfSfKH+WYBUglZBmz/K6uW41mSRuuH3Pu/lnPgGvsxtT7KE8dkbyrI+Tyg0pniOYdxBxgpu06S6
 MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
-security_config.SESSION_ENCODING_ALGORITHM = "RS256"
-security_config.ALLOW_LOGIN_WITH_USERNAME = True
+security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM = "RS256"
+security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME = True
+security_config.SANIC_SECURITY_SESSION_SECURE = False
 register_tortoise(
     app,
-    db_url=security_config.TEST_DATABASE_URL,
+    db_url=security_config.SANIC_SECURITY_TEST_DATABASE_URL,
     modules={"models": ["sanic_security.orm.tortoise"]},
     generate_schemas=True,
 )

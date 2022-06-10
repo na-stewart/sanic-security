@@ -205,7 +205,6 @@ class Session(BaseModel):
         expiration_date (datetime): Date and time the session expires and can no longer be used.
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
-        token (uuid): Token stored on the client's browser in a cookie for identification.
         bearer (ForeignKeyRelation[Account]): Account associated with this session.
         ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
@@ -213,7 +212,6 @@ class Session(BaseModel):
     expiration_date: datetime.datetime = fields.DatetimeField(null=True)
     active: bool = fields.BooleanField(default=True)
     ip: str = fields.CharField(max_length=16)
-    token: uuid.UUID = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
         "models.Account", null=True
     )
@@ -274,27 +272,27 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
+            "id": self.id,
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
-            "token": str(self.token),
             "ip": self.ip,
             **self.ctx.__dict__,
         }
-        cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
+        cookie = f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
         encoded_session = jwt.encode(
-            payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
+            payload, security_config.SANIC_SECURITY_SECRET, security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM
         )
         if isinstance(encoded_session, bytes):
             response.cookies[cookie] = encoded_session.decode()
         elif isinstance(encoded_session, str):
             response.cookies[cookie] = encoded_session
-        response.cookies[cookie]["httponly"] = security_config.SESSION_HTTPONLY
-        response.cookies[cookie]["samesite"] = security_config.SESSION_SAMESITE
-        response.cookies[cookie]["secure"] = security_config.SESSION_SECURE
-        if security_config.SESSION_EXPIRES_ON_CLIENT and self.expiration_date:
+        response.cookies[cookie]["httponly"] = security_config.SANIC_SECURITY_SESSION_HTTPONLY
+        response.cookies[cookie]["samesite"] = security_config.SANIC_SECURITY_SESSION_SAMESITE
+        response.cookies[cookie]["secure"] = security_config.SANIC_SECURITY_SESSION_SECURE
+        if security_config.SANIC_SECURITY_SESSION_EXPIRES_ON_CLIENT and self.expiration_date:
             response.cookies[cookie]["expires"] = self.expiration_date
-        if security_config.SESSION_DOMAIN:
-            response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
+        if security_config.SANIC_SECURITY_SESSION_DOMAIN:
+            response.cookies[cookie]["domain"] = security_config.SANIC_SECURITY_SESSION_DOMAIN
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
@@ -311,7 +309,7 @@ class Session(BaseModel):
             JWTDecodeError
         """
         cookie = request.cookies.get(
-            f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
+            f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
         )
         try:
             if not cookie:
@@ -319,10 +317,10 @@ class Session(BaseModel):
             else:
                 return jwt.decode(
                     cookie,
-                    security_config.SECRET
-                    if not security_config.PUBLIC_SECRET
-                    else security_config.PUBLIC_SECRET,
-                    security_config.SESSION_ENCODING_ALGORITHM,
+                    security_config.SANIC_SECURITY_SECRET
+                    if not security_config.SANIC_SECURITY_PUBLIC_SECRET
+                    else security_config.SANIC_SECURITY_PUBLIC_SECRET,
+                    security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))
@@ -345,9 +343,7 @@ class Session(BaseModel):
         try:
             decoded_raw = cls.decode_raw(request)
             decoded_session = (
-                await cls.filter(token=decoded_raw["token"])
-                .prefetch_related("bearer")
-                .get()
+                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
@@ -386,7 +382,7 @@ class VerificationSession(Session):
             MaxedOutChallengeError
         """
         if self.code != code:
-            if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
+            if self.attempts < security_config.SANIC_SECURITY_MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError("The value provided does not match.")
@@ -415,7 +411,7 @@ class TwoStepSession(VerificationSession):
             ip=get_ip(request),
             bearer=account,
             expiration_date=get_expiration_date(
-                security_config.TWO_STEP_SESSION_EXPIRATION
+                security_config.SANIC_SECURITY_TWO_STEP_SESSION_EXPIRATION
             ),
         )
 
@@ -434,7 +430,7 @@ class CaptchaSession(VerificationSession):
             **kwargs,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
-                security_config.CAPTCHA_SESSION_EXPIRATION
+                security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
         )
 
@@ -466,10 +462,10 @@ class AuthenticationSession(Session):
             bearer=account,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
-                security_config.AUTHENTICATION_SESSION_EXPIRATION
+                security_config.SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION
             ),
             refresh_expiration_date=get_expiration_date(
-                security_config.AUTHENTICATION_SESSION_EXPIRATION * 2
+                security_config.SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION * 2
             ),
         )
 
