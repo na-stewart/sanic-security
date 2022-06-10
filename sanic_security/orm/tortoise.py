@@ -205,7 +205,6 @@ class Session(BaseModel):
         expiration_date (datetime): Date and time the session expires and can no longer be used.
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
-        token (uuid): Token stored on the client's browser in a cookie for identification.
         bearer (ForeignKeyRelation[Account]): Account associated with this session.
         ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
@@ -213,7 +212,6 @@ class Session(BaseModel):
     expiration_date: datetime.datetime = fields.DatetimeField(null=True)
     active: bool = fields.BooleanField(default=True)
     ip: str = fields.CharField(max_length=16)
-    token: uuid.UUID = fields.UUIDField(unique=True, default=uuid.uuid4, max_length=36)
     bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
         "models.Account", null=True
     )
@@ -274,9 +272,9 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
+            "id": self.id,
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
-            "token": str(self.token),
             "ip": self.ip,
             **self.ctx.__dict__,
         }
@@ -345,9 +343,7 @@ class Session(BaseModel):
         try:
             decoded_raw = cls.decode_raw(request)
             decoded_session = (
-                await cls.filter(token=decoded_raw["token"])
-                .prefetch_related("bearer")
-                .get()
+                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")

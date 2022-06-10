@@ -1,5 +1,4 @@
 import base64
-import datetime
 import functools
 import re
 
@@ -18,8 +17,6 @@ from sanic_security.exceptions import (
     IntegrityError,
     SessionError,
     DeactivatedError,
-    ExpiredError,
-    DeletedError,
 )
 from sanic_security.orm.tortoise import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
@@ -66,19 +63,17 @@ async def register(
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
-        raise CredentialsError("Please use a valid email such as you@mail.com.", 400)
+        raise CredentialsError("Please use a valid email address.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
         raise CredentialsError(
             "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
             400,
         )
     if request.form.get("phone") and not re.search(
-        r"^[0-9]{11,14}$", request.form.get("phone")
+        r"/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g",
+        request.form.get("phone"),
     ):
-        raise CredentialsError(
-            "Please use a valid phone format such as 15621435489 or 19498963648018.",
-            400,
-        )
+        raise CredentialsError("Please use a valid phone number.", 400)
     if 100 > len(request.form.get("password")) > 8:
         raise CredentialsError(
             "Password must be more than 8 characters and must be less than 100 characters.",

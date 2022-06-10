@@ -252,6 +252,7 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 """
 security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM = "RS256"
 security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME = True
+security_config.SANIC_SECURITY_SESSION_SECURE = False
 register_tortoise(
     app,
     db_url=security_config.SANIC_SECURITY_TEST_DATABASE_URL,
