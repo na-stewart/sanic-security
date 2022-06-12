@@ -8,8 +8,6 @@ from sanic.log import logger
 from sanic.request import Request
 from sanic import Sanic
 
-from tortoise.exceptions import DoesNotExist
-
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
@@ -18,7 +16,6 @@ from sanic_security.exceptions import (
     SessionError,
     DeactivatedError,
 )
-from sanic_security.orm.tortoise import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
@@ -104,7 +101,7 @@ async def register(
     
 
 #async def login(request: Request, account: Account = None) -> AuthenticationSession:
-async def login(request: Request, account: Account = None):
+async def login(request: Request, account = None):
     """
     Login with email or username (if enabled) and password.
 
@@ -185,7 +182,8 @@ async def logout(request: Request):
     return authentication_session
 
 
-async def authenticate(request: Request) -> AuthenticationSession:
+#async def authenticate(request: Request) -> AuthenticationSession:
+async def authenticate(request: Request):
     """
     Validates client.
 

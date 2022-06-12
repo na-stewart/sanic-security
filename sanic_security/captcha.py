@@ -1,10 +1,9 @@
 import functools
 from contextlib import suppress
 
-from sanic import Request
+from sanic import Request, Sanic
 
 from sanic_security.exceptions import NotFoundError, JWTDecodeError
-from sanic_security.orm.tortoise import CaptchaSession
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -25,7 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-async def request_captcha(request: Request) -> CaptchaSession:
+#async def request_captcha(request: Request) -> CaptchaSession:
+async def request_captcha(request: Request):
     """
     Creates a captcha session and deactivates the client's current captcha session if found.
 
@@ -35,15 +35,18 @@ async def request_captcha(request: Request) -> CaptchaSession:
     Returns:
         captcha_session
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
+
     with suppress(NotFoundError, JWTDecodeError):
-        captcha_session = await CaptchaSession.decode(request)
+        captcha_session = await _orm.captcha_session.decode(request)
         if captcha_session.active:
             captcha_session.active = False
             await captcha_session.save(update_fields=["active"])
-    return await CaptchaSession.new(request)
+    return await _orm.captcha_session.new(request)
 
 
-async def captcha(request: Request) -> CaptchaSession:
+#async def captcha(request: Request) -> CaptchaSession:
+async def captcha(request: Request):
     """
     Validates a captcha challenge attempt.
 
@@ -62,7 +65,9 @@ async def captcha(request: Request) -> CaptchaSession:
     Returns:
         captcha_session
     """
-    captcha_session = await CaptchaSession.decode(request)
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    captcha_session = await _orm.captcha_session.decode(request)
     captcha_session.validate()
     await captcha_session.check_code(request, request.form.get("captcha"))
     return captcha_session
