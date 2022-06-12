@@ -60,8 +60,20 @@ class SanicSecurityExtension(Extension):
         self.orm = orm if orm else self.app.config.get('SANIC_SECURITY_ORM', 'tortoise')
         try:
             logger.error(f"attmpeting to import sanic_security.orm.{self.orm}")
-            self.orm = importlib.import_module(self.orm, package='./orm') 
-            #import sanic_security.orm.tortoise
+            if self.orm == 'tortoise':
+                from .orm.tortoise import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession
+                if not self.role:
+                    self.role = Role()
+                if not self.account:
+                    self.account = Account()
+                if not self.verification_session:
+                    self.verification_session = VerificationSession()
+                if not self.twostep_session:
+                    self.twostep_session = TwoStepSession()
+                if not self.captcha_session:
+                    self.captcha_session = CaptchaSession()
+                if not self.authentication_session:
+                    self.authentication_session = AuthenticationSession()
         except ImportError as e:
             logger.error(f"No such ORM provider: {orm}")
             raise e
