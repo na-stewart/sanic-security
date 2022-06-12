@@ -1,14 +1,13 @@
 import functools
 import logging
 from fnmatch import fnmatch
-
-from tortoise.exceptions import DoesNotExist
+from xml.dom import NotFoundErr
 
 from sanic.request import Request
+from sanic import Sanic
 
 from sanic_security.authentication import authenticate
-from sanic_security.exceptions import AuthorizationError
-from sanic_security.orm.tortoise import Role, Account, AuthenticationSession
+from sanic_security.exceptions import AuthorizationError, NotFoundError
 from sanic_security.utils import get_ip
 
 
@@ -33,7 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 async def check_permissions(
     request: Request, *required_permissions: str
-) -> AuthenticationSession:
+#) -> AuthenticationSession:
+):
     """
     Authenticates client and determines if the account has sufficient permissions for an action.
 
@@ -68,7 +68,8 @@ async def check_permissions(
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
-async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
+#async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
+async def check_roles(request: Request, *required_roles: str):
     """
     Authenticates client and determines if the account has sufficient roles for an action.
 
@@ -177,8 +178,9 @@ def require_roles(*required_roles: str):
 
 
 async def assign_role(
-    name: str, account: Account, permissions: str = None, description: str = None
-) -> Role:
+    name: str, account, permissions: str = None, description: str = None
+#) -> Role:
+):
     """
     Quick creation of a role associated with an account.
 
@@ -188,10 +190,13 @@ async def assign_role(
         permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         description (str):  The description of the role associated with the account.
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
+
     try:
-        role = await Role.filter(name=name, permissions=permissions).get()
-    except DoesNotExist:
-        role = await Role.create(
+        # removed `permissions` lookup, as names should be unique in a sane RBAC model
+        role = await _orm.role.lookup(name=name)
+    except NotFoundError:
+        role = await _orm.role.create(
             description=description, permissions=permissions, name=name
         )
     await account.roles.add(role)
