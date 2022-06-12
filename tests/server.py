@@ -4,6 +4,7 @@ sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), ".."
 
 from argon2 import PasswordHasher
 from sanic import Sanic, text
+from sanic.log import logger
 from tortoise.contrib.sanic import register_tortoise
 
 from sanic_security import SanicSecurityExtension
@@ -50,8 +51,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 app = Sanic("security-test")
 password_hasher = PasswordHasher()
-SanicSecurityExtension(app)
-
+security = SanicSecurityExtension()
+security.init_app(app)
 
 @app.post("api/test/auth/register")
 async def on_register(request):
