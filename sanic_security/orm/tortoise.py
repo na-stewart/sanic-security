@@ -137,32 +137,15 @@ class Account(BaseModel):
             raise DisabledError()
 
     @staticmethod
-    async def get_via_email(email: str):
+    async def lookup(email: str = None, username: str = None, phone: str = None, id: str = None):
         """
-        Retrieve an account with an email.
+        Retrieve an account by primary identifier
 
-        Args:
+        Args (one of):
             email (str): Email associated to account being retrieved.
-
-        Returns:
-            account
-
-        Raises:
-            NotFoundError
-        """
-        try:
-            account = await Account.filter(email=email, deleted=False).get()
-            return account
-        except DoesNotExist:
-            raise NotFoundError("Account with this email does not exist.")
-
-    @staticmethod
-    async def get_via_username(username: str):
-        """
-        Retrieve an account with a username.
-
-        Args:
             username (str): Username associated to account being retrieved.
+            phone (str): Phone associated to account being retrieved.
+            id (str): Id associated to account being retrieved.
 
         Returns:
             account
@@ -171,30 +154,24 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(username=username, deleted=False).get()
+            account = None
+            if email:
+                account = await Account.filter(email=email, deleted=False).get()
+                logger.critical(f"Lookup user identified by {email}")
+            elif username:
+                account = await Account.filter(username=username, deleted=False).get()
+                logger.critical(f"Lookup user identified by {username}")
+            elif phone:
+                account = await Account.filter(phone=phone, deleted=False).get()
+                logger.critical(f"Lookup user identified by {phone}")
+            elif id:
+                account = await Account.filter(id=id, deleted=False).get()
+                logger.critical(f"Lookup user identified by {id}")
+            else:
+                raise NotFoundError("Lookup requested by no identifier provided")
             return account
         except DoesNotExist:
-            raise NotFoundError("Account with this username does not exist.")
-
-    @staticmethod
-    async def get_via_phone(phone: str):
-        """
-        Retrieve an account with a phone number.
-
-        Args:
-            phone (str): Phone number associated to account being retrieved.
-
-        Returns:
-            account
-
-        Raises:
-            NotFoundError
-        """
-        try:
-            account = await Account.filter(phone=phone, deleted=False).get()
-            return account
-        except DoesNotExist:
-            raise NotFoundError("Account with this phone number does not exist.")
+            raise NotFoundError("Account with this identifier does not exist.")
 
 
 class Session(BaseModel):
@@ -496,3 +473,23 @@ class Role(BaseModel):
             "description": self.description,
             "permissions": self.permissions,
         }
+
+    @staticmethod
+    async def lookup(name: str):
+        """
+        Retrieve a role by its name.
+
+        Args:
+            name (str): Role name being retrieved.
+
+        Returns:
+            role
+
+        Raises:
+            NotFoundError
+        """
+        try:
+            role = await Role.filter(name=name).get()
+            return role
+        except DoesNotExist:
+            raise NotFoundError("Role with this name does not exist.")
