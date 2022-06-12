@@ -4,9 +4,9 @@ import re
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
+from sanic import Sanic
 
 from tortoise.exceptions import DoesNotExist
 
@@ -41,10 +41,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 password_hasher = PasswordHasher()
 
-
 async def register(
     request: Request, verified: bool = False, disabled: bool = False
-) -> Account:
+#) -> security_config.SANIC_SECURITY_ACCOUNT:
+):
     """
     Registers a new account that can be logged into.
 
@@ -59,6 +59,8 @@ async def register(
     Raises:
         CredentialsError
     """
+
+    _orm = Sanic.get_app().ctx.extensions['security']
 
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
@@ -79,23 +81,27 @@ async def register(
             "Password must be more than 8 characters and must be less than 100 characters.",
             400,
         )
-    if await Account.filter(email=request.form.get("email").lower()).exists():
-        raise CredentialsError("An account with this email already exists.")
-    if (
-        security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
-        and await Account.filter(username=request.form.get("username")).exists()
-    ):
-        raise CredentialsError("An account with this username already exists.")
-    account = await Account.create(
-        email=request.form.get("email").lower(),
-        username=request.form.get("username"),
-        password=password_hasher.hash(request.form.get("password")),
-        phone=request.form.get("phone"),
-        verified=verified,
-        disabled=disabled,
-    )
-    return account
-
+    try:
+        if await _orm.account.get_via_email(request.form.get("email").lower()):
+            raise CredentialsError("An account with this email already exists.")
+    except NotFoundError:
+        try:
+          if (
+              security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
+              and await _orm.account.get_via_username(request.form.get("username"))
+          ):
+              raise CredentialsError("An account with this username already exists.")
+        except NotFoundError:
+            account = await _orm.account.create(
+                email=request.form.get("email").lower(),
+                username=request.form.get("username"),
+                password=password_hasher.hash(request.form.get("password")),
+                phone=request.form.get("phone"),
+                verified=verified,
+                disabled=disabled,
+            )
+            return account
+    
 
 async def login(request: Request, account: Account = None) -> AuthenticationSession:
     """
