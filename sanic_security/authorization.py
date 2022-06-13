@@ -1,7 +1,6 @@
 import functools
 import logging
 from fnmatch import fnmatch
-from xml.dom import NotFoundErr
 
 from sanic.request import Request
 from sanic import Sanic
