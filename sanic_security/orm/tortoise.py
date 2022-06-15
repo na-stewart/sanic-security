@@ -157,18 +157,19 @@ class Account(BaseModel):
             account = None
             if email:
                 account = await Account.filter(email=email, deleted=False).get()
-                logger.critical(f"Lookup user identified by {email}")
+                logger.debug(f"Lookup user identified by email: {email}")
             elif username:
                 account = await Account.filter(username=username, deleted=False).get()
-                logger.critical(f"Lookup user identified by {username}")
+                logger.debug(f"Lookup user identified by username: {username}")
             elif phone:
                 account = await Account.filter(phone=phone, deleted=False).get()
-                logger.critical(f"Lookup user identified by {phone}")
+                logger.debug(f"Lookup user identified by phone: {phone}")
             elif id:
                 account = await Account.filter(id=id, deleted=False).get()
-                logger.critical(f"Lookup user identified by {id}")
+                logger.debug(f"Lookup user identified by id: {id}")
             else:
                 raise NotFoundError("Lookup requested by no identifier provided")
+            logger.debug(f"Found user: {account}")
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this identifier does not exist.")
