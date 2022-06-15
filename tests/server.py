@@ -52,6 +52,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 app = Sanic("security-test")
 password_hasher = PasswordHasher()
 security = SanicSecurityExtension()
+
+## umongo setup
+from mongomock_motor import AsyncMongoMockClient
+from umongo.frameworks import MotorAsyncIOInstance
+client = AsyncMongoMockClient("mongodb://mock:mock@127.0.0.1:27001/")
+client = client["mock_database"]
+lazy_umongo = MotorAsyncIOInstance()
+lazy_umongo.set_db(client)
+app.config.LAZY_UMONGO = lazy_umongo
+
 security.init_app(app)
 
 @app.post("api/test/auth/register")
@@ -260,6 +270,8 @@ register_tortoise(
     modules={"models": ["sanic_security.orm.tortoise"]},
     generate_schemas=True,
 )
+
+
 create_initial_admin_account(app)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, workers=1, debug=True)

@@ -74,6 +74,22 @@ class SanicSecurityExtension(Extension):
                     self.captcha_session = CaptchaSession()
                 if not self.authentication_session:
                     self.authentication_session = AuthenticationSession()
+            elif self.orm == 'umongo':
+                from .orm.umongo import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession
+                if not self.role:
+                    self.role = Role()
+                if not self.account:
+                    self.account = Account()
+                if not self.verification_session:
+                    self.verification_session = VerificationSession()
+                if not self.twostep_session:
+                    self.twostep_session = TwoStepSession()
+                if not self.captcha_session:
+                    self.captcha_session = CaptchaSession()
+                if not self.authentication_session:
+                    self.authentication_session = AuthenticationSession()
+            else:
+                raise ImportError("Invalid ORM specified")
         except ImportError as e:
             logger.error(f"No such ORM provider: {orm}")
             raise e
@@ -84,6 +100,7 @@ class SanicSecurityExtension(Extension):
         return "Sanic-Security"
 
     def _register_extension(self, app):
+        logger.critical("Trying to register Security Extension")
         if not hasattr(app.ctx, 'extensions'):
             setattr(app.ctx, 'extensions', {})
         app.ctx.extensions[self.extension_name] = self
