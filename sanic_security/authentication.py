@@ -79,13 +79,13 @@ async def register(
             400,
         )
     try:
-        if await _orm.account.lookup(request.form.get("email").lower()):
+        if await _orm.account.lookup(email=request.form.get("email").lower()):
             raise CredentialsError("An account with this email already exists.")
     except NotFoundError:
         try:
           if (
               security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
-              and await _orm.account.lookup(request.form.get("username"))
+              and await _orm.account.lookup(username=request.form.get("username"))
           ):
               raise CredentialsError("An account with this username already exists.")
         except NotFoundError:
