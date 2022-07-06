@@ -4,9 +4,12 @@ sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), ".."
 
 import pytest
 
-from server import app as test_app
+from server import make_app as test_app
+
+import sanic_security
 
 import logging
+import random
 
 import uvloop
 import asyncio
@@ -21,10 +24,21 @@ def logger():
     return logger
 
 
-@pytest.fixture
-def app():
-    sanic_app = test_app
+@pytest.fixture(params=["umongo", "tortoise"])
+def app(request, monkeypatch, logger):
+
+    # Use the fixture params to test all our ORM providers
+    monkeypatch.setitem(sanic_security.configuration.DEFAULT_CONFIG, 'SANIC_SECURITY_ORM', request.param)
+    monkeypatch.setenv('SANIC_SECURITY_ORM', request.param)
+
+    sanic_app = test_app()
     # Hack to do some poor code work in the app for some workarounds for broken fucntions under pytest
     sanic_app.config['PYTESTING'] = True
 
-    return sanic_app
+    yield sanic_app
+    sanic_app = None
+
+
+@pytest.fixture(autouse=True)
+def rand_phone():
+    return ''.join(str(random.randint(1, 9)) for i in range(10))

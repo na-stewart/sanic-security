@@ -1,20 +1,21 @@
-import datetime
+import datetime as dt
+import uuid
 from io import BytesIO
 from types import SimpleNamespace
+
+from bson import objectid
 
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from marshmallow import ValidationError
+from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
-from tortoise import fields, Model
-from tortoise.validators import RegexValidator, Validator
-from tortoise.exceptions import DoesNotExist, ValidationError
-from tortoise.contrib.pydantic import pydantic_model_creator
-
-import re
-import phonenumbers
+from umongo import Document, EmbeddedDocument, fields, validate, post_load, MixinDocument
+from umongo.exceptions import NotCreatedError
+from pymongo.errors import DuplicateKeyError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
@@ -38,23 +39,21 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-
-class PhoneNumberValidator(Validator):
-    """
-    A validator to check a phone number against `phonenumbers` module
-    """
-    def __call__(self, value: str):
-        try:
-            _phone = phonenumbers.parse(value, "US") # Default to US
-            if phonenumbers.is_possible_number(_phone):
-                return True
-            else:
-                raise ValidationError(f"Value '{value}' is not a valid phone number")
-        except Exception:
-            raise ValidationError(f"Value '{value}' is not a valid phone number")
+app = Sanic.get_app()
+if not app.config.get('LAZY_UMONGO', None):
+    from umongo.frameworks import MotorAsyncIOInstance
+    app.config.LAZY_UMONGO = MotorAsyncIOInstance()
+instance = app.config.get('LAZY_UMONGO')
 
 
-class BaseModel(Model):
+# ensure indexes
+@app.listener('before_server_start')
+async def init(sanic):
+    await setup_indexes()
+
+
+@instance.register
+class BaseMixin(MixinDocument):
     """
     Base Sanic Security model that all other models derive from.
 
@@ -62,13 +61,13 @@ class BaseModel(Model):
         id (int): Primary key of model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): Renders the model filterable without removing from the database.
+        deleted (bool): Renders the model find_oneable without removing from the database.
     """
 
-    id: int = fields.IntField(pk=True)
-    date_created: datetime.datetime = fields.DatetimeField(auto_now_add=True)
-    date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
-    deleted: bool = fields.BooleanField(default=False)
+    id: uuid.UUID = fields.ObjectIdField()
+    date_created: dt.datetime = fields.DateTimeField(auto_now_add=True)
+    date_updated: dt.datetime = fields.DateTimeField(auto_now=True)
+    deleted: bool = fields.BooleanField(load_default=False)
 
     def validate(self) -> None:
         """
@@ -78,38 +77,22 @@ class BaseModel(Model):
             SecurityError
         """
         raise NotImplementedError()
-    
+
     async def verify(self) -> None:
         self.verified = True
-        await self.save(update_fields=["verified"])
+        await self.commit()
 
-    async def json(data) -> dict:
-        """
-        A JSON serializable dict to be used in a HTTP request or response.
-
-        Example:
-            Below is an example of this method returning a dict to be used for JSON serialization.
-
-                def json(self):
-                    return {
-                        'id': id,
-                        'date_created': str(self.date_created),
-                        'date_updated': str(self.date_updated),
-                        'email': self.email,
-                        'username': self.username,
-                        'disabled': self.disabled,
-                        'verified': self.verified
-                    }
-
-        """
-        _data = await pydantic_model_creator(data.__class__).from_tortoise_orm(data)
-        return _data.json()
+    async def json(self, cls) -> dict:
+        _ma = cls.schema.as_marshmallow_schema()
+        schema = _ma()
+        return schema.dump(self)
 
     class Meta:
         abstract = True
 
 
-class Account(BaseModel):
+@instance.register
+class Account(Document, BaseMixin):
     """
     Contains all identifiable user information.
 
@@ -123,15 +106,21 @@ class Account(BaseModel):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    username: str = fields.CharField(max_length=32, unique=True, validators=[RegexValidator("^[A-Za-z0-9 @_-]{3,32}$", re.I)])
-    email: str = fields.CharField(unique=True, max_length=255, validators=[RegexValidator("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", re.I)])
-    phone: str = fields.CharField(unique=True, max_length=14, null=True, validators=[PhoneNumberValidator()])
-    password: str = fields.CharField(max_length=255)
-    disabled: bool = fields.BooleanField(default=False)
-    verified: bool = fields.BooleanField(default=False)
-    roles: fields.ManyToManyRelation["Role"] = fields.ManyToManyField(
-        "models.Role", through="account_role"
-    )
+    username = fields.StringField(required=False, unique=True, validate=[validate.Regexp(r"^[A-Za-z0-9 @_-]{3,32}$")])
+    email: str = fields.EmailField(required=True, unique=True, allow_none=False)
+    password: str = fields.StringField(required=True, validate=[validate.Length(max=512)], allow_none=False)
+    phone: str = fields.StringField(required=False,
+                                    validate=[validate.Length(max=11, min=10),],
+                                    load_default=None, unique=True)
+    created_at: dt.datetime = fields.DateTimeField(allow_none=False, load_default=lambda: dt.datetime.utcnow())
+    last_login_at: dt.datetime = fields.DateTimeField(null=True)
+    current_login_at: dt.datetime = fields.DateTimeField(null=True)
+    confirmed_at: dt.datetime = fields.DateTimeField(null=True)
+    last_login_ip: str = fields.StringField(validate=[validate.Length(max=60)], null=True)
+    current_login_ip: str = fields.StringField(validate=[validate.Length(max=60)], null=True)
+    disabled: bool = fields.BooleanField(load_default=False)
+    verified: bool = fields.BooleanField(load_default=False)
+    roles = fields.ListField(fields.ReferenceField('Role', fetch=True), null=True, fetch=True) 
 
     def validate(self) -> None:
         """
@@ -148,6 +137,58 @@ class Account(BaseModel):
             raise UnverifiedError()
         elif self.disabled:
             raise DisabledError()
+
+    async def json(self) -> dict:
+        _ma = Account().schema.as_marshmallow_schema()
+        schema = _ma(exclude=['password'])
+        return schema.dump(self)
+
+    @staticmethod
+    async def new(**kwargs):
+        logger.debug(f"New user requested: {kwargs}")
+        try:
+            _account = await Account(**kwargs).commit()
+        except DuplicateKeyError as e:
+            logger.info(f'Tried to create a duplicate key! {e}')
+            raise AccountError(e.message)
+        except ValidationError as e:
+            logger.info(f'Tried to create an invalid account! {e}')
+            raise AccountError(e.messages, code=400)
+        except Exception as e:
+            logger.error(f'Generic Exception! {e}')
+            raise AccountError(str(e))
+
+        return await Account.find_one({'id': _account.inserted_id, 'deleted': False})
+
+    #@property
+    async def get_roles(self, id = None):
+        account = self
+        if not account.pk:
+            account = await Account.find_one({'id': id})
+        if not account:
+            raise NotFoundError("Lookup returned no matching user")
+        elif not account.roles:
+            return []
+
+        roles = [await role.fetch() for role in account.roles]
+        return roles
+
+    async def add_role(self, id = None, role = None):
+        logger.debug(f'Trying to add role: {role} to user {id}')
+        account = await id.fetch()
+        logger.debug(f'Fetched account = {account}')
+        if not account.pk:
+            if not id:
+                raise AccountError('Must provide Account object or pass `id` parameter!')
+            account = await Account.find_one({'id': id})
+        if not account:
+            raise NotFoundError("Lookup requested by no identifier provided")
+        if account.roles:
+            account.roles.append(role)
+        else:
+            account.roles = [role]
+        await account.commit()
+        return account
 
     @staticmethod
     async def lookup(email: str = None, username: str = None, phone: str = None, id: str = None):
@@ -169,84 +210,30 @@ class Account(BaseModel):
         try:
             account = None
             if email:
-                account = await Account.filter(email=email, deleted=False).get()
+                account = await Account.find_one({'email': email, 'deleted': False})
                 logger.debug(f"Lookup user identified by email: {email}")
             elif username:
-                account = await Account.filter(username=username, deleted=False).get()
+                account = await Account.find_one({'username': username, 'deleted': False})
                 logger.debug(f"Lookup user identified by username: {username}")
             elif phone:
-                account = await Account.filter(phone=phone, deleted=False).get()
+                account = await Account.find_one({'phone': phone, 'deleted': False})
                 logger.debug(f"Lookup user identified by phone: {phone}")
             elif id:
-                account = await Account.filter(id=id, deleted=False).get()
+                account = await Account.find_one({'id': id, 'deleted': False})
                 logger.debug(f"Lookup user identified by id: {id}")
             else:
                 raise NotFoundError("Lookup requested by no identifier provided")
-            logger.debug(f"Found user: {account}")
+            if not account:
+                raise NotCreatedError
+
+            logger.debug(f"Account Found: {account}")
             return account
-        except DoesNotExist:
+        except NotCreatedError:
             raise NotFoundError("Account with this identifier does not exist.")
-        except ValidationError as e:
-            # Tortoise-ORM is dumb how it validates even at searching
-            raise NotFoundError("Account with this identifier does not exist.")
-        except Exception as e:
-            logger.critical(f'Generic Error! {e}')
-            raise AccountError(str(e), code=400)
-
-    @staticmethod
-    async def new(email: str = None, username: str = None,
-                  password: str = None, phone: str = None,
-                  verified: bool = False, disabled: bool = False,
-                  roles: list = []
-                 ):
-
-        try:
-            logger.debug("Attempting to Create a New Tortoise User")
-            account = await Account.create(
-               email=email,
-               username=username,
-               password=password,
-               phone=phone,
-               verified=verified,
-               disabled=disabled,
-            )
-            for role in roles:
-                await account.roles.add(role)
-            logger.debug(f"Successfully Created a New Tortoise User: {account}")
-            return account
-        except ValidationError as e:
-            logger.error(f'Tried to create an invalid account! {e}')
-            raise AccountError(e, code=400)
-        except Exception as e:
-            logger.error(f'Generic Exception! {e}')
-            raise AccountError(e.message)
-
-    async def get_roles(self, id = None):
-        account = self
-        if not account.pk:
-            account = await Account.filter(id=id, deleted=False).prefetch_related("roles").get()
-        if not account:
-            raise NotFoundError("Lookup returned no matching user")
-        elif not account.roles:
-            return []
-
-        return account.roles
-
-    async def add_role(self, id = None, role = None):
-        logger.debug(f'Trying to add role: {role} to user {id}')
-        account = id
-        if not account.id:
-            if not id:
-                raise AccountError('Must provide Account object or pass `id` parameter!')
-            account = await Account.filter(id=id, deleted=False).prefetch_related("roles").get()
-        if not account:
-            raise NotFoundError("Lookup requested by no identifier provided")
-
-        await account.roles.add(role)
-        return role
 
 
-class Session(BaseModel):
+@instance.register
+class Session(BaseMixin, MixinDocument):
     """
     Used for client identification and verification. Base session model that all session models derive from.
 
@@ -258,16 +245,13 @@ class Session(BaseModel):
         ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
-    expiration_date: datetime.datetime = fields.DatetimeField(null=True)
-    active: bool = fields.BooleanField(default=True)
-    ip: str = fields.CharField(max_length=16)
-    bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
-        "models.Account", null=True
-    )
+    expiration_date: dt.datetime = fields.DateTimeField(null=True)
+    refresh_expiration_date: dt.datetime = fields.DateTimeField(null=True)
+    active: bool = fields.BooleanField(load_default=True)
+    ip: str = fields.StringField(max_length=16)
+    bearer = fields.ReferenceField('Account', fetch=True)
     ctx = SimpleNamespace()
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -297,7 +281,8 @@ class Session(BaseModel):
             raise DeletedError("Session has been deleted.")
         elif (
             self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+            and dt.datetime.now() >= self.expiration_date
+            #and dt.datetime.now(dt.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
@@ -311,7 +296,7 @@ class Session(BaseModel):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
-            "id": self.id,
+            "id": str(self.id),
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
             "ip": self.ip,
@@ -381,12 +366,18 @@ class Session(BaseModel):
         """
         try:
             decoded_raw = cls.decode_raw(request)
+            logger.debug(f'Decoded_Raw: {decoded_raw}')
             decoded_session = (
-                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
+                await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})
             )
-        except DoesNotExist:
+            if not decoded_session:
+                raise NotCreatedError
+        except NotCreatedError:
             raise NotFoundError("Session could not be found.")
+        if decoded_session.bearer:
+            return decoded_session, await decoded_session.bearer.fetch()
         return decoded_session, decoded_session.bearer
+        
 
     @classmethod
     async def deactivate(cls, session):
@@ -403,16 +394,30 @@ class Session(BaseModel):
             JWTDecodeError
             NotFoundError
         """
-        # TODO: Should probably be removing old sessions, not just setting inactive
-        session.active = False
-        await session.save(update_fields=["active"])
+        try:
+            session.active = False
+            deactivated_session = (
+                #TODO: Should probably be removing old sessions, not just setting inactive
+                #await cls.remove({'id': objectid.ObjectId(session["id"])})
+                await session.commit()
+            )
+            if not deactivated_session:
+                raise NotCreatedError
+        except NotCreatedError:
+            raise NotFoundError("Session could not be found.")
         return session
+
+    async def json(self) -> dict:
+        _ma = Session().schema.as_marshmallow_schema()
+        schema = _ma()
+        return schema.dump(self)
 
     class Meta:
         abstract = True
 
 
-class VerificationSession(Session):
+@instance.register
+class VerificationSession(Session, BaseMixin, MixinDocument):
     """
     Used for a client verification method that requires some form of code, challenge, or key.
 
@@ -421,8 +426,8 @@ class VerificationSession(Session):
         code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
     """
 
-    attempts: int = fields.IntField(default=0)
-    code: str = fields.CharField(max_length=10, default=get_code, null=True)
+    attempts: int = fields.IntField(load_default=0)
+    code: str = fields.StringField(max_length=10, load_default=get_code, null=True)
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -443,55 +448,59 @@ class VerificationSession(Session):
         if self.code != code:
             if self.attempts < security_config.SANIC_SECURITY_MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
-                await self.save(update_fields=["attempts"])
+                await self.commit()
                 raise ChallengeError("The value provided does not match.")
             else:
                 logger.warning(
-                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                    f"Client ({self.bearer.pk}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 raise MaxedOutChallengeError()
         else:
             self.active = False
-            await self.save(update_fields=["active"])
+            await self.commit()
 
     class Meta:
         abstract = True
+        allow_inheritance = True
 
 
-class TwoStepSession(VerificationSession):
+@instance.register
+class TwoStepSession(VerificationSession, Document):
     """
     Validates a client using a code sent via email or text.
     """
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
-        return await TwoStepSession.create(
-            **kwargs,
-            ip=get_ip(request),
-            bearer=account,
-            expiration_date=get_expiration_date(
+        _session = await TwoStepSession(
+            ip = get_ip(request),
+            bearer = account['id'],
+            expiration_date = get_expiration_date(
                 security_config.SANIC_SECURITY_TWO_STEP_SESSION_EXPIRATION
             ),
-        )
+        ).commit()
+        logger.debug(f"TwoStepSession Created: {_session}")
+        new_session = await TwoStepSession.find_one({'id': _session.inserted_id, 'deleted': False})
+        return new_session
 
-    class Meta:
-        table = "two_step_session"
 
-
-class CaptchaSession(VerificationSession):
+@instance.register
+class CaptchaSession(Document, VerificationSession, Session):
     """
     Validates a client with a captcha challenge.
     """
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
-        return await CaptchaSession.create(
+        _captcha_session = await CaptchaSession(
             **kwargs,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
                 security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
-        )
+        ).commit()
+        return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
+
 
     def get_image(self) -> HTTPResponse:
         """
@@ -509,14 +518,15 @@ class CaptchaSession(VerificationSession):
         table = "captcha_session"
 
 
-class AuthenticationSession(Session):
+@instance.register
+class AuthenticationSession(Document, VerificationSession, Session, BaseMixin):
     """
     Used to authenticate and identify a client.
     """
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
-        return await AuthenticationSession.create(
+        _auth_session = await AuthenticationSession(
             **kwargs,
             bearer=account,
             ip=get_ip(request),
@@ -526,23 +536,28 @@ class AuthenticationSession(Session):
             refresh_expiration_date=get_expiration_date(
                 security_config.SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION * 2
             ),
-        )
+        ).commit()
+        return await AuthenticationSession.find_one({'id': _auth_session.inserted_id})
 
 
-class Role(BaseModel):
+@instance.register
+class Role(Document, BaseMixin):
     """
     Assigned to an account to authorize an action.
 
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be separated via comma and in 
-                           wildcard format (printer:query, printer:query,delete).
+        permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
-    name: str = fields.CharField(max_length=255)
-    description: str = fields.CharField(max_length=255, null=True)
-    permissions: str = fields.CharField(max_length=255, null=True)
+    name: str = fields.StringField(max_length=255, allow_none=False, unique=True)
+    description: str = fields.StringField(required=False, max_length=255, allow_none=True)
+    permissions: str = fields.StringField(required=False, max_length=255, allow_none=True)
+
+    def __repr__(self):
+        """Represent instance as a unique string."""
+        return f'<Role({self.name})>'
 
     def validate(self) -> None:
         raise NotImplementedError()
@@ -562,13 +577,32 @@ class Role(BaseModel):
             NotFoundError
         """
         try:
-            role = await Role.filter(name=name).get()
-            return role
-        except DoesNotExist:
+            role = await Role.find_one({'name': name, 'deleted': False})
+            if role:
+                return role
+            raise NotCreatedError
+        except NotCreatedError:
             raise NotFoundError("Role with this name does not exist.")
 
     @staticmethod
     async def new(**kwargs):
-        return await Role.create(
-            **kwargs
-        )
+        new_role = await Role(**kwargs).commit()
+        return await Role.find_one({'id': new_role.inserted_id, 'deleted': False})
+
+
+# `ensure_indexes` must be called, once, for each model we have indexes on (including default `unique`)
+async def setup_indexes():
+    try:
+        await Account.ensure_indexes()
+    except DuplicateKeyError as e:
+        logger.info('Indexes for Account table already setup')
+    except Exception as e:
+        if 'An equivalent index already exists' in e:
+            logger.info('Indexes for Account table already setup')
+    try:
+        await Role.ensure_indexes()
+    except DuplicateKeyError as e:
+        logger.info('Indexes for Account table already setup')
+    except Exception as e:
+        if 'An equivalent index already exists' in e:
+            logger.info('Indexes for Role table already setup')

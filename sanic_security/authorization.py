@@ -2,13 +2,12 @@ import functools
 import logging
 from fnmatch import fnmatch
 
-from tortoise.exceptions import DoesNotExist
-
 from sanic.request import Request
+from sanic.log import logger
+from sanic import Sanic
 
 from sanic_security.authentication import authenticate
-from sanic_security.exceptions import AuthorizationError
-from sanic_security.orm.tortoise import Role, Account, AuthenticationSession
+from sanic_security.exceptions import AuthorizationError, NotFoundError
 from sanic_security.utils import get_ip
 
 
@@ -33,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 async def check_permissions(
     request: Request, *required_permissions: str
-) -> AuthenticationSession:
+):
     """
     Authenticates client and determines if the account has sufficient permissions for an action.
 
@@ -54,8 +53,10 @@ async def check_permissions(
         DisabledError
         AuthorizationError
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    logger.debug(f'Authentication Session: {authentication_session.bearer}')
+    roles = await _orm.account.get_roles(authentication_session.bearer.pk)
     for role in roles:
         for required_permission, role_permission in zip(
             required_permissions, role.permissions.split(", ")
@@ -63,12 +64,12 @@ async def check_permissions(
             if fnmatch(required_permission, role_permission):
                 return authentication_session
     logging.warning(
-        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient permissions."
+        f"Client ({authentication_session.bearer.pk}/{get_ip(request)}) has insufficient permissions."
     )
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
-async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
+async def check_roles(request: Request, *required_roles: str):
     """
     Authenticates client and determines if the account has sufficient roles for an action.
 
@@ -89,13 +90,15 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         DisabledError
         AuthorizationError
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    roles = await _orm.account.get_roles(authentication_session.bearer.pk)
+    logger.debug(f'Found Roles: {roles}')
     for role in roles:
         if role.name in required_roles:
             return authentication_session
     logging.warning(
-        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient roles."
+        f"Client ({authentication_session.bearer.pk}/{get_ip(request)}) has insufficient roles."
     )
     raise AuthorizationError("Insufficient roles required for this action.")
 
@@ -177,8 +180,8 @@ def require_roles(*required_roles: str):
 
 
 async def assign_role(
-    name: str, account: Account, permissions: str = None, description: str = None
-) -> Role:
+    name: str, account, permissions: str = None, description: str = None
+):
     """
     Quick creation of a role associated with an account.
 
@@ -188,11 +191,14 @@ async def assign_role(
         permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
         description (str):  The description of the role associated with the account.
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
+
     try:
-        role = await Role.filter(name=name, permissions=permissions).get()
-    except DoesNotExist:
-        role = await Role.create(
+        # removed `permissions` lookup, as names should be unique in a sane RBAC model
+        role = await _orm.role.lookup(name=name)
+    except NotFoundError:
+        role = await _orm.role.new(
             description=description, permissions=permissions, name=name
         )
-    await account.roles.add(role)
+    await _orm.account.add_role(account, role=role)
     return role

@@ -23,6 +23,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+
 @pytest.mark.usefixtures("app")
 class TestConfiguration:
     """
@@ -36,8 +37,8 @@ class TestConfiguration:
         os.environ["SANIC_SECURITY_SECRET"] = "test-secret"
         security_config = Config()
         security_config.load_environment_variables()
-        assert security_config.SECRET == "test-secret"
+        assert security_config.SANIC_SECURITY_SECRET == "test-secret"
 
         assert 'SECRET' not in app.config
         app.config.update_config(security_config)
-        assert app.config.SECRET == 'test-secret'
+        assert app.config.SANIC_SECURITY_SECRET == 'test-secret'

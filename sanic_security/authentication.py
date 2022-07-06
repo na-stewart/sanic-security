@@ -1,14 +1,11 @@
 import base64
 import functools
-import re
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-
-from tortoise.exceptions import DoesNotExist
+from sanic import Sanic
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
@@ -18,7 +15,6 @@ from sanic_security.exceptions import (
     SessionError,
     DeactivatedError,
 )
-from sanic_security.orm.tortoise import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
 """
@@ -41,10 +37,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 password_hasher = PasswordHasher()
 
-
 async def register(
     request: Request, verified: bool = False, disabled: bool = False
-) -> Account:
+):
     """
     Registers a new account that can be logged into.
 
@@ -60,44 +55,37 @@ async def register(
         CredentialsError
     """
 
-    if not re.search(
-        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
-    ):
-        raise CredentialsError("Please use a valid email address.", 400)
-    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
-        raise CredentialsError(
-            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
-            400,
-        )
-    if request.form.get("phone") and not re.search(
-        r"/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g",
-        request.form.get("phone"),
-    ):
-        raise CredentialsError("Please use a valid phone number.", 400)
-    if 100 > len(request.form.get("password")) > 8:
-        raise CredentialsError(
-            "Password must be more than 8 characters and must be less than 100 characters.",
-            400,
-        )
-    if await Account.filter(email=request.form.get("email").lower()).exists():
-        raise CredentialsError("An account with this email already exists.")
-    if (
-        security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
-        and await Account.filter(username=request.form.get("username")).exists()
-    ):
-        raise CredentialsError("An account with this username already exists.")
-    account = await Account.create(
-        email=request.form.get("email").lower(),
-        username=request.form.get("username"),
-        password=password_hasher.hash(request.form.get("password")),
-        phone=request.form.get("phone"),
-        verified=verified,
-        disabled=disabled,
-    )
-    return account
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    # Input validation should be handled in the ORM itself
+    try:
+        if await _orm.account.lookup(email=request.form.get("email").lower()):
+            raise CredentialsError("An account with this email already exists.")
+    except NotFoundError:
+        try:
+          if (
+              security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
+              and await _orm.account.lookup(username=request.form.get("username"))
+          ):
+              raise CredentialsError("An account with this username already exists.")
+        except NotFoundError:
+            try:
+                account = await _orm.account.new(
+                    email=request.form.get("email").lower(),
+                    username=request.form.get("username"),
+                    password=password_hasher.hash(request.form.get("password")),
+                    phone=request.form.get("phone"),
+                    verified=verified,
+                    disabled=disabled,
+                )
+                return account
+            except Exception as e:
+                # TODO: Need to clean up this exception handling
+                logger.error(f"Generic Error Registering User: {str(e)}")
+                raise IntegrityError(str(e))
 
 
-async def login(request: Request, account: Account = None) -> AuthenticationSession:
+async def login(request: Request, account = None):
     """
     Login with email or username (if enabled) and password.
 
@@ -115,6 +103,8 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         UnverifiedError
         DisabledError
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
+
     if request.headers.get("Authorization"):
         authorization_type, credentials = request.headers.get("Authorization").split()
         if authorization_type == "Basic":
@@ -126,11 +116,15 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
     else:
         raise CredentialsError("Credentials not provided.")
     if not account:
+        # TODO: I hate this whole 'email *or* username' thing, in practice and in concept
         try:
-            account = await Account.get_via_email(email_or_username)
+            account = await _orm.account.lookup(email=email_or_username)
         except NotFoundError as e:
             if security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME:
-                account = await Account.get_via_username(email_or_username)
+                try:
+                    account = await _orm.account.lookup(username=email_or_username)
+                except NotFoundError as e:
+                    raise e
             else:
                 raise e
     try:
@@ -139,7 +133,8 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        return await AuthenticationSession.new(request, account)
+        foo = await _orm.authentication_session.new(request, account)
+        return await _orm.authentication_session.new(request, account)
     except VerifyMismatchError:
         logger.warning(
             f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
@@ -147,7 +142,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         raise CredentialsError("Incorrect password.", 401)
 
 
-async def logout(request: Request) -> AuthenticationSession:
+async def logout(request: Request):
     """
     Deactivates client's authentication session and revokes access.
 
@@ -162,15 +157,16 @@ async def logout(request: Request) -> AuthenticationSession:
     Returns:
         authentication_session
     """
-    authentication_session = await AuthenticationSession.decode(request)
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    authentication_session, bearer = await _orm.authentication_session.decode(request)
     if not authentication_session.active:
         raise DeactivatedError("Already logged out.", 403)
-    authentication_session.active = False
-    await authentication_session.save(update_fields=["active"])
-    return authentication_session
+
+    return await _orm.authentication_session.deactivate(authentication_session)
 
 
-async def authenticate(request: Request) -> AuthenticationSession:
+async def authenticate(request: Request):
     """
     Validates client.
 
@@ -189,9 +185,11 @@ async def authenticate(request: Request) -> AuthenticationSession:
         UnverifiedError
         DisabledError
     """
-    authentication_session = await AuthenticationSession.decode(request)
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    authentication_session, bearer = await _orm.authentication_session.decode(request)
     authentication_session.validate()
-    authentication_session.bearer.validate()
+    bearer.validate()
     return authentication_session
 
 
@@ -235,31 +233,32 @@ def create_initial_admin_account(app: Sanic) -> None:
     Args:
         app (Sanic): The main Sanic application instance.
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
 
     @app.listener("before_server_start")
     async def generate(app, loop):
         try:
-            role = await Role.filter(name="Head Admin").get()
-        except DoesNotExist:
-            role = await Role.create(
+            role = await _orm.role.lookup(name="Head Admin")
+        except NotFoundError:
+            role = await _orm.role.new(
                 description="Has the ability to control any aspect of the API. Assign sparingly.",
                 permissions="*:*",
                 name="Head Admin",
             )
         try:
-            account = await Account.filter(username="Head Admin").get()
-            await account.fetch_related("roles")
+            account = await _orm.account.lookup(username="Head Admin")
             if role not in account.roles:
                 await account.roles.add(role)
                 logger.warning(
                     'The initial admin account role "Head Admin" was removed and has been reinstated.'
                 )
-        except DoesNotExist:
-            account = await Account.create(
+        except NotFoundError:
+            account = await _orm.account.new(
                 username="Head Admin",
                 email=security_config.SANIC_SECURITY_INITIAL_ADMIN_EMAIL,
                 password=PasswordHasher().hash(security_config.SANIC_SECURITY_INITIAL_ADMIN_PASSWORD),
                 verified=True,
+                phone=security_config.get('SANIC_SECURITY_INITIAL_ADMIN_PHONE', '1111111111'),
+                roles=[role]
             )
-            await account.roles.add(role)
-            logger.info("Initial admin account created.")
+            logger.debug(f"Created Admin Account: {account}")

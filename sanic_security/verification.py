@@ -1,14 +1,10 @@
 import functools
 from contextlib import suppress
 
+from sanic import Sanic
 from sanic.request import Request
 
 from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
-from sanic_security.orm.tortoise import (
-    Account,
-    TwoStepSession,
-)
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -29,15 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-async def request_two_step_verification(
-    request: Request, account: Account = None
-) -> TwoStepSession:
+async def request_two_step_verification(request: Request, account = None):
     """
     Creates a two-step session and deactivates the client's current two-step session if found.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
-        account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
+        request (Request): Sanic request parameter. All request bodies are sent as 
+                           form-data with the following arguments: email.
+        account (Account): The account being associated with the verification session. 
+                           If None, an account is retrieved via email in the request form-data.
 
     Raises:
         NotFoundError
@@ -45,18 +41,20 @@ async def request_two_step_verification(
     Returns:
          two_step_session
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
+
     with suppress(NotFoundError, JWTDecodeError):
-        two_step_session = await TwoStepSession.decode(request)
+        two_step_session = await _orm.twostep_session.decode(request)
         if two_step_session.active:
             two_step_session.active = False
             await two_step_session.save(update_fields=["active"])
     if not account:
-        account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await TwoStepSession.new(request, account)
+        account = await _orm.account.lookup(request.form.get("email"))
+    two_step_session = await _orm.twostep_session.new(request, account)
     return two_step_session
 
 
-async def two_step_verification(request: Request) -> TwoStepSession:
+async def two_step_verification(request: Request):
     """
     Validates a two-step verification attempt.
 
@@ -77,14 +75,16 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession.decode(request)
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    two_step_session, bearer = await _orm.twostep_session.decode(request)
     two_step_session.validate()
-    two_step_session.bearer.validate()
+    bearer.validate()
     await two_step_session.check_code(request, request.form.get("code"))
     return two_step_session
 
 
-async def verify_account(request: Request) -> TwoStepSession:
+async def verify_account(request: Request):
     """
     Verifies account via two-step session code.
 
@@ -104,14 +104,15 @@ async def verify_account(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession.decode(request)
-    if two_step_session.bearer.verified:
+    _orm = Sanic.get_app().ctx.extensions['security']
+
+    two_step_session, bearer = await _orm.twostep_session.decode(request)
+    if bearer.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
     await two_step_session.check_code(request, request.form.get("code"))
-    two_step_session.bearer.verified = True
-    await two_step_session.bearer.save(update_fields=["verified"])
-    return two_step_session
+    await bearer.verify()
+    return bearer
 
 
 def requires_two_step_verification():

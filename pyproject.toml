@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sanic-security"
-version = "2.0.0"
+version = "2.0.0_preview_01"
 description = "An effective, simple, and async security library for the Sanic framework... minus the mandatory ORM"
 authors = ["Rob Dailey <rob@suspected.org>"]
 
@@ -11,8 +11,12 @@ captcha = "^0.4"
 argon2-cffi = "^21.3.0"
 cryptography = {version = "^37.0.2", extras = ["crypto"]}
 tortoise-orm = {version = "^0.19.1", extras = ["tortoise"]}
+umongo = {version = "^3.1.0", extras = ["umongo"]}
 sanic = "^22.3.2"
 sanic-ext = "^22.3.2"
+motor = {version = "^3.0.0", extras = ["umongo"]}
+pydantic = {version = "^1.9.1", extras = ["toroise"]}
+phonenumbers = {version = "^8.12.51", extras = ["toroise", "umongo"]}
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
@@ -22,6 +26,7 @@ cryptography = "^37.0.2"
 pytest = "^7.1.2"
 sanic-testing = "^22.3.0"
 pytest-cov = "^3.0.0"
+mongomock-motor = "^0.0.11"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
