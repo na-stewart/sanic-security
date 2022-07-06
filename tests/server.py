@@ -4,7 +4,6 @@ sys_path.insert(0, os_path.join(os_path.dirname(os_path.abspath(__file__)), ".."
 
 from argon2 import PasswordHasher
 from sanic import Sanic, text
-from sanic.log import logger
 from tortoise.contrib.sanic import register_tortoise
 
 from sanic_security import SanicSecurityExtension
@@ -49,200 +48,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-app = Sanic("security-test")
-password_hasher = PasswordHasher()
-security = SanicSecurityExtension()
 
-## umongo setup
-from mongomock_motor import AsyncMongoMockClient
-from umongo.frameworks import MotorAsyncIOInstance
-client = AsyncMongoMockClient("mongodb://mock:mock@127.0.0.1:27001/")
-client = client["mock_database"]
-lazy_umongo = MotorAsyncIOInstance()
-lazy_umongo.set_db(client)
-app.config.LAZY_UMONGO = lazy_umongo
-
-security.init_app(app)
-
-_orm = Sanic.get_app().ctx.extensions['security']
-
-@app.post("api/test/auth/register")
-async def on_register(request):
-    """
-    Register an account with email and password.
-    """
-    account = await register(
-        request,
-        verified=request.form.get("verified") == "true",
-        disabled=request.form.get("disabled") == "true",
-    )
-    #if not account['verified']:
-    if not account.verified:
-        two_step_session = await request_two_step_verification(request, account)
-        response = json(
-            "Registration successful! Verification required.", two_step_session['code']
-        )
-        two_step_session.encode(response)
-    else:
-        response = json("Registration successful!", await account.json())
-        #response = json("Registration successful!", account)
-    return response
-
-
-@app.post("api/test/auth/verify")
-async def on_verify(request):
-    """
-    Verifies an unverified account.
-    """
-    bearer = await verify_account(request)
-    return json(
-        "You have verified your account and may login!", await bearer.json()
-    )
-
-
-@app.post("api/test/auth/login")
-async def on_login(request):
-    """
-    Login to an account with an email and password.
-    """
-    authentication_session = await login(request)
-    response = json("Login successful!", await authentication_session.json())
-    authentication_session.encode(response)
-    return response
-
-
-@app.post("api/test/auth/logout")
-async def on_logout(request):
-    """
-    Logout of currently logged in account.
-    """
-    authentication_session = await logout(request)
-    response = json("Logout successful!", await authentication_session.json())
-    return response
-
-
-@app.post("api/test/auth")
-@requires_authentication()
-async def on_authenticate(request, authentication_session):
-    """
-    Check if current authentication session is valid.
-    """
-    response = json("Authenticated!", await authentication_session.json())
-    authentication_session.encode(response)
-    return response
-
-
-@app.get("api/test/capt/request")
-async def on_captcha_request(request):
-    """
-    Request captcha with solution in the response.
-    """
-    captcha_session = await request_captcha(request)
-    response = json("Captcha request successful!", captcha_session.code)
-    captcha_session.encode(response)
-    return response
-
-
-@app.get("api/test/capt/image")
-async def on_captcha_image(request):
-    """
-    Request captcha image.
-    """
-    captcha_session = await _orm.captcha_session.decode(request)
-    response = captcha_session.get_image()
-    captcha_session.encode(response)
-    return response
-
-
-@app.post("api/test/capt")
-@requires_captcha()
-async def on_captcha_attempt(request, captcha_session):
-    """
-    Attempt captcha.
-    """
-    return json("Captcha attempt successful!", await captcha_session.json())
-    #return json("Captcha attempt successful!", captcha_session)
-
-
-@app.post("api/test/two-step/request")
-async def on_request_verification(request):
-    """
-    Request two-step verification with code in the response.
-    """
-    two_step_session = await request_two_step_verification(request)
-    response = json("Verification request successful!", two_step_session.code)
-    two_step_session.encode(response)
-    return response
-
-
-@app.post("api/test/two-step")
-@requires_two_step_verification()
-async def on_verification_attempt(request, two_step_session):
-    """
-    Attempt two-step verification.
-    """
-    return json("Two step verification attempt successful!", await two_step_session.json())
-    #return json("Two step verification attempt successful!", two_step_session)
-
-
-@app.post("api/test/auth/roles")
-@requires_authentication()
-async def on_authorization(request, authentication_session):
-    """
-    Check if client is authorized with sufficient roles and permissions.
-    """
-    await check_roles(request, request.form.get("role"))
-    if request.form.get("permissions_required"):
-        await check_permissions(
-            request, *request.form.get("permissions_required").split(", ")
-        )
-    return text("Account permitted.")
-
-
-@app.post("api/test/auth/roles/assign")
-@requires_authentication()
-async def on_role_assign(request, authentication_session):
-    """
-    Assign authenticated account a role.
-    """
-    await assign_role(
-        request.form.get("name"),
-        authentication_session.bearer,
-        request.form.get("permissions"),
-        "Role used for testing.",
-    )
-    return text("Role assigned.")
-
-
-@app.post("api/test/account")
-async def on_account_creation(request):
-    """
-    Quick account creation.
-    """
-    try:
-        username = "not_registered"
-        if request.form.get("username"):
-            username = request.form.get("username")
-        account = await _orm.account.new(
-            username=username,
-            email=request.form.get("email"),
-            password=password_hasher.hash("testtest"),
-            verified=True,
-            disabled=False,
-            phone=request.form.get("phone")
-        )
-        response = json("Account creation successful!", await account.json())
-    except IntegrityError:
-        response = json("Account with these credentials already exist!", None)
-    return response
-
-
-@app.exception(SecurityError)
-async def on_error(request, exception):
-    return exception.json_response
-
-
-security_config.SANIC_SECURITY_SECRET = """
+SECURITY_SECRET = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU4vHCHEEZjdZIQRqwriFpeeoqMA1
 ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStfVn25+ZfSfKH+WYBUglZBmz/K6uW
@@ -260,7 +67,8 @@ mQ4BjbU1slel/eXlhomQpxoBCH3J/Ba9qd+uBql29QZMQXtKFg/mryjprapq8sUcbgazr9u1x+zJz9w+
 1G1CHHo/vq8zPNkVWmhciIUeHR3YJbw==
 -----END RSA PRIVATE KEY-----
 """
-security_config.SANIC_SECURITY_PUBLIC_SECRET = """
+
+PUBLIC_SECRET = """
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU
 4vHCHEEZjdZIQRqwriFpeeoqMA1ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStf
@@ -268,17 +76,218 @@ Vn25+ZfSfKH+WYBUglZBmz/K6uW41mSRuuH3Pu/lnPgGvsxtT7KE8dkbyrI+Tyg0pniOYdxBxgpu06S6
 MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
-security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM = "RS256"
-security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME = True
-security_config.SANIC_SECURITY_SESSION_SECURE = False
-register_tortoise(
-    app,
-    db_url=security_config.SANIC_SECURITY_TEST_DATABASE_URL,
-    modules={"models": ["sanic_security.orm.tortoise"]},
-    generate_schemas=True,
-)
 
+def make_app():
+    app = Sanic("security-test")
+    password_hasher = PasswordHasher()
+    security = SanicSecurityExtension()
+    
+    ## umongo setup
+    from mongomock_motor import AsyncMongoMockClient
+    from umongo.frameworks import MotorAsyncIOInstance
+    client = AsyncMongoMockClient("mongodb://mock:mock@127.0.0.1:27001/")
+    client = client["mock_database"]
+    lazy_umongo = MotorAsyncIOInstance()
+    lazy_umongo.set_db(client)
+    app.config.LAZY_UMONGO = lazy_umongo
+    
+    security.init_app(app)
+    
+    _orm = Sanic.get_app().ctx.extensions['security']
 
-create_initial_admin_account(app)
+    @app.post("api/test/auth/register")
+    async def on_register(request):
+        """
+        Register an account with email and password.
+        """
+        account = await register(
+            request,
+            verified=request.form.get("verified") == "true",
+            disabled=request.form.get("disabled") == "true",
+        )
+        #if not account['verified']:
+        foo = await account.json()
+        if not account.verified:
+            two_step_session = await request_two_step_verification(request, account)
+            response = json(
+                "Registration successful! Verification required.", two_step_session.code
+            )
+            two_step_session.encode(response)
+        else:
+            response = json("Registration successful!", await account.json())
+        return response
+    
+    
+    @app.post("api/test/auth/verify")
+    async def on_verify(request):
+        """
+        Verifies an unverified account.
+        """
+        bearer = await verify_account(request)
+        return json(
+            "You have verified your account and may login!", await bearer.json()
+        )
+    
+    
+    @app.post("api/test/auth/login")
+    async def on_login(request):
+        """
+        Login to an account with an email and password.
+        """
+        authentication_session = await login(request)
+        response = json("Login successful!", await authentication_session.json())
+        authentication_session.encode(response)
+        return response
+    
+    
+    @app.post("api/test/auth/logout")
+    async def on_logout(request):
+        """
+        Logout of currently logged in account.
+        """
+        authentication_session = await logout(request)
+        response = json("Logout successful!", await authentication_session.json())
+        return response
+    
+    
+    @app.post("api/test/auth")
+    @requires_authentication()
+    async def on_authenticate(request, authentication_session):
+        """
+        Check if current authentication session is valid.
+        """
+        response = json("Authenticated!", await authentication_session.json())
+        authentication_session.encode(response)
+        return response
+    
+    
+    @app.get("api/test/capt/request")
+    async def on_captcha_request(request):
+        """
+        Request captcha with solution in the response.
+        """
+        captcha_session = await request_captcha(request)
+        response = json("Captcha request successful!", captcha_session.code)
+        captcha_session.encode(response)
+        return response
+    
+    
+    @app.get("api/test/capt/image")
+    async def on_captcha_image(request):
+        """
+        Request captcha image.
+        """
+        captcha_session = await _orm.captcha_session.decode(request)
+        response = captcha_session.get_image()
+        captcha_session.encode(response)
+        return response
+    
+    
+    @app.post("api/test/capt")
+    @requires_captcha()
+    async def on_captcha_attempt(request, captcha_session):
+        """
+        Attempt captcha.
+        """
+        return json("Captcha attempt successful!", await captcha_session.json())
+        #return json("Captcha attempt successful!", captcha_session)
+    
+    
+    @app.post("api/test/two-step/request")
+    async def on_request_verification(request):
+        """
+        Request two-step verification with code in the response.
+        """
+        two_step_session = await request_two_step_verification(request)
+        response = json("Verification request successful!", two_step_session.code)
+        two_step_session.encode(response)
+        return response
+    
+    
+    @app.post("api/test/two-step")
+    @requires_two_step_verification()
+    async def on_verification_attempt(request, two_step_session):
+        """
+        Attempt two-step verification.
+        """
+        return json("Two step verification attempt successful!", await two_step_session.json())
+        #return json("Two step verification attempt successful!", two_step_session)
+    
+    
+    @app.post("api/test/auth/roles")
+    @requires_authentication()
+    async def on_authorization(request, authentication_session):
+        """
+        Check if client is authorized with sufficient roles and permissions.
+        """
+        await check_roles(request, request.form.get("role"))
+        if request.form.get("permissions_required"):
+            await check_permissions(
+                request, *request.form.get("permissions_required").split(", ")
+            )
+        return text("Account permitted.")
+    
+    
+    @app.post("api/test/auth/roles/assign")
+    @requires_authentication()
+    async def on_role_assign(request, authentication_session):
+        """
+        Assign authenticated account a role.
+        """
+        await assign_role(
+            request.form.get("name"),
+            authentication_session.bearer,
+            request.form.get("permissions"),
+            "Role used for testing.",
+        )
+        return text("Role assigned.")
+    
+    
+    @app.post("api/test/account")
+    async def on_account_creation(request):
+        """
+        Quick account creation.
+        """
+        try:
+            username = "not_registered"
+            if request.form.get("username"):
+                username = request.form.get("username")
+            account = await _orm.account.new(
+                username=username,
+                email=request.form.get("email"),
+                password=password_hasher.hash("testtest"),
+                verified=True,
+                disabled=False,
+                phone=request.form.get("phone")
+            )
+            response = json("Account creation successful!", await account.json())
+        except IntegrityError:
+            response = json("Account with these credentials already exist!", None)
+        return response
+    
+    
+    @app.exception(SecurityError)
+    async def on_error(request, exception):
+        return exception.json_response
+    
+    security_config.SANIC_SECURITY_SECRET = SECURITY_SECRET
+    security_config.SANIC_SECURITY_PUBLIC_SECRET = PUBLIC_SECRET
+    security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM = "RS256"
+    security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME = True
+    security_config.SANIC_SECURITY_SESSION_SECURE = False
+
+    register_tortoise(
+        app,
+        db_url=security_config.SANIC_SECURITY_TEST_DATABASE_URL,
+        modules={"models": ["sanic_security.orm.tortoise"]},
+        generate_schemas=True,
+    )
+    
+    
+    create_initial_admin_account(app)
+
+    return app
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, workers=1, debug=True)
+    _app = make_app()
+    _app.run(host="127.0.0.1", port=8000, workers=1, debug=True)
