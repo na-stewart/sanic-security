@@ -73,10 +73,13 @@ class TestLogin:
         Login with an intentionally incorrect password and into a non existent account.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
+
         with _client:
-            _client.post(
+            #`username` must be provided, because no sane system that allows login with "username"
+            #  can have "security" in its name if it allows duplicates
+            foo, bar = _client.post(
                 "/api/test/account",
-                data={"email": "incorrectpass@login.com"},
+                data={"email": "incorrectpass@login.com", "username": "incorrectpass"},
             )
             incorrect_password_login_request, incorrect_password_login_response = _client.post(
                 "/api/test/auth/login",
@@ -101,7 +104,7 @@ class TestLogin:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "logout@login.com"},
+                data={"email": "logout@login.com", "username": "logout"},
             )
             _client.post(
                 "/api/test/auth/login",

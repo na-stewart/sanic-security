@@ -36,7 +36,7 @@ class TestAuthorization:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "permissions@authorization.com"},
+                data={"email": "permissions@authorization.com", "username": "permissions"},
             )
             _client.post(
                 "/api/test/auth/login",
@@ -78,7 +78,7 @@ class TestAuthorization:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "roles@authorization.com"},
+                data={"email": "roles@authorization.com", "username": "roles"},
             )
             _client.post(
                 "/api/test/auth/login",

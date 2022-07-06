@@ -1,4 +1,5 @@
 import pytest
+import random
 
 from sanic import Sanic
 from sanic_testing.reusable import ReusableClient
@@ -28,6 +29,9 @@ class TestRegistration:
     Tests registration.
     """
 
+    def rand_phone(self):
+        return ''.join(str(random.randint(1,9)) for i in range(10))
+
     def register(
         self,
         client,
@@ -35,7 +39,7 @@ class TestRegistration:
         username: str,
         disabled: bool,
         verified: bool,
-        phone: str = None,
+        phone: str = rand_phone(False),
     ):
         registration_request, registration_response = client.post(
             "/api/test/auth/register",
@@ -57,7 +61,7 @@ class TestRegistration:
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "emailpass@register.com", "emailpass", False, True
+                _client, "emailpass@register.com", "emailpass", False, True, self.rand_phone(),
             )
             assert registration_response.status == 200, registration_response.text
 
@@ -68,7 +72,7 @@ class TestRegistration:
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             invalid_email_registration_request, invalid_email_registration_response = self.register(
-                _client, "invalidregister.com", "invalid", False, True
+                _client, "invalidregister.com", "invalid", False, True, self.rand_phone(),
             )
             assert (
                 invalid_email_registration_response.status == 400
@@ -80,7 +84,7 @@ class TestRegistration:
                 invalid_phone_registration_response.status == 400
             ), invalid_phone_registration_response.text
             invalid_username_registration_request, invalid_username_registration_response = self.register(
-                _client, "invaliduser@register.com", "_inVal!d_", False, True
+                _client, "invaliduser@register.com", "_inVal!d_", False, True, self.rand_phone(),
             )
             assert (
                 invalid_username_registration_response.status == 400
@@ -91,6 +95,7 @@ class TestRegistration:
                 "thisusernameistoolongtoberegisteredwith",
                 False,
                 True,
+                self.rand_phone(),
             )
             assert (
                 too_many_characters_registration_response.status == 400
@@ -103,7 +108,7 @@ class TestRegistration:
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "disabled@register.com", "disabled", True, True
+                _client, "disabled@register.com", "disabled", True, True, self.rand_phone(),
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(
@@ -119,7 +124,7 @@ class TestRegistration:
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "unverified@register.com", "unverified", False, False
+                _client, "unverified@register.com", "unverified", False, False, self.rand_phone(),
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(
@@ -135,7 +140,7 @@ class TestRegistration:
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "unverified_disabled@register.com", "unverified_disabled", True, False
+                _client, "unverified_disabled@register.com", "unverified_disabled", True, False, self.rand_phone(),
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(

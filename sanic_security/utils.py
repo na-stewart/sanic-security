@@ -5,6 +5,8 @@ import string
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
 
+from sanic.log import logger
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -59,9 +61,22 @@ def json(message: str, data, status_code: int = 200) -> HTTPResponse:
     Returns:
         json
     """
+    logger.critical(f"JSON Message: {message}")
+    logger.critical(f"JSON Data: {data}")
     return sanic_json(
         {"message": message, "code": status_code, "data": data}, status=status_code
     )
+    '''
+    try:
+        return sanic_json(
+            {"message": message, "code": status_code, "data": data}, status=status_code
+        )
+    except TypeError:
+        return sanic_json(
+            {"message": message, "code": status_code, "data": data.json()}, status=status_code
+        )
+    '''
+
 
 
 def get_expiration_date(seconds: int) -> datetime.datetime:

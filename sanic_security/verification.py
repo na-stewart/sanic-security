@@ -2,6 +2,7 @@ import functools
 from contextlib import suppress
 
 from sanic import Sanic
+from sanic.log import logger
 from sanic.request import Request
 
 from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
@@ -80,9 +81,9 @@ async def two_step_verification(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    two_step_session = await _orm.twostep_session.decode(request)
+    two_step_session, bearer = await _orm.twostep_session.decode(request)
     two_step_session.validate()
-    two_step_session.bearer.validate()
+    bearer.validate()
     await two_step_session.check_code(request, request.form.get("code"))
     return two_step_session
 
@@ -110,14 +111,17 @@ async def verify_account(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    two_step_session = await _orm.twostep_session.decode(request)
-    if two_step_session.bearer.verified:
+    two_step_session, bearer = await _orm.twostep_session.decode(request)
+    logger.critical(f'Bearer: {bearer}')
+    logger.critical(f'Two Step Session: {two_step_session}')
+    if bearer.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
     await two_step_session.check_code(request, request.form.get("code"))
-    two_step_session.bearer.verified = True
-    await two_step_session.bearer.save(update_fields=["verified"])
-    return two_step_session
+    await bearer.verify()
+    #two_step_session.bearer.verified = True
+    #await two_step_session.bearer.save(update_fields=["verified"])
+    return bearer
 
 
 def requires_two_step_verification():

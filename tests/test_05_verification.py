@@ -57,7 +57,7 @@ class TestVerification:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "two_step@verification.com"},
+                data={"email": "two_step@verification.com", "username": "two_step"},
             )
             two_step_verification_request_request, two_step_verification_request_response = _client.post(
                 "/api/test/two-step/request",

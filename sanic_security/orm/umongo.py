@@ -3,15 +3,19 @@ import uuid
 from io import BytesIO
 from types import SimpleNamespace
 
+from bson import objectid
+
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
+from marshmallow import ValidationError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
 from umongo import Document, EmbeddedDocument, fields, validate, post_load, MixinDocument
 from umongo.exceptions import NotCreatedError
+from pymongo.errors import DuplicateKeyError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
@@ -57,10 +61,10 @@ class BaseMixin(MixinDocument):
         id (int): Primary key of model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
-        deleted (bool): Renders the model filterable without removing from the database.
+        deleted (bool): Renders the model find_oneable without removing from the database.
     """
 
-    _id: uuid.UUID = fields.ObjectIdField()
+    id: uuid.UUID = fields.ObjectIdField()
     date_created: dt.datetime = fields.DateTimeField(auto_now_add=True)
     date_updated: dt.datetime = fields.DateTimeField(auto_now=True)
     deleted: bool = fields.BooleanField(load_default=False)
@@ -74,26 +78,14 @@ class BaseMixin(MixinDocument):
         """
         raise NotImplementedError()
 
-    def json(self) -> dict:
-        """
-        A JSON serializable dict to be used in a HTTP request or response.
+    async def verify(self) -> None:
+        self.verified = True
+        await self.commit()
 
-        Example:
-            Below is an example of this method returning a dict to be used for JSON serialization.
-
-                def json(self):
-                    return {
-                        'id': id,
-                        'date_created': str(self.date_created),
-                        'date_updated': str(self.date_updated),
-                        'email': self.email,
-                        'username': self.username,
-                        'disabled': self.disabled,
-                        'verified': self.verified
-                    }
-
-        """
-        raise NotImplementedError()
+    def json(self, cls) -> dict:
+        _ma = cls.schema.as_marshmallow_schema()
+        schema = _ma()
+        return schema.dump(self)
 
     class Meta:
         abstract = True
@@ -114,12 +106,15 @@ class Account(Document, BaseMixin):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    _id: uuid.UUID = fields.ObjectIdField()
-    username = fields.StringField(required=True, unique=True)
-    email: str = fields.EmailField(required=True, unique=True, null=False, metadata={"required": True}, marshmallow_required=True)
-    password: str = fields.StringField(required=True, validate=[validate.Length(max=512)], null=False, marshmallow_required=True)
-    phone: int = fields.StringField(required=True, validate=[validate.Length(max=11)], null=True, unique=True)
-    created_at: dt.datetime = fields.DateTimeField(null=False, load_default=lambda: dt.datetime.utcnow())
+    username = fields.StringField(required=False, unique=True, validate=[validate.Regexp("^[A-Za-z0-9 _-]{3,32}$")])
+    email: str = fields.EmailField(required=True, unique=True, allow_none=False,
+                                   metadata={"required": True}, marshmallow_required=True)
+    password: str = fields.StringField(required=True, validate=[validate.Length(max=512)],
+                                       allow_none=False, marshmallow_required=True)
+    phone: str = fields.StringField(required=False,
+                                    validate=[validate.Length(max=11, min=10),],
+                                    load_default=None, unique=True)
+    created_at: dt.datetime = fields.DateTimeField(allow_none=False, load_default=lambda: dt.datetime.utcnow())
     last_login_at: dt.datetime = fields.DateTimeField(null=True)
     current_login_at: dt.datetime = fields.DateTimeField(null=True)
     confirmed_at: dt.datetime = fields.DateTimeField(null=True)
@@ -127,18 +122,7 @@ class Account(Document, BaseMixin):
     current_login_ip: str = fields.StringField(validate=[validate.Length(max=60)], null=True)
     disabled: bool = fields.BooleanField(load_default=False)
     verified: bool = fields.BooleanField(load_default=False)
-    roles = fields.ListField(fields.ReferenceField('Role'))
-
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "email": self.email,
-            "username": self.username,
-            "disabled": self.disabled,
-            "verified": self.verified,
-        }
+    roles = fields.ListField(fields.ReferenceField('Role', fetch=True), null=True, fetch=True) 
 
     def validate(self) -> None:
         """
@@ -155,6 +139,62 @@ class Account(Document, BaseMixin):
             raise UnverifiedError()
         elif self.disabled:
             raise DisabledError()
+
+    def json(self) -> dict:
+        _ma = Account().schema.as_marshmallow_schema()
+        schema = _ma(exclude=['password'])
+        return schema.dump(self)
+
+    @staticmethod
+    async def new(**kwargs):
+        logger.debug(f"New user requested: {kwargs}")
+        try:
+            _account = await Account(**kwargs).commit()
+        except DuplicateKeyError as e:
+            logger.critical(f'Tried to create a duplicate key! {e}')
+            raise AccountError(e.message)
+        except ValidationError as e:
+            logger.critical(f'Tried to create a duplicate account! {e}')
+            raise AccountError(e.messages, code=400)
+        except Exception as e:
+            logger.critical(f'Generic Exception! {e}')
+            raise AccountError(e)
+
+        return await Account.find_one({'id': _account.inserted_id, 'deleted': False})
+
+    #@property
+    async def get_roles(self, id = None):
+        logger.critical(f"[get_roles] self: {self}")
+        logger.critical(f"[get_roles] id: {id}")
+        account = self
+        if not account.pk:
+            #account = await Account.find_one({'id': objectid.ObjectId(id)})
+            account = await Account.find_one({'id': id})
+        if not account:
+            raise NotFoundError("Lookup returned no matching user")
+        elif not account.roles:
+            return []
+
+        roles = [await role.fetch() for role in account.roles]
+        logger.critical(f'Found roles: {roles}')
+        return roles
+
+    async def add_role(self, id = None, role = None):
+        logger.debug(f'Trying to add role: {role} to user {id}')
+        account = await id.fetch()
+        logger.debug(f'Fetched account = {account}')
+        if not account.pk:
+            if not id:
+                raise AccountError('Must provide Account object or pass `id` parameter!')
+            account = await Account.find_one({'id': id})
+        if not account:
+            raise NotFoundError("Lookup requested by no identifier provided")
+        if account.roles:
+            account.roles.append(role)
+        else:
+            account.roles = [role]
+        await account.commit()
+        return account
 
     @staticmethod
     async def lookup(email: str = None, username: str = None, phone: str = None, id: str = None):
@@ -176,19 +216,23 @@ class Account(Document, BaseMixin):
         try:
             account = None
             if email:
-                account = await Account.filter(email=email, deleted=False).get()
-                logger.critical(f"Lookup user identified by {email}")
+                account = await Account.find_one({'email': email, 'deleted': False})
+                logger.debug(f"Lookup user identified by email: {email}")
             elif username:
-                account = await Account.filter(username=username, deleted=False).get()
-                logger.critical(f"Lookup user identified by {username}")
+                account = await Account.find_one({'username': username, 'deleted': False})
+                logger.debug(f"Lookup user identified by username: {username}")
             elif phone:
-                account = await Account.filter(phone=phone, deleted=False).get()
-                logger.critical(f"Lookup user identified by {phone}")
+                account = await Account.find_one({'phone': phone, 'deleted': False})
+                logger.debug(f"Lookup user identified by phone: {phone}")
             elif id:
-                account = await Account.filter(id=id, deleted=False).get()
-                logger.critical(f"Lookup user identified by {id}")
+                account = await Account.find_one({'id': id, 'deleted': False})
+                logger.debug(f"Lookup user identified by id: {id}")
             else:
                 raise NotFoundError("Lookup requested by no identifier provided")
+            if not account:
+                raise NotCreatedError
+
+            logger.debug(f"Account Found: {account}")
             return account
         except NotCreatedError:
             raise NotFoundError("Account with this identifier does not exist.")
@@ -208,13 +252,12 @@ class Session(BaseMixin, MixinDocument):
     """
 
     expiration_date: dt.datetime = fields.DateTimeField(null=True)
+    refresh_expiration_date: dt.datetime = fields.DateTimeField(null=True)
     active: bool = fields.BooleanField(load_default=True)
     ip: str = fields.StringField(max_length=16)
-    bearer: fields.ReferenceField('Account')
+    bearer = fields.ReferenceField('Account', fetch=True)
     ctx = SimpleNamespace()
 
-    #def __init__(self, **kwargs):
-    #    super().__init__(**kwargs)
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -231,16 +274,6 @@ class Session(BaseMixin, MixinDocument):
         """
         raise NotImplementedError()
 
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "expiration_date": str(self.expiration_date),
-            "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
-            "active": self.active,
-        }
-
     def validate(self) -> None:
         """
         Raises an error with respect to session state.
@@ -254,7 +287,8 @@ class Session(BaseMixin, MixinDocument):
             raise DeletedError("Session has been deleted.")
         elif (
             self.expiration_date
-            and dt.datetime.now(dt.timezone.utc) >= self.expiration_date
+            and dt.datetime.now() >= self.expiration_date
+            #and dt.datetime.now(dt.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
@@ -268,7 +302,7 @@ class Session(BaseMixin, MixinDocument):
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
         payload = {
-            "id": self.id,
+            "id": str(self.id),
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
             "ip": self.ip,
@@ -338,12 +372,51 @@ class Session(BaseMixin, MixinDocument):
         """
         try:
             decoded_raw = cls.decode_raw(request)
+            logger.critical(f'Decoded_Raw: {decoded_raw}')
             decoded_session = (
-                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
+                await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})
             )
+            if not decoded_session:
+                raise NotCreatedError
         except NotCreatedError:
             raise NotFoundError("Session could not be found.")
-        return decoded_session
+        if decoded_session.bearer:
+            return decoded_session, await decoded_session.bearer.fetch()
+        return decoded_session, decoded_session.bearer
+        
+
+    @classmethod
+    async def deactivate(cls, session):
+        """
+        Sets a session as deactivated/deleted session
+
+        Args:
+            request (Request): Sanic request parameter.
+
+        Returns:
+            session
+
+        Raises:
+            JWTDecodeError
+            NotFoundError
+        """
+        try:
+            session.active = False
+            deactivated_session = (
+                #TODO: Should probably be removing old sessions, not just setting inactive
+                #await cls.remove({'id': objectid.ObjectId(session["id"])})
+                await session.commit()
+            )
+            if not deactivated_session:
+                raise NotCreatedError
+        except NotCreatedError:
+            raise NotFoundError("Session could not be found.")
+        return session
+
+    def json(self) -> dict:
+        _ma = Session().schema.as_marshmallow_schema()
+        schema = _ma()
+        return schema.dump(self)
 
     class Meta:
         abstract = True
@@ -381,57 +454,59 @@ class VerificationSession(Session, BaseMixin, MixinDocument):
         if self.code != code:
             if self.attempts < security_config.SANIC_SECURITY_MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
-                await self.save(update_fields=["attempts"])
+                await self.commit()
                 raise ChallengeError("The value provided does not match.")
             else:
                 logger.warning(
-                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                    f"Client ({self.bearer.pk}/{get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 raise MaxedOutChallengeError()
         else:
             self.active = False
-            await self.save(update_fields=["active"])
+            await self.commit()
 
     class Meta:
         abstract = True
+        allow_inheritance = True
 
 
 @instance.register
-class TwoStepSession(Document, VerificationSession):
+class TwoStepSession(VerificationSession, Document):
     """
     Validates a client using a code sent via email or text.
     """
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
-        return await TwoStepSession.create(
-            **kwargs,
-            ip=get_ip(request),
-            bearer=account,
-            expiration_date=get_expiration_date(
+        _session = await TwoStepSession(
+            ip = get_ip(request),
+            bearer = account['id'],
+            expiration_date = get_expiration_date(
                 security_config.SANIC_SECURITY_TWO_STEP_SESSION_EXPIRATION
             ),
-        )
-
-    class Meta:
-        table = "two_step_session"
+        ).commit()
+        logger.debug(f"TwoStepSession Created: {_session}")
+        new_session = await TwoStepSession.find_one({'id': _session.inserted_id, 'deleted': False})
+        return new_session
 
 
 @instance.register
-class CaptchaSession(Document, VerificationSession):
+class CaptchaSession(Document, VerificationSession, Session):
     """
     Validates a client with a captcha challenge.
     """
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
-        return await CaptchaSession.create(
+        _captcha_session = await CaptchaSession(
             **kwargs,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
                 security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
-        )
+        ).commit()
+        return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
+
 
     def get_image(self) -> HTTPResponse:
         """
@@ -450,14 +525,14 @@ class CaptchaSession(Document, VerificationSession):
 
 
 @instance.register
-class AuthenticationSession(Document, Session):
+class AuthenticationSession(Document, VerificationSession, Session, BaseMixin):
     """
     Used to authenticate and identify a client.
     """
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
-        return await AuthenticationSession.create(
+        _auth_session = await AuthenticationSession(
             **kwargs,
             bearer=account,
             ip=get_ip(request),
@@ -467,7 +542,13 @@ class AuthenticationSession(Document, Session):
             refresh_expiration_date=get_expiration_date(
                 security_config.SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION * 2
             ),
-        )
+        ).commit()
+        return await AuthenticationSession.find_one({'id': _auth_session.inserted_id})
+
+    #@property
+    #async def get_roles(self):
+    #    logger.critical(f'get_roles: {self}')
+    #    return await self.roles.fetch()
 
 
 @instance.register
@@ -481,9 +562,9 @@ class Role(Document, BaseMixin):
         permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
-    name: str = fields.StringField(max_length=255, null=False, unique=True)
-    description: str = fields.StringField(max_length=255, null=True)
-    permissions: str = fields.StringField(max_length=255, null=True)
+    name: str = fields.StringField(max_length=255, allow_none=False, unique=True)
+    description: str = fields.StringField(required=False, max_length=255, allow_none=True)
+    permissions: str = fields.StringField(required=False, max_length=255, allow_none=True)
 
     def __repr__(self):
         """Represent instance as a unique string."""
@@ -491,16 +572,6 @@ class Role(Document, BaseMixin):
 
     def validate(self) -> None:
         raise NotImplementedError()
-
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "name": self.name,
-            "description": self.description,
-            "permissions": self.permissions,
-        }
 
     @staticmethod
     async def lookup(name: str):
@@ -517,40 +588,32 @@ class Role(Document, BaseMixin):
             NotFoundError
         """
         try:
-            logger.critical(f'Doc: {Role}')
-            logger.critical(f'Doc.dir: {dir(Role)}')
-            logger.critical(f'Doc.fields: {Role._fields}')
-            #role = await Role.find_one(name=name, deleted=False)
-            role = await Role.find_one(name=name)
-            return role
+            role = await Role.find_one({'name': name, 'deleted': False})
+            if role:
+                return role
+            raise NotCreatedError
         except NotCreatedError:
             raise NotFoundError("Role with this name does not exist.")
+
+    @staticmethod
+    async def new(**kwargs):
+        new_role = await Role(**kwargs).commit()
+        return await Role.find_one({'id': new_role.inserted_id, 'deleted': False})
 
 
 # `ensure_indexes` must be called, once, for each model we have indexes on (including default `unique`)
 async def setup_indexes():
     try:
         await Account.ensure_indexes()
+    except DuplicateKeyError as e:
+        logger.info('Indexes for Account table already setup')
     except Exception as e:
         if 'An equivalent index already exists' in e:
             logger.info('Indexes for Account table already setup')
     try:
         await Role.ensure_indexes()
+    except DuplicateKeyError as e:
+        logger.info('Indexes for Account table already setup')
     except Exception as e:
+        if 'An equivalent index already exists' in e:
             logger.info('Indexes for Role table already setup')
-    try:
-        await Session.ensure_indexes()
-    except Exception as e:
-            logger.info('Indexes for Session table already setup')
-    try:
-        await VerificationSession.ensure_indexes()
-    except Exception as e:
-            logger.info('Indexes for VerificationSession table already setup')
-    try:
-        await TwoStepSession.ensure_indexes()
-    except Exception as e:
-        logger.info('Indexes for TwoStepSession table already setup')
-    try:
-        await CaptchaSession.ensure_indexes()
-    except Exception as e:
-        logger.info('Indexes for CaptchaSesion table already setup')

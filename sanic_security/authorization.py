@@ -3,6 +3,7 @@ import logging
 from fnmatch import fnmatch
 
 from sanic.request import Request
+from sanic.log import logger
 from sanic import Sanic
 
 from sanic_security.authentication import authenticate
@@ -53,8 +54,12 @@ async def check_permissions(
         DisabledError
         AuthorizationError
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    logger.critical(f'Authentication Session: {authentication_session.bearer}')
+    #roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    #roles = await authentication_session.bearer.roles
+    roles = await _orm.account.get_roles(authentication_session.bearer.pk)
     for role in roles:
         for required_permission, role_permission in zip(
             required_permissions, role.permissions.split(", ")
@@ -62,7 +67,7 @@ async def check_permissions(
             if fnmatch(required_permission, role_permission):
                 return authentication_session
     logging.warning(
-        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient permissions."
+        f"Client ({authentication_session.bearer.pk}/{get_ip(request)}) has insufficient permissions."
     )
     raise AuthorizationError("Insufficient permissions required for this action.")
 
@@ -89,13 +94,24 @@ async def check_roles(request: Request, *required_roles: str):
         DisabledError
         AuthorizationError
     """
+    _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
+    #roles = await authentication_session.bearer.roles
+    #roles = await authentication_session.get_roles(authentication_session.bearer)
+    fetched = await authentication_session.bearer.fetch()
+    logger.critical(f'Authentication Session Bearer: {authentication_session.bearer}')
+    logger.critical(f'Authentication Session Fetched Bearer: {fetched}')
+    logger.critical(f'Authentication Session Bearer PK: {authentication_session.bearer.pk}')
+    roles = await _orm.account.get_roles(authentication_session.bearer.pk)
+    avail_roles = _orm.role.find()
+    async for a_role in avail_roles:
+        logger.critical(f'available role: {a_role}')
+    logger.critical(f'Found Roles: {roles}')
     for role in roles:
         if role.name in required_roles:
             return authentication_session
     logging.warning(
-        f"Client ({authentication_session.bearer.email}/{get_ip(request)}) has insufficient roles."
+        f"Client ({authentication_session.bearer.pk}/{get_ip(request)}) has insufficient roles."
     )
     raise AuthorizationError("Insufficient roles required for this action.")
 
@@ -195,8 +211,8 @@ async def assign_role(
         # removed `permissions` lookup, as names should be unique in a sane RBAC model
         role = await _orm.role.lookup(name=name)
     except NotFoundError:
-        role = await _orm.role.create(
+        role = await _orm.role.new(
             description=description, permissions=permissions, name=name
         )
-    await account.roles.add(role)
+    await _orm.account.add_role(account, role=role)
     return role

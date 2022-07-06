@@ -64,6 +64,8 @@ app.config.LAZY_UMONGO = lazy_umongo
 
 security.init_app(app)
 
+_orm = Sanic.get_app().ctx.extensions['security']
+
 @app.post("api/test/auth/register")
 async def on_register(request):
     """
@@ -74,14 +76,16 @@ async def on_register(request):
         verified=request.form.get("verified") == "true",
         disabled=request.form.get("disabled") == "true",
     )
+    #if not account['verified']:
     if not account.verified:
         two_step_session = await request_two_step_verification(request, account)
         response = json(
-            "Registration successful! Verification required.", two_step_session.code
+            "Registration successful! Verification required.", two_step_session['code']
         )
         two_step_session.encode(response)
     else:
         response = json("Registration successful!", account.json())
+        #response = json("Registration successful!", account)
     return response
 
 
@@ -90,9 +94,11 @@ async def on_verify(request):
     """
     Verifies an unverified account.
     """
-    two_step_session = await verify_account(request)
+    bearer = await verify_account(request)
+    logger.critical(f'on_verify bearer: {bearer}')
     return json(
-        "You have verified your account and may login!", two_step_session.bearer.json()
+        #"You have verified your account and may login!", two_step_session.bearer.json()
+        "You have verified your account and may login!", bearer.json()
     )
 
 
@@ -102,7 +108,10 @@ async def on_login(request):
     Login to an account with an email and password.
     """
     authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.bearer.json())
+    logger.critical(f"Authentication_Session: {authentication_session}")
+    logger.critical(f"Authentication_Session.bearer: {authentication_session.bearer}")
+    #response = json("Login successful!", authentication_session.bearer.json())
+    response = json("Login successful!", authentication_session.json()['bearer'])
     authentication_session.encode(response)
     return response
 
@@ -113,7 +122,8 @@ async def on_logout(request):
     Logout of currently logged in account.
     """
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.bearer.json())
+    #response = json("Logout successful!", authentication_session.bearer.json())
+    response = json("Logout successful!", authentication_session.json()['bearer'])
     return response
 
 
@@ -123,7 +133,9 @@ async def on_authenticate(request, authentication_session):
     """
     Check if current authentication session is valid.
     """
-    response = json("Authenticated!", authentication_session.bearer.json())
+    #response = json("Authenticated!", authentication_session.bearer.json())
+    response = json("Authenticated!", authentication_session.json()['bearer'])
+    #response = json("Authenticated!", authentication_session.bearer)
     authentication_session.encode(response)
     return response
 
@@ -144,7 +156,7 @@ async def on_captcha_image(request):
     """
     Request captcha image.
     """
-    captcha_session = await CaptchaSession.decode(request)
+    captcha_session = await _orm.captcha_session.decode(request)
     response = captcha_session.get_image()
     captcha_session.encode(response)
     return response
@@ -157,6 +169,7 @@ async def on_captcha_attempt(request, captcha_session):
     Attempt captcha.
     """
     return json("Captcha attempt successful!", captcha_session.json())
+    #return json("Captcha attempt successful!", captcha_session)
 
 
 @app.post("api/test/two-step/request")
@@ -177,6 +190,7 @@ async def on_verification_attempt(request, two_step_session):
     Attempt two-step verification.
     """
     return json("Two step verification attempt successful!", two_step_session.json())
+    #return json("Two step verification attempt successful!", two_step_session)
 
 
 @app.post("api/test/auth/roles")
@@ -205,7 +219,7 @@ async def on_role_assign(request, authentication_session):
         request.form.get("permissions"),
         "Role used for testing.",
     )
-    return text("Role assigned.b")
+    return text("Role assigned.")
 
 
 @app.post("api/test/account")
@@ -217,12 +231,13 @@ async def on_account_creation(request):
         username = "not_registered"
         if request.form.get("username"):
             username = request.form.get("username")
-        account = await Account.create(
+        account = await _orm.account.new(
             username=username,
             email=request.form.get("email"),
             password=password_hasher.hash("testtest"),
             verified=True,
             disabled=False,
+            phone=request.form.get("phone")
         )
         response = json("Account creation successful!", account.json())
     except IntegrityError:

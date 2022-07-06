@@ -59,6 +59,8 @@ async def register(
 
     _orm = Sanic.get_app().ctx.extensions['security']
 
+    #Input validation should be handled in the ORM itself
+    """
     if not re.search(
         r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
     ):
@@ -78,6 +80,7 @@ async def register(
             "Password must be more than 8 characters and must be less than 100 characters.",
             400,
         )
+    """
     try:
         if await _orm.account.lookup(email=request.form.get("email").lower()):
             raise CredentialsError("An account with this email already exists.")
@@ -89,7 +92,7 @@ async def register(
           ):
               raise CredentialsError("An account with this username already exists.")
         except NotFoundError:
-            account = await _orm.account.create(
+            account = await _orm.account.new(
                 email=request.form.get("email").lower(),
                 username=request.form.get("username"),
                 password=password_hasher.hash(request.form.get("password")),
@@ -148,6 +151,8 @@ async def login(request: Request, account = None):
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
+        foo = await _orm.authentication_session.new(request, account)
+        logger.debug(f"New Authentication Session: {foo}")
         return await _orm.authentication_session.new(request, account)
     except VerifyMismatchError:
         logger.warning(
@@ -174,12 +179,14 @@ async def logout(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    authentication_session = await _orm.authentication_session.decode(request)
+    authentication_session, bearer = await _orm.authentication_session.decode(request)
     if not authentication_session.active:
         raise DeactivatedError("Already logged out.", 403)
-    authentication_session.active = False
-    await authentication_session.save(update_fields=["active"])
-    return authentication_session
+
+    return await _orm.authentication_session.deactivate(authentication_session)
+    #authentication_session.active = False
+    #await authentication_session.save(update_fields=["active"])
+    #return authentication_session
 
 
 #async def authenticate(request: Request) -> AuthenticationSession:
@@ -204,9 +211,9 @@ async def authenticate(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    authentication_session = await _orm.authentication_session.decode(request)
+    authentication_session, bearer = await _orm.authentication_session.decode(request)
     authentication_session.validate()
-    authentication_session.bearer.validate()
+    bearer.validate()
     return authentication_session
 
 
@@ -257,25 +264,27 @@ def create_initial_admin_account(app: Sanic) -> None:
         try:
             role = await _orm.role.lookup(name="Head Admin")
         except NotFoundError:
-            role = await _orm.role.create(
+            role = await _orm.role.new(
                 description="Has the ability to control any aspect of the API. Assign sparingly.",
                 permissions="*:*",
                 name="Head Admin",
             )
         try:
             account = await _orm.account.lookup(username="Head Admin")
-            await account.fetch_related("roles")
+            #await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
                 logger.warning(
                     'The initial admin account role "Head Admin" was removed and has been reinstated.'
                 )
         except NotFoundError:
-            account = await _orm.account.create(
+            account = await _orm.account.new(
                 username="Head Admin",
                 email=security_config.SANIC_SECURITY_INITIAL_ADMIN_EMAIL,
                 password=PasswordHasher().hash(security_config.SANIC_SECURITY_INITIAL_ADMIN_PASSWORD),
                 verified=True,
+                roles=[role]
             )
-            await account.roles.add(role)
+            logger.debug(f"Created Admin Account: {account}")
+            #await account.roles.add(role)
             logger.info("Initial admin account created.")

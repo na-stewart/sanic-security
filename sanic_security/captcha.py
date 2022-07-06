@@ -67,7 +67,7 @@ async def captcha(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    captcha_session = await _orm.captcha_session.decode(request)
+    captcha_session, _ = await _orm.captcha_session.decode(request)
     captcha_session.validate()
     await captcha_session.check_code(request, request.form.get("captcha"))
     return captcha_session
