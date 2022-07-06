@@ -92,15 +92,19 @@ async def register(
           ):
               raise CredentialsError("An account with this username already exists.")
         except NotFoundError:
-            account = await _orm.account.new(
-                email=request.form.get("email").lower(),
-                username=request.form.get("username"),
-                password=password_hasher.hash(request.form.get("password")),
-                phone=request.form.get("phone"),
-                verified=verified,
-                disabled=disabled,
-            )
-            return account
+            try:
+                account = await _orm.account.new(
+                    email=request.form.get("email").lower(),
+                    username=request.form.get("username"),
+                    password=password_hasher.hash(request.form.get("password")),
+                    phone=request.form.get("phone"),
+                    verified=verified,
+                    disabled=disabled,
+                )
+                return account
+            except Exception as e:
+                #TODO: Need to clean up this exception handling
+                raise IntegrityError(e.message)
     
 
 #async def login(request: Request, account: Account = None) -> AuthenticationSession:

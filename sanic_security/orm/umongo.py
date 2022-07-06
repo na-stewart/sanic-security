@@ -154,11 +154,11 @@ class Account(Document, BaseMixin):
             logger.critical(f'Tried to create a duplicate key! {e}')
             raise AccountError(e.message)
         except ValidationError as e:
-            logger.critical(f'Tried to create a duplicate account! {e}')
+            logger.critical(f'Tried to create an invalid account! {e}')
             raise AccountError(e.messages, code=400)
         except Exception as e:
             logger.critical(f'Generic Exception! {e}')
-            raise AccountError(e)
+            raise AccountError(str(e))
 
         return await Account.find_one({'id': _account.inserted_id, 'deleted': False})
 
@@ -168,7 +168,6 @@ class Account(Document, BaseMixin):
         logger.critical(f"[get_roles] id: {id}")
         account = self
         if not account.pk:
-            #account = await Account.find_one({'id': objectid.ObjectId(id)})
             account = await Account.find_one({'id': id})
         if not account:
             raise NotFoundError("Lookup returned no matching user")
