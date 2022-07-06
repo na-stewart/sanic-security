@@ -41,4 +41,4 @@ def app(request, monkeypatch, logger):
 
 @pytest.fixture(autouse=True)
 def rand_phone():
-    return ''.join(str(random.randint(1,9)) for i in range(10))
+    return ''.join(str(random.randint(1, 9)) for i in range(10))

@@ -1,6 +1,5 @@
 import base64
 import functools
-import re
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -40,7 +39,6 @@ password_hasher = PasswordHasher()
 
 async def register(
     request: Request, verified: bool = False, disabled: bool = False
-#) -> security_config.SANIC_SECURITY_ACCOUNT:
 ):
     """
     Registers a new account that can be logged into.
@@ -59,7 +57,7 @@ async def register(
 
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    #Input validation should be handled in the ORM itself
+    # Input validation should be handled in the ORM itself
     try:
         if await _orm.account.lookup(email=request.form.get("email").lower()):
             raise CredentialsError("An account with this email already exists.")
@@ -82,12 +80,11 @@ async def register(
                 )
                 return account
             except Exception as e:
-                #TODO: Need to clean up this exception handling
+                # TODO: Need to clean up this exception handling
                 logger.error(f"Generic Error Registering User: {str(e)}")
                 raise IntegrityError(str(e))
 
 
-#async def login(request: Request, account: Account = None) -> AuthenticationSession:
 async def login(request: Request, account = None):
     """
     Login with email or username (if enabled) and password.
@@ -119,7 +116,7 @@ async def login(request: Request, account = None):
     else:
         raise CredentialsError("Credentials not provided.")
     if not account:
-        #TODO: I hate this whole 'email *or* username' thing, in practice and in concept
+        # TODO: I hate this whole 'email *or* username' thing, in practice and in concept
         try:
             account = await _orm.account.lookup(email=email_or_username)
         except NotFoundError as e:
@@ -145,7 +142,6 @@ async def login(request: Request, account = None):
         raise CredentialsError("Incorrect password.", 401)
 
 
-#async def logout(request: Request) -> AuthenticationSession:
 async def logout(request: Request):
     """
     Deactivates client's authentication session and revokes access.
@@ -170,7 +166,6 @@ async def logout(request: Request):
     return await _orm.authentication_session.deactivate(authentication_session)
 
 
-#async def authenticate(request: Request) -> AuthenticationSession:
 async def authenticate(request: Request):
     """
     Validates client.
@@ -252,7 +247,6 @@ def create_initial_admin_account(app: Sanic) -> None:
             )
         try:
             account = await _orm.account.lookup(username="Head Admin")
-            #await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
                 logger.warning(

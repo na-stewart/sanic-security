@@ -1,8 +1,6 @@
 from os import environ
 
 from sanic.utils import str_to_bool
-from sanic.log import logger
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -44,8 +42,7 @@ DEFAULT_CONFIG = {
     "SANIC_SECURITY_INITIAL_ADMIN_PASSWORD": "admin123",
     "SANIC_SECURITY_INITIAL_ADMIN_PHONE": "1111111111",
     "SANIC_SECURITY_TEST_DATABASE_URL": "sqlite://:memory:",
-    "SANIC_SECURITY_ORM": 'tortoise',
-    #"SANIC_SECURITY_ORM": 'umongo',
+    "SANIC_SECURITY_ORM": 'tortoise', # Currently supports ['tortoise', 'umongo']
     "SANIC_SECURITY_ACCOUNT": None,
     "SANIC_SECURITY_SESSION": None,
     "SANIC_SECURITY_ROLE": None,

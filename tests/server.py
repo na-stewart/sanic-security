@@ -22,7 +22,6 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError, IntegrityError
-from sanic_security.orm.tortoise import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -77,11 +76,12 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
 
+
 def make_app():
     app = Sanic("security-test")
     password_hasher = PasswordHasher()
     security = SanicSecurityExtension()
-    
+
     ## umongo setup
     from mongomock_motor import AsyncMongoMockClient
     from umongo.frameworks import MotorAsyncIOInstance
@@ -90,9 +90,9 @@ def make_app():
     lazy_umongo = MotorAsyncIOInstance()
     lazy_umongo.set_db(client)
     app.config.LAZY_UMONGO = lazy_umongo
-    
+
     security.init_app(app)
-    
+
     _orm = Sanic.get_app().ctx.extensions['security']
 
     @app.post("api/test/auth/register")
@@ -105,8 +105,6 @@ def make_app():
             verified=request.form.get("verified") == "true",
             disabled=request.form.get("disabled") == "true",
         )
-        #if not account['verified']:
-        foo = await account.json()
         if not account.verified:
             two_step_session = await request_two_step_verification(request, account)
             response = json(
@@ -116,8 +114,8 @@ def make_app():
         else:
             response = json("Registration successful!", await account.json())
         return response
-    
-    
+
+
     @app.post("api/test/auth/verify")
     async def on_verify(request):
         """
@@ -127,8 +125,8 @@ def make_app():
         return json(
             "You have verified your account and may login!", await bearer.json()
         )
-    
-    
+
+
     @app.post("api/test/auth/login")
     async def on_login(request):
         """
@@ -138,8 +136,8 @@ def make_app():
         response = json("Login successful!", await authentication_session.json())
         authentication_session.encode(response)
         return response
-    
-    
+
+
     @app.post("api/test/auth/logout")
     async def on_logout(request):
         """
@@ -148,8 +146,8 @@ def make_app():
         authentication_session = await logout(request)
         response = json("Logout successful!", await authentication_session.json())
         return response
-    
-    
+
+
     @app.post("api/test/auth")
     @requires_authentication()
     async def on_authenticate(request, authentication_session):
@@ -159,8 +157,8 @@ def make_app():
         response = json("Authenticated!", await authentication_session.json())
         authentication_session.encode(response)
         return response
-    
-    
+
+
     @app.get("api/test/capt/request")
     async def on_captcha_request(request):
         """
@@ -170,8 +168,8 @@ def make_app():
         response = json("Captcha request successful!", captcha_session.code)
         captcha_session.encode(response)
         return response
-    
-    
+
+
     @app.get("api/test/capt/image")
     async def on_captcha_image(request):
         """
@@ -181,8 +179,8 @@ def make_app():
         response = captcha_session.get_image()
         captcha_session.encode(response)
         return response
-    
-    
+
+
     @app.post("api/test/capt")
     @requires_captcha()
     async def on_captcha_attempt(request, captcha_session):
@@ -191,8 +189,8 @@ def make_app():
         """
         return json("Captcha attempt successful!", await captcha_session.json())
         #return json("Captcha attempt successful!", captcha_session)
-    
-    
+
+
     @app.post("api/test/two-step/request")
     async def on_request_verification(request):
         """
@@ -202,8 +200,8 @@ def make_app():
         response = json("Verification request successful!", two_step_session.code)
         two_step_session.encode(response)
         return response
-    
-    
+
+
     @app.post("api/test/two-step")
     @requires_two_step_verification()
     async def on_verification_attempt(request, two_step_session):
@@ -212,8 +210,8 @@ def make_app():
         """
         return json("Two step verification attempt successful!", await two_step_session.json())
         #return json("Two step verification attempt successful!", two_step_session)
-    
-    
+
+
     @app.post("api/test/auth/roles")
     @requires_authentication()
     async def on_authorization(request, authentication_session):
@@ -226,8 +224,8 @@ def make_app():
                 request, *request.form.get("permissions_required").split(", ")
             )
         return text("Account permitted.")
-    
-    
+
+
     @app.post("api/test/auth/roles/assign")
     @requires_authentication()
     async def on_role_assign(request, authentication_session):
@@ -241,8 +239,8 @@ def make_app():
             "Role used for testing.",
         )
         return text("Role assigned.")
-    
-    
+
+
     @app.post("api/test/account")
     async def on_account_creation(request):
         """
@@ -264,12 +262,12 @@ def make_app():
         except IntegrityError:
             response = json("Account with these credentials already exist!", None)
         return response
-    
-    
+
+
     @app.exception(SecurityError)
     async def on_error(request, exception):
         return exception.json_response
-    
+
     security_config.SANIC_SECURITY_SECRET = SECURITY_SECRET
     security_config.SANIC_SECURITY_PUBLIC_SECRET = PUBLIC_SECRET
     security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM = "RS256"
@@ -282,8 +280,8 @@ def make_app():
         modules={"models": ["sanic_security.orm.tortoise"]},
         generate_schemas=True,
     )
-    
-    
+
+
     create_initial_admin_account(app)
 
     return app

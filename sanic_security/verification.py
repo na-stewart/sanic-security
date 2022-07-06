@@ -25,15 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-async def request_two_step_verification(
-    request: Request, account = None
-):
+async def request_two_step_verification(request: Request, account = None):
     """
     Creates a two-step session and deactivates the client's current two-step session if found.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
-        account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
+        request (Request): Sanic request parameter. All request bodies are sent as 
+                           form-data with the following arguments: email.
+        account (Account): The account being associated with the verification session. 
+                           If None, an account is retrieved via email in the request form-data.
 
     Raises:
         NotFoundError

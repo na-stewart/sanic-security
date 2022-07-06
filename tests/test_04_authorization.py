@@ -97,7 +97,8 @@ class TestAuthorization:
             assert (
                 permitted_authorization_response.status == 200
             ), permitted_authorization_response.text
-            prohibited_authorization_request, prohibited_authorization_response = _client.post( "/api/test/auth/roles", data={"role": "InvalidRole"},)
+            prohibited_authorization_request, prohibited_authorization_response = _client.post("/api/test/auth/roles",
+                                                                                               data={"role": "InvalidRole"},)
             assert (
                 prohibited_authorization_response.status == 403
             ), prohibited_authorization_response.text

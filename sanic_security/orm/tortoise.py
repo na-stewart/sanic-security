@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from io import BytesIO
 from types import SimpleNamespace
 
@@ -39,13 +38,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+
 class PhoneNumberValidator(Validator):
     """
     A validator to check a phone number against `phonenumbers` module
     """
     def __call__(self, value: str):
         try:
-            _phone = phonenumbers.parse(value, "US") #Default to US
+            _phone = phonenumbers.parse(value, "US") # Default to US
             if phonenumbers.is_possible_number(_phone):
                 return True
             else:
@@ -69,9 +69,6 @@ class BaseModel(Model):
     date_created: datetime.datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
     deleted: bool = fields.BooleanField(default=False)
-
-    #def pk(self):
-    #    return self.id
 
     def validate(self) -> None:
         """
@@ -105,7 +102,6 @@ class BaseModel(Model):
                     }
 
         """
-        #raise NotImplementedError()
         _data = await pydantic_model_creator(data.__class__).from_tortoise_orm(data)
         return _data.json()
 
@@ -225,7 +221,6 @@ class Account(BaseModel):
             logger.error(f'Generic Exception! {e}')
             raise AccountError(e.message)
 
-    #@property
     async def get_roles(self, id = None):
         account = self
         if not account.pk:
@@ -408,7 +403,7 @@ class Session(BaseModel):
             JWTDecodeError
             NotFoundError
         """
-        #TODO: Should probably be removing old sessions, not just setting inactive
+        # TODO: Should probably be removing old sessions, not just setting inactive
         session.active = False
         await session.save(update_fields=["active"])
         return session
@@ -541,7 +536,8 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
+        permissions (str): Permissions of the role. Must be separated via comma and in 
+                           wildcard format (printer:query, printer:query,delete).
     """
 
     name: str = fields.CharField(max_length=255)

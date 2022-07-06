@@ -1,5 +1,3 @@
-import importlib
-
 from sanic import Sanic
 from sanic.log import logger
 from sanic_ext.extensions.base import Extension
@@ -59,7 +57,7 @@ class SanicSecurityExtension(Extension):
         self.authentication_session = authentication if authentication else self.app.config.get('SANIC_SECURITY_AUTHENTICATION_MODEL', None)
         self.orm = orm if orm else self.app.config.get('SANIC_SECURITY_ORM', 'tortoise')
         try:
-            #TODO: this is ugly as hell, but works for now
+            # TODO: this is ugly as hell, but works for now
             logger.info(f"attmpeting to import sanic_security.ORM.{self.orm}")
             if self.orm == 'tortoise':
                 from .orm.tortoise import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession

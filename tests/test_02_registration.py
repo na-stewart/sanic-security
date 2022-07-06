@@ -1,5 +1,4 @@
 import pytest
-import random
 
 from sanic import Sanic
 from sanic_testing.reusable import ReusableClient
@@ -28,9 +27,6 @@ class TestRegistration:
     """
     Tests registration.
     """
-
-    #def rand_phone(self):
-    #    return ''.join(str(random.randint(1,9)) for i in range(10))
 
     def register(
         self,
@@ -100,7 +96,7 @@ class TestRegistration:
             assert (
                 too_many_characters_registration_response.status == 400
             ), too_many_characters_registration_response.text
-    
+
     def test_registration_disabled(self, app: Sanic, rand_phone):
         """
         Registration and login with a disabled account.
