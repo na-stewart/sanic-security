@@ -426,6 +426,14 @@ mako = "*"
 markdown = ">=3.0"
 
 [[package]]
+name = "phonenumbers"
+version = "8.12.51"
+description = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "pillow"
 version = "9.2.0"
 description = "Python Imaging Library (Fork)"
@@ -778,7 +786,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "b73c31f995bf8847c9b361bbff15de4ffe4b1724b735d75432748db0413ed0fb"
+content-hash = "e95c4dc67958e41b99dd0e2df2b1affa6d16256db94af356604362f8d6a46510"
 
 [metadata.files]
 aiofiles = [
@@ -1209,6 +1217,10 @@ pathspec = [
 pdoc3 = [
     {file = "pdoc3-0.10.0-py3-none-any.whl", hash = "sha256:ba45d1ada1bd987427d2bf5cdec30b2631a3ff5fb01f6d0e77648a572ce6028b"},
     {file = "pdoc3-0.10.0.tar.gz", hash = "sha256:5f22e7bcb969006738e1aa4219c75a32f34c2d62d46dc9d2fb2d3e0b0287e4b7"},
+]
+phonenumbers = [
+    {file = "phonenumbers-8.12.51-py2.py3-none-any.whl", hash = "sha256:ac13b944e18ecb3ad58d9a090a2053dfe3d30dbe3711ebc2945a461b855ad4bf"},
+    {file = "phonenumbers-8.12.51.tar.gz", hash = "sha256:9d4a9460127ffd288ae071dd1f7942e2329da5b5c5d57d8aabe7103427ca7cbf"},
 ]
 pillow = [
     {file = "Pillow-9.2.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:a9c9bc489f8ab30906d7a85afac4b4944a572a7432e00698a7239f44a44e6efb"},
