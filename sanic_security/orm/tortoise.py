@@ -10,7 +10,12 @@ from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
 from tortoise import fields, Model
-from tortoise.exceptions import DoesNotExist
+from tortoise.validators import RegexValidator, Validator
+from tortoise.exceptions import DoesNotExist, ValidationError
+from tortoise.contrib.pydantic import pydantic_model_creator
+
+import re
+import phonenumbers
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
@@ -34,6 +39,20 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+class PhoneNumberValidator(Validator):
+    """
+    A validator to check a phone number against `phonenumbers` module
+    """
+    def __call__(self, value: str):
+        try:
+            _phone = phonenumbers.parse(value, "US") #Default to US
+            if phonenumbers.is_possible_number(_phone):
+                return True
+            else:
+                raise ValidationError(f"Value '{value}' is not a valid phone number")
+        except Exception:
+            raise ValidationError(f"Value '{value}' is not a valid phone number")
+
 
 class BaseModel(Model):
     """
@@ -51,6 +70,9 @@ class BaseModel(Model):
     date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
     deleted: bool = fields.BooleanField(default=False)
 
+    #def pk(self):
+    #    return self.id
+
     def validate(self) -> None:
         """
         Raises an error with respect to state.
@@ -59,8 +81,12 @@ class BaseModel(Model):
             SecurityError
         """
         raise NotImplementedError()
+    
+    async def verify(self) -> None:
+        self.verified = True
+        await self.save(update_fields=["verified"])
 
-    def json(self) -> dict:
+    async def json(data) -> dict:
         """
         A JSON serializable dict to be used in a HTTP request or response.
 
@@ -79,7 +105,9 @@ class BaseModel(Model):
                     }
 
         """
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        _data = await pydantic_model_creator(data.__class__).from_tortoise_orm(data)
+        return _data.json()
 
     class Meta:
         abstract = True
@@ -99,26 +127,15 @@ class Account(BaseModel):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    username: str = fields.CharField(max_length=32)
-    email: str = fields.CharField(unique=True, max_length=255)
-    phone: str = fields.CharField(unique=True, max_length=14, null=True)
+    username: str = fields.CharField(max_length=32, unique=True, validators=[RegexValidator("^[A-Za-z0-9 @_-]{3,32}$", re.I)])
+    email: str = fields.CharField(unique=True, max_length=255, validators=[RegexValidator("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", re.I)])
+    phone: str = fields.CharField(unique=True, max_length=14, null=True, validators=[PhoneNumberValidator()])
     password: str = fields.CharField(max_length=255)
     disabled: bool = fields.BooleanField(default=False)
     verified: bool = fields.BooleanField(default=False)
     roles: fields.ManyToManyRelation["Role"] = fields.ManyToManyField(
         "models.Role", through="account_role"
     )
-
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "email": self.email,
-            "username": self.username,
-            "disabled": self.disabled,
-            "verified": self.verified,
-        }
 
     def validate(self) -> None:
         """
@@ -173,6 +190,65 @@ class Account(BaseModel):
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this identifier does not exist.")
+        except ValidationError as e:
+            # Tortoise-ORM is dumb how it validates even at searching
+            raise NotFoundError("Account with this identifier does not exist.")
+        except Exception as e:
+            logger.critical(f'Generic Error! {e}')
+            raise AccountError(str(e), code=400)
+
+    @staticmethod
+    async def new(email: str = None, username: str = None,
+                  password: str = None, phone: str = None,
+                  verified: bool = False, disabled: bool = False,
+                  roles: list = []
+                 ):
+
+        try:
+            logger.debug("Attempting to Create a New Tortoise User")
+            account = await Account.create(
+               email=email,
+               username=username,
+               password=password,
+               phone=phone,
+               verified=verified,
+               disabled=disabled,
+            )
+            for role in roles:
+                await account.roles.add(role)
+            logger.debug(f"Successfully Created a New Tortoise User: {account}")
+            return account
+        except ValidationError as e:
+            logger.error(f'Tried to create an invalid account! {e}')
+            raise AccountError(e, code=400)
+        except Exception as e:
+            logger.error(f'Generic Exception! {e}')
+            raise AccountError(e.message)
+
+    #@property
+    async def get_roles(self, id = None):
+        account = self
+        if not account.pk:
+            account = await Account.filter(id=id, deleted=False).prefetch_related("roles").get()
+        if not account:
+            raise NotFoundError("Lookup returned no matching user")
+        elif not account.roles:
+            return []
+
+        return account.roles
+
+    async def add_role(self, id = None, role = None):
+        logger.debug(f'Trying to add role: {role} to user {id}')
+        account = id
+        if not account.id:
+            if not id:
+                raise AccountError('Must provide Account object or pass `id` parameter!')
+            account = await Account.filter(id=id, deleted=False).prefetch_related("roles").get()
+        if not account:
+            raise NotFoundError("Lookup requested by no identifier provided")
+
+        await account.roles.add(role)
+        return role
 
 
 class Session(BaseModel):
@@ -212,16 +288,6 @@ class Session(BaseModel):
             session
         """
         raise NotImplementedError()
-
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "expiration_date": str(self.expiration_date),
-            "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
-            "active": self.active,
-        }
 
     def validate(self) -> None:
         """
@@ -325,7 +391,27 @@ class Session(BaseModel):
             )
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
-        return decoded_session
+        return decoded_session, decoded_session.bearer
+
+    @classmethod
+    async def deactivate(cls, session):
+        """
+        Sets a session as deactivated/deleted session
+
+        Args:
+            request (Request): Sanic request parameter.
+
+        Returns:
+            session
+
+        Raises:
+            JWTDecodeError
+            NotFoundError
+        """
+        #TODO: Should probably be removing old sessions, not just setting inactive
+        session.active = False
+        await session.save(update_fields=["active"])
+        return session
 
     class Meta:
         abstract = True
@@ -465,16 +551,6 @@ class Role(BaseModel):
     def validate(self) -> None:
         raise NotImplementedError()
 
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "name": self.name,
-            "description": self.description,
-            "permissions": self.permissions,
-        }
-
     @staticmethod
     async def lookup(name: str):
         """
@@ -494,3 +570,9 @@ class Role(BaseModel):
             return role
         except DoesNotExist:
             raise NotFoundError("Role with this name does not exist.")
+
+    @staticmethod
+    async def new(**kwargs):
+        return await Role.create(
+            **kwargs
+        )
