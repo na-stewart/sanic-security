@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sanic-security"
-version = "2.0.0"
+version = "2.0.0_preview_01"
 description = "An effective, simple, and async security library for the Sanic framework... minus the mandatory ORM"
 authors = ["Rob Dailey <rob@suspected.org>"]
 
