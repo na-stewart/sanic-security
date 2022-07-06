@@ -32,7 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 async def check_permissions(
     request: Request, *required_permissions: str
-#) -> AuthenticationSession:
 ):
     """
     Authenticates client and determines if the account has sufficient permissions for an action.
@@ -56,9 +55,7 @@ async def check_permissions(
     """
     _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    logger.critical(f'Authentication Session: {authentication_session.bearer}')
-    #roles = await authentication_session.bearer.roles.filter(deleted=False).all()
-    #roles = await authentication_session.bearer.roles
+    logger.debug(f'Authentication Session: {authentication_session.bearer}')
     roles = await _orm.account.get_roles(authentication_session.bearer.pk)
     for role in roles:
         for required_permission, role_permission in zip(
@@ -72,7 +69,6 @@ async def check_permissions(
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
-#async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
 async def check_roles(request: Request, *required_roles: str):
     """
     Authenticates client and determines if the account has sufficient roles for an action.
@@ -96,17 +92,8 @@ async def check_roles(request: Request, *required_roles: str):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
     authentication_session = await authenticate(request)
-    #roles = await authentication_session.bearer.roles
-    #roles = await authentication_session.get_roles(authentication_session.bearer)
-    fetched = await authentication_session.bearer.fetch()
-    logger.critical(f'Authentication Session Bearer: {authentication_session.bearer}')
-    logger.critical(f'Authentication Session Fetched Bearer: {fetched}')
-    logger.critical(f'Authentication Session Bearer PK: {authentication_session.bearer.pk}')
     roles = await _orm.account.get_roles(authentication_session.bearer.pk)
-    avail_roles = _orm.role.find()
-    async for a_role in avail_roles:
-        logger.critical(f'available role: {a_role}')
-    logger.critical(f'Found Roles: {roles}')
+    logger.debug(f'Found Roles: {roles}')
     for role in roles:
         if role.name in required_roles:
             return authentication_session
@@ -194,7 +181,6 @@ def require_roles(*required_roles: str):
 
 async def assign_role(
     name: str, account, permissions: str = None, description: str = None
-#) -> Role:
 ):
     """
     Quick creation of a role associated with an account.

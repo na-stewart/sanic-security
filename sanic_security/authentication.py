@@ -60,27 +60,6 @@ async def register(
     _orm = Sanic.get_app().ctx.extensions['security']
 
     #Input validation should be handled in the ORM itself
-    """
-    if not re.search(
-        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
-    ):
-        raise CredentialsError("Please use a valid email address.", 400)
-    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
-        raise CredentialsError(
-            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
-            400,
-        )
-    if request.form.get("phone") and not re.search(
-        r"/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g",
-        request.form.get("phone"),
-    ):
-        raise CredentialsError("Please use a valid phone number.", 400)
-    if 100 > len(request.form.get("password")) > 8:
-        raise CredentialsError(
-            "Password must be more than 8 characters and must be less than 100 characters.",
-            400,
-        )
-    """
     try:
         if await _orm.account.lookup(email=request.form.get("email").lower()):
             raise CredentialsError("An account with this email already exists.")
@@ -104,8 +83,9 @@ async def register(
                 return account
             except Exception as e:
                 #TODO: Need to clean up this exception handling
-                raise IntegrityError(e.message)
-    
+                logger.error(f"Generic Error Registering User: {str(e)}")
+                raise IntegrityError(str(e))
+
 
 #async def login(request: Request, account: Account = None) -> AuthenticationSession:
 async def login(request: Request, account = None):
@@ -139,6 +119,7 @@ async def login(request: Request, account = None):
     else:
         raise CredentialsError("Credentials not provided.")
     if not account:
+        #TODO: I hate this whole 'email *or* username' thing, in practice and in concept
         try:
             account = await _orm.account.lookup(email=email_or_username)
         except NotFoundError as e:
@@ -156,7 +137,6 @@ async def login(request: Request, account = None):
             await account.save(update_fields=["password"])
         account.validate()
         foo = await _orm.authentication_session.new(request, account)
-        logger.debug(f"New Authentication Session: {foo}")
         return await _orm.authentication_session.new(request, account)
     except VerifyMismatchError:
         logger.warning(
@@ -188,9 +168,6 @@ async def logout(request: Request):
         raise DeactivatedError("Already logged out.", 403)
 
     return await _orm.authentication_session.deactivate(authentication_session)
-    #authentication_session.active = False
-    #await authentication_session.save(update_fields=["active"])
-    #return authentication_session
 
 
 #async def authenticate(request: Request) -> AuthenticationSession:
@@ -287,8 +264,7 @@ def create_initial_admin_account(app: Sanic) -> None:
                 email=security_config.SANIC_SECURITY_INITIAL_ADMIN_EMAIL,
                 password=PasswordHasher().hash(security_config.SANIC_SECURITY_INITIAL_ADMIN_PASSWORD),
                 verified=True,
+                phone=security_config.get('SANIC_SECURITY_INITIAL_ADMIN_PHONE', '1111111111'),
                 roles=[role]
             )
             logger.debug(f"Created Admin Account: {account}")
-            #await account.roles.add(role)
-            logger.info("Initial admin account created.")

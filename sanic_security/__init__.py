@@ -59,7 +59,8 @@ class SanicSecurityExtension(Extension):
         self.authentication_session = authentication if authentication else self.app.config.get('SANIC_SECURITY_AUTHENTICATION_MODEL', None)
         self.orm = orm if orm else self.app.config.get('SANIC_SECURITY_ORM', 'tortoise')
         try:
-            logger.error(f"attmpeting to import sanic_security.orm.{self.orm}")
+            #TODO: this is ugly as hell, but works for now
+            logger.info(f"attmpeting to import sanic_security.ORM.{self.orm}")
             if self.orm == 'tortoise':
                 from .orm.tortoise import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession
                 if not self.role:
@@ -91,7 +92,7 @@ class SanicSecurityExtension(Extension):
             else:
                 raise ImportError("Invalid ORM specified")
         except ImportError as e:
-            logger.error(f"No such ORM provider: {orm}")
+            logger.critical(f"No such ORM provider: {orm}")
             raise e
         
         self._register_extension(self.app)
@@ -100,7 +101,7 @@ class SanicSecurityExtension(Extension):
         return "Sanic-Security"
 
     def _register_extension(self, app):
-        logger.critical("Trying to register Security Extension")
+        logger.info("Trying to register Security Extension")
         if not hasattr(app.ctx, 'extensions'):
             setattr(app.ctx, 'extensions', {})
         app.ctx.extensions[self.extension_name] = self
@@ -108,5 +109,6 @@ class SanicSecurityExtension(Extension):
     def startup(self, bootstrap: Extend) -> None:
         """
         Used by sanic-ext to start up an extension
+        NOT YET WORKING -- SANIC-EXT issue, not mine
         """
-        logger.critical(f"Bootstrap: {dir(bootstrap)}")
+        logger.debug(f"Bootstrap: {dir(bootstrap)}")

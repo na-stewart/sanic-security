@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-#async def request_captcha(request: Request) -> CaptchaSession:
 async def request_captcha(request: Request):
     """
     Creates a captcha session and deactivates the client's current captcha session if found.
@@ -45,7 +44,6 @@ async def request_captcha(request: Request):
     return await _orm.captcha_session.new(request)
 
 
-#async def captcha(request: Request) -> CaptchaSession:
 async def captcha(request: Request):
     """
     Validates a captcha challenge attempt.

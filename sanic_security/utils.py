@@ -61,22 +61,9 @@ def json(message: str, data, status_code: int = 200) -> HTTPResponse:
     Returns:
         json
     """
-    logger.critical(f"JSON Message: {message}")
-    logger.critical(f"JSON Data: {data}")
     return sanic_json(
         {"message": message, "code": status_code, "data": data}, status=status_code
     )
-    '''
-    try:
-        return sanic_json(
-            {"message": message, "code": status_code, "data": data}, status=status_code
-        )
-    except TypeError:
-        return sanic_json(
-            {"message": message, "code": status_code, "data": data.json()}, status=status_code
-        )
-    '''
-
 
 
 def get_expiration_date(seconds: int) -> datetime.datetime:
@@ -94,6 +81,3 @@ def get_expiration_date(seconds: int) -> datetime.datetime:
         if seconds > 0
         else None
     )
-
-
-4
