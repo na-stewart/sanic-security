@@ -15,6 +15,7 @@ umongo = {version = "^3.1.0", extras = ["umongo"]}
 sanic = "^22.3.2"
 sanic-ext = "^22.3.2"
 motor = {version = "^3.0.0", extras = ["umongo"]}
+pydantic = {version = "^1.9.1", extras = ["toroise"]}
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
