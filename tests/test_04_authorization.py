@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-@pytest.mark.usefixtures("app")
+@pytest.mark.usefixtures("app", "rand_phone")
 class TestAuthorization:
     """
     Tests role and permissions based authorization.
     """
 
-    def test_permissions_authorization(self, app: Sanic):
+    def test_permissions_authorization(self, app: Sanic, rand_phone):
         """
         Authorization with permissions.
         """
@@ -36,7 +36,7 @@ class TestAuthorization:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "permissions@authorization.com", "username": "permissions"},
+                data={"email": "permissions@authorization.com", "username": "permissions", "phone": rand_phone},
             )
             _client.post(
                 "/api/test/auth/login",
@@ -70,7 +70,7 @@ class TestAuthorization:
                 prohibited_authorization_response.status == 403
             ), prohibited_authorization_response.text
 
-    def test_roles_authorization(self, app: Sanic):
+    def test_roles_authorization(self, app: Sanic, rand_phone):
         """
         Authorization with roles.
         """
@@ -78,7 +78,7 @@ class TestAuthorization:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "roles@authorization.com", "username": "roles"},
+                data={"email": "roles@authorization.com", "username": "roles", "phone": rand_phone},
             )
             _client.post(
                 "/api/test/auth/login",

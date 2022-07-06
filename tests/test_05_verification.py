@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-@pytest.mark.usefixtures("app")
+@pytest.mark.usefixtures("app", "rand_phone")
 class TestVerification:
     """
     Tests two-step verification and captcha.
@@ -49,7 +49,7 @@ class TestVerification:
                 captcha_attempt_response.status == 200
             ), captcha_attempt_response.text
 
-    def test_two_step_verification(self, app: Sanic):
+    def test_two_step_verification(self, app: Sanic, rand_phone):
         """
         Two step verification request and attempt.
         """
@@ -57,7 +57,7 @@ class TestVerification:
         with _client:
             _client.post(
                 "/api/test/account",
-                data={"email": "two_step@verification.com", "username": "two_step"},
+                data={"email": "two_step@verification.com", "username": "two_step", "phone": rand_phone},
             )
             two_step_verification_request_request, two_step_verification_request_response = _client.post(
                 "/api/test/two-step/request",
@@ -83,7 +83,7 @@ class TestVerification:
                 two_step_verification_attempt_response.status == 200
             ), two_step_verification_attempt_response.text
 
-    def test_account_verification(self, app: Sanic):
+    def test_account_verification(self, logger, app: Sanic, rand_phone):
         """
         Account registration and verification process with successful login.
         """
@@ -95,6 +95,7 @@ class TestVerification:
                     "username": "account_verification",
                     "email": "account@verification.com",
                     "password": "testtest",
+                    "phone": rand_phone,
                     "disabled": False,
                     "verified": False,
                 },

@@ -23,14 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 
-@pytest.mark.usefixtures("app")
+@pytest.mark.usefixtures("app", "rand_phone")
 class TestRegistration:
     """
     Tests registration.
     """
 
-    def rand_phone(self):
-        return ''.join(str(random.randint(1,9)) for i in range(10))
+    #def rand_phone(self):
+    #    return ''.join(str(random.randint(1,9)) for i in range(10))
 
     def register(
         self,
@@ -39,13 +39,13 @@ class TestRegistration:
         username: str,
         disabled: bool,
         verified: bool,
-        phone: str = rand_phone(False),
+        phone: str = None,
     ):
         registration_request, registration_response = client.post(
             "/api/test/auth/register",
             data={
-                "username": username,
                 "email": email,
+                "username": username,
                 "password": "testtest",
                 "disabled": disabled,
                 "verified": verified,
@@ -54,25 +54,25 @@ class TestRegistration:
         )
         return registration_request, registration_response
 
-    def test_registration(self, app: Sanic):
+    def test_registration(self, app: Sanic, rand_phone):
         """
         Registration and login.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "emailpass@register.com", "emailpass", False, True, self.rand_phone(),
+                _client, "emailpass1@register.com", "emailpass1", False, True, rand_phone,
             )
             assert registration_response.status == 200, registration_response.text
 
-    def test_invalid_registration(self, app: Sanic):
+    def test_invalid_registration(self, app: Sanic, rand_phone):
         """
         Registration with an intentionally invalid email, username, and phone.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             invalid_email_registration_request, invalid_email_registration_response = self.register(
-                _client, "invalidregister.com", "invalid", False, True, self.rand_phone(),
+                _client, "invalidregister.com", "invalid", False, True, rand_phone,
             )
             assert (
                 invalid_email_registration_response.status == 400
@@ -84,7 +84,7 @@ class TestRegistration:
                 invalid_phone_registration_response.status == 400
             ), invalid_phone_registration_response.text
             invalid_username_registration_request, invalid_username_registration_response = self.register(
-                _client, "invaliduser@register.com", "_inVal!d_", False, True, self.rand_phone(),
+                _client, "invaliduser@register.com", "_inVal!d_", False, True, rand_phone,
             )
             assert (
                 invalid_username_registration_response.status == 400
@@ -95,20 +95,20 @@ class TestRegistration:
                 "thisusernameistoolongtoberegisteredwith",
                 False,
                 True,
-                self.rand_phone(),
+                rand_phone,
             )
             assert (
                 too_many_characters_registration_response.status == 400
             ), too_many_characters_registration_response.text
     
-    def test_registration_disabled(self, app: Sanic):
+    def test_registration_disabled(self, app: Sanic, rand_phone):
         """
         Registration and login with a disabled account.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "disabled@register.com", "disabled", True, True, self.rand_phone(),
+                _client, "disabled@register.com", "disabled", True, True, rand_phone,
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(
@@ -117,14 +117,14 @@ class TestRegistration:
             )
             assert "DisabledError" in login_response.text, login_response.text
 
-    def test_registration_unverified(self, app: Sanic):
+    def test_registration_unverified(self, app: Sanic, rand_phone):
         """
         Registration and login with an unverified account.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "unverified@register.com", "unverified", False, False, self.rand_phone(),
+                _client, "unverified@register.com", "unverified", False, False, rand_phone,
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(
@@ -133,14 +133,14 @@ class TestRegistration:
             )
             assert "UnverifiedError" in login_response.text, login_response.text
 
-    def test_registration_unverified_disabled(self, app: Sanic):
+    def test_registration_unverified_disabled(self, app: Sanic, rand_phone):
         """
         Registration and login with an unverified and disabled account.
         """
         _client = ReusableClient(app, host='127.0.0.1', port='8000')
         with _client:
             registration_request, registration_response = self.register(
-                _client, "unverified_disabled@register.com", "unverified_disabled", True, False, self.rand_phone(),
+                _client, "unverified_disabled@register.com", "unverified_disabled", True, False, rand_phone,
             )
             assert registration_response.status == 200, registration_response.text
             login_request, login_response = _client.post(
