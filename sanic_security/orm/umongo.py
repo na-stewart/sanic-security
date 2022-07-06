@@ -82,7 +82,7 @@ class BaseMixin(MixinDocument):
         self.verified = True
         await self.commit()
 
-    def json(self, cls) -> dict:
+    async def json(self, cls) -> dict:
         _ma = cls.schema.as_marshmallow_schema()
         schema = _ma()
         return schema.dump(self)
@@ -140,7 +140,7 @@ class Account(Document, BaseMixin):
         elif self.disabled:
             raise DisabledError()
 
-    def json(self) -> dict:
+    async def json(self) -> dict:
         _ma = Account().schema.as_marshmallow_schema()
         schema = _ma(exclude=['password'])
         return schema.dump(self)
@@ -413,7 +413,7 @@ class Session(BaseMixin, MixinDocument):
             raise NotFoundError("Session could not be found.")
         return session
 
-    def json(self) -> dict:
+    async def json(self) -> dict:
         _ma = Session().schema.as_marshmallow_schema()
         schema = _ma()
         return schema.dump(self)
