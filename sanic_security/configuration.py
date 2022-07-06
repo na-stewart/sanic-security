@@ -1,6 +1,7 @@
 from os import environ
 
 from sanic.utils import str_to_bool
+from sanic.log import logger
 
 
 """
@@ -41,9 +42,10 @@ DEFAULT_CONFIG = {
     "SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME": False,
     "SANIC_SECURITY_INITIAL_ADMIN_EMAIL": "admin@example.com",
     "SANIC_SECURITY_INITIAL_ADMIN_PASSWORD": "admin123",
+    "SANIC_SECURITY_INITIAL_ADMIN_PHONE": "1111111111",
     "SANIC_SECURITY_TEST_DATABASE_URL": "sqlite://:memory:",
-    #"SANIC_SECURITY_ORM": 'tortoise',
-    "SANIC_SECURITY_ORM": 'umongo',
+    "SANIC_SECURITY_ORM": 'tortoise',
+    #"SANIC_SECURITY_ORM": 'umongo',
     "SANIC_SECURITY_ACCOUNT": None,
     "SANIC_SECURITY_SESSION": None,
     "SANIC_SECURITY_ROLE": None,
@@ -81,33 +83,33 @@ class Config(dict):
         SANIC_SECURITY_ORM (str): ORM to use (right now, 'tortoise' or 'manual')
     """
 
-    SANIC_SECURITY_SECRET: str
-    SANIC_SECURITY_PUBLIC_SECRET: str
-    SANIC_SECURITY_SESSION_SAMESITE: str
-    SANIC_SECURITY_SESSION_SECURE: bool
-    SANIC_SECURITY_SESSION_HTTPONLY: bool
-    SANIC_SECURITY_SESSION_DOMAIN: str
-    SANIC_SECURITY_SESSION_EXPIRES_ON_CLIENT: bool
-    SANIC_SECURITY_SESSION_ENCODING_ALGORITHM: str
-    SANIC_SECURITY_SESSION_PREFIX: str
-    SANIC_SECURITY_MAX_CHALLENGE_ATTEMPTS: int
-    SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION: int
-    SANIC_SECURITY_CAPTCHA_FONT: str
-    SANIC_SECURITY_TWO_STEP_SESSION_EXPIRATION: int
-    SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION: int
-    SANIC_SECURITY_AUTHENTICATION_SESSION_REFRESH: bool
-    SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME: bool
-    SANIC_SECURITY_INITIAL_ADMIN_EMAIL: str
-    SANIC_SECURITY_INITIAL_ADMIN_PASSWORD: str
-    SANIC_SECURITY_TEST_DATABASE_URL: str
-    SANIC_SECURITY_ORM: str
-    SANIC_SECURITY_ACCOUNT: str
-    SANIC_SECURITY_SESSION: str
-    SANIC_SECURITY_ROLE: str
-    SANIC_SECURITY_VERIFICATION_MODEL: str
-    SANIC_SECURITY_TWOSTEP_MODEL: str
-    SANIC_SECURITY_CAPTCHA_MODEL: str
-    SANIC_SECURITY_AUTHENTICATION_MODEL: str
+    SECRET: str
+    PUBLIC_SECRET: str
+    SESSION_SAMESITE: str
+    SESSION_SECURE: bool
+    SESSION_HTTPONLY: bool
+    SESSION_DOMAIN: str
+    SESSION_EXPIRES_ON_CLIENT: bool
+    SESSION_ENCODING_ALGORITHM: str
+    SESSION_PREFIX: str
+    MAX_CHALLENGE_ATTEMPTS: int
+    CAPTCHA_SESSION_EXPIRATION: int
+    CAPTCHA_FONT: str
+    TWO_STEP_SESSION_EXPIRATION: int
+    AUTHENTICATION_SESSION_EXPIRATION: int
+    AUTHENTICATION_SESSION_REFRESH: bool
+    ALLOW_LOGIN_WITH_USERNAME: bool
+    INITIAL_ADMIN_EMAIL: str
+    INITIAL_ADMIN_PASSWORD: str
+    TEST_DATABASE_URL: str
+    ORM: str
+    ACCOUNT: str
+    SESSION: str
+    ROLE: str
+    VERIFICATION_MODEL: str
+    TWOSTEP_MODEL: str
+    CAPTCHA_MODEL: str
+    AUTHENTICATION_MODEL: str
 
     def load_environment_variables(self, load_env="SANIC_SECURITY_") -> None:
         """
@@ -124,7 +126,7 @@ class Config(dict):
 
             for converter in (int, float, str_to_bool, str):
                 try:
-                    self[config_key] = converter(value)
+                    self[load_env + config_key] = converter(value)
                     break
                 except ValueError:
                     pass
