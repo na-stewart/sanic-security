@@ -106,11 +106,9 @@ class Account(Document, BaseMixin):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    username = fields.StringField(required=False, unique=True, validate=[validate.Regexp("^[A-Za-z0-9 _-]{3,32}$")])
-    email: str = fields.EmailField(required=True, unique=True, allow_none=False,
-                                   metadata={"required": True}, marshmallow_required=True)
-    password: str = fields.StringField(required=True, validate=[validate.Length(max=512)],
-                                       allow_none=False, marshmallow_required=True)
+    username = fields.StringField(required=False, unique=True, validate=[validate.Regexp(r"^[A-Za-z0-9 @_-]{3,32}$")])
+    email: str = fields.EmailField(required=True, unique=True, allow_none=False)
+    password: str = fields.StringField(required=True, validate=[validate.Length(max=512)], allow_none=False)
     phone: str = fields.StringField(required=False,
                                     validate=[validate.Length(max=11, min=10),],
                                     load_default=None, unique=True)
@@ -151,21 +149,19 @@ class Account(Document, BaseMixin):
         try:
             _account = await Account(**kwargs).commit()
         except DuplicateKeyError as e:
-            logger.critical(f'Tried to create a duplicate key! {e}')
+            logger.info(f'Tried to create a duplicate key! {e}')
             raise AccountError(e.message)
         except ValidationError as e:
-            logger.critical(f'Tried to create an invalid account! {e}')
+            logger.info(f'Tried to create an invalid account! {e}')
             raise AccountError(e.messages, code=400)
         except Exception as e:
-            logger.critical(f'Generic Exception! {e}')
+            logger.error(f'Generic Exception! {e}')
             raise AccountError(str(e))
 
         return await Account.find_one({'id': _account.inserted_id, 'deleted': False})
 
     #@property
     async def get_roles(self, id = None):
-        logger.critical(f"[get_roles] self: {self}")
-        logger.critical(f"[get_roles] id: {id}")
         account = self
         if not account.pk:
             account = await Account.find_one({'id': id})
@@ -175,7 +171,6 @@ class Account(Document, BaseMixin):
             return []
 
         roles = [await role.fetch() for role in account.roles]
-        logger.critical(f'Found roles: {roles}')
         return roles
 
     async def add_role(self, id = None, role = None):
@@ -371,7 +366,7 @@ class Session(BaseMixin, MixinDocument):
         """
         try:
             decoded_raw = cls.decode_raw(request)
-            logger.critical(f'Decoded_Raw: {decoded_raw}')
+            logger.debug(f'Decoded_Raw: {decoded_raw}')
             decoded_session = (
                 await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})
             )
@@ -543,11 +538,6 @@ class AuthenticationSession(Document, VerificationSession, Session, BaseMixin):
             ),
         ).commit()
         return await AuthenticationSession.find_one({'id': _auth_session.inserted_id})
-
-    #@property
-    #async def get_roles(self):
-    #    logger.critical(f'get_roles: {self}')
-    #    return await self.roles.fetch()
 
 
 @instance.register
