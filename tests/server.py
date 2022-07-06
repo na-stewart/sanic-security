@@ -84,7 +84,7 @@ async def on_register(request):
         )
         two_step_session.encode(response)
     else:
-        response = json("Registration successful!", account.json())
+        response = json("Registration successful!", await account.json())
         #response = json("Registration successful!", account)
     return response
 
@@ -95,10 +95,8 @@ async def on_verify(request):
     Verifies an unverified account.
     """
     bearer = await verify_account(request)
-    logger.critical(f'on_verify bearer: {bearer}')
     return json(
-        #"You have verified your account and may login!", two_step_session.bearer.json()
-        "You have verified your account and may login!", bearer.json()
+        "You have verified your account and may login!", await bearer.json()
     )
 
 
@@ -108,10 +106,7 @@ async def on_login(request):
     Login to an account with an email and password.
     """
     authentication_session = await login(request)
-    logger.critical(f"Authentication_Session: {authentication_session}")
-    logger.critical(f"Authentication_Session.bearer: {authentication_session.bearer}")
-    #response = json("Login successful!", authentication_session.bearer.json())
-    response = json("Login successful!", authentication_session.json()['bearer'])
+    response = json("Login successful!", await authentication_session.json())
     authentication_session.encode(response)
     return response
 
@@ -122,8 +117,7 @@ async def on_logout(request):
     Logout of currently logged in account.
     """
     authentication_session = await logout(request)
-    #response = json("Logout successful!", authentication_session.bearer.json())
-    response = json("Logout successful!", authentication_session.json()['bearer'])
+    response = json("Logout successful!", await authentication_session.json())
     return response
 
 
@@ -133,9 +127,7 @@ async def on_authenticate(request, authentication_session):
     """
     Check if current authentication session is valid.
     """
-    #response = json("Authenticated!", authentication_session.bearer.json())
-    response = json("Authenticated!", authentication_session.json()['bearer'])
-    #response = json("Authenticated!", authentication_session.bearer)
+    response = json("Authenticated!", await authentication_session.json())
     authentication_session.encode(response)
     return response
 
@@ -168,7 +160,7 @@ async def on_captcha_attempt(request, captcha_session):
     """
     Attempt captcha.
     """
-    return json("Captcha attempt successful!", captcha_session.json())
+    return json("Captcha attempt successful!", await captcha_session.json())
     #return json("Captcha attempt successful!", captcha_session)
 
 
@@ -189,7 +181,7 @@ async def on_verification_attempt(request, two_step_session):
     """
     Attempt two-step verification.
     """
-    return json("Two step verification attempt successful!", two_step_session.json())
+    return json("Two step verification attempt successful!", await two_step_session.json())
     #return json("Two step verification attempt successful!", two_step_session)
 
 
@@ -239,7 +231,7 @@ async def on_account_creation(request):
             disabled=False,
             phone=request.form.get("phone")
         )
-        response = json("Account creation successful!", account.json())
+        response = json("Account creation successful!", await account.json())
     except IntegrityError:
         response = json("Account with these credentials already exist!", None)
     return response
