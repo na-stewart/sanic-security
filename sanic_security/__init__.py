@@ -1,9 +1,15 @@
 from sanic import Sanic
+from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic_ext.extensions.base import Extension
 from sanic_ext import Extend
 
 from sanic_security.configuration import Config as sanic_security_config
+
+
+class ORMNotProvided():
+    def __init__(self):
+        raise SanicException('Necessary Model not Provided')
 
 
 class SanicSecurityExtension(Extension):
@@ -59,48 +65,39 @@ class SanicSecurityExtension(Extension):
         try:
             # TODO: this is ugly as hell, but works for now
             logger.info(f"attmpeting to import sanic_security.ORM.{self.orm}")
-            if self.orm == 'tortoise':
+            if self.orm == 'custom':
                 if not self.role:
-                    from .orm.tortoise import Role
-                    self.role = Role()
+                    raise Exception('Custom ORM specified, but required model Role was not provided!')
                 if not self.account:
-                    from .orm.tortoise import Account
-                    self.account = Account()
+                    raise Exception('Custom ORM specified, but required model Account was not provided!')
                 if not self.verification_session:
-                    from .orm.tortoise import VerificationSession
-                    self.verification_session = VerificationSession()
+                    self.verification_session = ORMNotProvided()
                 if not self.twostep_session:
-                    from .orm.tortoise import TwoStepSession
-                    self.twostep_session = TwoStepSession()
+                    self.twostep_session = ORMNotProvided()
                 if not self.captcha_session:
-                    from .orm.tortoise import CaptchaSession
-                    self.captcha_session = CaptchaSession()
+                    self.captcha_session = ORMNotProvided()
                 if not self.authentication_session:
-                    from .orm.tortoise import AuthenticationSession
-                    self.authentication_session = AuthenticationSession()
-            elif self.orm == 'umongo':
-                if not self.role:
-                    from .orm.umongo import Role
-                    self.role = Role()
-                if not self.account:
-                    from .orm.umongo import Account
-                    self.account = Account()
-                if not self.verification_session:
-                    from .orm.umongo import VerificationSession
-                    self.verification_session = VerificationSession()
-                if not self.twostep_session:
-                    from .orm.umongo import TwoStepSession
-                    self.twostep_session = TwoStepSession()
-                if not self.captcha_session:
-                    from .orm.umongo import CaptchaSession
-                    self.captcha_session = CaptchaSession()
-                if not self.authentication_session:
-                    from .orm.umongo import AuthenticationSession
-                    self.authentication_session = AuthenticationSession()
+                    self.authentication_session = ORMNotProvided()
             else:
-                raise ImportError("Invalid ORM specified")
+                if self.orm == 'tortoise':
+                    from .orm.tortoise import Role, Account, VerificationSession, TwoStepSession, CaptchaSession, AuthenticationSession
+                elif self.orm == 'umongo':
+                    from .orm.umongo import Role, Account, VerificationSession, TwoStepSession, CaptchaSession, AuthenticationSession
+                else:
+                    raise ImportError("Invalid ORM specified")
+    
+                self.role = Role()
+                self.account = Account()
+                self.verification_session = VerificationSession()
+                self.twostep_session = TwoStepSession()
+                self.captcha_session = CaptchaSession()
+                self.authentication_session = AuthenticationSession()
+
         except ImportError as e:
             logger.critical(f"No such ORM provider: {orm}")
+            raise e
+        except Exception as e:
+            logger.critical(f"Sanic-Security ORM Setup Failure: {e}")
             raise e
         
         self._register_extension(self.app)
