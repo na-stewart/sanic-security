@@ -38,13 +38,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 password_hasher = PasswordHasher()
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+    request: dict, verified: bool = False, disabled: bool = False
 ):
     """
     Registers a new account that can be logged into.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
+        request (Request): Sanic request parameter. All requests are sent as a dict with the following arguments: email, username, password, phone (including country code).
         verified (bool): Enables or disabled the verification requirement for the account being registered.
         disabled (bool): Renders an account unusable until manually set to false if designated true.
 
@@ -59,22 +59,22 @@ async def register(
 
     # Input validation should be handled in the ORM itself
     try:
-        if await _orm.account.lookup(email=request.form.get("email").lower()):
+        if await _orm.account.lookup(email=request.get("email").lower()):
             raise CredentialsError("An account with this email already exists.")
     except NotFoundError:
         try:
           if (
               security_config.SANIC_SECURITY_ALLOW_LOGIN_WITH_USERNAME
-              and await _orm.account.lookup(username=request.form.get("username"))
+              and await _orm.account.lookup(username=request.get("username"))
           ):
               raise CredentialsError("An account with this username already exists.")
         except NotFoundError:
             try:
                 account = await _orm.account.new(
-                    email=request.form.get("email").lower(),
-                    username=request.form.get("username"),
-                    password=password_hasher.hash(request.form.get("password")),
-                    phone=request.form.get("phone"),
+                    email=request.get("email").lower(),
+                    username=request.get("username"),
+                    password=password_hasher.hash(request.get("password")),
+                    phone=request.get("phone"),
                     verified=verified,
                     disabled=disabled,
                 )
