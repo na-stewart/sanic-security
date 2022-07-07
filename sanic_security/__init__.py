@@ -60,32 +60,42 @@ class SanicSecurityExtension(Extension):
             # TODO: this is ugly as hell, but works for now
             logger.info(f"attmpeting to import sanic_security.ORM.{self.orm}")
             if self.orm == 'tortoise':
-                from .orm.tortoise import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession
                 if not self.role:
+                    from .orm.tortoise import Role
                     self.role = Role()
                 if not self.account:
+                    from .orm.tortoise import Account
                     self.account = Account()
                 if not self.verification_session:
+                    from .orm.tortoise import VerificationSession
                     self.verification_session = VerificationSession()
                 if not self.twostep_session:
+                    from .orm.tortoise import TwoStepSession
                     self.twostep_session = TwoStepSession()
                 if not self.captcha_session:
+                    from .orm.tortoise import CaptchaSession
                     self.captcha_session = CaptchaSession()
                 if not self.authentication_session:
+                    from .orm.tortoise import AuthenticationSession
                     self.authentication_session = AuthenticationSession()
             elif self.orm == 'umongo':
-                from .orm.umongo import Account, Role, AuthenticationSession, TwoStepSession, CaptchaSession, VerificationSession
                 if not self.role:
+                    from .orm.umongo import Role
                     self.role = Role()
                 if not self.account:
+                    from .orm.umongo import Account
                     self.account = Account()
                 if not self.verification_session:
+                    from .orm.umongo import VerificationSession
                     self.verification_session = VerificationSession()
                 if not self.twostep_session:
+                    from .orm.umongo import TwoStepSession
                     self.twostep_session = TwoStepSession()
                 if not self.captcha_session:
+                    from .orm.umongo import CaptchaSession
                     self.captcha_session = CaptchaSession()
                 if not self.authentication_session:
+                    from .orm.umongo import AuthenticationSession
                     self.authentication_session = AuthenticationSession()
             else:
                 raise ImportError("Invalid ORM specified")
