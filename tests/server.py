@@ -101,7 +101,7 @@ def make_app():
         Register an account with email and password.
         """
         account = await register(
-            request,
+            request.form,
             verified=request.form.get("verified") == "true",
             disabled=request.form.get("disabled") == "true",
         )

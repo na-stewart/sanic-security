@@ -1,6 +1,9 @@
 from os import environ
 
 from sanic.utils import str_to_bool
+from sanic import Sanic
+from sanic.log import logger
+
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -108,6 +111,38 @@ class Config(dict):
     CAPTCHA_MODEL: str
     AUTHENTICATION_MODEL: str
 
+    def load_app_variables(self, app: Sanic = None, load_env="SANIC_SECURITY_") -> None:
+        """
+        If we have a loaded Sanic app, read in any local config variables
+        """
+        try:
+            if not app:
+                app = Sanic.get_app()
+        except:
+            logger.debug('SANIC-SECURITY No Sanic App provided -- skipping load of Sanic variables')
+            return
+        logger.debug('SANIC-SECURITY Sanic App provided -- loading Sanic variables')
+        
+        for key, value in app.config.items():
+            if not key.startswith(load_env):
+                continue
+
+            logger.debug(f'SANIC-SECURITY Found App Config Variable: {key}')
+
+            # Support unsetting values
+            if not value:
+                self[key] = value
+                continue
+
+            for converter in (int, float, str_to_bool, str):
+                try:
+                    if [key]:
+                        self[key] = converter(value)
+                        break
+                except ValueError:
+                    pass
+    
+
     def load_environment_variables(self, load_env="SANIC_SECURITY_") -> None:
         """
         Any environment variables defined with the prefix argument will be applied to the config.
@@ -119,11 +154,14 @@ class Config(dict):
             if not key.startswith(load_env):
                 continue
 
-            _, config_key = key.split(load_env, 1)
+            # Support unsetting values
+            if not value:
+                self[key] = value
+                continue
 
             for converter in (int, float, str_to_bool, str):
                 try:
-                    self[load_env + config_key] = converter(value)
+                    self[key] = converter(value)
                     break
                 except ValueError:
                     pass
@@ -131,6 +169,7 @@ class Config(dict):
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
         self.__dict__ = self
+        self.load_app_variables()
         self.load_environment_variables()
 
 
