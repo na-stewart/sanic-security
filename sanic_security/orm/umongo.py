@@ -6,8 +6,6 @@ from bson import objectid
 
 import phonenumbers
 
-import jwt
-from jwt import DecodeError
 from marshmallow import ValidationError
 from sanic import Sanic
 from sanic.log import logger
@@ -19,7 +17,7 @@ from pymongo.errors import DuplicateKeyError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date
+from sanic_security.utils import get_ip, get_code, get_expiration_date, decode_raw
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -346,67 +344,6 @@ class Session(BaseMixin, MixinDocument):
         elif not self.active:
             raise DeactivatedError()
 
-    def encode(self, response: HTTPResponse) -> None:
-        """
-        Transforms session into JWT and then is stored in a cookie.
-
-        Args:
-            response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
-        """
-        payload = {
-            "id": str(self.id),
-            "date_created": str(self.date_created),
-            "expiration_date": str(self.expiration_date),
-            "ip": self.ip,
-            **self.ctx.__dict__,
-        }
-        cookie = f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
-        encoded_session = jwt.encode(
-            payload, security_config.SANIC_SECURITY_SECRET, security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM
-        )
-        if isinstance(encoded_session, bytes):
-            response.cookies[cookie] = encoded_session.decode()
-        elif isinstance(encoded_session, str):
-            response.cookies[cookie] = encoded_session
-        response.cookies[cookie]["httponly"] = security_config.SANIC_SECURITY_SESSION_HTTPONLY
-        response.cookies[cookie]["samesite"] = security_config.SANIC_SECURITY_SESSION_SAMESITE
-        response.cookies[cookie]["secure"] = security_config.SANIC_SECURITY_SESSION_SECURE
-        if security_config.SANIC_SECURITY_SESSION_EXPIRES_ON_CLIENT and self.expiration_date:
-            response.cookies[cookie]["expires"] = self.expiration_date
-        if security_config.SANIC_SECURITY_SESSION_DOMAIN:
-            response.cookies[cookie]["domain"] = security_config.SANIC_SECURITY_SESSION_DOMAIN
-
-    @classmethod
-    def decode_raw(cls, request: Request) -> dict:
-        """
-        Decodes JWT token from client cookie into a python dict.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Returns:
-            session_dict
-
-        Raises:
-            JWTDecodeError
-        """
-        cookie = request.cookies.get(
-            f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
-        )
-        try:
-            if not cookie:
-                raise JWTDecodeError("Session token not provided.")
-            else:
-                return jwt.decode(
-                    cookie,
-                    security_config.SANIC_SECURITY_SECRET
-                    if not security_config.SANIC_SECURITY_PUBLIC_SECRET
-                    else security_config.SANIC_SECURITY_PUBLIC_SECRET,
-                    security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM,
-                )
-        except DecodeError as e:
-            raise JWTDecodeError(str(e))
-
     @classmethod
     async def decode(cls, request: Request):
         """
@@ -423,7 +360,7 @@ class Session(BaseMixin, MixinDocument):
             NotFoundError
         """
         try:
-            decoded_raw = cls.decode_raw(request)
+            decoded_raw = decode_raw(cls, request)
             logger.debug(f'Decoded_Raw: {decoded_raw}')
             decoded_session = (
                 await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})

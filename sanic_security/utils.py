@@ -2,11 +2,18 @@ import datetime
 import random
 import string
 
+import jwt
+from jwt import DecodeError
+
 from captcha.image import ImageCaptcha
 from io import BytesIO
 
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse, raw
+from sanic.log import logger
+
+from sanic_security.exceptions import JWTDecodeError
+from sanic_security.configuration import config as security_config
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -95,3 +102,66 @@ def get_image(self) -> HTTPResponse:
     with BytesIO() as output:
         image.generate_image(self.code).save(output, format="JPEG")
         return raw(output.getvalue(), content_type="image/jpeg")
+
+
+def encode(session, response: HTTPResponse) -> None:
+    """
+    Transforms session into JWT and then is stored in a cookie.
+
+    Args:
+        response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
+    """
+    payload = {
+        "id": str(session.id),
+        "date_created": str(session.date_created),
+        "expiration_date": str(session.expiration_date),
+        "ip": session.ip,
+        **session.ctx.__dict__,
+    }
+    logger.critical(f'Encode Name: {session.__class__.__name__.lower()[:4]}')
+    cookie = f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{session.__class__.__name__.lower()[:4]}_session"
+    encoded_session = jwt.encode(
+        payload, security_config.SANIC_SECURITY_SECRET, security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM
+    )
+    if isinstance(encoded_session, bytes):
+        response.cookies[cookie] = encoded_session.decode()
+    elif isinstance(encoded_session, str):
+        response.cookies[cookie] = encoded_session
+    response.cookies[cookie]["httponly"] = security_config.SANIC_SECURITY_SESSION_HTTPONLY
+    response.cookies[cookie]["samesite"] = security_config.SANIC_SECURITY_SESSION_SAMESITE
+    response.cookies[cookie]["secure"] = security_config.SANIC_SECURITY_SESSION_SECURE
+    if security_config.SANIC_SECURITY_SESSION_EXPIRES_ON_CLIENT and session.expiration_date:
+        response.cookies[cookie]["expires"] = session.expiration_date
+    if security_config.SANIC_SECURITY_SESSION_DOMAIN:
+        response.cookies[cookie]["domain"] = security_config.SANIC_SECURITY_SESSION_DOMAIN
+
+
+def decode_raw(cls, request: Request) -> dict:
+    """
+    Decodes JWT token from client cookie into a python dict.
+
+    Args:
+        request (Request): Sanic request parameter.
+
+    Returns:
+        session_dict
+
+    Raises:
+        JWTDecodeError
+    """
+    cookie = request.cookies.get(
+        f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
+    )
+    try:
+        if not cookie:
+            raise JWTDecodeError("Session token not provided.")
+        else:
+            return jwt.decode(
+                cookie,
+                security_config.SANIC_SECURITY_SECRET
+                if not security_config.SANIC_SECURITY_PUBLIC_SECRET
+                else security_config.SANIC_SECURITY_PUBLIC_SECRET,
+                security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM,
+            )
+    except DecodeError as e:
+        raise JWTDecodeError(str(e))
