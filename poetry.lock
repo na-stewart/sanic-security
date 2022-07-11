@@ -642,7 +642,7 @@ test = ["sanic-testing (>=22.3.0)", "pytest (==6.2.5)", "coverage (==5.3)", "gun
 
 [[package]]
 name = "sanic-ext"
-version = "22.6.1"
+version = "22.6.2"
 description = "Extend your Sanic installation with some core functionality."
 category = "main"
 optional = false
@@ -1469,10 +1469,7 @@ sanic = [
     {file = "sanic-22.6.0-py3-none-any.whl", hash = "sha256:f6eb181e7a1b9a77a3b916de0f1413eddbe384c59487c2a4bff0c7a41e66e080"},
     {file = "sanic-22.6.0.tar.gz", hash = "sha256:d0653de59cf3073d8ca047253db72c868510d45d753c13b6316aede769fb66fb"},
 ]
-sanic-ext = [
-    {file = "sanic-ext-22.6.1.tar.gz", hash = "sha256:a55d2f7255dfd4934b3c5c4ccb09cb37177fa14fc675e7c03b384f75318c201c"},
-    {file = "sanic_ext-22.6.1-py3-none-any.whl", hash = "sha256:b8e21afa50b7981b43f29c1f571b2970e37de29925cca4c9c86bf2fd6971f742"},
-]
+sanic-ext = []
 sanic-routing = [
     {file = "sanic-routing-22.3.0.tar.gz", hash = "sha256:fde5a7d4079794b585b9a2904accd0de5a70abf27c82d2658b40c551ef44f703"},
     {file = "sanic_routing-22.3.0-py3-none-any.whl", hash = "sha256:8282fc05659ff2cebbffa4fb69697601fc9d653c34e0b5bdeed04a832e793fb9"},
