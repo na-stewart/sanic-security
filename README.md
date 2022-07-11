@@ -36,7 +36,10 @@
     * [Two Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Testing](#testing)
+* [ORM Support](#orm-support)
     * [Tortoise](#tortoise)
+    * [μMongo](#μmongo)
+    * [Custom](#custom)
 * [Contributing](#contributing)
 * [License](#license)
 * [Versioning](#versioning)
@@ -136,7 +139,7 @@ Order of presedence is: Environment > Sanic Config
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
 | **INITIAL_ADMIN_PHONE**               | 1231231234                   | Phone number used when creating the initial admin account.                                                                           |
-| **SANIC_SECURITY_ORM**                | 'tortoise','umongo','manual']| ORM Provider to use. If 'manual', needed objects must be provided to init.                                                                           |
+| **SANIC_SECURITY_ORM**                |['tortoise','umongo','manual']| ORM Provider to use. If 'manual', needed objects must be provided to init.                                                                           |
 
 
 
@@ -352,7 +355,7 @@ async def on_suspend_account(request, authentication_session):
 * Execute the tests with `pytest`, under `Poetry`: `poetry run pytest -x`
 
 ## ORM Support
-Sanic Security can either use the built-in Tortoise or uMongo models and ORMs, or allows you to provide your own at `init` time, which can be used instead.
+Sanic Security can either use the built-in Tortoise or μMongo models and ORMs, or allows you to provide your own at `init` time, which can be used instead.
 
 ### Tortoise
 Sanic Security can use [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations. It is currently the default, unless you specify otherwise, and requires installation.
@@ -383,15 +386,118 @@ register_tortoise(
 )
 ```
 
-### uMongo
-Sanic Security can use [uMongo ORM](https://umongo.readthedocs.io/en/latest/) for database operations. To use it, you must specify this via configuration value and it requires installation.
+### μMongo
+Sanic Security can use [μMongo ORM](https://umongo.readthedocs.io/en/latest/) for database operations. To use it, you must specify this via configuration value and it requires installation.
 
 μMongo is a Python MongoDB ODM. It inception comes from two needs: the lack of async ODM and the difficulty to do document (un)serialization with existing ODMs.
 
 Sanic Security includes default models for uMongo, located in `orm/umongo.py`. You can either use these, or supply your own as outlined in the [Custom](#orm-custom) section.
 
 ### Custom ORM
-TBD
+Sanic Security can also use any ORM or object/model system you want for database operations. To use it, you must specify this via configuration value, and provide your custom object classes at init time.
+
+At a minimum, you will need to provide the `user` and `role` objects, and depending on other functionality you wish to use, may be required to provide the additional as listed below.
+
+Each will be expected to have certain methods, that accept and return detail as defined below. A sample custom ORM using pure Python can be found in `tests/custom_orm.py`.
+
+***
+* #### **Account**
+    * Required for `custom` provider usage
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |username|string|
+    |password|string|
+    |email|string|
+    |phone|string|
+    |disabled|bool|
+    |verified|bool|
+    |roles|list|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new user into the `Account` storage. Should perform all input validations.|
+    |Args|`dict` containing the new user information: `username`, `email`, `password` (will be provided as a hash), `phone`, `disabled`, `verified`, `roles`|
+    |Returns|New `Account` Object. Must contain at least a `pk` property for a unique identifier|
+    
+    |`json()`|Details|
+    |--------|-------|
+    |Desc|Abstraction method to convert an existing `Account` object into a JSON serializable `dict`|
+    |Args|`self`|
+    |Returns|`dict` representing the linked `Account`|
+    
+    |`validate()`|Details|
+    |------------|-------|
+    |desc|Checks the status of an `Account` object|
+    |Args|`self`|
+    |Returns|None|
+    
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|Abstraction method to find an existing user by provided identifier|
+    |Args|(one of): `username`, `email`, `phone`, `id`|
+    |Returns|Found `Account` Object. Must contain at least a `pk` property for a unique identifier|
+    
+    |`get_roles()`|Details|
+    |-------------|-------|
+    |Desc|Abstraction method to provide the roles of an account for use in authorization lookups|
+    |Args|Probably valid `id` or `Account` object|
+    |Returns|`list` of roles for the identified user, or an empty `list`|
+    
+    |`add_roles()`|Details|
+    |-------------|-------|
+    |Desc|Abstraction method to add a new `role` to an existing user
+    |Args|*`id` or `Account` object to modify <br />*`role` object to add to the existing user|
+    |Returns|Updated `Account` Object. Must contain at least a `pk` property for a unique identifier|
+    
+*** *
+ * #### **Role**
+    * Required for `custom` provider usage
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |name|string|
+    |description|string|
+    |permissions|string|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new role into the `Role` storage. Should perform all input validations.|
+    |Args|`name`: Short name of the `Role`<br />`description`: Readable description of the `Role` <br /> `permissions`: CSV list of [rights](#authorization)|
+    |Returns|New `Role` Object. Must contain at least a `pk` property for a unique identifier|
+    
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|Abstration method to find an existing role in the `Role` storage.|
+    |Args|`name`: Short name of the `Role`|
+    |Returns|Identified `Role` Object. Must contain at least a `pk` property for a unique identifier|
+
+***
+* #### **AuthenticationSessions**
+    * Required for `custom` provider usage
+    
+***
+* #### **VerificationSessions**
+    * Required for `custom` provider usage, where Client Verification is expected to be used
+    
+***
+* #### **TwoStepValidationSessions**
+    * Required for `custom` provider usage, where Two Step Verification is expected to be used
+    
+***
+* #### **CaptchaValidationSessions**
+    * Required for `custom` provider usage, where Captcha Verification is expected to be used
+    
+    
+###
 
 <!-- CONTRIBUTING -->
 ## Contributing
