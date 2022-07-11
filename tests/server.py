@@ -22,7 +22,7 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError, IntegrityError
-from sanic_security.utils import json, get_image
+from sanic_security.utils import json, get_image, encode
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -110,7 +110,7 @@ def make_app():
             response = json(
                 "Registration successful! Verification required.", two_step_session.code
             )
-            two_step_session.encode(response)
+            encode(two_step_session, response)
         else:
             response = json("Registration successful!", await account.json())
         return response
@@ -134,7 +134,7 @@ def make_app():
         """
         authentication_session = await login(request)
         response = json("Login successful!", await authentication_session.json())
-        authentication_session.encode(response)
+        encode(authentication_session, response)
         return response
 
 
@@ -155,7 +155,7 @@ def make_app():
         Check if current authentication session is valid.
         """
         response = json("Authenticated!", await authentication_session.json())
-        authentication_session.encode(response)
+        encode(authentication_session, response)
         return response
 
 
@@ -166,7 +166,7 @@ def make_app():
         """
         captcha_session = await request_captcha(request)
         response = json("Captcha request successful!", captcha_session.code)
-        captcha_session.encode(response)
+        encode(captcha_session, response)
         return response
 
 
@@ -176,9 +176,8 @@ def make_app():
         Request captcha image.
         """
         captcha_session = await _orm.captcha_session.decode(request)
-        #response = captcha_session.get_image()
         response = get_image()
-        captcha_session.encode(response)
+        encode(captcha_session, response)
         return response
 
 
@@ -199,7 +198,7 @@ def make_app():
         """
         two_step_session = await request_two_step_verification(request)
         response = json("Verification request successful!", two_step_session.code)
-        two_step_session.encode(response)
+        encode(two_step_session, response)
         return response
 
 

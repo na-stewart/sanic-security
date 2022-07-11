@@ -1,6 +1,6 @@
 from sanic.exceptions import SanicException
 
-from sanic_security.utils import json
+from sanic.response import json
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -34,7 +34,7 @@ class SecurityError(SanicException):
     """
 
     def __init__(self, message: str, code: int):
-        self.json_response = json(message, self.__class__.__name__, code)
+        self.json_response = json({"message": message, "data": self.__class__.__name__, "code": code}, status=code)
         super().__init__(message, code)
 
 
