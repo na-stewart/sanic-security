@@ -1,18 +1,16 @@
 import datetime as dt
 import uuid
-from io import BytesIO
 from types import SimpleNamespace
 
 from bson import objectid
 
 import jwt
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from marshmallow import ValidationError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from sanic.response import HTTPResponse, raw
+from sanic.response import HTTPResponse
 from umongo import Document, EmbeddedDocument, fields, validate, post_load, MixinDocument
 from umongo.exceptions import NotCreatedError
 from pymongo.errors import DuplicateKeyError
@@ -145,6 +143,25 @@ class Account(Document, BaseMixin):
 
     @staticmethod
     async def new(**kwargs):
+        """
+        Abstracted method for the defined ORM to create a new Account entry.
+
+        Args:
+            email (str): Email address for new account. MUST BE UNIQUE
+            username (str): Username for new account (optional). If provided, MUST BE UNIQUE
+            password (str): Password for new account (should already be hashed)
+            phone (str): Phone number for new account
+            verified (bool): Verification status
+            disabled (bool): Disabled status
+            roles (list): Roles (list of names of valid Role)
+
+        Returns:
+            Account (object)
+
+        Raises:
+            AccountError
+        """
+
         logger.debug(f"New user requested: {kwargs}")
         try:
             _account = await Account(**kwargs).commit()
@@ -160,8 +177,20 @@ class Account(Document, BaseMixin):
 
         return await Account.find_one({'id': _account.inserted_id, 'deleted': False})
 
-    #@property
     async def get_roles(self, id = None):
+        """
+        Returns a list of roles for provided account
+
+        Args:
+            id (str): Account ID to return roles for
+
+        Returns:
+            roles (list)
+
+        Raises:
+            NotFoundError
+        """
+
         account = self
         if not account.pk:
             account = await Account.find_one({'id': id})
@@ -174,6 +203,21 @@ class Account(Document, BaseMixin):
         return roles
 
     async def add_role(self, id = None, role = None):
+        """
+        Add a role to an existing Account
+
+        Args:
+            id (str): ID of account to add a role to. Optional if not used as account property
+            role (str): Role to add
+
+        Returns:
+            Account
+
+        Raises:
+            Account Error
+            NotFoundError
+        """
+
         logger.debug(f'Trying to add role: {role} to user {id}')
         account = await id.fetch()
         logger.debug(f'Fetched account = {account}')
@@ -398,7 +442,6 @@ class Session(BaseMixin, MixinDocument):
             session.active = False
             deactivated_session = (
                 #TODO: Should probably be removing old sessions, not just setting inactive
-                #await cls.remove({'id': objectid.ObjectId(session["id"])})
                 await session.commit()
             )
             if not deactivated_session:
@@ -501,19 +544,6 @@ class CaptchaSession(Document, VerificationSession, Session):
         ).commit()
         return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
 
-
-    def get_image(self) -> HTTPResponse:
-        """
-        Retrieves captcha image file.
-
-        Returns:
-            captcha_image
-        """
-        image = ImageCaptcha(190, 90)
-        with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="JPEG")
-            return raw(output.getvalue(), content_type="image/jpeg")
-
     class Meta:
         table = "captcha_session"
 
@@ -590,8 +620,12 @@ class Role(Document, BaseMixin):
         return await Role.find_one({'id': new_role.inserted_id, 'deleted': False})
 
 
-# `ensure_indexes` must be called, once, for each model we have indexes on (including default `unique`)
 async def setup_indexes():
+    """
+    Must be called, once, for each model we have indexes on (including default `unique`),
+     for uMongo to create/update them
+
+    """
     try:
         await Account.ensure_indexes()
     except DuplicateKeyError as e:

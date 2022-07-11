@@ -22,7 +22,7 @@ from sanic_security.authorization import (
 from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError, IntegrityError
-from sanic_security.utils import json
+from sanic_security.utils import json, get_image
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -176,7 +176,8 @@ def make_app():
         Request captcha image.
         """
         captcha_session = await _orm.captcha_session.decode(request)
-        response = captcha_session.get_image()
+        #response = captcha_session.get_image()
+        response = get_image()
         captcha_session.encode(response)
         return response
 

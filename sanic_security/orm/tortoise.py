@@ -1,13 +1,11 @@
 import datetime
-from io import BytesIO
 from types import SimpleNamespace
 
 import jwt
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
 from sanic.request import Request
-from sanic.response import HTTPResponse, raw
+from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from tortoise.validators import RegexValidator, Validator
 from tortoise.exceptions import DoesNotExist, ValidationError
@@ -42,6 +40,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class PhoneNumberValidator(Validator):
     """
     A validator to check a phone number against `phonenumbers` module
+
+    Raises:
+        ValidationError
     """
     def __call__(self, value: str):
         try:
@@ -85,22 +86,14 @@ class BaseModel(Model):
 
     async def json(data) -> dict:
         """
-        A JSON serializable dict to be used in a HTTP request or response.
+        A JSON serializable dict to be used in a HTTP request or response, catchall for all models.
 
-        Example:
-            Below is an example of this method returning a dict to be used for JSON serialization.
+        Async for uniformity with uMongo ORM, as well as anything custom
 
-                def json(self):
-                    return {
-                        'id': id,
-                        'date_created': str(self.date_created),
-                        'date_updated': str(self.date_updated),
-                        'email': self.email,
-                        'username': self.username,
-                        'disabled': self.disabled,
-                        'verified': self.verified
-                    }
+        TODO: Should probably be customized to remove sensitive data, like password
 
+        Returns:
+           data (json)
         """
         _data = await pydantic_model_creator(data.__class__).from_tortoise_orm(data)
         return _data.json()
@@ -188,6 +181,8 @@ class Account(BaseModel):
             raise NotFoundError("Account with this identifier does not exist.")
         except ValidationError as e:
             # Tortoise-ORM is dumb how it validates even at searching
+            # This error will arrive if you submit an invalid pattern validated string,
+            #   like an `email@email.com` to a regex that doesn't allow `@` symbols
             raise NotFoundError("Account with this identifier does not exist.")
         except Exception as e:
             logger.critical(f'Generic Error! {e}')
@@ -199,6 +194,24 @@ class Account(BaseModel):
                   verified: bool = False, disabled: bool = False,
                   roles: list = []
                  ):
+        """
+        Abstracted method for the defined ORM to create a new Account entry.
+
+        Args:
+            email (str): Email address for new account. MUST BE UNIQUE
+            username (str): Username for new account (optional). If provided, MUST BE UNIQUE
+            password (str): Password for new account (should already be hashed)
+            phone (str): Phone number for new account
+            verified (bool): Verification status
+            disabled (bool): Disabled status
+            roles (list): Roles (list of names of valid Role)
+
+        Returns:
+            Account (object)
+
+        Raises:
+            AccountError
+        """
 
         try:
             logger.debug("Attempting to Create a New Tortoise User")
@@ -222,6 +235,19 @@ class Account(BaseModel):
             raise AccountError(e.message)
 
     async def get_roles(self, id = None):
+        """
+        Returns a list of roles for provided account
+
+        Args:
+            id (str): Account ID to return roles for
+
+        Returns:
+            roles (list)
+
+        Raises:
+            NotFoundError
+        """
+
         account = self
         if not account.pk:
             account = await Account.filter(id=id, deleted=False).prefetch_related("roles").get()
@@ -233,6 +259,21 @@ class Account(BaseModel):
         return account.roles
 
     async def add_role(self, id = None, role = None):
+        """
+        Add a role to an existing Account
+
+        Args:
+            id (str): ID of account to add a role to. Optional if not used as account property
+            role (str): Role to add
+
+        Returns:
+            Account
+
+        Raises:
+            Account Error
+            NotFoundError
+        """
+
         logger.debug(f'Trying to add role: {role} to user {id}')
         account = id
         if not account.id:
@@ -243,7 +284,7 @@ class Account(BaseModel):
             raise NotFoundError("Lookup requested by no identifier provided")
 
         await account.roles.add(role)
-        return role
+        return account
 
 
 class Session(BaseModel):
@@ -492,18 +533,6 @@ class CaptchaSession(VerificationSession):
                 security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
         )
-
-    def get_image(self) -> HTTPResponse:
-        """
-        Retrieves captcha image file.
-
-        Returns:
-            captcha_image
-        """
-        image = ImageCaptcha(190, 90)
-        with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="JPEG")
-            return raw(output.getvalue(), content_type="image/jpeg")
 
     class Meta:
         table = "captcha_session"
