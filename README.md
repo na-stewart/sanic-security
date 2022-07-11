@@ -62,9 +62,10 @@ In order to get started, please install pip.
 
 ### Prerequisites
 
-* Pip
+* python3
+* [poetry](https://poetry.eustace.io/)
 
-https://pypi.org/
+This package relies on [poetry](https://poetry.eustace.io/) for dependency management and packaging.
 
 ### Installation
 
@@ -109,6 +110,10 @@ SANIC_SECURITY_SECRET will be loaded by the application automatically and fed in
 
 You can load environment variables with a different prefix via calling the `config.load_environment_variables("NEW_PREFIX_")` method.
 
+Additionally, you can load security variables in your main project configuration, by prefixing the variables with the SANIC_SECURITY_ prefix.
+
+Order of presedence is: Environment > Sanic Config
+
 * Default configuration values:
 
 | Key                                   | Value                        | Description                                                                                                                      |
@@ -130,6 +135,10 @@ You can load environment variables with a different prefix via calling the `conf
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
+| **INITIAL_ADMIN_PHONE**               | 1231231234                   | Phone number used when creating the initial admin account.                                                                           |
+| **SANIC_SECURITY_ORM**                | 'tortoise','umongo','manual']| ORM Provider to use. If 'manual', needed objects must be provided to init.                                                                           |
+
+
 
 ## Usage
 
@@ -154,7 +163,7 @@ if __name__ == "__main__":
 
 * Registration
 
-Phone can be null or empty.
+Phone and Username can be null or empty, but if provided, must be unique.
 
 | Key          | Value               |
 |--------------|---------------------|
@@ -167,7 +176,7 @@ Phone can be null or empty.
 account = await register(request)
 two_step_session = await request_two_step_verification(request, account)
 await email_code(two_step_session.code)  # Custom method for emailing verification code.
-response = json("Registration successful!", two_step_session.bearer.json())
+response = json("Registration successful!", await two_step_session.json())
 two_step_session.encode(response)
 return response
 ```
@@ -181,7 +190,7 @@ return response
 ```python
 two_step_session = await verify_account(request)
 return json(
-    "You have verified your account and may login!", two_step_session.bearer.json()
+    "You have verified your account and may login!", await two_step_session.json()
 )
 ```
 
@@ -195,7 +204,7 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 
 ```python
 authentication_session = await login(request)
-response = json("Login successful!", authentication_session.bearer.json())
+response = json("Login successful!", await authentication_session.json())
 authentication_session.encode(response)
 return response
 ```
@@ -204,7 +213,7 @@ return response
 
 ```python
 authentication_session = await logout(request)
-response = json("Logout successful!", authentication_session.bearer.json())
+response = json("Logout successful!", await authentication_session.json())
 return response
 ```
 
@@ -216,7 +225,7 @@ return response
 async def on_authenticate(request, authentication_session):
     return json(
         "You have been authenticated.",
-        authentication_session.bearer.json(),
+        await authentication_session.json(),
     )
 ```
 
@@ -252,7 +261,7 @@ return response
 @app.post("api/captcha")
 @requires_captcha()
 async def on_captcha(request, captcha_session):
-    return json("Captcha attempt successful!", captcha_session.json())
+    return json("Captcha attempt successful!", await captcha_session.json())
 ```
 
 ## Two-step Verification
@@ -266,7 +275,7 @@ async def on_captcha(request, captcha_session):
 ```python
 two_step_session = await request_two_step_verification(request)
 await email_code(two_step_session.code)  # Custom method for emailing verification code.
-response = json("Verification request successful!", two_step_session.bearer.json())
+response = json("Verification request successful!", await two_step_session.json())
 two_step_session.encode(response)
 return response
 ```
@@ -276,7 +285,7 @@ return response
 ```python
 two_step_session = await TwoStepSession.decode(request)
 await email_code(two_step_session.code)  # Custom method for emailing verification code.
-return json("Verification code resend successful!", two_step_session.bearer.json())
+return json("Verification code resend successful!", await two_step_session.json())
 ```
 
 * Requires Two-step Verification
@@ -290,7 +299,7 @@ return json("Verification code resend successful!", two_step_session.bearer.json
 @requires_two_step_verification()
 async def on_verify(request, two_step_session):
     response = json(
-        "Two-step verification attempt successful!", two_step_session.bearer.json()
+        "Two-step verification attempt successful!", await two_step_session.json()
     )
     return response
 ```
@@ -338,17 +347,19 @@ async def on_suspend_account(request, authentication_session):
 
 ## Testing
 
-* Set the `TEST_DATABASE_URL` configuration value.
+* Set the `TEST_DATABASE_URL` configuration value, if you want to use an alternate URL than a mock instance.
 
-* Make sure the test Sanic instance (`test/server.py`) is running on your machine.
+* Execute the tests with `pytest`, under `Poetry`: `poetry run pytest -x`
 
-* Run the unit test client (`test/tests.py`) for results.
+## ORM Support
+Sanic Security can either use the built-in Tortoise or uMongo models and ORMs, or allows you to provide your own at `init` time, which can be used instead.
 
-## Tortoise
+### Tortoise
+Sanic Security can use [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations. It is currently the default, unless you specify otherwise, and requires installation.
 
-Sanic Security uses [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/index.html) for database operations.
+Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper) for several popular databases like sqlite, mysql, and postgresql.
 
-Tortoise ORM is an easy-to-use asyncio ORM (Object Relational Mapper).
+Sanic Security includes default models for Tortoise, located in `orm/tortoise.py`. You can either use these, or supply your own as outlined in the [Custom](#orm-custom) section.
 
 * Initialise your models and database like so: 
 
@@ -372,32 +383,15 @@ register_tortoise(
 )
 ```
 
-* Define your models like so:
+### uMongo
+Sanic Security can use [uMongo ORM](https://umongo.readthedocs.io/en/latest/) for database operations. To use it, you must specify this via configuration value and it requires installation.
 
-```python
-from tortoise.models import Model
-from tortoise import fields
+μMongo is a Python MongoDB ODM. It inception comes from two needs: the lack of async ODM and the difficulty to do document (un)serialization with existing ODMs.
 
+Sanic Security includes default models for uMongo, located in `orm/umongo.py`. You can either use these, or supply your own as outlined in the [Custom](#orm-custom) section.
 
-class Tournament(Model):
-    id = fields.IntField(pk=True)
-    name = fields.TextField()
-```
-
-* Use it like so:
-
-```python
-# Create instance by save
-tournament = Tournament(name="New Tournament")
-await tournament.save()
-
-# Or by .create()
-await Tournament.create(name="Another Tournament")
-
-# Now search for a record
-tour = await Tournament.filter(name__contains="Another").first()
-print(tour.name)
-```
+### Custom ORM
+TBD
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -405,10 +399,12 @@ print(tour.name)
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Setup poetry: `poetry install`
+3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+5. Verify unit tests are passing: `poetry run pytest -ra`
+6. Push to the Branch (`git push origin feature/AmazingFeature`)
+7. Open a Pull Request
 
 
 <!-- LICENSE -->

@@ -80,7 +80,7 @@ class Config(dict):
         SANIC_SECURITY_INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
         SANIC_SECURITY_INITIAL_ADMIN_PASSWORD (str) Password used when creating the initial admin account.
         SANIC_SECURITY_TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
-        SANIC_SECURITY_ORM (str): ORM to use (right now, 'tortoise' or 'manual')
+        SANIC_SECURITY_ORM (str): ORM to use (right now, 'tortoise', 'umongo', or 'manual')
     """
 
     SECRET: str
