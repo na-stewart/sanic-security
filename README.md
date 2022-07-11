@@ -237,7 +237,7 @@ Captcha challenge example:
 
 ```python
 captcha_session = await request_captcha(request)
-response = captcha_session.get_image()
+response = get_image()
 captcha_session.encode(response)
 return response
 ```

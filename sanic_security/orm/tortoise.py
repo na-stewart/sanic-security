@@ -1,13 +1,11 @@
 import datetime
-from io import BytesIO
 from types import SimpleNamespace
 
 import jwt
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.log import logger
 from sanic.request import Request
-from sanic.response import HTTPResponse, raw
+from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from tortoise.validators import RegexValidator, Validator
 from tortoise.exceptions import DoesNotExist, ValidationError
@@ -535,18 +533,6 @@ class CaptchaSession(VerificationSession):
                 security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
         )
-
-    def get_image(self) -> HTTPResponse:
-        """
-        Retrieves captcha image file.
-
-        Returns:
-            captcha_image
-        """
-        image = ImageCaptcha(190, 90)
-        with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="JPEG")
-            return raw(output.getvalue(), content_type="image/jpeg")
 
     class Meta:
         table = "captcha_session"

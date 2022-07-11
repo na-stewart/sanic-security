@@ -2,8 +2,11 @@ import datetime
 import random
 import string
 
+from captcha.image import ImageCaptcha
+from io import BytesIO
+
 from sanic.request import Request
-from sanic.response import json as sanic_json, HTTPResponse
+from sanic.response import json as sanic_json, HTTPResponse, raw
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -79,3 +82,16 @@ def get_expiration_date(seconds: int) -> datetime.datetime:
         if seconds > 0
         else None
     )
+
+
+def get_image(self) -> HTTPResponse:
+    """
+    Retrieves captcha image file.
+
+    Returns:
+        captcha_image
+    """
+    image = ImageCaptcha(190, 90)
+    with BytesIO() as output:
+        image.generate_image(self.code).save(output, format="JPEG")
+        return raw(output.getvalue(), content_type="image/jpeg")

@@ -1,18 +1,16 @@
 import datetime as dt
 import uuid
-from io import BytesIO
 from types import SimpleNamespace
 
 from bson import objectid
 
 import jwt
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from marshmallow import ValidationError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from sanic.response import HTTPResponse, raw
+from sanic.response import HTTPResponse
 from umongo import Document, EmbeddedDocument, fields, validate, post_load, MixinDocument
 from umongo.exceptions import NotCreatedError
 from pymongo.errors import DuplicateKeyError
@@ -545,19 +543,6 @@ class CaptchaSession(Document, VerificationSession, Session):
             ),
         ).commit()
         return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
-
-
-    def get_image(self) -> HTTPResponse:
-        """
-        Retrieves captcha image file.
-
-        Returns:
-            captcha_image
-        """
-        image = ImageCaptcha(190, 90)
-        with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="JPEG")
-            return raw(output.getvalue(), content_type="image/jpeg")
 
     class Meta:
         table = "captcha_session"
