@@ -248,7 +248,7 @@ def create_initial_admin_account(app: Sanic) -> None:
         try:
             account = await _orm.account.lookup(username="Head Admin")
             if role not in account.roles:
-                await account.roles.add(role)
+                await account.add_role(role)
                 logger.warning(
                     'The initial admin account role "Head Admin" was removed and has been reinstated.'
                 )
