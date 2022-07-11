@@ -91,7 +91,13 @@ def make_app():
     lazy_umongo.set_db(client)
     app.config.LAZY_UMONGO = lazy_umongo
 
-    security.init_app(app)
+    if app.config.get('SECURITY_ORM') == 'custom':
+        from custom_orm import Role, Account, VerificationSession, TwoStepSession, CaptchaSession, AuthenticationSession
+        security.init_app(app, account=Account, role=Role, 
+                          verification=VerificationSession, twostep=TwoStepSession,
+                          captcha=CaptchaSession, authentication=AuthenticationSession)
+    else:
+        security.init_app(app)
 
     _orm = Sanic.get_app().ctx.extensions['security']
 

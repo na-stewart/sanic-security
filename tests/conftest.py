@@ -11,10 +11,6 @@ import sanic_security
 import logging
 import random
 
-import uvloop
-import asyncio
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 
 @pytest.fixture(scope="module", autouse=True)
 def logger():
@@ -24,7 +20,7 @@ def logger():
     return logger
 
 
-@pytest.fixture(params=["umongo", "tortoise"])
+@pytest.fixture(params=["custom", "tortoise", "umongo"])
 def app(request, monkeypatch, logger):
 
     # Use the fixture params to test all our ORM providers

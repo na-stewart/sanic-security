@@ -11,7 +11,7 @@ class ORMNotProvided():
     def __init__(self, *args, **kwargs):
         pass
 
-    def __new__(self, *args, **kwargs):
+    def new(self, *args, **kwargs):
         raise SanicException('Necessary Model not Provided')
     
 

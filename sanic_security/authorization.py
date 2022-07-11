@@ -196,9 +196,12 @@ async def assign_role(
     try:
         # removed `permissions` lookup, as names should be unique in a sane RBAC model
         role = await _orm.role.lookup(name=name)
+        logger.debug(f"Found Role: {role}")
     except NotFoundError:
+        logger.debug(f"Creating New Role: {name}")
         role = await _orm.role.new(
             description=description, permissions=permissions, name=name
         )
+    logger.debug(f'Calling to add new role [{role}] to account [{account}]')
     await _orm.account.add_role(account, role=role)
     return role
