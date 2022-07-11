@@ -118,7 +118,6 @@ def encode(session, response: HTTPResponse) -> None:
         "ip": session.ip,
         **session.ctx.__dict__,
     }
-    logger.critical(f'Encode Name: {session.__class__.__name__.lower()[:4]}')
     cookie = f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{session.__class__.__name__.lower()[:4]}_session"
     encoded_session = jwt.encode(
         payload, security_config.SANIC_SECURITY_SECRET, security_config.SANIC_SECURITY_SESSION_ENCODING_ALGORITHM
