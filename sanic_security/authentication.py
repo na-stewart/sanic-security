@@ -44,7 +44,7 @@ async def register(
     Registers a new account that can be logged into.
 
     Args:
-        request (Request): Sanic request parameter. All requests are sent as a dict with the following arguments: email, username, password, phone (including country code).
+        request (dict): A dict with the following arguments: email, username, password, phone (including country code).
         verified (bool): Enables or disabled the verification requirement for the account being registered.
         disabled (bool): Renders an account unusable until manually set to false if designated true.
 

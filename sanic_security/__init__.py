@@ -8,11 +8,39 @@ from sanic_security.configuration import Config as sanic_security_config
 
 
 class ORMNotProvided():
-    def __init__(self):
-        raise SanicException('Necessary Model not Provided')
+    def __init__(self, *args, **kwargs):
+        pass
 
+    def __new__(self, *args, **kwargs):
+        raise SanicException('Necessary Model not Provided')
+    
 
 class SanicSecurityExtension(Extension):
+    """
+    Class for the overall Security provider.
+
+    This is mostly convienience, and wont really do anything until
+     sanic-ext is updated and stabalized. At that time, the intention
+     is to load this extention as a native Sanic Extension in the namespace.
+
+    Args:
+        app (Sanic): The Sanic app instance. If no provided at setup, `init_app(app)` can later be called.
+        orm (str): ORM to use ['tortoise', 'umongo', 'custom'] [default: tortoise]
+        account (object): Account model, properly configured for the DB used.
+        session (object): Session model, properly configured for the DB used.
+        role (object):  Role model, properly configured for the DB used.
+        verification (object): Verification model, properly configured for the DB used.
+        twostep (object): Twostep Verification model, properly configured for the DB used.
+        captcha (object): Captcha Verification model, properly configured for the DB used.
+        authentication (object): Authentication Verification model, properly configured for the DB used.
+    
+    Returns:
+        Sanic-Security object, available at `current_app().ctx.extensions['security']`
+    
+    Raises:
+        ImportError (Exception): Invalid `ORM` specified
+        Exception (Exception): Missing required models for `custom` provider
+    """
     logger.info("Setting up SanicSecurityExtension")
     name: str = "security"
     extension_name = app_attribute = 'security'
@@ -45,6 +73,8 @@ class SanicSecurityExtension(Extension):
                  authentication: object = None):
         """
         init_app factory
+
+        See main object for Args
         """
         logger.info("[Sanic-Security] init_app")
 
