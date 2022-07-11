@@ -4,6 +4,8 @@ from types import SimpleNamespace
 
 from bson import objectid
 
+import phonenumbers
+
 import jwt
 from jwt import DecodeError
 from marshmallow import ValidationError
@@ -11,7 +13,7 @@ from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse
-from umongo import Document, EmbeddedDocument, fields, validate, post_load, MixinDocument
+from umongo import Document, EmbeddedDocument, fields, validate, pre_load, MixinDocument
 from umongo.exceptions import NotCreatedError
 from pymongo.errors import DuplicateKeyError
 
@@ -119,6 +121,18 @@ class Account(Document, BaseMixin):
     disabled: bool = fields.BooleanField(load_default=False)
     verified: bool = fields.BooleanField(load_default=False)
     roles = fields.ListField(fields.ReferenceField('Role', fetch=True), null=True, fetch=True) 
+
+    @pre_load
+    def clean(self, data, many, **kwargs):
+        if 'phone' in data:
+            try:
+                _phone = phonenumbers.parse(data['phone'], "US") # Default to US
+                if not phonenumbers.is_possible_number(_phone):
+                    raise ValidationError(f"Value '{data['phone']}' is not a valid phone number")
+            except Exception:
+                raise ValidationError(f"Value '{data['phone']}' is not a valid phone number")
+        
+        return data
 
     def validate(self) -> None:
         """
