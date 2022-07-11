@@ -402,7 +402,8 @@ Each will be expected to have certain methods, that accept and return detail as 
 
 ***
 * #### **Account**
-    * Required for `custom` provider usage
+    * Required for `custom` provider usage.
+
     At a minimum, the object must contain the following properties:
 
     |Field|Type|
@@ -456,7 +457,8 @@ Each will be expected to have certain methods, that accept and return detail as 
     
 *** *
  * #### **Role**
-    * Required for `custom` provider usage
+    * Required for `custom` provider usage.
+
     At a minimum, the object must contain the following properties:
 
     |Field|Type|
@@ -481,20 +483,80 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Returns|Identified `Role` Object. Must contain at least a `pk` property for a unique identifier|
 
 ***
-* #### **AuthenticationSessions**
-    * Required for `custom` provider usage
+* #### **AuthenticationSession**
+    * Required for `custom` provider usage.
+
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |tbd|tbd|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Args|tbd|
+    |Returns|New `AuthenticationSession` Object. Must contain at least a `pk` property for a unique identifier|
     
 ***
 * #### **VerificationSessions**
     * Required for `custom` provider usage, where Client Verification is expected to be used
+
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |tbd|tbd|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Args|tbd|
+    |Returns|New `VerificationSession` Object. Must contain at least a `pk` property for a unique identifier|
     
 ***
 * #### **TwoStepValidationSessions**
     * Required for `custom` provider usage, where Two Step Verification is expected to be used
+
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |tbd|tbd|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Args|tbd|
+    |Returns|New `TwoStepValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
     
 ***
 * #### **CaptchaValidationSessions**
     * Required for `custom` provider usage, where Captcha Verification is expected to be used
+
+    At a minimum, the object must contain the following properties:
+
+    |Field|Type|
+    |-----|----|
+    |id|string|
+    |tbd|tbd|
+
+    Additionally, the object must contain the following methods:
+
+    |`new()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Args|tbd|
+    |Returns|New `CaptchaValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
     
     
 ###
