@@ -3,6 +3,7 @@ import uuid
 from types import SimpleNamespace
 
 from bson import objectid
+import bson
 
 import phonenumbers
 
@@ -12,6 +13,7 @@ from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from umongo import Document, EmbeddedDocument, fields, validate, pre_load, MixinDocument
+from umongo.frameworks.motor_asyncio import MotorAsyncIOReference
 from umongo.exceptions import NotCreatedError
 from pymongo.errors import DuplicateKeyError
 
@@ -308,7 +310,6 @@ class Session(BaseMixin, MixinDocument):
     bearer = fields.ReferenceField('Account', fetch=True)
     ctx = SimpleNamespace()
 
-
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         """
@@ -323,6 +324,10 @@ class Session(BaseMixin, MixinDocument):
             session
         """
         raise NotImplementedError()
+
+    #@staticmethod
+    async def lookup(cls, id: str = None):
+        return await cls.find_one({'id': objectid.ObjectId(id)})
 
     def validate(self) -> None:
         """
@@ -369,7 +374,7 @@ class Session(BaseMixin, MixinDocument):
                 raise NotCreatedError
         except NotCreatedError:
             raise NotFoundError("Session could not be found.")
-        if decoded_session.bearer:
+        if isinstance(decoded_session.bearer, str) or isinstance(decoded_session.bearer, MotorAsyncIOReference):
             return decoded_session, await decoded_session.bearer.fetch()
         return decoded_session, decoded_session.bearer
         
@@ -453,6 +458,9 @@ class VerificationSession(Session, BaseMixin, MixinDocument):
             self.active = False
             await self.commit()
 
+    async def lookup(cls, id: str = None):
+        return await cls.find_one({'id': objectid.ObjectId(id)})
+
     class Meta:
         abstract = True
         allow_inheritance = True
@@ -477,6 +485,9 @@ class TwoStepSession(VerificationSession, Document):
         new_session = await TwoStepSession.find_one({'id': _session.inserted_id, 'deleted': False})
         return new_session
 
+    async def lookup(cls, id: str = None):
+        return await cls.find_one({'id': objectid.ObjectId(id)})
+
 
 @instance.register
 class CaptchaSession(Document, VerificationSession, Session):
@@ -494,6 +505,9 @@ class CaptchaSession(Document, VerificationSession, Session):
             ),
         ).commit()
         return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
+
+    async def lookup(cls, id: str = None):
+        return await cls.find_one({'id': objectid.ObjectId(id)})
 
     class Meta:
         table = "captcha_session"
@@ -519,6 +533,9 @@ class AuthenticationSession(Document, VerificationSession, Session, BaseMixin):
             ),
         ).commit()
         return await AuthenticationSession.find_one({'id': _auth_session.inserted_id})
+
+    async def lookup(cls, id: str = None):
+        return await cls.find_one({'id': objectid.ObjectId(id)})
 
 
 @instance.register
