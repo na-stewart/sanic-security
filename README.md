@@ -421,13 +421,13 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new user into the `Account` storage. Should perform all input validations.|
+    |Desc|(**async**) Abstration method to insert a new user into the `Account` storage. Should perform all input validations.|
     |Args|`dict` containing the new user information: `username`, `email`, `password` (will be provided as a hash), `phone`, `disabled`, `verified`, `roles`|
     |Returns|New `Account` Object. Must contain at least a `pk` property for a unique identifier|
     
     |`json()`|Details|
     |--------|-------|
-    |Desc|Abstraction method to convert an existing `Account` object into a JSON serializable `dict`|
+    |Desc|(**async**) Abstraction method to convert an existing `Account` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `Account`|
     
@@ -439,19 +439,19 @@ Each will be expected to have certain methods, that accept and return detail as 
     
     |`lookup()`|Details|
     |----------|-------|
-    |Desc|Abstraction method to find an existing user by provided identifier|
+    |Desc|(**async**) Abstraction method to find an existing user by provided identifier|
     |Args|(one of): `username`, `email`, `phone`, `id`|
     |Returns|Found `Account` Object. Must contain at least a `pk` property for a unique identifier|
     
     |`get_roles()`|Details|
     |-------------|-------|
-    |Desc|Abstraction method to provide the roles of an account for use in authorization lookups|
+    |Desc|(**async**) Abstraction method to provide the roles of an account for use in authorization lookups|
     |Args|Probably valid `id` or `Account` object|
     |Returns|`list` of roles for the identified user, or an empty `list`|
     
     |`add_roles()`|Details|
     |-------------|-------|
-    |Desc|Abstraction method to add a new `role` to an existing user
+    |Desc|(**async**) Abstraction method to add a new `role` to an existing user
     |Args|*`id` or `Account` object to modify <br />*`role` object to add to the existing user|
     |Returns|Updated `Account` Object. Must contain at least a `pk` property for a unique identifier|
     
@@ -472,13 +472,13 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new role into the `Role` storage. Should perform all input validations.|
+    |Desc|(**async**) Abstration method to insert a new role into the `Role` storage. Should perform all input validations.|
     |Args|`name`: Short name of the `Role`<br />`description`: Readable description of the `Role` <br /> `permissions`: CSV list of [rights](#authorization)|
     |Returns|New `Role` Object. Must contain at least a `pk` property for a unique identifier|
     
     |`lookup()`|Details|
     |----------|-------|
-    |Desc|Abstration method to find an existing role in the `Role` storage.|
+    |Desc|(**async**) Abstration method to find an existing role in the `Role` storage.|
     |Args|`name`: Short name of the `Role`|
     |Returns|Identified `Role` Object. Must contain at least a `pk` property for a unique identifier|
 
@@ -502,7 +502,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Desc|(**async**) Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `AuthenticationSession` Object. Must contain at least a `pk` property for a unique identifier|
 
@@ -514,7 +514,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`json()`|Details|
     |--------|-------|
-    |Desc|Abstraction method to convert an existing `AuthenticationSession` object into a JSON serializable `dict`|
+    |Desc|(**async**) Abstraction method to convert an existing `AuthenticationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `AuthenticationSession`|
     
@@ -536,7 +536,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Desc|(**async**) Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `VerificationSession` Object. Must contain at least a `pk` property for a unique identifier|
 
@@ -548,13 +548,13 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`json()`|Details|
     |--------|-------|
-    |Desc|Abstraction method to convert an existing `VerificationSession` object into a JSON serializable `dict`|
+    |Desc|(**async**) Abstraction method to convert an existing `VerificationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `VerificationSession`|
 
     |`check_code()`|Details|
     |--------|-------|
-    |Desc|(**async**)Abstraction method to check if code passed is equivalent to the session code.|
+    |Desc|(**async**) Abstraction method to check if code passed is equivalent to the session code.|
     |Args|`self`: `VerificationSession` object<br />request: Sanic `Request`<br />code: code to be cross checked|
     |Raises|Exception on invalid code verification attempt|
     
@@ -576,7 +576,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Desc|(**async**) Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |bearer||
     |Returns|New `TwoStepValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
@@ -589,7 +589,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`json()`|Details|
     |--------|-------|
-    |Desc|Abstraction method to convert an existing `TwoStepValidationSession` object into a JSON serializable `dict`|
+    |Desc|(**async**) Abstraction method to convert an existing `TwoStepValidationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `TwoStepValidationSession`|
     
@@ -610,7 +610,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|Abstration method to insert a new role into the `Session` storage.|
+    |Desc|(**async**) Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `CaptchaValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
 
@@ -622,7 +622,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`json()`|Details|
     |--------|-------|
-    |Desc|Abstraction method to convert an existing `CaptchaValidationSession` object into a JSON serializable `dict`|
+    |Desc|(**async**) Abstraction method to convert an existing `CaptchaValidationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `CaptchaValidationSession`|
     
