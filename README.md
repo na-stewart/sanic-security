@@ -286,7 +286,7 @@ return response
 * Resend Two-step Verification Code
 
 ```python
-two_step_session = await TwoStepSession.decode(request)
+two_step_session = await decode(TwoStepSession, request)
 await email_code(two_step_session.code)  # Custom method for emailing verification code.
 return json("Verification code resend successful!", await two_step_session.json())
 ```
@@ -517,7 +517,13 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|(**async**) Abstraction method to convert an existing `AuthenticationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `AuthenticationSession`|
-    
+
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|(**async**) Abstration method to find an existing session in the `AuthenticationSession` storage.|
+    |Args|`cls`: class of the session<br />`id`: Identifier of the session|
+    |Returns|Identified `AuthenticationSession` Object. Must contain at least a `pk` property for a unique identifier<br />Matching `Account` detail for the bearer|
+
 ***
 * #### **VerificationSession**
     * Required for `custom` provider usage, where Client Verification is expected to be used.
@@ -557,6 +563,12 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|(**async**) Abstraction method to check if code passed is equivalent to the session code.|
     |Args|`self`: `VerificationSession` object<br />request: Sanic `Request`<br />code: code to be cross checked|
     |Raises|Exception on invalid code verification attempt|
+
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|(**async**) Abstration method to find an existing session in the `VerificationSession` storage.|
+    |Args|`cls`: class of the session<br />`id`: Identifier of the session|
+    |Returns|Identified `VerificationSession` Object. Must contain at least a `pk` property for a unique identifier<br />Matching `Account` detail for the bearer|
     
 ***
 * #### **TwoStepValidationSession**
@@ -592,6 +604,12 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|(**async**) Abstraction method to convert an existing `TwoStepValidationSession` object into a JSON serializable `dict`|
     |Args|`self`|
     |Returns|`dict` representing the linked `TwoStepValidationSession`|
+
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|(**async**) Abstration method to find an existing session in the `TwoStepValidationSession` storage.|
+    |Args|`cls`: class of the session<br />`id`: Identifier of the session|
+    |Returns|Identified `TwoStepValidationSession` Object. Must contain at least a `pk` property for a unique identifier<br />Matching `Account` detail for the bearer|
     
 ***
 * #### **CaptchaValidationSession**
@@ -610,7 +628,7 @@ Each will be expected to have certain methods, that accept and return detail as 
 
     |`new()`|Details|
     |-------|-------|
-    |Desc|(**async**) Abstration method to insert a new role into the `Session` storage.|
+    |Desc|(**async**) Abstration method to insert a new role into the `CaptchaValidationSession` storage.|
     |Args|tbd|
     |Returns|New `CaptchaValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
 
@@ -626,6 +644,11 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Args|`self`|
     |Returns|`dict` representing the linked `CaptchaValidationSession`|
     
+    |`lookup()`|Details|
+    |----------|-------|
+    |Desc|(**async**) Abstration method to find an existing session in the `CaptchaValidationSession` storage.|
+    |Args|`cls`: class of the session<br />`id`: Identifier of the session|
+    |Returns|Identified `CaptchaValidationSession` Object. Must contain at least a `pk` property for a unique identifier<br />Matching `Account` detail for the bearer|
     
 ###
 

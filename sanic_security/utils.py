@@ -12,7 +12,7 @@ from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse, raw
 from sanic.log import logger
 
-from sanic_security.exceptions import JWTDecodeError
+from sanic_security.exceptions import JWTDecodeError, NotFoundError
 from sanic_security.configuration import config as security_config
 
 """
@@ -148,9 +148,15 @@ def decode_raw(cls, request: Request) -> dict:
     Raises:
         JWTDecodeError
     """
-    cookie = request.cookies.get(
-        f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
-    )
+    if isinstance(cls, type):
+        cookie = request.cookies.get(
+            f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls().__class__.__name__.lower()[:4]}_session"
+        )
+    else:
+        cookie = request.cookies.get(
+            f"{security_config.SANIC_SECURITY_SESSION_PREFIX}_{cls.__class__.__name__.lower()[:4]}_session"
+        )
+
     try:
         if not cookie:
             raise JWTDecodeError("Session token not provided.")
@@ -164,3 +170,29 @@ def decode_raw(cls, request: Request) -> dict:
             )
     except DecodeError as e:
         raise JWTDecodeError(str(e))
+
+#@classmethod
+async def decode(cls, request: Request):
+    """
+    Decodes session JWT from client cookie to a Sanic Security session.
+
+    Args:
+        cls: Class of the session
+        request (Request): Sanic request parameter.
+
+    Returns:
+        session
+
+    Raises:
+        JWTDecodeError
+        NotFoundError
+    """
+    try:
+        decoded_raw = decode_raw(cls, request)
+        logger.debug(f'Decoded_Raw: {decoded_raw}')
+        decoded_session, session_bearer = await cls.lookup(id=decoded_raw["id"])
+        if not decoded_session:
+            raise NotFoundError("Session could not be found.")
+    except NotFoundError:
+        raise NotFoundError("Session could not be found.")
+    return decoded_session, session_bearer

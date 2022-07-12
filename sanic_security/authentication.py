@@ -15,7 +15,7 @@ from sanic_security.exceptions import (
     SessionError,
     DeactivatedError,
 )
-from sanic_security.utils import get_ip
+from sanic_security.utils import get_ip, decode
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -159,7 +159,7 @@ async def logout(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    authentication_session, bearer = await _orm.authentication_session.decode(request)
+    authentication_session, bearer = await decode(_orm.authentication_session, request)
     if not authentication_session.active:
         raise DeactivatedError("Already logged out.", 403)
 
@@ -187,7 +187,7 @@ async def authenticate(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    authentication_session, bearer = await _orm.authentication_session.decode(request)
+    authentication_session, bearer = await decode(_orm.authentication_session, request)
     authentication_session.validate()
     bearer.validate()
     return authentication_session

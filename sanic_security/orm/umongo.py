@@ -1,5 +1,6 @@
 import datetime as dt
 import uuid
+import copy
 from types import SimpleNamespace
 
 from bson import objectid
@@ -12,12 +13,13 @@ from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse
 from umongo import Document, EmbeddedDocument, fields, validate, pre_load, MixinDocument
+from umongo.frameworks.motor_asyncio import MotorAsyncIOReference
 from umongo.exceptions import NotCreatedError
 from pymongo.errors import DuplicateKeyError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date, decode_raw
+from sanic_security.utils import get_ip, get_code, get_expiration_date
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -308,7 +310,6 @@ class Session(BaseMixin, MixinDocument):
     bearer = fields.ReferenceField('Account', fetch=True)
     ctx = SimpleNamespace()
 
-
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         """
@@ -323,6 +324,27 @@ class Session(BaseMixin, MixinDocument):
             session
         """
         raise NotImplementedError()
+
+    @classmethod
+    async def lookup(cls, id: str = None):
+        """
+        Looks up a session based upon its ID
+
+        Args:
+            id (string): Session Identifier
+        
+        Returns:
+            session, session bearer
+
+        Raises:
+            NotFoundError
+        """
+
+        _session = await cls.find_one({'id': objectid.ObjectId(id)})
+
+        if isinstance(_session.bearer, str) or isinstance(_session.bearer, MotorAsyncIOReference):
+            return _session, await _session.bearer.fetch()
+        return _session, _session.bearer
 
     def validate(self) -> None:
         """
@@ -343,36 +365,6 @@ class Session(BaseMixin, MixinDocument):
             raise ExpiredError()
         elif not self.active:
             raise DeactivatedError()
-
-    @classmethod
-    async def decode(cls, request: Request):
-        """
-        Decodes session JWT from client cookie to a Sanic Security session.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Returns:
-            session
-
-        Raises:
-            JWTDecodeError
-            NotFoundError
-        """
-        try:
-            decoded_raw = decode_raw(cls, request)
-            logger.debug(f'Decoded_Raw: {decoded_raw}')
-            decoded_session = (
-                await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})
-            )
-            if not decoded_session:
-                raise NotCreatedError
-        except NotCreatedError:
-            raise NotFoundError("Session could not be found.")
-        if decoded_session.bearer:
-            return decoded_session, await decoded_session.bearer.fetch()
-        return decoded_session, decoded_session.bearer
-        
 
     @classmethod
     async def deactivate(cls, session):
