@@ -1,9 +1,9 @@
 import datetime as dt
 import uuid
+import copy
 from types import SimpleNamespace
 
 from bson import objectid
-import bson
 
 import phonenumbers
 
@@ -19,7 +19,7 @@ from pymongo.errors import DuplicateKeyError
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date, decode_raw
+from sanic_security.utils import get_ip, get_code, get_expiration_date
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -325,9 +325,26 @@ class Session(BaseMixin, MixinDocument):
         """
         raise NotImplementedError()
 
-    #@staticmethod
+    @classmethod
     async def lookup(cls, id: str = None):
-        return await cls.find_one({'id': objectid.ObjectId(id)})
+        """
+        Looks up a session based upon its ID
+
+        Args:
+            id (string): Session Identifier
+        
+        Returns:
+            session, session bearer
+
+        Raises:
+            NotFoundError
+        """
+
+        _session = await cls.find_one({'id': objectid.ObjectId(id)})
+
+        if isinstance(_session.bearer, str) or isinstance(_session.bearer, MotorAsyncIOReference):
+            return _session, await _session.bearer.fetch()
+        return _session, _session.bearer
 
     def validate(self) -> None:
         """
@@ -348,36 +365,6 @@ class Session(BaseMixin, MixinDocument):
             raise ExpiredError()
         elif not self.active:
             raise DeactivatedError()
-
-    @classmethod
-    async def decode(cls, request: Request):
-        """
-        Decodes session JWT from client cookie to a Sanic Security session.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Returns:
-            session
-
-        Raises:
-            JWTDecodeError
-            NotFoundError
-        """
-        try:
-            decoded_raw = decode_raw(cls, request)
-            logger.debug(f'Decoded_Raw: {decoded_raw}')
-            decoded_session = (
-                await cls.find_one({'id': objectid.ObjectId(decoded_raw["id"])})
-            )
-            if not decoded_session:
-                raise NotCreatedError
-        except NotCreatedError:
-            raise NotFoundError("Session could not be found.")
-        if isinstance(decoded_session.bearer, str) or isinstance(decoded_session.bearer, MotorAsyncIOReference):
-            return decoded_session, await decoded_session.bearer.fetch()
-        return decoded_session, decoded_session.bearer
-        
 
     @classmethod
     async def deactivate(cls, session):
@@ -458,9 +445,6 @@ class VerificationSession(Session, BaseMixin, MixinDocument):
             self.active = False
             await self.commit()
 
-    async def lookup(cls, id: str = None):
-        return await cls.find_one({'id': objectid.ObjectId(id)})
-
     class Meta:
         abstract = True
         allow_inheritance = True
@@ -485,9 +469,6 @@ class TwoStepSession(VerificationSession, Document):
         new_session = await TwoStepSession.find_one({'id': _session.inserted_id, 'deleted': False})
         return new_session
 
-    async def lookup(cls, id: str = None):
-        return await cls.find_one({'id': objectid.ObjectId(id)})
-
 
 @instance.register
 class CaptchaSession(Document, VerificationSession, Session):
@@ -505,9 +486,6 @@ class CaptchaSession(Document, VerificationSession, Session):
             ),
         ).commit()
         return await CaptchaSession.find_one({'id': _captcha_session.inserted_id})
-
-    async def lookup(cls, id: str = None):
-        return await cls.find_one({'id': objectid.ObjectId(id)})
 
     class Meta:
         table = "captcha_session"
@@ -533,9 +511,6 @@ class AuthenticationSession(Document, VerificationSession, Session, BaseMixin):
             ),
         ).commit()
         return await AuthenticationSession.find_one({'id': _auth_session.inserted_id})
-
-    async def lookup(cls, id: str = None):
-        return await cls.find_one({'id': objectid.ObjectId(id)})
 
 
 @instance.register

@@ -17,7 +17,7 @@ from sanic.response import HTTPResponse
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date, decode_raw
+from sanic_security.utils import get_ip, get_code, get_expiration_date
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -366,6 +366,35 @@ class Session(BaseMixin):
         """
         raise NotImplementedError()
 
+    @classmethod
+    async def lookup(cls, id: str = None):
+        """
+        Looks up a session based upon its ID
+
+        Args:
+            id (string): Session Identifier
+        
+        Returns:
+            session, session bearer
+
+        Raises:
+            NotFoundError
+        """
+
+        found_session = None
+        for _session in cls.db:
+            if _session.id == id:
+                found_session = _session
+
+        if not found_session:
+            raise NotFoundError("Session could not be found.")
+
+        if isinstance(found_session.bearer, str):
+            _bearer = await Account.lookup(id=found_session.bearer)
+            return found_session, _bearer
+
+        return found_session, found_session.bearer
+
     def validate(self) -> None:
         """
         Raises an error with respect to session state.
@@ -385,39 +414,6 @@ class Session(BaseMixin):
             raise ExpiredError()
         elif not self.active:
             raise DeactivatedError()
-
-    @classmethod
-    async def decode(cls, request: Request):
-        """
-        Decodes session JWT from client cookie to a Sanic Security session.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Returns:
-            session
-
-        Raises:
-            JWTDecodeError
-            NotFoundError
-        """
-        try:
-            decoded_raw = decode_raw(cls, request)
-            logger.debug(f'Decoded_Raw: {decoded_raw}')
-            decoded_session = None
-            for _session in Session.db:
-                if _session.id == decoded_raw["id"]:
-                    decoded_session = _session
-
-            if not decoded_session:
-                raise NotFoundError("No matching session found!")
-        except NotFoundError:
-            raise NotFoundError("Session could not be found.")
-        if isinstance(decoded_session.bearer, str):
-            decoded_session.bearer = await Account.lookup(id=decoded_session.bearer)
-
-        return decoded_session, decoded_session.bearer
-        
 
     @classmethod
     async def deactivate(cls, session):
@@ -458,8 +454,13 @@ class Session(BaseMixin):
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
+    """
     class Meta:
         abstract = True
+    """
+
+    def __str__(self):
+        return 'fuck'
 
 
 class VerificationSession(Session, BaseMixin):
@@ -470,6 +471,8 @@ class VerificationSession(Session, BaseMixin):
         attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
         code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
     """
+
+    db: list = list([])
 
     attempts: int = 0
     code: str = get_code()
@@ -512,7 +515,7 @@ class TwoStepSession(VerificationSession):
     Validates a client using a code sent via email or text.
     """
 
-    db: list = []
+    db: list = list([])
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -526,7 +529,8 @@ class TwoStepSession(VerificationSession):
                 security_config.SANIC_SECURITY_TWO_STEP_SESSION_EXPIRATION
             ),
         )
-        Session.db.append(new_session)
+        #Session.db.append(new_session)
+        cls.db.append(new_session)
         logger.debug(f"TwoStepSession Created: {new_session}")
 
         return new_session
@@ -536,6 +540,8 @@ class CaptchaSession(VerificationSession, Session):
     """
     Validates a client with a captcha challenge.
     """
+
+    db: list = list([])
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
@@ -549,7 +555,8 @@ class CaptchaSession(VerificationSession, Session):
                 security_config.SANIC_SECURITY_CAPTCHA_SESSION_EXPIRATION
             ),
         )
-        Session.db.append(new_captcha_session)
+        #Session.db.append(new_captcha_session)
+        cls.db.append(new_captcha_session)
         return new_captcha_session
 
     class Meta:
@@ -579,8 +586,12 @@ class AuthenticationSession(VerificationSession, Session, BaseMixin):
                 security_config.SANIC_SECURITY_AUTHENTICATION_SESSION_EXPIRATION * 2
             ),
         )
-        Session.db.append(new_auth_session)
+        #Session.db.append(new_auth_session)
+        cls.db.append(new_auth_session)
         return new_auth_session
+    
+    class Meta:
+        abstract = True
 
 
 class Role(BaseMixin):

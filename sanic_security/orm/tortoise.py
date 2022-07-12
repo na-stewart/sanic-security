@@ -14,7 +14,7 @@ import phonenumbers
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date, decode_raw
+from sanic_security.utils import get_ip, get_code, get_expiration_date
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -343,28 +343,21 @@ class Session(BaseModel):
             raise DeactivatedError()
 
     @classmethod
-    async def decode(cls, request: Request):
+    async def lookup(cls, id: str = None):
         """
-        Decodes session JWT from client cookie to a Sanic Security session.
+        Looks up a session based upon its ID
 
         Args:
-            request (Request): Sanic request parameter.
-
+            id (string): Session Identifier
+        
         Returns:
-            session
+            session, session bearer
 
         Raises:
-            JWTDecodeError
             NotFoundError
         """
-        try:
-            decoded_raw = decode_raw(cls, request)
-            decoded_session = (
-                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
-            )
-        except DoesNotExist:
-            raise NotFoundError("Session could not be found.")
-        return decoded_session, decoded_session.bearer
+        _session = await cls.filter(id=id).prefetch_related("bearer").get()
+        return _session, _session.bearer
 
     @classmethod
     async def deactivate(cls, session):

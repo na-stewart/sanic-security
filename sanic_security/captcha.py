@@ -4,6 +4,7 @@ from contextlib import suppress
 from sanic import Request, Sanic
 
 from sanic_security.exceptions import NotFoundError, JWTDecodeError
+from sanic_security.utils import decode
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -37,7 +38,7 @@ async def request_captcha(request: Request):
     _orm = Sanic.get_app().ctx.extensions['security']
 
     with suppress(NotFoundError, JWTDecodeError):
-        captcha_session = await _orm.captcha_session.decode(request)
+        captcha_session = await decode(_orm.captcha_session, request)
         if captcha_session.active:
             captcha_session.active = False
             await captcha_session.save(update_fields=["active"])
@@ -65,7 +66,7 @@ async def captcha(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    captcha_session, _ = await _orm.captcha_session.decode(request)
+    captcha_session, _ = await decode(_orm.captcha_session, request)
     captcha_session.validate()
     await captcha_session.check_code(request, request.form.get("captcha"))
     return captcha_session

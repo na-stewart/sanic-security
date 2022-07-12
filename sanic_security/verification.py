@@ -5,6 +5,7 @@ from sanic import Sanic
 from sanic.request import Request
 
 from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
+from sanic_security.utils import decode
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -44,7 +45,7 @@ async def request_two_step_verification(request: Request, account = None):
     _orm = Sanic.get_app().ctx.extensions['security']
 
     with suppress(NotFoundError, JWTDecodeError):
-        two_step_session = await _orm.twostep_session.decode(request)
+        two_step_session = await decode(_orm.twostep_session, request)
         if two_step_session.active:
             two_step_session.active = False
             await two_step_session.save(update_fields=["active"])
@@ -77,7 +78,7 @@ async def two_step_verification(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    two_step_session, bearer = await _orm.twostep_session.decode(request)
+    two_step_session, bearer = await decode(_orm.twostep_session, request)
     two_step_session.validate()
     bearer.validate()
     await two_step_session.check_code(request, request.form.get("code"))
@@ -106,7 +107,7 @@ async def verify_account(request: Request):
     """
     _orm = Sanic.get_app().ctx.extensions['security']
 
-    two_step_session, bearer = await _orm.twostep_session.decode(request)
+    two_step_session, bearer = await decode(_orm.twostep_session, request)
     if bearer.verified:
         raise AccountError("Account already verified.", 403)
     two_step_session.validate()
