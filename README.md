@@ -491,7 +491,12 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Field|Type|
     |-----|----|
     |id|string|
-    |tbd|tbd|
+    |bearer|string|
+    |ip|string|
+    |expiration_date|`datetime` of ticket expiration|
+    |refresh_expiration_date|`datetime` of refresh ticket expiration|
+    |active|bool|
+    |ctx|`SimpleNamespace()` (can be used to store additional encoded session data)|
 
     Additionally, the object must contain the following methods:
 
@@ -500,17 +505,32 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `AuthenticationSession` Object. Must contain at least a `pk` property for a unique identifier|
+
+    |`validate()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to verify if the ticket is still good (not expired or deactivated)|
+    |Args|`self`|
+    |Raises|Exception for invalid reason|
+
+    |`json()`|Details|
+    |--------|-------|
+    |Desc|Abstraction method to convert an existing `AuthenticationSession` object into a JSON serializable `dict`|
+    |Args|`self`|
+    |Returns|`dict` representing the linked `AuthenticationSession`|
     
 ***
-* #### **VerificationSessions**
-    * Required for `custom` provider usage, where Client Verification is expected to be used
+* #### **VerificationSession**
+    * Required for `custom` provider usage, where Client Verification is expected to be used.
 
     At a minimum, the object must contain the following properties:
 
     |Field|Type|
     |-----|----|
     |id|string|
-    |tbd|tbd|
+    |bearer||
+    |ip|string|
+    |expiration_date|`datetime` of ticket expiration|
+    |ctx|`SimpleNamespace()` (can be used to store additional encoded session data)|
 
     Additionally, the object must contain the following methods:
 
@@ -519,17 +539,38 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `VerificationSession` Object. Must contain at least a `pk` property for a unique identifier|
+
+    |`validate()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to verify if the ticket is still good (not expired or deactivated)|
+    |Args|`self`|
+    |Raises|Exception for invalid reason|
+
+    |`json()`|Details|
+    |--------|-------|
+    |Desc|Abstraction method to convert an existing `VerificationSession` object into a JSON serializable `dict`|
+    |Args|`self`|
+    |Returns|`dict` representing the linked `VerificationSession`|
+
+    |`check_code()`|Details|
+    |--------|-------|
+    |Desc|(**async**)Abstraction method to check if code passed is equivalent to the session code.|
+    |Args|`self`: `VerificationSession` object<br />request: Sanic `Request`<br />code: code to be cross checked|
+    |Raises|Exception on invalid code verification attempt|
     
 ***
-* #### **TwoStepValidationSessions**
-    * Required for `custom` provider usage, where Two Step Verification is expected to be used
+* #### **TwoStepValidationSession**
+    * Required for `custom` provider usage, where Two Step Verification is expected to be used.
 
     At a minimum, the object must contain the following properties:
 
     |Field|Type|
     |-----|----|
     |id|string|
-    |tbd|tbd|
+    |bearer||
+    |ip|string|
+    |expiration_date|`datetime` of ticket expiration|
+    |ctx|`SimpleNamespace()` (can be used to store additional encoded session data)|
 
     Additionally, the object must contain the following methods:
 
@@ -537,18 +578,33 @@ Each will be expected to have certain methods, that accept and return detail as 
     |-------|-------|
     |Desc|Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
+    |bearer||
     |Returns|New `TwoStepValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
+
+    |`validate()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to verify if the ticket is still good (not expired or deactivated)|
+    |Args|`self`|
+    |Raises|Exception for invalid reason|
+
+    |`json()`|Details|
+    |--------|-------|
+    |Desc|Abstraction method to convert an existing `TwoStepValidationSession` object into a JSON serializable `dict`|
+    |Args|`self`|
+    |Returns|`dict` representing the linked `TwoStepValidationSession`|
     
 ***
-* #### **CaptchaValidationSessions**
-    * Required for `custom` provider usage, where Captcha Verification is expected to be used
+* #### **CaptchaValidationSession**
+    * Required for `custom` provider usage, where Captcha Verification is expected to be used.
 
     At a minimum, the object must contain the following properties:
 
     |Field|Type|
     |-----|----|
     |id|string|
-    |tbd|tbd|
+    |ip|string|
+    |expiration_date|`datetime` of ticket expiration|
+    |ctx|`SimpleNamespace()` (can be used to store additional encoded session data)|
 
     Additionally, the object must contain the following methods:
 
@@ -557,6 +613,18 @@ Each will be expected to have certain methods, that accept and return detail as 
     |Desc|Abstration method to insert a new role into the `Session` storage.|
     |Args|tbd|
     |Returns|New `CaptchaValidationSession` Object. Must contain at least a `pk` property for a unique identifier|
+
+    |`validate()`|Details|
+    |-------|-------|
+    |Desc|Abstration method to verify if the ticket is still good (not expired or deactivated)|
+    |Args|`self`|
+    |Raises|Exception for invalid reason|
+
+    |`json()`|Details|
+    |--------|-------|
+    |Desc|Abstraction method to convert an existing `CaptchaValidationSession` object into a JSON serializable `dict`|
+    |Args|`self`|
+    |Returns|`dict` representing the linked `CaptchaValidationSession`|
     
     
 ###
