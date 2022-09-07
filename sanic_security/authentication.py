@@ -78,10 +78,7 @@ async def register(
         )
     if await Account.filter(email=request.form.get("email").lower()).exists():
         raise CredentialsError("An account with this email already exists.")
-    if (
-        security_config.ALLOW_LOGIN_WITH_USERNAME
-        and await Account.filter(username=request.form.get("username")).exists()
-    ):
+    elif await Account.filter(username=request.form.get("username")).exists():
         raise CredentialsError("An account with this username already exists.")
     account = await Account.create(
         email=request.form.get("email").lower(),
