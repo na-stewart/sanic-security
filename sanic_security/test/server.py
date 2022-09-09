@@ -202,7 +202,7 @@ async def on_account_creation(request):
     Quick account creation.
     """
     try:
-        username = f"{''.join(random.sample(string.ascii_letters, 10))}_not_registered"
+        username = f"{''.join(random.sample(string.ascii_letters, 6))}_not_registered"
         if request.form.get("username"):
             username = request.form.get("username")
         account = await Account.create(
