@@ -25,7 +25,9 @@ from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
-    verify_account, request_captcha, requires_captcha,
+    verify_account,
+    request_captcha,
+    requires_captcha,
 )
 
 """
