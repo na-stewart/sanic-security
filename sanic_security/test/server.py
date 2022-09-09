@@ -15,7 +15,6 @@ from sanic_security.authorization import (
     check_permissions,
     check_roles,
 )
-from sanic_security.captcha import request_captcha, requires_captcha
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession
@@ -23,7 +22,7 @@ from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
-    verify_account,
+    verify_account, request_captcha, requires_captcha,
 )
 
 """
