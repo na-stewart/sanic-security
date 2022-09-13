@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from io import BytesIO
 from types import SimpleNamespace
 

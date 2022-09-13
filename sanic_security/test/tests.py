@@ -49,7 +49,7 @@ class RegistrationTest(TestCase):
             data={
                 "username": username,
                 "email": email,
-                "password": "testtest",
+                "password": "password",
                 "disabled": disabled,
                 "verified": verified,
                 "phone": phone,
@@ -59,38 +59,43 @@ class RegistrationTest(TestCase):
 
     def test_registration(self):
         """
-        Registration and login.
+        Account registration and login.
         """
         registration_response = self.register(
-            "emailpass@register.com", "emailpass", False, True
+            "account_registration@register.com", "account_registration", False, True
         )
         assert registration_response.status_code == 200, registration_response.text
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            auth=("account_registration@register.com", "password"),
+        )
+        assert login_response.status_code == 200, login_response.text
 
     def test_invalid_registration(self):
         """
         Registration with an intentionally invalid email, username, and phone.
         """
         invalid_email_registration_response = self.register(
-            "invalidregister.com", "invalid", False, True
+            "invalid_register.com", "invalid_register", False, True
         )
         assert (
             invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
         invalid_phone_registration_response = self.register(
-            "invalidnum@register.com", "invalidnum", False, True, phone="218183186"
+            "invalidnum@register.com", "invalid_num", False, True, phone="218183186"
         )
         assert (
             invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
         invalid_username_registration_response = self.register(
-            "invaliduser@register.com", "_inVal!d_", False, True
+            "invalid_user@register.com", "_inVal!d_", False, True
         )
         assert (
             invalid_username_registration_response.status_code == 400
         ), invalid_username_registration_response.text
         too_many_characters_registration_response = self.register(
-            "toolonguser@register.com",
-            "thisusernameistoolongtoberegisteredwith",
+            "too_long_user@register.com",
+            "this_username_is_too_long_to_be_registered_with",
             False,
             True,
         )
@@ -108,7 +113,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("disabled@register.com", "testtest"),
+            auth=("disabled@register.com", "password"),
         )
         assert "DisabledError" in login_response.text, login_response.text
 
@@ -122,7 +127,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unverified@register.com", "testtest"),
+            auth=("unverified@register.com", "password"),
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -136,7 +141,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unverified_disabled@register.com", "testtest"),
+            auth=("unverified_disabled@register.com", "password"),
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -158,11 +163,11 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "emailpass@login.com"},
+            data={"email": "email_pass@login.com", "username": "email_pass"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("emailpass@login.com", "testtest"),
+            auth=("email_pass@login.com", "password"),
         )
         assert login_response.status_code == 200, login_response.text
         authenticate_response = self.client.post(
@@ -176,11 +181,11 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "userpass@login.com", "username": "username_test"},
+            data={"email": "user_pass@login.com", "username": "user_pass"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("username_test", "testtest"),
+            auth=("user_pass", "password"),
         )
         assert login_response.status_code == 200, login_response.text
         authenticate_response = self.client.post(
@@ -194,18 +199,18 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "incorrectpass@login.com"},
+            data={"email": "incorrect_pass@login.com", "username": "incorrect_pass"},
         )
         incorrect_password_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("incorrectpass@login.com", "incorrecttest"),
+            auth=("incorrect_pass@login.com", "incorrect_password"),
         )
         assert (
             incorrect_password_login_response.status_code == 401
         ), incorrect_password_login_response.text
         unavailable_account_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unavailable@login.com", "testtest"),
+            auth=("unavailable@login.com", "password"),
         )
         assert (
             unavailable_account_login_response.status_code == 404
@@ -217,11 +222,11 @@ class LoginTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "logout@login.com"},
+            data={"email": "logout@login.com", "username": "logout"},
         )
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("logout@login.com", "testtest"),
+            auth=("logout@login.com", "password"),
         )
         logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
         assert logout_response.status_code == 200, logout_response.text
@@ -286,7 +291,7 @@ class VerificationTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "two_step@verification.com"},
+            data={"email": "two_step@verification.com", "username": "two_step"},
         )
         two_step_verification_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step/request",
@@ -320,8 +325,8 @@ class VerificationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
                 "username": "account_verification",
-                "email": "account@verification.com",
-                "password": "testtest",
+                "email": "account_verification@verification.com",
+                "password": "password",
                 "disabled": False,
                 "verified": False,
             },
@@ -351,11 +356,11 @@ class AuthorizationTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "permissions@authorization.com"},
+            data={"email": "permissions@authorization.com", "username": "permissions"},
         )
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("permissions@authorization.com", "testtest"),
+            auth=("permissions@authorization.com", "password"),
         )
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles/assign",
@@ -391,11 +396,11 @@ class AuthorizationTest(TestCase):
         """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "roles@authorization.com"},
+            data={"email": "roles@authorization.com", "username": "roles"},
         )
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("roles@authorization.com", "testtest"),
+            auth=("roles@authorization.com", "password"),
         )
         self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles/assign",

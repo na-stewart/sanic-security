@@ -1,10 +1,6 @@
-import random
-import string
-
 from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
-from tortoise.exceptions import IntegrityError
 
 from sanic_security.authentication import (
     login,
@@ -19,7 +15,7 @@ from sanic_security.authorization import (
     check_roles,
 )
 from sanic_security.configuration import config as security_config
-from sanic_security.exceptions import SecurityError
+from sanic_security.exceptions import SecurityError, CredentialsError
 from sanic_security.models import Account, CaptchaSession
 from sanic_security.utils import json
 from sanic_security.verification import (
@@ -201,25 +197,23 @@ async def on_account_creation(request):
     """
     Quick account creation.
     """
-    try:
-        username = f"{''.join(random.sample(string.ascii_letters, 6))}_not_registered"
-        if request.form.get("username"):
-            username = request.form.get("username")
-        account = await Account.create(
-            username=username,
-            email=request.form.get("email"),
-            password=password_hasher.hash("testtest"),
-            verified=True,
-            disabled=False,
-        )
-        response = json("Account creation successful!", account.json())
-    except IntegrityError:
-        response = json("Account with these credentials already exist!", None)
+    if await Account.filter(email=request.form.get("email").lower()).exists():
+        raise CredentialsError("An account with this email already exists.", 409)
+    elif await Account.filter(username=request.form.get("username")).exists():
+        raise CredentialsError("An account with this username already exists.", 409)
+    account = await Account.create(
+        username=request.form.get("username"),
+        email=request.form.get("email"),
+        password=password_hasher.hash("password"),
+        verified=True,
+        dbisabled=False,
+    )
+    response = json("Account creation successful!", account.json())
     return response
 
 
 @app.exception(SecurityError)
-async def on_error(request, exception):
+async def on_security_error(request, exception):
     return exception.json_response
 
 
