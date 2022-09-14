@@ -264,6 +264,9 @@ class Session(BaseModel):
             raise DeactivatedError()
 
     async def deactivate(self):
+        """
+        Renders session deactivated and unusable.
+        """
         if self.active:
             self.active = False
             await self.save(update_fields=["active"])
