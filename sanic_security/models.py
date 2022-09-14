@@ -256,12 +256,17 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+                self.expiration_date
+                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
             raise DeactivatedError()
+
+    async def deactivate(self):
+        if self.active:
+            self.active = False
+            await self.save(update_fields=["active"])
 
     def encode(self, response: HTTPResponse) -> None:
         """
@@ -347,13 +352,6 @@ class Session(BaseModel):
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
         return decoded_session
-
-    @classmethod
-    async def deactivate(cls, request: Request):
-        session = await cls.decode(request)
-        if session.active:
-            session.active = False
-            await session.save(update_fields=["active"])
 
     class Meta:
         abstract = True
