@@ -348,6 +348,13 @@ class Session(BaseModel):
             raise NotFoundError("Session could not be found.")
         return decoded_session
 
+    @classmethod
+    async def deactivate(cls, request: Request):
+        session = await cls.decode(request)
+        if session.active:
+            session.active = False
+            await session.save(update_fields=["active"])
+
     class Meta:
         abstract = True
 

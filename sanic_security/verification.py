@@ -46,10 +46,7 @@ async def request_two_step_verification(
          two_step_session
     """
     with suppress(NotFoundError, JWTDecodeError):
-        two_step_session = await TwoStepSession.decode(request)
-        if two_step_session.active:
-            two_step_session.active = False
-            await two_step_session.save(update_fields=["active"])
+        await TwoStepSession.deactivate(request)
     if not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await TwoStepSession.new(request, account)
@@ -161,10 +158,7 @@ async def request_captcha(request: Request) -> CaptchaSession:
         captcha_session
     """
     with suppress(NotFoundError, JWTDecodeError):
-        captcha_session = await CaptchaSession.decode(request)
-        if captcha_session.active:
-            captcha_session.active = False
-            await captcha_session.save(update_fields=["active"])
+        await CaptchaSession.deactivate(request)
     return await CaptchaSession.new(request)
 
 
