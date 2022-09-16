@@ -18,6 +18,7 @@ from sanic_security.exceptions import (
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -35,6 +36,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 
 password_hasher = PasswordHasher()
 
@@ -166,7 +168,7 @@ async def logout(request: Request) -> AuthenticationSession:
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Validates client.
+    Validates client's authentication session and account.
 
     Args:
         request (Request): Sanic request parameter.
@@ -191,7 +193,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication():
     """
-    Validates client.
+    Validates client's authentication session and account.
 
     Example:
         This method is not called directly and instead used as a decorator:

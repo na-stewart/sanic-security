@@ -10,6 +10,7 @@ from sanic_security.models import (
     CaptchaSession,
 )
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart

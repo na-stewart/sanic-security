@@ -6,6 +6,7 @@ import httpx
 
 from sanic_security.configuration import Config
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart

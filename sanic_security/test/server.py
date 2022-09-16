@@ -26,6 +26,7 @@ from sanic_security.verification import (
     requires_captcha,
 )
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -43,6 +44,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 
 app = Sanic("security-test")
 password_hasher = PasswordHasher()
@@ -72,7 +74,7 @@ async def on_register(request):
 @app.post("api/test/auth/verify")
 async def on_verify(request):
     """
-    Verifies an unverified account.
+    Verifies client account.
     """
     two_step_session = await verify_account(request)
     return json(
@@ -105,7 +107,7 @@ async def on_logout(request):
 @requires_authentication()
 async def on_authenticate(request, authentication_session):
     """
-    Check if current authentication session is valid.
+    Authenticate client session and account.
     """
     response = json("Authenticated!", authentication_session.bearer.json())
     authentication_session.encode(response)
@@ -115,7 +117,7 @@ async def on_authenticate(request, authentication_session):
 @app.get("api/test/capt/request")
 async def on_captcha_request(request):
     """
-    Request captcha with solution in the response.
+    Request captcha with solution in response.
     """
     captcha_session = await request_captcha(request)
     response = json("Captcha request successful!", captcha_session.code)
@@ -138,7 +140,7 @@ async def on_captcha_image(request):
 @requires_captcha()
 async def on_captcha_attempt(request, captcha_session):
     """
-    Attempt captcha.
+    Attempt captcha challenge.
     """
     return json("Captcha attempt successful!", captcha_session.json())
 
@@ -158,7 +160,7 @@ async def on_request_verification(request):
 @requires_two_step_verification()
 async def on_verification_attempt(request, two_step_session):
     """
-    Attempt two-step verification.
+    Attempt two-step verification challenge.
     """
     return json("Two step verification attempt successful!", two_step_session.json())
 
@@ -214,6 +216,9 @@ async def on_account_creation(request):
 
 @app.exception(SecurityError)
 async def on_security_error(request, exception):
+    """
+    Handles security errors with correct response.
+    """
     return exception.json_response
 
 

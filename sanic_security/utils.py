@@ -5,6 +5,7 @@ import string
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart

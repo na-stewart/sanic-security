@@ -2,6 +2,7 @@ from sanic.exceptions import SanicException
 
 from sanic_security.utils import json
 
+
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -39,65 +40,117 @@ class SecurityError(SanicException):
 
 
 class NotFoundError(SecurityError):
+    """
+    Raised when something cannot be found.
+    """
+
     def __init__(self, message):
         super().__init__(message, 404)
 
 
 class DeletedError(SecurityError):
+    """
+    Raised when something has been deleted.
+    """
+
     def __init__(self, message):
         super().__init__(message, 410)
 
 
 class AccountError(SecurityError):
+    """
+    Base account error that all other account errors derive from.
+    """
+
     def __init__(self, message, code):
         super().__init__(message, code)
 
 
 class DisabledError(AccountError):
+    """
+    Raised when account is disabled.
+    """
+
     def __init__(self):
         super().__init__("This account has been disabled.", 401)
 
 
 class UnverifiedError(AccountError):
+    """
+    Raised when account is unverified.
+    """
+
     def __init__(self):
         super().__init__("Account requires verification.", 401)
 
 
 class SessionError(SecurityError):
+    """
+    Base session error that all other session errors derive from.
+    """
+
     def __init__(self, message, code=401):
         super().__init__(message, code)
 
 
 class JWTDecodeError(SessionError):
+    """
+    Raised when client JWT is invalid.
+    """
+
     def __init__(self, message):
         super().__init__(message, 400)
 
 
 class DeactivatedError(SessionError):
+    """
+    Raised when session is deactivated.
+    """
+
     def __init__(self, message="Session is deactivated.", code: int = 401):
         super().__init__(message, code)
 
 
 class ExpiredError(SessionError):
+    """
+    Raised when session has expired.
+    """
+
     def __init__(self):
         super().__init__("Session has expired", 401)
 
 
 class ChallengeError(SessionError):
+    """
+    Raised when a session challenge attempt is invalid.
+    """
+
     def __init__(self, message):
         super().__init__(message, 401)
 
 
 class MaxedOutChallengeError(ChallengeError):
+    """
+    Raised when a session's challenge attempt limit is reached.
+    """
+
     def __init__(self):
         super().__init__("The maximum amount of attempts has been reached.")
 
 
 class AuthorizationError(SecurityError):
+    """
+    Raised when an account has insufficient permissions or roles for an action.
+    """
+
     def __init__(self, message):
         super().__init__(message, 403)
 
 
 class CredentialsError(SecurityError):
+    """
+    Raised when credentials are invalid.
+    """
+
     def __init__(self, message, code=400):
         super().__init__(message, code)

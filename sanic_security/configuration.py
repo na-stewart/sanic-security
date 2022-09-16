@@ -67,7 +67,7 @@ class Config(dict):
         AUTHENTICATION_SESSION_REFRESH (bool): A refresh token can be used to generate a new session instead of reauthenticating.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
         INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
-        INITIAL_ADMIN_PASSWORD (str) Password used when creating the initial admin account.
+        INITIAL_ADMIN_PASSWORD (str): Password used when creating the initial admin account.
         TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
     """
 
