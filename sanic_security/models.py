@@ -271,6 +271,8 @@ class Session(BaseModel):
         if self.active:
             self.active = False
             await self.save(update_fields=["active"])
+        else:
+            raise DeactivatedError("Session is already deactivated.")
 
     def encode(self, response: HTTPResponse) -> None:
         """
