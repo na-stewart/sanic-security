@@ -267,6 +267,9 @@ class Session(BaseModel):
     async def deactivate(self):
         """
         Renders session deactivated and unusable.
+
+        Raises:
+            DeactivatedError
         """
         if self.active:
             self.active = False
