@@ -56,7 +56,7 @@ class Config(dict):
         SESSION_SECURE (bool): The Secure attribute of session cookies.
         SESSION_HTTPONLY (bool): The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
         SESSION_DOMAIN (bool): The Domain attribute of session cookies.
-        SESSION_EXPIRES_ON_CLIENT: When true, session cookies are removed from the clients browser when the session expires.
+        SESSION_EXPIRES_ON_CLIENT (bool): When true, session cookies are removed from the clients browser when the session expires.
         SESSION_ENCODING_ALGORITHM (str): The algorithm used to encode sessions to a JWT.
         SESSION_PREFIX (str): Prefix attached to the beginning of session cookies.
         MAX_CHALLENGE_ATTEMPTS (str): The maximum amount of session challenge attempts allowed.
