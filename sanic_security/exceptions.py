@@ -41,7 +41,7 @@ class SecurityError(SanicException):
 
 class NotFoundError(SecurityError):
     """
-    Raised when something cannot be found.
+    Raised when a resource cannot be found.
     """
 
     def __init__(self, message):
@@ -50,7 +50,7 @@ class NotFoundError(SecurityError):
 
 class DeletedError(SecurityError):
     """
-    Raised when something has been deleted.
+    Raised when attempting to access a deleted resource.
     """
 
     def __init__(self, message):
