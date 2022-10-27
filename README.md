@@ -119,7 +119,6 @@ You can load environment variables with a different prefix via calling the `conf
 | **SESSION_SECURE**                    | True                         | The Secure attribute of session cookies.                                                                                         |
 | **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing. |
 | **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                         |
-| **SESSION_EXPIRES_ON_CLIENT**         | True                        | If true, session cookies are removed from the client's browser when the session expires.                                         |
 | **SESSION_ENCODING_ALGORITHM**        | HS256                        | The algorithm used to encode and decode session JWT's.                                                                           |
 | **SESSION_PREFIX**                    | token                        | Prefix attached to the beginning of session cookies.                                                                             |
 | **MAX_CHALLENGE_ATTEMPTS**            | 5                            | The maximum amount of session challenge attempts allowed.                                                                        |
@@ -127,7 +126,7 @@ You can load environment variables with a different prefix via calling the `conf
 | **CAPTCHA_FONT**                      | captcha.ttf                  | The file path to the font being used for captcha generation.                                                                     |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 2692000                      | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
-| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
+| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                          s                                   |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
 

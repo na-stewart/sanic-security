@@ -302,7 +302,7 @@ class Session(BaseModel):
         response.cookies[cookie]["httponly"] = security_config.SESSION_HTTPONLY
         response.cookies[cookie]["samesite"] = security_config.SESSION_SAMESITE
         response.cookies[cookie]["secure"] = security_config.SESSION_SECURE
-        if security_config.SESSION_EXPIRES_ON_CLIENT and self.expiration_date:
+        if self.expiration_date:
             response.cookies[cookie]["expires"] = self.expiration_date
         if security_config.SESSION_DOMAIN:
             response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
