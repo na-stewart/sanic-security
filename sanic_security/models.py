@@ -326,7 +326,7 @@ class Session(BaseModel):
         )
         try:
             if not cookie:
-                raise JWTDecodeError("Session token not provided.")
+                raise JWTDecodeError("Session token not provided or expired.")
             else:
                 return jwt.decode(
                     cookie,
