@@ -132,23 +132,22 @@ You can load environment variables with a different prefix via calling the `conf
 
 ## Usage
 
-Sanic Security's authentication and verification functionality is session based.
-
-A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha).
+* Sanic Security's authentication and verification functionality is session based.
+* A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha).
 The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie would be sent
 along with every subsequent request. The server can then compare the session stored on the cookie
 against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
+* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
+* You can create the initial administrator account via the example below: 
 
-The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
+  ```python
+  create_initial_admin_account(app)
+  if __name__ == "__main__":
+      app.run(host="127.0.0.1", port=8000)
+  ```
 
-You can create the initial administrator account via the example below. This account can be logged into and has complete authoritative access. Login credentials
-can be modified in config.
-
-```python
-create_initial_admin_account(app)
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
-```
+  This account can be logged into and has complete authoritative access. Login credentials
+  can be modified in config.
 
 ## Authentication
 
