@@ -141,7 +141,8 @@ against the session information stored in the database to verify user’s identi
 
 The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
-You can create the initial administrator account via the example below. This account can be logged into and has complete authoritative access.
+You can create the initial administrator account via the example below. This account can be logged into and has complete authoritative access. Login credentials
+can be modified in the configuation.
 
 ```python
 create_initial_admin_account(app)
