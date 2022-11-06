@@ -144,10 +144,10 @@ against the session information stored in the database to verify user’s identi
   if __name__ == "__main__":
       app.run(host="127.0.0.1", port=8000)
   ```
-* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
-
+  
   This account can be logged into and has complete authoritative access. Login credentials
   can be modified in config.
+* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
 
