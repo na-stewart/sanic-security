@@ -137,7 +137,6 @@ You can load environment variables with a different prefix via calling the `conf
 The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie would be sent
 along with every subsequent request. The server can then compare the session stored on the cookie
 against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
-* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 * You can create the initial administrator account via the example below: 
 
   ```python
@@ -145,6 +144,7 @@ against the session information stored in the database to verify user’s identi
   if __name__ == "__main__":
       app.run(host="127.0.0.1", port=8000)
   ```
+* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
   This account can be logged into and has complete authoritative access. Login credentials
   can be modified in config.
