@@ -126,7 +126,7 @@ You can load environment variables with a different prefix via calling the `conf
 | **CAPTCHA_FONT**                      | captcha.ttf                  | The file path to the font being used for captcha generation.                                                                     |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 2692000                      | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
-| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                          s                                   |
+| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
 
