@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU Affero General Public License v3.0",
-    version="1.9.2",
+    version="1.9.3",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
