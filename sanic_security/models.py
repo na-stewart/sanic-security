@@ -398,7 +398,9 @@ class VerificationSession(Session):
             if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
                 self.attempts += 1
                 await self.save(update_fields=["attempts"])
-                raise ChallengeError("Your code does not match verification session code.")
+                raise ChallengeError(
+                    "Your code does not match verification session code."
+                )
             else:
                 logger.warning(
                     f"Client ({get_ip(request)}) has maxed out on session challenge attempts"
