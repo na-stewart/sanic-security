@@ -401,7 +401,7 @@ class VerificationSession(Session):
                 raise ChallengeError("The value provided does not match.")
             else:
                 logger.warning(
-                    f"Client ({self.bearer.email}/{get_ip(request)}) has maxed out on session challenge attempts"
+                    f"Client ({get_ip(request)}) has maxed out on session challenge attempts"
                 )
                 raise MaxedOutChallengeError()
         else:

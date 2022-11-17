@@ -138,7 +138,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         return await AuthenticationSession.new(request, account)
     except VerifyMismatchError:
         logger.warning(
-            f"Client ({account.email}/{get_ip(request)}) login password attempt is incorrect"
+            f"Client ({get_ip(request)}) login password attempt is incorrect"
         )
         raise CredentialsError("Incorrect password.", 401)
 
