@@ -204,6 +204,18 @@ response = json("Logout successful!", authentication_session.bearer.json())
 return response
 ```
 
+* Authenticate
+
+```python
+@app.post("api/auth")
+async def on_authenticate(request):
+    authentication_session = await authenticate(request)
+    return json(
+        "You have been authenticated.",
+        authentication_session.bearer.json(),
+    )
+```
+
 * Requires Authentication
 
 ```python
@@ -236,6 +248,19 @@ captcha_session = await request_captcha(request)
 response = captcha_session.get_image()
 captcha_session.encode(response)
 return response
+```
+
+* Captcha
+
+| Key         | Value  |
+|-------------|--------|
+| **captcha** | AJ8HGD |
+
+```python
+@app.post("api/captcha")
+async def on_captcha(request):
+  captcha_session = await captcha(request)
+    return json("Captcha attempt successful!", captcha_session.json())
 ```
 
 * Requires Captcha
@@ -273,6 +298,23 @@ return response
 two_step_session = await TwoStepSession.decode(request)
 await email_code(two_step_session.code)  # Custom method for emailing verification code.
 return json("Verification code resend successful!", two_step_session.bearer.json())
+```
+
+* Two-step Verification
+
+| Key      | Value  |
+|----------|--------|
+| **code** | AJ8HGD |
+
+```python
+@app.post("api/verify")
+@requires_two_step_verification()
+async def on_verify(request, two_step_session):
+    two_step_session = await two_step_verification(request)
+    response = json(
+        "Two-step verification attempt successful!", two_step_session.bearer.json()
+    )
+    return response
 ```
 
 * Requires Two-step Verification
