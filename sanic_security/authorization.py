@@ -61,9 +61,7 @@ async def check_permissions(
         ):
             if fnmatch(required_permission, role_permission):
                 return authentication_session
-    logging.warning(
-        f"Client ({get_ip(request)}) has insufficient permissions."
-    )
+    logging.warning(f"Client ({get_ip(request)}) has insufficient permissions.")
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
@@ -93,9 +91,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     for role in roles:
         if role.name in required_roles:
             return authentication_session
-    logging.warning(
-        f"Client ({get_ip(request)}) has insufficient roles."
-    )
+    logging.warning(f"Client ({get_ip(request)}) has insufficient roles.")
     raise AuthorizationError("Insufficient roles required for this action.")
 
 
