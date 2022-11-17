@@ -207,13 +207,11 @@ return response
 * Authenticate
 
 ```python
-@app.post("api/auth")
-async def on_authenticate(request):
-    authentication_session = await authenticate(request)
-    return json(
-        "You have been authenticated.",
-        authentication_session.bearer.json(),
-    )
+authentication_session = await authenticate(request)
+return json(
+    "You have been authenticated.",
+    authentication_session.bearer.json(),
+)
 ```
 
 * Requires Authentication
@@ -257,10 +255,8 @@ return response
 | **captcha** | AJ8HGD |
 
 ```python
-@app.post("api/captcha")
-async def on_captcha(request):
-    captcha_session = await captcha(request)
-    return json("Captcha attempt successful!", captcha_session.json())
+captcha_session = await captcha(request)
+return json("Captcha attempt successful!", captcha_session.json())
 ```
 
 * Requires Captcha
@@ -307,14 +303,11 @@ return json("Verification code resend successful!", two_step_session.bearer.json
 | **code** | AJ8HGD |
 
 ```python
-@app.post("api/verify")
-@requires_two_step_verification()
-async def on_verify(request, two_step_session):
-    two_step_session = await two_step_verification(request)
-    response = json(
-        "Two-step verification attempt successful!", two_step_session.bearer.json()
-    )
-    return response
+two_step_session = await two_step_verification(request)
+response = json(
+    "Two-step verification attempt successful!", two_step_session.bearer.json()
+)
+return response
 ```
 
 * Requires Two-step Verification
