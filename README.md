@@ -259,7 +259,7 @@ return response
 ```python
 @app.post("api/captcha")
 async def on_captcha(request):
-  captcha_session = await captcha(request)
+    captcha_session = await captcha(request)
     return json("Captcha attempt successful!", captcha_session.json())
 ```
 
