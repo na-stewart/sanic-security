@@ -252,7 +252,7 @@ return response
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | AJ8HGD |
+| **captcha** | 2bH14b |
 
 ```python
 captcha_session = await captcha(request)
@@ -263,7 +263,7 @@ return json("Captcha attempt successful!", captcha_session.json())
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | AJ8HGD |
+| **captcha** | 2bH14b |
 
 ```python
 @app.post("api/captcha")
@@ -349,6 +349,14 @@ await assign_role(
 )
 ```
 
+* Check Permissions
+
+```python
+authentication_session = await check_permissions(request, "channels:view", "voice:*")
+return text("Account is authorized.")
+```
+
+
 * Require Permissions
 
 ```python
@@ -356,6 +364,13 @@ await assign_role(
 @require_permissions("channels:view", "voice:*")
 async def on_voice_chat_control(request, authentication_session):
     return text("Voice chat is now being controlled.")
+```
+
+* Check Roles
+
+```python
+authentication_session = await check_roles(request, "Chat Room Moderator")
+return text("Account is authorized.")
 ```
 
 * Require Roles
