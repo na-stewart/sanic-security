@@ -67,7 +67,7 @@ async def register(
             400,
         )
     if request.form.get("phone") and not re.search(
-        r"/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g",
+        r"^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$",
         request.form.get("phone"),
     ):
         raise CredentialsError("Please use a valid phone number.", 400)

@@ -63,7 +63,11 @@ class RegistrationTest(TestCase):
         Account registration and login.
         """
         registration_response = self.register(
-            "account_registration@register.com", "account_registration", False, True
+            "account_registration@register.com",
+            "account_registration",
+            False,
+            True,
+            "6172818371",
         )
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
