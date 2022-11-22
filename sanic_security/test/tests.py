@@ -87,7 +87,7 @@ class RegistrationTest(TestCase):
             invalid_email_registration_response.status_code == 400
         ), invalid_email_registration_response.text
         invalid_phone_registration_response = self.register(
-            "invalidnum@register.com", "invalid_num", False, True, phone="218183186"
+            "invalidnum@register.com", "invalid_num", False, True, phone="617261746"
         )
         assert (
             invalid_phone_registration_response.status_code == 400
