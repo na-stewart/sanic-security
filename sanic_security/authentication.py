@@ -56,10 +56,8 @@ async def register(
     Raises:
         CredentialsError
     """
-
-    if not re.search(
-        r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", request.form.get("email")
-    ):
+    email_lower = request.form.get("email").lower()
+    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email_lower):
         raise CredentialsError("Please use a valid email address.", 400)
     if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
         raise CredentialsError(
@@ -76,12 +74,16 @@ async def register(
             "Password must be more than 8 characters and must be less than 100 characters.",
             400,
         )
-    if await Account.filter(email=request.form.get("email").lower()).exists():
-        raise CredentialsError("An account with this email already exists.", 409)
+    if await Account.filter(email=email_lower).exists():
+        raise CredentialsError(
+            "An account with this email, username, or phone number already exists.", 409
+        )
     elif await Account.filter(username=request.form.get("username")).exists():
         raise CredentialsError("An account with this username already exists.", 409)
+    elif await Account.filter(phone=request.form.get("phone")).exists():
+        raise CredentialsError("An account with this phone number already exists.", 409)
     account = await Account.create(
-        email=request.form.get("email").lower(),
+        email=email_lower,
         username=request.form.get("username"),
         password=password_hasher.hash(request.form.get("password")),
         phone=request.form.get("phone"),
@@ -121,7 +123,7 @@ async def login(request: Request, account: Account = None) -> AuthenticationSess
         raise CredentialsError("Credentials not provided.")
     if not account:
         try:
-            account = await Account.get_via_email(email_or_username)
+            account = await Account.get_via_email(email_or_username.lower())
         except NotFoundError as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(email_or_username)
