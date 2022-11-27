@@ -116,6 +116,7 @@ class Account(BaseModel):
             "date_updated": str(self.date_updated),
             "email": self.email,
             "username": self.username,
+            "phone": self.phone,
             "disabled": self.disabled,
             "verified": self.verified,
         }
