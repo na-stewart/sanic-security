@@ -3,13 +3,16 @@ from contextlib import suppress
 
 from sanic.request import Request
 
-from sanic_security.exceptions import AccountError, JWTDecodeError, NotFoundError
+from sanic_security.exceptions import (
+    AccountError,
+    JWTDecodeError,
+    NotFoundError,
+)
 from sanic_security.models import (
     Account,
     TwoStepSession,
     CaptchaSession,
 )
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -38,7 +41,7 @@ async def request_two_step_verification(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
-        account (Account): The account being associated with the verification session. If None, an account is retrieved via email in the request form-data.
+        account (Account): The account being associated with the new verification session. If None, an account is retrieved via the email in the request form-data or an existing two-step session.
 
     Raises:
         NotFoundError
@@ -50,7 +53,9 @@ async def request_two_step_verification(
         two_step_session = await TwoStepSession.decode(request)
         if two_step_session.active:
             await two_step_session.deactivate()
-    if not account:
+        if not account:
+            account = two_step_session.bearer
+    if request.form.get("email"):
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await TwoStepSession.new(request, account)
     return two_step_session
