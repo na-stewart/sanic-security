@@ -15,7 +15,6 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
 from sanic_security.utils import get_ip, get_code, get_expiration_date
 
-
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -197,6 +196,19 @@ class Account(BaseModel):
         except DoesNotExist:
             raise NotFoundError("Account with this phone number does not exist.")
 
+    async def disable(self):
+        """
+        Renders account unusable
+
+        Raises:
+            NotFoundError
+        """
+        if self.disabled:
+            raise DisabledError("Account is already disabled.")
+        else:
+            self.disabled = False
+            await self.save(update_fields=["disabled"])
+
 
 class Session(BaseModel):
     """
@@ -258,8 +270,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+                self.expiration_date
+                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
