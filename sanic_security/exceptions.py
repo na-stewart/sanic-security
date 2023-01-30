@@ -70,6 +70,7 @@ class DisabledError(AccountError):
     """
     Raised when account is disabled.
     """
+
     def __init__(self, message="Account is deactivated.", code: int = 401):
         super().__init__(message, code)
 
