@@ -136,6 +136,19 @@ class Account(BaseModel):
         elif self.disabled:
             raise DisabledError()
 
+    async def disable(self):
+        """
+        Renders account unusable
+
+        Raises:
+            DisabledError
+        """
+        if self.disabled:
+            raise DisabledError("Account is already disabled.")
+        else:
+            self.disabled = False
+            await self.save(update_fields=["disabled"])
+
     @staticmethod
     async def get_via_email(email: str):
         """
@@ -195,19 +208,6 @@ class Account(BaseModel):
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this phone number does not exist.")
-
-    async def disable(self):
-        """
-        Renders account unusable
-
-        Raises:
-            DisabledError
-        """
-        if self.disabled:
-            raise DisabledError("Account is already disabled.")
-        else:
-            self.disabled = False
-            await self.save(update_fields=["disabled"])
 
 
 class Session(BaseModel):
