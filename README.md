@@ -53,7 +53,7 @@ This library contains a variety of features including:
 * Captcha
 * Role based authorization with wildcard permissions
 
-Please visit [security.sunsetdeveloper.com](https://security.sunsetdeveloper.com) for documentation.
+Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
