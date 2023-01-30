@@ -233,21 +233,6 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
-        """
-        Creates session with pre-set values.
-
-        Args:
-            request (Request): Sanic request parameter.
-            account (Account): Account being associated to the session.
-            **kwargs (dict[str, Any]): Extra arguments applied during session creation.
-
-        Returns:
-            session
-        """
-        raise NotImplementedError()
-
     def json(self) -> dict:
         return {
             "id": self.id,
@@ -319,6 +304,21 @@ class Session(BaseModel):
             response.cookies[cookie]["expires"] = self.expiration_date
         if security_config.SESSION_DOMAIN:
             response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
+
+    @classmethod
+    async def new(cls, request: Request, account: Account, **kwargs):
+        """
+        Creates session with pre-set values.
+
+        Args:
+            request (Request): Sanic request parameter.
+            account (Account): Account being associated to the session.
+            **kwargs (dict[str, Any]): Extra arguments applied during session creation.
+
+        Returns:
+            session
+        """
+        raise NotImplementedError()
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
