@@ -6,10 +6,10 @@ with open("README.md", "r") as rm:
 
 setup(
     name="sanic-security",
-    author="sunset-developer",
-    author_email="aidanstewart@sunsetdeveloper.com",
+    author="Aidan Stewart",
+    author_email="na.stewart365@gmail.com",
     description="An effective, simple, and async security library for the Sanic framework.",
-    url="https://github.com/sunset-developer/sanic-security",
+    url="https://github.com/na-stewart/sanic-security",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GNU Affero General Public License v3.0",
