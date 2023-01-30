@@ -201,7 +201,7 @@ class Account(BaseModel):
         Renders account unusable
 
         Raises:
-            NotFoundError
+            DisabledError
         """
         if self.disabled:
             raise DisabledError("Account is already disabled.")
