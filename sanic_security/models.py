@@ -146,7 +146,7 @@ class Account(BaseModel):
         if self.disabled:
             raise DisabledError("Account is already disabled.")
         else:
-            self.disabled = False
+            self.disabled = True
             await self.save(update_fields=["disabled"])
 
     @staticmethod
