@@ -461,7 +461,7 @@ class MiscTest(TestCase):
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("retreive_related@login.com", "password"),
+            auth=("retreive_related@misc.com", "password"),
         )
         assert login_response.status_code == 200, login_response.text
         retrieve_related_response = self.client.post(
