@@ -16,7 +16,7 @@ from sanic_security.authorization import (
 )
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import SecurityError, CredentialsError
-from sanic_security.models import Account, CaptchaSession
+from sanic_security.models import Account, CaptchaSession, AuthenticationSession
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -25,7 +25,6 @@ from sanic_security.verification import (
     request_captcha,
     requires_captcha,
 )
-
 
 """
 An effective, simple, and async security library for the Sanic framework.
@@ -44,7 +43,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
 
 app = Sanic("security-test")
 password_hasher = PasswordHasher()
@@ -112,6 +110,17 @@ async def on_authenticate(request, authentication_session):
     response = json("Authenticated!", authentication_session.bearer.json())
     authentication_session.encode(response)
     return response
+
+
+@app.post("api/test/auth/related")
+@requires_authentication()
+async def on_get_related_authentication_sessions(request, authentication_session):
+    """
+    Retrieves authentication sessions associated with logged in account.
+    """
+    authentication_sessions = await AuthenticationSession.get_related(authentication_session.bearer)
+    return json("Related authentication sessions retrieved!",
+                [auth_session.json() for auth_session in authentication_sessions])
 
 
 @app.get("api/test/capt/request")

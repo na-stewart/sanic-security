@@ -334,7 +334,7 @@ class Session(BaseModel):
         Raises:
             NotFoundError
         """
-        sessions = await cls.filter(account=account).prefetch_related("bearer").all()
+        sessions = await cls.filter(bearer=account).prefetch_related("bearer").all()
         if not sessions:
             raise NotFoundError("No sessions associated to account were found.")
         return sessions
