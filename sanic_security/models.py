@@ -255,8 +255,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-                self.expiration_date
-                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+            self.expiration_date
+            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
