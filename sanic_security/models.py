@@ -255,8 +255,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+                self.expiration_date
+                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
@@ -319,6 +319,25 @@ class Session(BaseModel):
             session
         """
         raise NotImplementedError()
+
+    @classmethod
+    async def get_related(cls, account: Account):
+        """
+        Retrieves sessions associated to an account.
+
+        Args:
+            account (Request): Account associated with sessions being retrieved.
+
+        Returns:
+            sessions
+
+        Raises:
+            NotFoundError
+        """
+        sessions = await cls.filter(account=account).prefetch_related("bearer").all()
+        if not sessions:
+            raise NotFoundError("No sessions associated to account were found.")
+        return sessions
 
     @classmethod
     def decode_raw(cls, request: Request) -> dict:

@@ -205,7 +205,7 @@ async def on_account_creation(request):
         raise CredentialsError("An account with this username already exists.", 409)
     account = await Account.create(
         username=request.form.get("username"),
-        email=request.form.get("email"),
+        email=request.form.get("email").lower(),
         password=password_hasher.hash("password"),
         verified=True,
         dbisabled=False,

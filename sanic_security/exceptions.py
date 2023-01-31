@@ -2,7 +2,6 @@ from sanic.exceptions import SanicException
 
 from sanic_security.utils import json
 
-
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -71,7 +70,7 @@ class DisabledError(AccountError):
     Raised when account is disabled.
     """
 
-    def __init__(self, message="Account is deactivated.", code: int = 401):
+    def __init__(self, message: str = "Account is disabled.", code: int = 401):
         super().__init__(message, code)
 
 
@@ -107,7 +106,7 @@ class DeactivatedError(SessionError):
     Raised when session is deactivated.
     """
 
-    def __init__(self, message="Session is deactivated.", code: int = 401):
+    def __init__(self, message: str = "Session is deactivated.", code: int = 401):
         super().__init__(message, code)
 
 
