@@ -454,7 +454,7 @@ class MiscTest(TestCase):
         security_config.load_environment_variables()
         assert security_config.SECRET == "test-secret"
 
-    def test_retrieve_related_sessions(self):
+    def test_get_related_sessions(self):
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "retreive_related@misc.com", "username": "retrieve_related"},
