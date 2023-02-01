@@ -138,7 +138,7 @@ class Account(BaseModel):
 
     async def disable(self):
         """
-        Renders account unusable
+        Renders account unusable.
 
         Raises:
             DisabledError
