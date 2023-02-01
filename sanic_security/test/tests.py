@@ -457,11 +457,11 @@ class MiscTest(TestCase):
     def test_get_related_sessions(self):
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "retreive_related@misc.com", "username": "retrieve_related"},
+            data={"email": "get_related_sessions@misc.com", "username": "get_related"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("retreive_related@misc.com", "password"),
+            auth=("get_related_sessions@misc.com", "password"),
         )
         assert login_response.status_code == 200, login_response.text
         retrieve_related_response = self.client.post(
