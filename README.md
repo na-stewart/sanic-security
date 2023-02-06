@@ -144,6 +144,9 @@ along with every subsequent request. The server can then compare the session sto
   
   This account can be logged into and has complete authoritative access. Login credentials
   can be modified in config.
+
+* The code blocks in the below examples are meant to be enclosed in a [Sanic Framework endpoint](https://sanic.dev/en/guide/getting-started.html#hello-world-application).
+
 * The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
@@ -214,7 +217,7 @@ return json(
 )
 ```
 
-* Requires Authentication
+* Requires Authentication (This method is not called directly and instead used as a decorator.)
 
 ```python
 @app.post("api/auth")
@@ -259,7 +262,7 @@ captcha_session = await captcha(request)
 return json("Captcha attempt successful!", captcha_session.json())
 ```
 
-* Requires Captcha
+* Requires Captcha (This method is not called directly and instead used as a decorator.)
 
 | Key         | Value  |
 |-------------|--------|
@@ -310,7 +313,7 @@ response = json(
 return response
 ```
 
-* Requires Two-step Verification
+* Requires Two-step Verification (This method is not called directly and instead used as a decorator.)
 
 | Key      | Value  |
 |----------|--------|
@@ -357,7 +360,7 @@ return text("Account is authorized.")
 ```
 
 
-* Require Permissions
+* Require Permissions (This method is not called directly and instead used as a decorator.)
 
 ```python
 @app.post("api/channel/voice/control")
@@ -373,7 +376,7 @@ authentication_session = await check_roles(request, "Chat Room Moderator")
 return text("Account is authorized.")
 ```
 
-* Require Roles
+* Require Roles (This method is not called directly and instead used as a decorator.)
 
 ```python
 @app.post("api/account/suspend")
