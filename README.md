@@ -147,7 +147,7 @@ along with every subsequent request. The server can then compare the session sto
 
 * The code blocks in the below examples are meant to be enclosed in a [Sanic Framework endpoint](https://sanic.dev/en/guide/getting-started.html#hello-world-application).
 
-* The tables in the below examples represent example request `form-data` (https://sanicframework.org/en/guide/basics/request.html#form).
+* The tables in the below examples represent example [request form-data](https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
 
