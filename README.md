@@ -380,7 +380,7 @@ await assign_role(
 * Check Permissions
 
 ```python
-@app.post("api/security/check-perms")
+@app.post("api/security/perms")
 async def on_check_perms(request):
     authentication_session = await check_permissions(
         request, "channels:view", "voice:*"
@@ -392,7 +392,7 @@ async def on_check_perms(request):
 * Require Permissions (This method is not called directly and instead used as a decorator.)
 
 ```python
-@app.post("api/security/check-perms")
+@app.post("api/security/perms")
 @require_permissions("channels:view", "voice:*")
 async def on_check_perms(request, authentication_session):
     return text("Account is authorized.")
@@ -401,7 +401,7 @@ async def on_check_perms(request, authentication_session):
 * Check Roles
 
 ```python
-@app.post("api/security/check-roles")
+@app.post("api/security/roles")
 async def on_check_roles(request):
     authentication_session = await check_roles(request, "Chat Room Moderator")
     return text("Account is authorized.")
@@ -410,7 +410,7 @@ async def on_check_roles(request):
 * Require Roles (This method is not called directly and instead used as a decorator.)
 
 ```python
-@app.post("api/security/check-roles")
+@app.post("api/security/roles")
 @require_roles("Chat Room Moderator")
 async def on_check_roles(request, authentication_session):
     return text("Account is authorized.")
