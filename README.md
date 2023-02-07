@@ -162,12 +162,16 @@ Phone can be null or empty.
 | **password** | examplepass         |
 
 ```python
-account = await register(request)
-two_step_session = await request_two_step_verification(request, account)
-await email_code(two_step_session.code)  # Custom method for emailing verification code.
-response = json("Registration successful!", two_step_session.bearer.json())
-two_step_session.encode(response)
-return response
+@app.post("api/security/register")
+async def on_register(request):
+    account = await register(request)
+    two_step_session = await request_two_step_verification(request, account)
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Registration successful!", two_step_session.bearer.json())
+    two_step_session.encode(response)
+    return response
 ```
 
 * Verify Account
@@ -177,10 +181,12 @@ return response
 | **code** | AJ8HGD |
 
 ```python
-two_step_session = await verify_account(request)
-return json(
-    "You have verified your account and may login!", two_step_session.bearer.json()
-)
+@app.post("api/security/verify")
+async def on_verify(request):
+    two_step_session = await verify_account(request)
+    return json(
+        "You have verified your account and may login!", two_step_session.bearer.json()
+    )
 ```
 
 * Login
@@ -192,34 +198,40 @@ username and the password with a colon (aladdin:opensesame), and then by encodin
 You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
-authentication_session = await login(request)
-response = json("Login successful!", authentication_session.bearer.json())
-authentication_session.encode(response)
-return response
+@app.post("api/security/login")
+async def on_login(request):
+    authentication_session = await login(request)
+    response = json("Login successful!", authentication_session.bearer.json())
+    authentication_session.encode(response)
+    return response
 ```
 
 * Logout
 
 ```python
-authentication_session = await logout(request)
-response = json("Logout successful!", authentication_session.bearer.json())
-return response
-```
+@app.post("api/security/logout")
+async def on_logout(request):
+    authentication_session = await logout(request)
+    response = json("Logout successful!", authentication_session.bearer.json())
+    return response
+ ```
 
 * Authenticate
 
 ```python
-authentication_session = await authenticate(request)
-return json(
-    "You have been authenticated.",
-    authentication_session.bearer.json(),
-)
+@app.post("api/security/auth")
+async def on_authenticate(request):
+    authentication_session = await authenticate(request)
+    return json(
+        "You have been authenticated.",
+        authentication_session.bearer.json(),
+    )
 ```
 
 * Requires Authentication (This method is not called directly and instead used as a decorator.)
 
 ```python
-@app.post("api/auth")
+@app.post("api/security/auth")
 @requires_authentication()
 async def on_authenticate(request, authentication_session):
     return json(
@@ -244,10 +256,12 @@ Captcha challenge example:
 * Request Captcha
 
 ```python
-captcha_session = await request_captcha(request)
-response = captcha_session.get_image()
-captcha_session.encode(response)
-return response
+@app.get("api/security/captcha")
+async def on_captcha_img_request(request):
+    captcha_session = await request_captcha(request)
+    response = captcha_session.get_image()
+    captcha_session.encode(response)
+    return response
 ```
 
 * Captcha
@@ -257,8 +271,10 @@ return response
 | **captcha** | 2bH14b |
 
 ```python
-captcha_session = await captcha(request)
-return json("Captcha attempt successful!", captcha_session.json())
+@app.post("api/security/captcha")
+async def on_captcha(request):
+    captcha_session = await captcha(request)
+    return json("Captcha attempt successful!", captcha_session.json())
 ```
 
 * Requires Captcha (This method is not called directly and instead used as a decorator.)
@@ -268,7 +284,7 @@ return json("Captcha attempt successful!", captcha_session.json())
 | **captcha** | 2bH14b |
 
 ```python
-@app.post("api/captcha")
+@app.post("ap/security/captcha")
 @requires_captcha()
 async def on_captcha(request, captcha_session):
     return json("Captcha attempt successful!", captcha_session.json())
@@ -283,19 +299,23 @@ async def on_captcha(request, captcha_session):
 | **email**   | example@example.com |
 
 ```python
-two_step_session = await request_two_step_verification(request)
-await email_code(two_step_session.code)  # Custom method for emailing verification code.
-response = json("Verification request successful!", two_step_session.bearer.json())
-two_step_session.encode(response)
-return response
+@app.post("api/security/two-step/request")
+async def on_two_step_request(request):
+    two_step_session = await request_two_step_verification(request)
+    await email_code(two_step_session.code)  # Custom method for emailing verification code.
+    response = json("Verification request successful!", two_step_session.bearer.json())
+    two_step_session.encode(response)
+    return response
 ```
 
 * Resend Two-step Verification Code
 
 ```python
-two_step_session = await TwoStepSession.decode(request)
-await email_code(two_step_session.code)  # Custom method for emailing verification code.
-return json("Verification code resend successful!", two_step_session.bearer.json())
+@app.post("api/security/two-step/resend")
+async def on_two_step_resend(request):
+    two_step_session = await TwoStepSession.decode(request)
+    await email_code(two_step_session.code)  # Custom method for emailing verification code.
+    return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
 * Two-step Verification
@@ -305,11 +325,13 @@ return json("Verification code resend successful!", two_step_session.bearer.json
 | **code** | AJ8HGD |
 
 ```python
-two_step_session = await two_step_verification(request)
-response = json(
-    "Two-step verification attempt successful!", two_step_session.bearer.json()
-)
-return response
+@app.post("api/security/two-step")
+async def on_two_step_verification(request):
+    two_step_session = await two_step_verification(request)
+    response = json(
+        "Two-step verification attempt successful!", two_step_session.bearer.json()
+    )
+    return response
 ```
 
 * Requires Two-step Verification (This method is not called directly and instead used as a decorator.)
@@ -319,9 +341,9 @@ return response
 | **code** | AJ8HGD |
 
 ```python
-@app.post("api/verify")
+@app.post("api/security/two-step")
 @requires_two_step_verification()
-async def on_verify(request, two_step_session):
+async def on_two_step_verification(request, two_step_session):
     response = json(
         "Two-step verification attempt successful!", two_step_session.bearer.json()
     )
@@ -354,34 +376,38 @@ await assign_role(
 * Check Permissions
 
 ```python
-authentication_session = await check_permissions(request, "channels:view", "voice:*")
-return text("Account is authorized.")
+@app.post("api/security/check-perms")
+async def on_check_perms(request):
+    authentication_session = await check_permissions(request, "channels:view", "voice:*")
+    return text("Account is authorized.")
 ```
 
 
 * Require Permissions (This method is not called directly and instead used as a decorator.)
 
 ```python
-@app.post("api/channel/voice/control")
+@app.post("api/security/check-perms")
 @require_permissions("channels:view", "voice:*")
-async def on_voice_chat_control(request, authentication_session):
-    return text("Voice chat is now being controlled.")
+async def on_check_perms(request, authentication_session):
+    return text("Account is authorized.")
 ```
 
 * Check Roles
 
 ```python
-authentication_session = await check_roles(request, "Chat Room Moderator")
-return text("Account is authorized.")
+@app.post("api/security/check-roles")
+async def on_check_roles(request):
+    authentication_session = await check_roles(request, "Chat Room Moderator")
+    return text("Account is authorized.")
 ```
 
 * Require Roles (This method is not called directly and instead used as a decorator.)
 
 ```python
-@app.post("api/account/suspend")
+@app.post("api/security/check-roles")
 @require_roles("Chat Room Moderator")
-async def on_suspend_account(request, authentication_session):
-    return text("Account successfully suspended.")
+async def on_check_roles(request, authentication_session):
+    return text("Account is authorized.")
 ```
 
 ## Testing
