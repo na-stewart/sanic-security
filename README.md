@@ -214,7 +214,7 @@ async def on_logout(request):
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.bearer.json())
     return response
- ```
+```
 
 * Authenticate
 
@@ -302,7 +302,9 @@ async def on_captcha(request, captcha_session):
 @app.post("api/security/two-step/request")
 async def on_two_step_request(request):
     two_step_session = await request_two_step_verification(request)
-    await email_code(two_step_session.code)  # Custom method for emailing verification code.
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
@@ -314,7 +316,9 @@ async def on_two_step_request(request):
 @app.post("api/security/two-step/resend")
 async def on_two_step_resend(request):
     two_step_session = await TwoStepSession.decode(request)
-    await email_code(two_step_session.code)  # Custom method for emailing verification code.
+    await email_code(
+        two_step_session.code
+    )  # Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
 
@@ -378,7 +382,9 @@ await assign_role(
 ```python
 @app.post("api/security/check-perms")
 async def on_check_perms(request):
-    authentication_session = await check_permissions(request, "channels:view", "voice:*")
+    authentication_session = await check_permissions(
+        request, "channels:view", "voice:*"
+    )
     return text("Account is authorized.")
 ```
 
