@@ -177,10 +177,6 @@ async def on_register(request):
 
 This section can be ignored if new accounts are initally verified on creation/registration.
 
-Otherwise, a newly created/registered account must be verified via two-step verification.
-
-Therefore a two-step verification request is required. See `Registration` example above or the [Two Step Verification](#two-step-verification) section for additional information and examples.
-
 | Key      | Value  |
 |----------|--------|
 | **code** | AJ8HGD |
