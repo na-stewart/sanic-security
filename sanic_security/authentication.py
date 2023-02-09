@@ -47,8 +47,8 @@ async def register(
 
     Args:
         request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
-        verified (bool): Enables or disabled the verification requirement for the account being registered.
-        disabled (bool): Renders an account unusable until manually set to false if designated true.
+        verified (bool): Sets the verification requirement for the account being registered.
+        disabled (bool): Renders the account being registered unusable.
 
     Returns:
         account
