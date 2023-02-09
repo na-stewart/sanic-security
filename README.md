@@ -180,6 +180,8 @@ async def on_register(request):
 |----------|--------|
 | **code** | AJ8HGD |
 
+Account is verified via two-step verification.
+
 ```python
 @app.post("api/security/verify")
 async def on_verify(request):
