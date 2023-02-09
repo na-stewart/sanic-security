@@ -175,7 +175,7 @@ async def on_register(request):
 
 * Verify Account
 
-This section can be ignored if newly registered accounts are initally verified. 
+A two-step verification request is required to verify the user's account.
 
 | Key      | Value  |
 |----------|--------|
