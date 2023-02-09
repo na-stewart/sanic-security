@@ -179,9 +179,11 @@ async def on_register(request):
 |----------|--------|
 | **code** | AJ8HGD |
 
-Account is verified via two-step verification. 
+This section can be ignored if new accounts are initally verified on creation/registration.
 
-Therefore a two-step verification request is required. The code would be sent to SMS, email, etc.
+Otherwise, a newly created/registered account is verified via two-step verification.
+
+Therefore a two-step verification request is required. See `Registration` example above or the [Two Step Verification](#two-step-verification) section for additional information and examples.
 
 ```python
 @app.post("api/security/verify")
