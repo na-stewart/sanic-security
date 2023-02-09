@@ -141,15 +141,14 @@ The tables in the below examples represent example [request form-data](https://s
 
 * Initial Administrator Account:
 
+This account can be logged into and has complete authoritative access. Login credentials can be modified in config.
+  
   ```python
   create_initial_admin_account(app)
   if __name__ == "__main__":
       app.run(host="127.0.0.1", port=8000)
   ```
   
-  This account can be logged into and has complete authoritative access. Login credentials
-  can be modified in config.
-
 * Registration
 
 Phone can be null or empty.
