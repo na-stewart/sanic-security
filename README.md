@@ -179,7 +179,9 @@ async def on_register(request):
 |----------|--------|
 | **code** | AJ8HGD |
 
-Account is verified via two-step verification.
+Account is verified via two-step verification. 
+
+Therefore a two-step verification request is required with the code sent to SMS, email, etc.
 
 ```python
 @app.post("api/security/verify")
