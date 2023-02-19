@@ -166,6 +166,7 @@ async def on_register(request):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
     await email_code(
+        account.email,
         two_step_session.code
     )  # Custom method for emailing verification code.
     response = json("Registration successful!", two_step_session.bearer.json())
@@ -306,6 +307,7 @@ Two-step verification should be integrated with other custom functionality. For 
 async def on_two_step_request(request):
     two_step_session = await request_two_step_verification(request)
     await email_code(
+        account.email,
         two_step_session.code
     )  # Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.bearer.json())
@@ -320,6 +322,7 @@ async def on_two_step_request(request):
 async def on_two_step_resend(request):
     two_step_session = await TwoStepSession.decode(request)
     await email_code(
+        account.email,
         two_step_session.code
     )  # Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.bearer.json())
