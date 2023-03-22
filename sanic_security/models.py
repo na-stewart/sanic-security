@@ -59,6 +59,7 @@ class BaseModel(Model):
         """
         raise NotImplementedError()
 
+    @property
     def json(self) -> dict:
         """
         A JSON serializable dict to be used in a HTTP request or response.
@@ -108,6 +109,7 @@ class Account(BaseModel):
         "models.Role", through="account_role"
     )
 
+    @property
     def json(self) -> dict:
         return {
             "id": self.id,
@@ -233,6 +235,7 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @property
     def json(self) -> dict:
         return {
             "id": self.id,
@@ -531,6 +534,7 @@ class Role(BaseModel):
     def validate(self) -> None:
         raise NotImplementedError()
 
+    @property
     def json(self) -> dict:
         return {
             "id": self.id,

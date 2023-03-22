@@ -65,7 +65,7 @@ async def on_register(request):
         )
         two_step_session.encode(response)
     else:
-        response = json("Registration successful!", account.json())
+        response = json("Registration successful!", account.json)
     return response
 
 
@@ -76,7 +76,7 @@ async def on_verify(request):
     """
     two_step_session = await verify_account(request)
     return json(
-        "You have verified your account and may login!", two_step_session.bearer.json()
+        "You have verified your account and may login!", two_step_session.bearer.json
     )
 
 
@@ -86,7 +86,7 @@ async def on_login(request):
     Login to an account with an email and password.
     """
     authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.bearer.json())
+    response = json("Login successful!", authentication_session.bearer.json)
     authentication_session.encode(response)
     return response
 
@@ -97,7 +97,7 @@ async def on_logout(request):
     Logout of currently logged in account.
     """
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.bearer.json())
+    response = json("Logout successful!", authentication_session.bearer.json)
     return response
 
 
@@ -107,7 +107,7 @@ async def on_authenticate(request, authentication_session):
     """
     Authenticate client session and account.
     """
-    response = json("Authenticated!", authentication_session.bearer.json())
+    response = json("Authenticated!", authentication_session.bearer.json)
     authentication_session.encode(response)
     return response
 
@@ -123,7 +123,7 @@ async def on_get_related_authentication_sessions(request, authentication_session
     )
     return json(
         "Related authentication sessions retrieved!",
-        [auth_session.json() for auth_session in authentication_sessions],
+        [auth_session.json for auth_session in authentication_sessions],
     )
 
 
@@ -155,7 +155,7 @@ async def on_captcha_attempt(request, captcha_session):
     """
     Attempt captcha challenge.
     """
-    return json("Captcha attempt successful!", captcha_session.json())
+    return json("Captcha attempt successful!", captcha_session.json)
 
 
 @app.post("api/test/two-step/request")
@@ -175,7 +175,7 @@ async def on_verification_attempt(request, two_step_session):
     """
     Attempt two-step verification challenge.
     """
-    return json("Two step verification attempt successful!", two_step_session.json())
+    return json("Two step verification attempt successful!", two_step_session.json)
 
 
 @app.post("api/test/auth/roles")
@@ -223,7 +223,7 @@ async def on_account_creation(request):
         verified=True,
         dbisabled=False,
     )
-    response = json("Account creation successful!", account.json())
+    response = json("Account creation successful!", account.json)
     return response
 
 
