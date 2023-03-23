@@ -80,7 +80,7 @@ class UnverifiedError(AccountError):
     """
 
     def __init__(self):
-        super().__init__("Account requires verification.", 401)
+        super().__init__("Account requires verification.")
 
 
 class SessionError(SecurityError):
@@ -116,7 +116,7 @@ class ExpiredError(SessionError):
     """
 
     def __init__(self):
-        super().__init__("Session has expired", 401)
+        super().__init__("Session has expired")
 
 
 class ChallengeError(SessionError):
@@ -125,7 +125,7 @@ class ChallengeError(SessionError):
     """
 
     def __init__(self, message):
-        super().__init__(message, 401)
+        super().__init__(message)
 
 
 class MaxedOutChallengeError(ChallengeError):
@@ -135,6 +135,17 @@ class MaxedOutChallengeError(ChallengeError):
 
     def __init__(self):
         super().__init__("The maximum amount of attempts has been reached.")
+
+
+class UnknownLocationError(SessionError):
+    """
+    Raised if the session IP address does not match any other existing session's IP address.
+    """
+
+    def __init__(self):
+        super().__init__(
+            "Session IP address does not match any existing session's IP address."
+        )
 
 
 class AuthorizationError(SecurityError):

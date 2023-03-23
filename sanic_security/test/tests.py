@@ -454,19 +454,19 @@ class MiscTest(TestCase):
         security_config.load_environment_variables()
         assert security_config.SECRET == "test-secret"
 
-    def test_get_related_sessions(self):
+    def test_get_associated_sessions(self):
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "get_related_sessions@misc.com", "username": "get_related"},
+            data={"email": "get_associated_sessions@misc.com", "username": "get_associated"},
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("get_related_sessions@misc.com", "password"),
+            auth=("get_associated_sessions@misc.com", "password"),
         )
         assert login_response.status_code == 200, login_response.text
-        retrieve_related_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/related"
+        retrieve_associated_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/associated"
         )
         assert (
-            retrieve_related_response.status_code == 200
-        ), retrieve_related_response.text
+            retrieve_associated_response.status_code == 200
+        ), retrieve_associated_response.text

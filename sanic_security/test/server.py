@@ -112,17 +112,17 @@ async def on_authenticate(request, authentication_session):
     return response
 
 
-@app.post("api/test/auth/related")
+@app.post("api/test/auth/associated")
 @requires_authentication()
-async def on_get_related_authentication_sessions(request, authentication_session):
+async def on_get_associated_authentication_sessions(request, authentication_session):
     """
     Retrieves authentication sessions associated with logged in account.
     """
-    authentication_sessions = await AuthenticationSession.get_related(
+    authentication_sessions = await AuthenticationSession.get_associated(
         authentication_session.bearer
     )
     return json(
-        "Related authentication sessions retrieved!",
+        "Associated authentication sessions retrieved!",
         [auth_session.json for auth_session in authentication_sessions],
     )
 

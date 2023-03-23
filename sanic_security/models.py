@@ -324,7 +324,7 @@ class Session(BaseModel):
         raise NotImplementedError()
 
     @classmethod
-    async def get_related(cls, account: Account):
+    async def get_associated(cls, account: Account):
         """
         Retrieves sessions associated to an account.
 
