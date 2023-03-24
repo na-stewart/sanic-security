@@ -457,7 +457,10 @@ class MiscTest(TestCase):
     def test_get_associated_sessions(self):
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
-            data={"email": "get_associated_sessions@misc.com", "username": "get_associated"},
+            data={
+                "email": "get_associated_sessions@misc.com",
+                "username": "get_associated",
+            },
         )
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",

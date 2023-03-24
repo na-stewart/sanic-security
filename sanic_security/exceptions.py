@@ -80,7 +80,16 @@ class UnverifiedError(AccountError):
     """
 
     def __init__(self):
-        super().__init__("Account requires verification.")
+        super().__init__("Account requires verification.", 401)
+
+
+class VerifiedError(AccountError):
+    """
+    Raised when account is already verified.
+    """
+
+    def __init__(self):
+        super().__init__("Account already verified.", 403)
 
 
 class SessionError(SecurityError):
@@ -121,10 +130,20 @@ class ExpiredError(SessionError):
 
 class SecondFactorRequiredError(SessionError):
     """
-    Raised when an authentication session two-factor requirement isn't met.
+    Raised when authentication session two-factor requirement isn't met.
     """
+
     def __init__(self):
-        super().__init__("This session requires a second factor for authentication.")
+        super().__init__("Session requires second factor for authentication.")
+
+
+class SecondFactorFulfilledError(SessionError):
+    """
+    Raised when authentication session two-factor requirement is already met.
+    """
+
+    def __init__(self):
+        super().__init__("Session second factor requirement already met.", 403)
 
 
 class ChallengeError(SessionError):

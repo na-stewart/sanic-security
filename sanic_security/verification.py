@@ -7,6 +7,7 @@ from sanic_security.exceptions import (
     AccountError,
     JWTDecodeError,
     NotFoundError,
+    VerifiedError,
 )
 from sanic_security.models import (
     Account,
@@ -34,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 async def request_two_step_verification(
-    request: Request, account: Account = None
+        request: Request, account: Account = None
 ) -> TwoStepSession:
     """
     Creates a two-step session and deactivates the client's current two-step session if found.
@@ -89,37 +90,6 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-async def verify_account(request: Request) -> TwoStepSession:
-    # TODO Rewrite to validate authentication session two_factor and set account verified if unverified.
-    """
-    Verifies account via two-step session code.
-
-    Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
-
-    Raises:
-        NotFoundError
-        JWTDecodeError
-        DeletedError
-        ExpiredError
-        DeactivatedError
-        ChallengeError
-        MaxedOutChallengeError
-        AccountError
-
-    Returns:
-         two_step_session
-    """
-    two_step_session = await TwoStepSession.decode(request)
-    if two_step_session.bearer.verified:
-        raise AccountError("Account already verified.", 403)
-    two_step_session.validate()
-    await two_step_session.check_code(request, request.form.get("code"))
-    two_step_session.bearer.verified = True
-    await two_step_session.bearer.save(update_fields=["verified"])
-    return two_step_session
-
-
 def requires_two_step_verification():
     """
     Validates a two-step verification attempt.
@@ -154,6 +124,36 @@ def requires_two_step_verification():
         return wrapped
 
     return wrapper
+
+
+async def verify_account(request: Request) -> TwoStepSession:
+    """
+    Verifies the client's account via two-step session code.
+
+    Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+
+    Raises:
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        ChallengeError
+        MaxedOutChallengeError
+        VerifiedError
+
+    Returns:
+         two_step_session
+    """
+    two_step_session = await TwoStepSession.decode(request)
+    if two_step_session.bearer.verified:
+        raise VerifiedError()
+    two_step_session.validate()
+    await two_step_session.check_code(request, request.form.get("code"))
+    two_step_session.bearer.verified = True
+    await two_step_session.bearer.save(update_fields=["verified"])
+    return two_step_session
 
 
 async def request_captcha(request: Request) -> CaptchaSession:

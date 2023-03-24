@@ -13,9 +13,10 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
-    DeactivatedError
+    DeactivatedError,
+    SecondFactorFulfilledError,
 )
-from sanic_security.models import Account, AuthenticationSession, Role
+from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip
 
 """
@@ -94,13 +95,16 @@ async def register(
     return account
 
 
-async def login(request: Request, account: Account = None, requires_second_factor: bool = False) -> AuthenticationSession:
+async def login(
+    request: Request, account: Account = None, require_second_factor: bool = False
+) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
         account (Account): Account being logged into. If None, an account is retrieved via credentials in the authorization header.
+        require_second_factor (bool): Determines authentication session second factor requirement on login.
 
     Returns:
         authentication_session
@@ -136,7 +140,9 @@ async def login(request: Request, account: Account = None, requires_second_facto
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        return await AuthenticationSession.new(request, account)
+        return await AuthenticationSession.new(
+            request, account, requires_second_factor=require_second_factor
+        )
     except VerifyMismatchError:
         logger.warning(
             f"Client ({get_ip(request)}) login password attempt is incorrect"
@@ -189,6 +195,37 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
     authentication_session.bearer.validate()
+    return authentication_session
+
+
+async def fulfill_second_factor(request: Request) -> AuthenticationSession:
+    """
+    Fulfills client authentication session's second factor requirement via two-step session code.
+
+    Args:
+        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+
+    Raises:
+        NotFoundError
+        JWTDecodeError
+        DeletedError
+        ExpiredError
+        DeactivatedError
+        ChallengeError
+        MaxedOutChallengeError
+        AccountError
+
+    Returns:
+         authentication_Session
+    """
+    authentication_session = await AuthenticationSession.decode(request)
+    two_step_session = await TwoStepSession.decode(request)
+    if not authentication_session.requires_second_factor:
+        raise SecondFactorFulfilledError()
+    two_step_session.validate()
+    await two_step_session.check_code(request, request.form.get("code"))
+    authentication_session.requires_second_factor = False
+    await authentication_session.save(update_fields=["requires_second_factor"])
     return authentication_session
 
 

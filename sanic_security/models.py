@@ -1,6 +1,7 @@
 import datetime
 from io import BytesIO
 from types import SimpleNamespace
+from typing import Union
 
 import jwt
 from captcha.image import ImageCaptcha
@@ -258,8 +259,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-                self.expiration_date
-                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+            self.expiration_date
+            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
@@ -309,7 +310,12 @@ class Session(BaseModel):
             response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
 
     @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
+    async def new(
+        cls,
+        request: Request,
+        account: Account,
+        **kwargs: Union[int, str, bool, float, list, dict],
+    ):
         """
         Creates session with pre-set values.
 
@@ -507,6 +513,7 @@ class AuthenticationSession(Session):
     Attributes:
         requires_second_factor (bool): Determines if session requires a second factor.
     """
+
     requires_second_factor: bool = fields.BooleanField(default=False)
 
     def validate(self) -> None:
