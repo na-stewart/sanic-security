@@ -87,9 +87,9 @@ async def on_login(request):
     """
     Login to an account with an email and password.
     """
-    two_factor_authentication = request.args.get("two-factor-authentication")
+    two_factor_authentication = request.args.get("two-factor-authentication") == "true"
     authentication_session = await login(
-        request, require_second_factor=two_factor_authentication == "true"
+        request, require_second_factor=two_factor_authentication
     )
     if two_factor_authentication:
         two_step_session = await request_two_step_verification(
