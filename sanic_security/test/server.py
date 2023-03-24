@@ -106,7 +106,7 @@ async def on_login(request):
     return response
 
 
-@app.post("api/test/auth/login/second-factor")
+@app.post("api/test/auth/second-factor")
 async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
