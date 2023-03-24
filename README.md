@@ -169,7 +169,10 @@ async def on_register(request):
     await email_code(
         account.email, two_step_session.code
     )  # Custom method for emailing verification code.
-    response = json("Registration successful! Email verification required.", two_step_session.bearer.json())
+    response = json(
+        "Registration successful! Email verification required.",
+        two_step_session.bearer.json(),
+    )
     two_step_session.encode(response)
     return response
 ```
@@ -203,11 +206,16 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/security/login")
 async def on_login(request):
     authentication_session = await login(request, require_second_factor=True)
-    two_step_session = await request_two_step_verification(request, authentication_session.bearer)
+    two_step_session = await request_two_step_verification(
+        request, authentication_session.bearer
+    )
     await email_code(
         authentication_session.bearer.email, two_step_session.code
     )  # Custom method for emailing verification code.
-    response = json("Login successful! Two-factor authentication required.", authentication_session.bearer.json())
+    response = json(
+        "Login successful! Two-factor authentication required.",
+        authentication_session.bearer.json(),
+    )
     authentication_session.encode(response)
     two_step_session.encode(response)
     return response
