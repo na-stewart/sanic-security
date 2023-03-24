@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 async def request_two_step_verification(
-        request: Request, account: Account = None
+    request: Request, account: Account = None
 ) -> TwoStepSession:
     """
     Creates a two-step session and deactivates the client's current two-step session if found.
