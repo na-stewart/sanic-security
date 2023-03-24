@@ -258,8 +258,8 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+                self.expiration_date
+                and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
             raise ExpiredError()
         elif not self.active:
@@ -440,7 +440,7 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                raise MaxedOutChallengeError()
+                raise SecondFactorRequiredError()
         else:
             self.active = False
             await self.save(update_fields=["active"])
@@ -503,7 +503,25 @@ class CaptchaSession(VerificationSession):
 class AuthenticationSession(Session):
     """
     Used to authenticate and identify a client.
+
+    Attributes:
+        requires_second_factor (bool): Determines if session requires a second factor.
     """
+    requires_second_factor: bool = fields.BooleanField(default=False)
+
+    def validate(self) -> None:
+        """
+        Raises an error with respect to session state.
+
+        Raises:
+            DeletedError
+            ExpiredError
+            DeactivatedError
+            SecondFactorRequiredError
+        """
+        super().validate()
+        if self.requires_second_factor:
+            raise SecondFactorRequiredError()
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):

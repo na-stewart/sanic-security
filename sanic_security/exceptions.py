@@ -119,6 +119,14 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired")
 
 
+class SecondFactorRequiredError(SessionError):
+    """
+    Raised when an authentication session two-factor requirement isn't met.
+    """
+    def __init__(self):
+        super().__init__("This session requires a second factor for authentication.")
+
+
 class ChallengeError(SessionError):
     """
     Raised when a session challenge attempt is invalid.
@@ -135,17 +143,6 @@ class MaxedOutChallengeError(ChallengeError):
 
     def __init__(self):
         super().__init__("The maximum amount of attempts has been reached.")
-
-
-class UnknownLocationError(SessionError):
-    """
-    Raised if the session IP address does not match any other existing session's IP address.
-    """
-
-    def __init__(self):
-        super().__init__(
-            "Session IP address does not match any existing session's IP address."
-        )
 
 
 class AuthorizationError(SecurityError):

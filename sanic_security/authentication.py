@@ -13,7 +13,7 @@ from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
-    DeactivatedError,
+    DeactivatedError
 )
 from sanic_security.models import Account, AuthenticationSession, Role
 from sanic_security.utils import get_ip
@@ -94,7 +94,7 @@ async def register(
     return account
 
 
-async def login(request: Request, account: Account = None) -> AuthenticationSession:
+async def login(request: Request, account: Account = None, requires_second_factor: bool = False) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
 
@@ -195,6 +195,9 @@ async def authenticate(request: Request) -> AuthenticationSession:
 def requires_authentication():
     """
     Validates client's authentication session and account.
+
+        Args:
+        validate_client_location (bool): Checks if the client's IP address matches any other existing session's IP address.
 
     Example:
         This method is not called directly and instead used as a decorator:

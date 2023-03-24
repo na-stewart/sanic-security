@@ -90,6 +90,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
 
 
 async def verify_account(request: Request) -> TwoStepSession:
+    # TODO Rewrite to validate authentication session two_factor and set account verified if unverified.
     """
     Verifies account via two-step session code.
 
