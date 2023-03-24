@@ -110,7 +110,7 @@ async def on_login(request):
 async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
-        "Authentication session verified! You may now login.",
+        "Authentication session second-factor fulfilled! You are now authenticated.",
         authentication_session.bearer.json,
     )
     authentication_session.encode(response)

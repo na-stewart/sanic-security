@@ -49,8 +49,9 @@ Sanic Security is an authentication, authorization, and verification library des
 This library contains a variety of features including:
 
 * Login, registration, and authentication
-* Two-step verification
+* Two-factor authentication
 * Captcha
+* Two-step verification
 * Role based authorization with wildcard permissions
 
 Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
@@ -149,7 +150,7 @@ This account can be logged into and has complete authoritative access. Login cre
       app.run(host="127.0.0.1", port=8000)
   ```
   
-* Registration
+* Registration (With Two-step Verification)
 
 Phone can be null or empty.
 
@@ -168,14 +169,14 @@ async def on_register(request):
     await email_code(
         account.email, two_step_session.code
     )  # Custom method for emailing verification code.
-    response = json("Registration successful!", two_step_session.bearer.json())
+    response = json("Registration successful! Email verification required.", two_step_session.bearer.json())
     two_step_session.encode(response)
     return response
 ```
 
 * Verify Account
 
-A two-step verification request is required to verify the user's account.
+Verifies the client's account via two-step session code.
 
 | Key      | Value  |
 |----------|--------|
@@ -190,7 +191,7 @@ async def on_verify(request):
     )
 ```
 
-* Login
+* Login (With Two-factor Authentication)
 
 Login credentials are retrieved via the Authorization header. Credentials are constructed by first combining the 
 username and the password with a colon (aladdin:opensesame), and then by encoding the resulting string in base64 
@@ -201,8 +202,33 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 ```python
 @app.post("api/security/login")
 async def on_login(request):
-    authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.bearer.json())
+    authentication_session = await login(request, require_second_factor=True)
+    two_step_session = await request_two_step_verification(request, authentication_session.bearer)
+    await email_code(
+        authentication_session.bearer.email, two_step_session.code
+    )  # Custom method for emailing verification code.
+    response = json("Login successful! Two-factor authentication required.", authentication_session.bearer.json())
+    authentication_session.encode(response)
+    two_step_session.encode(response)
+    return response
+```
+
+* Fulfill Second Factor
+
+Fulfills client authentication session's second factor requirement via two-step session code.
+
+| Key      | Value  |
+|----------|--------|
+| **code** | BG5KLP |
+
+```python
+@app.post("api/security/second-factor")
+async def on_two_factor_authentication(request):
+    authentication_session = await fulfill_second_factor(request)
+    response = json(
+        "Authentication session second-factor fulfilled! You are now authenticated.",
+        authentication_session.bearer.json,
+    )
     authentication_session.encode(response)
     return response
 ```
@@ -269,7 +295,7 @@ async def on_captcha_img_request(request):
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | 2bH14b |
+| **captcha** | FV9NMQ |
 
 ```python
 @app.post("api/security/captcha")
@@ -282,7 +308,7 @@ async def on_captcha(request):
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | 2bH14b |
+| **captcha** | FV9NMQ |
 
 ```python
 @app.post("ap/security/captcha")
@@ -329,7 +355,7 @@ async def on_two_step_resend(request):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | AJ8HGD |
+| **code** | DT6JZX |
 
 ```python
 @app.post("api/security/two-step")
@@ -345,7 +371,7 @@ async def on_two_step_verification(request):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | AJ8HGD |
+| **code** | DT6JZX |
 
 ```python
 @app.post("api/security/two-step")
