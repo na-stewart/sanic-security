@@ -268,21 +268,19 @@ class LoginTest(TestCase):
             data={"email": "two-factor@login.test", "username": "two-factor"},
         )
         login_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/auth/login?require_second_factor=true",
+            "http://127.0.0.1:8000/api/test/auth/login?two-factor-authentication=true",
             auth=("two-factor@login.test", "password"),
         )
         assert login_response.status_code == 200, login_response.text
-        invalid_authenticate_response = self.client.post(
+        authentication_invalid_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth",
         )
         assert (
-            invalid_authenticate_response.status_code == 401
-        ), invalid_authenticate_response.text
+            authentication_invalid_response.status_code == 401
+        ), authentication_invalid_response.text
         two_factor_authentication_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/second-factor",
-            data={
-                "code": json.loads(login_response.text)["data"]
-            },
+            data={"code": json.loads(login_response.text)["data"]},
         )
         assert (
             two_factor_authentication_attempt_response.status_code == 200
