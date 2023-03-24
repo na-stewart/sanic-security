@@ -1,5 +1,6 @@
 from argon2 import PasswordHasher
 from sanic import Sanic, text
+from sanic.utils import str_to_bool
 from tortoise.contrib.sanic import register_tortoise
 
 from sanic_security.authentication import (
@@ -8,6 +9,7 @@ from sanic_security.authentication import (
     requires_authentication,
     logout,
     create_initial_admin_account,
+    fulfill_second_factor,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -85,8 +87,32 @@ async def on_login(request):
     """
     Login to an account with an email and password.
     """
-    authentication_session = await login(request)
-    response = json("Login successful!", authentication_session.bearer.json)
+    two_factor_authentication = request.args.get("require_second_factor")
+    authentication_session = await login(
+        request, require_second_factor=two_factor_authentication == "true"
+    )
+    if two_factor_authentication:
+        two_step_session = await request_two_step_verification(
+            request, authentication_session.bearer
+        )
+        response = json(
+            "Login successful! Two-factor authentication required.",
+            two_step_session.code,
+        )
+        two_step_session.encode(response)
+    else:
+        response = json("Login successful!", authentication_session.bearer.json)
+    authentication_session.encode(response)
+    return response
+
+
+@app.post("api/test/auth/login/second-factor")
+async def on_two_factor_authentication(request):
+    authentication_session = await fulfill_second_factor(request)
+    response = json(
+        "Authentication session verified! You may now login.",
+        authentication_session.bearer.json,
+    )
     authentication_session.encode(response)
     return response
 
@@ -261,6 +287,7 @@ Vn25+ZfSfKH+WYBUglZBmz/K6uW41mSRuuH3Pu/lnPgGvsxtT7KE8dkbyrI+Tyg0pniOYdxBxgpu06S6
 MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
+security_config.INITIAL_ADMIN_EMAIL = "admin@login.test"
 security_config.SESSION_ENCODING_ALGORITHM = "RS256"
 security_config.ALLOW_LOGIN_WITH_USERNAME = True
 security_config.SESSION_SECURE = False
