@@ -213,7 +213,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
         DeactivatedError
         ChallengeError
         MaxedOutChallengeError
-        AccountError
+        SecondFactorFulfilledError
 
     Returns:
          authentication_Session
