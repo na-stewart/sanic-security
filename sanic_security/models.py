@@ -322,7 +322,7 @@ class Session(BaseModel):
         Args:
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
-            **kwargs (dict[str, Any]): Extra arguments applied during session creation.
+            **kwargs (dict[str, Union[int, str, bool, float, list, dict]]): Extra arguments applied during session creation.
 
         Returns:
             session
