@@ -291,9 +291,10 @@ class Session(BaseModel):
             "date_created": str(self.date_created),
             "expiration_date": str(self.expiration_date),
             "ip": self.ip,
-            **self.ctx.__dict__,
         }
-        cookie = f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}_session"
+        cookie = (
+            f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:4]}"
+        )
         encoded_session = jwt.encode(
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
@@ -363,7 +364,7 @@ class Session(BaseModel):
             JWTDecodeError
         """
         cookie = request.cookies.get(
-            f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}_session"
+            f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:4]}"
         )
         try:
             if not cookie:
