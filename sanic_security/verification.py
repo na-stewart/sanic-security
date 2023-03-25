@@ -41,7 +41,7 @@ async def request_two_step_verification(
     Creates a two-step session and deactivates the client's current two-step session if found.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email.
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): email.
         account (Account): The account being associated with the new verification session. If None, an account is retrieved via the email in the request form-data or an existing two-step session.
 
     Raises:
@@ -67,7 +67,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     Validates a two-step verification attempt.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): code.
 
     Raises:
         NotFoundError
@@ -131,7 +131,7 @@ async def verify_account(request: Request) -> TwoStepSession:
     Verifies the client's account via two-step session code.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): code.
 
     Raises:
         NotFoundError
@@ -178,7 +178,7 @@ async def captcha(request: Request) -> CaptchaSession:
     Validates a captcha challenge attempt.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: captcha.
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): captcha.
 
     Raises:
         DeletedError

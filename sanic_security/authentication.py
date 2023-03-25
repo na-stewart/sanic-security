@@ -47,7 +47,7 @@ async def register(
     Registers a new account that can be logged into.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: email, username, password, phone (including country code).
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): email, username, password, phone (including country code).
         verified (bool): Sets the verification requirement for the account being registered.
         disabled (bool): Renders the account being registered unusable.
 
@@ -203,7 +203,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     Fulfills client authentication session's second factor requirement via two-step session code.
 
     Args:
-        request (Request): Sanic request parameter. All request bodies are sent as form-data with the following arguments: code.
+        request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): code.
 
     Raises:
         NotFoundError
