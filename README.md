@@ -134,7 +134,7 @@ The tables in the below examples represent example [request form-data](https://s
 
 ## Authentication
 
-* Initial Administrator Account:
+* Initial Administrator Account
 
 This account can be logged into and has complete authoritative access. Login credentials can be modified in config.
   
