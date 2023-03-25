@@ -61,12 +61,6 @@ Please visit [security.na-stewart.com](https://security.na-stewart.com) for docu
 
 In order to get started, please install pip.
 
-### Prerequisites
-
-* Pip
-
-https://pypi.org/
-
 ### Installation
 
 * Install the Sanic Security pip package.
