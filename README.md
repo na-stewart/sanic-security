@@ -204,7 +204,7 @@ async def on_login(request):
         request, authentication_session.bearer
     )
     await email_code(
-        authentication_session.bearer.email, two_step_session.code # Code = BG5KLP
+        authentication_session.bearer.email, two_step_session.code  # Code = BG5KLP
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
@@ -288,7 +288,7 @@ Captcha challenge example:
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
-    response = captcha_session.get_image() # Captcha: FV9NMQ 
+    response = captcha_session.get_image()  # Captcha: FV9NMQ
     captcha_session.encode(response)
     return response
 ```
@@ -334,7 +334,7 @@ Two-step verification should be integrated with other custom functionality. For 
 async def on_two_step_request(request):
     two_step_session = await request_two_step_verification(request)
     await email_code(
-        account.email, two_step_session.code # Code = DT6JZX
+        account.email, two_step_session.code  # Code = DT6JZX
     )  # Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.bearer.json())
     two_step_session.encode(response)
@@ -348,7 +348,7 @@ async def on_two_step_request(request):
 async def on_two_step_resend(request):
     two_step_session = await TwoStepSession.decode(request)
     await email_code(
-        account.email, two_step_session.code # Code = DT6JZX
+        account.email, two_step_session.code  # Code = DT6JZX
     )  # Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.bearer.json())
 ```
