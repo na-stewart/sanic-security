@@ -108,6 +108,9 @@ async def on_login(request):
 
 @app.post("api/test/auth/second-factor")
 async def on_two_factor_authentication(request):
+    """
+    Fulfills client authentication session's second factor requirement.
+    """
     authentication_session = await fulfill_second_factor(request)
     response = json(
         "Authentication session second-factor fulfilled! You are now authenticated.",

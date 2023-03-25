@@ -103,7 +103,7 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into. If None, an account is retrieved via credentials in the authorization header.
+        account (Account): Account being logged into, overrides retrieving account via email or username in form-data.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
 
     Returns:
@@ -152,7 +152,7 @@ async def login(
 
 async def logout(request: Request) -> AuthenticationSession:
     """
-    Deactivates client's authentication session and revokes access.
+    Deactivates client's authentication session.
 
     Args:
         request (Request): Sanic request parameter.
@@ -232,9 +232,6 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
 def requires_authentication():
     """
     Validates client's authentication session and account.
-
-        Args:
-        validate_client_location (bool): Checks if the client's IP address matches any other existing session's IP address.
 
     Example:
         This method is not called directly and instead used as a decorator:

@@ -94,7 +94,7 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. Can be null or empty.
-        password (str): Password of account for protection. Must be hashed via Argon.
+        password (str): Password of account for protection. Must be hashed via Argon2.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
         roles (ManyToManyRelation[Role]): Roles associated with this account.
@@ -277,7 +277,7 @@ class Session(BaseModel):
             self.active = False
             await self.save(update_fields=["active"])
         else:
-            raise DeactivatedError("Session is already deactivated.")
+            raise DeactivatedError("Session is already deactivated.", 403)
 
     def encode(self, response: HTTPResponse) -> None:
         """

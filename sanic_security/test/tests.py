@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class RegistrationTest(TestCase):
     """
-    Tests registration.
+    Registration tests.
     """
 
     def setUp(self):
@@ -152,7 +152,7 @@ class RegistrationTest(TestCase):
 
 class LoginTest(TestCase):
     """
-    Tests login.
+    Login tests.
     """
 
     def setUp(self):
@@ -293,7 +293,7 @@ class LoginTest(TestCase):
 
 class VerificationTest(TestCase):
     """
-    Tests two-step verification and captcha.
+    Two-step verification and captcha tests.
     """
 
     def setUp(self):
@@ -382,7 +382,7 @@ class VerificationTest(TestCase):
 
 class AuthorizationTest(TestCase):
     """
-    Tests role and permissions based authorization.
+    Role and permissions based authorization tests.
     """
 
     def setUp(self):
@@ -486,6 +486,9 @@ class MiscTest(TestCase):
         assert security_config.SECRET == "test-secret"
 
     def test_get_associated_sessions(self):
+        """
+        Retrieve sessions associated to logged in account.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={
