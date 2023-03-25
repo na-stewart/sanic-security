@@ -191,6 +191,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
         DeactivatedError
         UnverifiedError
         DisabledError
+        SecondFactorRequiredError
     """
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
