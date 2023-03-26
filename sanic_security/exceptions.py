@@ -26,7 +26,7 @@ class SecurityError(SanicException):
     Sanic Security related error.
 
     Attributes:
-        json_response (HTTPResponse): Security error json response.
+        json (HTTPResponse): Security error json response.
 
     Args:
         message (str): Human readable error message.
@@ -34,7 +34,7 @@ class SecurityError(SanicException):
     """
 
     def __init__(self, message: str, code: int):
-        self.json_response = json(message, self.__class__.__name__, code)
+        self.json = json(message, self.__class__.__name__, code)
         super().__init__(message, code)
 
 

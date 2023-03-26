@@ -261,7 +261,7 @@ async def on_security_error(request, exception):
     """
     Handles security errors with correct response.
     """
-    return exception.json_response
+    return exception.json
 
 
 security_config.SECRET = """
