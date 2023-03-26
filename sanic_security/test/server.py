@@ -106,7 +106,7 @@ async def on_login(request):
     return response
 
 
-@app.post("api/test/auth/second-factor")
+@app.post("api/test/auth/validate-2fa")
 async def on_two_factor_authentication(request):
     """
     Fulfills client authentication session's second factor requirement.
