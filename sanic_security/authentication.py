@@ -274,7 +274,7 @@ def create_initial_admin_account(app: Sanic) -> None:
     @app.listener("before_server_start")
     async def generate(app, loop):
         try:
-            role = await Role.filter(name="Head Admin").get()
+            role = await Role.filter(name="Head-Admin").get()
         except DoesNotExist:
             role = await Role.create(
                 description="Has the ability to control any aspect of the API. Assign sparingly.",
