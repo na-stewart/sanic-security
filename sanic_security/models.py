@@ -447,7 +447,7 @@ class VerificationSession(Session):
                 logger.warning(
                     f"Client ({get_ip(request)}) has maxed out on session challenge attempts"
                 )
-                raise SecondFactorRequiredError()
+                raise MaxedOutChallengeError()
         else:
             self.active = False
             await self.save(update_fields=["active"])
