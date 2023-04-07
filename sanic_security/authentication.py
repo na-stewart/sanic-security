@@ -277,7 +277,7 @@ def create_initial_admin_account(app: Sanic) -> None:
             role = await Role.filter(name="Head Admin").get()
         except DoesNotExist:
             role = await Role.create(
-                description="Has the ability to control any aspect of the API. Assign sparingly.",
+                description="Has the ability to control any aspect of the API, assign sparingly.",
                 permissions="*:*",
                 name="Head Admin",
             )
