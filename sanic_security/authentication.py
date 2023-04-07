@@ -274,7 +274,7 @@ def create_initial_admin_account(app: Sanic) -> None:
     @app.listener("before_server_start")
     async def generate(app, loop):
         try:
-            role = await Role.filter(name="Head-Admin").get()
+            role = await Role.filter(name="Head Admin").get()
         except DoesNotExist:
             role = await Role.create(
                 description="Has the ability to control any aspect of the API. Assign sparingly.",
@@ -282,7 +282,7 @@ def create_initial_admin_account(app: Sanic) -> None:
                 name="Head Admin",
             )
         try:
-            account = await Account.filter(username="Head Admin").get()
+            account = await Account.filter(username="Head-Admin").get()
             await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
@@ -291,7 +291,7 @@ def create_initial_admin_account(app: Sanic) -> None:
                 )
         except DoesNotExist:
             account = await Account.create(
-                username="Head Admin",
+                username="Head-Admin",
                 email=security_config.INITIAL_ADMIN_EMAIL,
                 password=PasswordHasher().hash(security_config.INITIAL_ADMIN_PASSWORD),
                 verified=True,
