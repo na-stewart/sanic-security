@@ -553,7 +553,7 @@ class Role(BaseModel):
         permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
     """
 
-    name: str = fields.CharField(max_length=255)
+    name: str = fields.CharField(unique=True, max_length=255)
     description: str = fields.CharField(max_length=255, null=True)
     permissions: str = fields.CharField(max_length=255, null=True)
 

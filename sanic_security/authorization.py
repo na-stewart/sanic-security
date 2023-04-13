@@ -175,7 +175,7 @@ async def assign_role(
     name: str, account: Account, permissions: str = None, description: str = None
 ) -> Role:
     """
-    Quick creation of a role associated with an account.
+    Easy account role assignment. Role being assigned to an account will be created if it doesn't exist.
 
     Args:
         name (str):  The name of the role associated with the account.
@@ -184,7 +184,7 @@ async def assign_role(
         description (str):  The description of the role associated with the account.
     """
     try:
-        role = await Role.filter(name=name, permissions=permissions).get()
+        role = await Role.filter(name=name).get()
     except DoesNotExist:
         role = await Role.create(
             description=description, permissions=permissions, name=name
