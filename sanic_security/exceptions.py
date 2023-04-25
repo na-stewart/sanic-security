@@ -106,8 +106,8 @@ class JWTDecodeError(SessionError):
     Raised when client JWT is invalid.
     """
 
-    def __init__(self, message):
-        super().__init__(message, 400)
+    def __init__(self, message, code=400):
+        super().__init__(message, code)
 
 
 class DeactivatedError(SessionError):
