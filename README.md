@@ -83,6 +83,11 @@ pip3 install sanic-security[crypto]
 pip3 install -e ".[dev]"
 ````
 
+* Update sanic-security if already installed.
+```shell
+pip3 install --upgrade sanic-security
+```
+
 ### Configuration
 
 Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
