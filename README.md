@@ -425,7 +425,6 @@ async def on_check_perms(request):
     return text("Account is authorized.")
 ```
 
-
 * Require Permissions (This method is not called directly and instead used as a decorator.)
 
 ```python
