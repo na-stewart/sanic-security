@@ -385,7 +385,8 @@ async def on_two_step_verification(request):
 @requires_two_step_verification()
 async def on_two_step_verification(request):
     response = json(
-        "Two-step verification attempt successful!", request.ctx.two_step_session.bearer.json
+        "Two-step verification attempt successful!",
+        request.ctx.two_step_session.bearer.json,
     )
     return response
 ```
