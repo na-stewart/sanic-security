@@ -239,7 +239,7 @@ def requires_authentication():
 
             @app.post('api/authenticate')
             @requires_authentication()
-            async def on_authenticate(request, authentication_session):
+            async def on_authenticate(request):
                 return text('User is authenticated!')
 
     Raises:

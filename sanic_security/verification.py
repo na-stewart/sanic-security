@@ -99,7 +99,7 @@ def requires_two_step_verification():
 
             @app.post("api/verification/attempt")
             @requires_two_step_verification()
-            async def on_verified(request, two_step_session):
+            async def on_verified(request):
                 response = json("Two-step verification attempt successful!", two_step_session.json())
                 return response
 
@@ -207,7 +207,7 @@ def requires_captcha():
 
             @app.post("api/captcha/attempt")
             @requires_captcha()
-            async def on_captcha_attempt(request, captcha_session):
+            async def on_captcha_attempt(request):
                 return json("Captcha attempt successful!", captcha_session.json())
 
     Raises:

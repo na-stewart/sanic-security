@@ -107,7 +107,7 @@ def require_permissions(*required_permissions: str):
 
             @app.post("api/auth/perms")
             @require_permissions("admin:update", "employee:add")
-            async def on_require_perms(request, authentication_session):
+            async def on_require_perms(request):
                 return text("Account permitted.")
 
     Raises:
@@ -146,7 +146,7 @@ def require_roles(*required_roles: str):
 
             @app.post("api/auth/roles")
             @require_roles("Admin", "Moderator")
-            async def on_require_roles(request, authentication_session):
+            async def on_require_roles(request):
                 return text("Account permitted")
 
     Raises:
