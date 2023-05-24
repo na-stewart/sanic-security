@@ -262,10 +262,10 @@ async def on_authenticate(request):
 ```python
 @app.post("api/security/auth")
 @requires_authentication()
-async def on_authenticate(request, authentication_session):
+async def on_authenticate(request):
     return json(
         "You have been authenticated.",
-        authentication_session.bearer.json,
+        request.ctx.authentication_session.bearer.json,
     )
 ```
 
@@ -315,8 +315,8 @@ async def on_captcha(request):
 ```python
 @app.post("ap/security/captcha")
 @requires_captcha()
-async def on_captcha(request, captcha_session):
-    return json("Captcha attempt successful!", captcha_session.json)
+async def on_captcha(request):
+    return json("Captcha attempt successful!", request.ctx.captcha_session.json)
 ```
 
 ## Two-step Verification
@@ -378,9 +378,9 @@ async def on_two_step_verification(request):
 ```python
 @app.post("api/security/two-step")
 @requires_two_step_verification()
-async def on_two_step_verification(request, two_step_session):
+async def on_two_step_verification(request):
     response = json(
-        "Two-step verification attempt successful!", two_step_session.bearer.json
+        "Two-step verification attempt successful!", request.ctx.two_step_session.bearer.json
     )
     return response
 ```
@@ -425,7 +425,7 @@ async def on_check_perms(request):
 ```python
 @app.post("api/security/perms")
 @require_permissions("channels:view", "voice:*")
-async def on_check_perms(request, authentication_session):
+async def on_check_perms(request):
     return text("Account is authorized.")
 ```
 
@@ -443,7 +443,7 @@ async def on_check_roles(request):
 ```python
 @app.post("api/security/roles")
 @require_roles("Chat Room Moderator")
-async def on_check_roles(request, authentication_session):
+async def on_check_roles(request):
     return text("Account is authorized.")
 ```
 

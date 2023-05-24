@@ -118,8 +118,8 @@ def requires_two_step_verification():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            two_step_session = await two_step_verification(request)
-            return await func(request, two_step_session, *args, **kwargs)
+            request.ctx.two_step_session = await two_step_verification(request)
+            return await func(request, *args, **kwargs)
 
         return wrapped
 
@@ -223,8 +223,8 @@ def requires_captcha():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            captcha_session = await captcha(request)
-            return await func(request, captcha_session, *args, **kwargs)
+            request.ctx.captcha_session = await captcha(request)
+            return await func(request, *args, **kwargs)
 
         return wrapped
 

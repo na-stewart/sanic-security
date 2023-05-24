@@ -255,8 +255,8 @@ def requires_authentication():
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(request, *args, **kwargs):
-            authentication_session = await authenticate(request)
-            return await func(request, authentication_session, *args, **kwargs)
+            request.ctx.authentication_session = await authenticate(request)
+            return await func(request, *args, **kwargs)
 
         return wrapped
 

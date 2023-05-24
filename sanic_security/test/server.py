@@ -1,6 +1,5 @@
 from argon2 import PasswordHasher
 from sanic import Sanic, text
-from sanic.utils import str_to_bool
 from tortoise.contrib.sanic import register_tortoise
 
 from sanic_security.authentication import (
@@ -132,23 +131,23 @@ async def on_logout(request):
 
 @app.post("api/test/auth")
 @requires_authentication()
-async def on_authenticate(request, authentication_session):
+async def on_authenticate(request):
     """
     Authenticate client session and account.
     """
-    response = json("Authenticated!", authentication_session.bearer.json)
-    authentication_session.encode(response)
+    response = json("Authenticated!", request.ctx.authentication_session.bearer.json)
+    request.ctx.authentication_session.encode(response)
     return response
 
 
 @app.post("api/test/auth/associated")
 @requires_authentication()
-async def on_get_associated_authentication_sessions(request, authentication_session):
+async def on_get_associated_authentication_sessions(request):
     """
     Retrieves authentication sessions associated with logged in account.
     """
     authentication_sessions = await AuthenticationSession.get_associated(
-        authentication_session.bearer
+        request.ctx.authentication_session.bearer
     )
     return json(
         "Associated authentication sessions retrieved!",
@@ -180,11 +179,11 @@ async def on_captcha_image(request):
 
 @app.post("api/test/capt")
 @requires_captcha()
-async def on_captcha_attempt(request, captcha_session):
+async def on_captcha_attempt(request):
     """
     Attempt captcha challenge.
     """
-    return json("Captcha attempt successful!", captcha_session.json)
+    return json("Captcha attempt successful!", request.ctx.captcha_session.json)
 
 
 @app.post("api/test/two-step/request")
@@ -200,16 +199,18 @@ async def on_request_verification(request):
 
 @app.post("api/test/two-step")
 @requires_two_step_verification()
-async def on_verification_attempt(request, two_step_session):
+async def on_verification_attempt(request):
     """
     Attempt two-step verification challenge.
     """
-    return json("Two step verification attempt successful!", two_step_session.json)
+    return json(
+        "Two step verification attempt successful!", request.ctx.two_step_session.json
+    )
 
 
 @app.post("api/test/auth/roles")
 @requires_authentication()
-async def on_authorization(request, authentication_session):
+async def on_authorization(request):
     """
     Check if client is authorized with sufficient roles and permissions.
     """
@@ -223,13 +224,13 @@ async def on_authorization(request, authentication_session):
 
 @app.post("api/test/auth/roles/assign")
 @requires_authentication()
-async def on_role_assign(request, authentication_session):
+async def on_role_assign(request):
     """
     Assign authenticated account a role.
     """
     await assign_role(
         request.form.get("name"),
-        authentication_session.bearer,
+        request.ctx.authentication_session.bearer,
         request.form.get("permissions"),
         "Role used for testing.",
     )
