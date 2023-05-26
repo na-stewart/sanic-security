@@ -40,6 +40,86 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 password_hasher = PasswordHasher()
 
 
+def validate_email(email: str) -> str:
+    """
+    Validates email format.
+
+    Args:
+        email (str): Email being validated.
+
+    Returns:
+        email
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+        raise CredentialsError("Please use a valid email address.", 400)
+    return email
+
+
+def validate_username(username: str) -> str:
+    """
+    Validates username format.
+
+    Args:
+        username (str): Username being validated.
+
+    Returns:
+        username
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", username):
+        raise CredentialsError(
+            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
+            400,
+        )
+    return username
+
+
+def validate_phone(phone: str) -> str:
+    """
+    Validates phone number format.
+
+    Args:
+        phone (str): Phone number being validated.
+
+    Returns:
+        phone
+
+    Raises:
+        CredentialsError
+    """
+    if phone and not re.search(
+        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
+    ):
+        raise CredentialsError("Please use a valid phone number.", 400)
+    return phone
+
+
+def validate_password(password: str) -> str:
+    """
+    Validates password requirements.
+
+    Args:
+        password (str): Password being validated.
+
+    Returns:
+        password
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).*$", password):
+        raise CredentialsError(
+            "Password must contain one capital letter, one number, and one special character",
+            400,
+        )
+    return password
+
+
 async def register(
     request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
@@ -57,24 +137,10 @@ async def register(
     Raises:
         CredentialsError
     """
-    email_lower = request.form.get("email").lower()
-    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email_lower):
-        raise CredentialsError("Please use a valid email address.", 400)
-    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", request.form.get("username")):
-        raise CredentialsError(
-            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
-            400,
-        )
-    if request.form.get("phone") and not re.search(
-        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$",
-        request.form.get("phone"),
-    ):
-        raise CredentialsError("Please use a valid phone number.", 400)
-    if 100 > len(request.form.get("password")) < 8:
-        raise CredentialsError(
-            "Password must be more than 8 characters and must be less than 100 characters.",
-            400,
-        )
+    email_lower = validate_email(request.form.get("email").lower())
+    validate_username(request.form.get("username"))
+    validate_phone(request.form.get("phone"))
+    validate_password(request.form.get("password"))
     if await Account.filter(email=email_lower).exists():
         raise CredentialsError("An account with this email already exists.", 409)
     elif await Account.filter(username=request.form.get("username")).exists():

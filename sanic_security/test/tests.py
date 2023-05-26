@@ -49,7 +49,7 @@ class RegistrationTest(TestCase):
             data={
                 "username": username,
                 "email": email,
-                "password": "password",
+                "password": "Pas$word1",
                 "disabled": disabled,
                 "verified": verified,
                 "phone": phone,
@@ -71,7 +71,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("account_registration@register.test", "password"),
+            auth=("account_registration@register.test", "Pas$word1"),
         )
         assert login_response.status_code == 200, login_response.text
 
@@ -117,7 +117,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("disabled@register.test", "password"),
+            auth=("disabled@register.test", "Pas$word1"),
         )
         assert "DisabledError" in login_response.text, login_response.text
 
@@ -131,7 +131,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unverified@register.test", "password"),
+            auth=("unverified@register.test", "Pas$word1"),
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -145,7 +145,7 @@ class RegistrationTest(TestCase):
         assert registration_response.status_code == 200, registration_response.text
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("unverified_disabled@register.test", "password"),
+            auth=("unverified_disabled@register.test", "Pas$word1"),
         )
         assert "UnverifiedError" in login_response.text, login_response.text
 
@@ -367,7 +367,7 @@ class VerificationTest(TestCase):
             data={
                 "username": "account_verification",
                 "email": "account_verification@verification.test",
-                "password": "password",
+                "password": "Pa$sword1",
                 "disabled": False,
                 "verified": False,
             },
