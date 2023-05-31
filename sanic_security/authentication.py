@@ -93,7 +93,7 @@ def validate_phone(phone: str) -> str:
         CredentialsError
     """
     if phone and not re.search(
-            r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
+        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
     ):
         raise CredentialsError("Please use a valid phone number.", 400)
     return phone
@@ -121,7 +121,7 @@ def validate_password(password: str) -> str:
 
 
 async def register(
-        request: Request, verified: bool = False, disabled: bool = False
+    request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account that can be logged into.
@@ -140,18 +140,19 @@ async def register(
     email_lower = validate_email(request.form.get("email").lower())
     if await Account.filter(email=email_lower).exists():
         raise CredentialsError("An account with this email already exists.", 409)
-    elif await Account.filter(username=request.form.get("username")).exists():
+    elif await Account.filter(username=validate_username(request.form.get("username"))).exists():
         raise CredentialsError("An account with this username already exists.", 409)
     elif (
-            request.form.get("phone")
-            and await Account.filter(phone=request.form.get("phone")).exists()
+        request.form.get("phone")
+        and await Account.filter(phone=validate_phone(request.form.get("phone"))).exists()
     ):
         raise CredentialsError("An account with this phone number already exists.", 409)
+    validate_password(request.form.get("password"))
     account = await Account.create(
         email=email_lower,
-        username=validate_username(request.form.get("username")),
-        password=password_hasher.hash(validate_password(request.form.get("password"))),
-        phone=validate_phone(request.form.get("phone")),
+        username=request.form.get("username"),
+        password=password_hasher.hash(request.form.get("password")),
+        phone=request.form.get("phone"),
         verified=verified,
         disabled=disabled,
     )
@@ -159,7 +160,7 @@ async def register(
 
 
 async def login(
-        request: Request, account: Account = None, require_second_factor: bool = False
+    request: Request, account: Account = None, require_second_factor: bool = False
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
