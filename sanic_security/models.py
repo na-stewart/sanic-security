@@ -299,16 +299,18 @@ class Session(BaseModel):
             payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
         if isinstance(encoded_session, bytes):
-            response.cookies[cookie] = encoded_session.decode()
-        elif isinstance(encoded_session, str):
-            response.cookies[cookie] = encoded_session
-        response.cookies[cookie]["httponly"] = security_config.SESSION_HTTPONLY
-        response.cookies[cookie]["samesite"] = security_config.SESSION_SAMESITE
-        response.cookies[cookie]["secure"] = security_config.SESSION_SECURE
+            encoded_session = encoded_session.decode()
+        response.cookies.add_cookie(
+            cookie,
+            encoded_session,
+            httponly=security_config.SESSION_HTTPONLY,
+            samesite=security_config.SESSION_SAMESITE,
+            secure=security_config.SESSION_SECURE,
+        )
         if self.expiration_date:
-            response.cookies[cookie]["expires"] = self.expiration_date
+            response.cookies.get_cookie(cookie).expires = self.expiration_date
         if security_config.SESSION_DOMAIN:
-            response.cookies[cookie]["domain"] = security_config.SESSION_DOMAIN
+            response.cookies.get_cookie(cookie).domain = security_config.SESSION_DOMAIN
 
     @classmethod
     async def new(
