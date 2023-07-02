@@ -99,7 +99,7 @@ For example:
 from sanic_security.configuration import config
 
 config.SECRET = "This is a big secret. Shhhhh"
-config["CAPTCHA_FONT"] = "./resources/captcha.ttf"
+config["CAPTCHA_FONT"] = "./resources/captcha-font.ttf"
 ```
 
 You can also use the update() method like on regular dictionaries.
