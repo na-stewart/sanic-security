@@ -544,6 +544,9 @@ class AuthenticationSession(Session):
             ),
         )
 
+    class Meta:
+        table = "authentication_session"
+
 
 class Role(BaseModel):
     """
