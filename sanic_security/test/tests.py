@@ -315,9 +315,7 @@ class VerificationTest(TestCase):
         captcha_image_response = self.client.get(
             "http://127.0.0.1:8000/api/test/capt/image"
         )
-        assert (
-            captcha_image_response.status_code == 200
-        ), captcha_image_response.text
+        assert captcha_image_response.status_code == 200, captcha_image_response.text
         captcha_attempt_response = self.client.post(
             "http://127.0.0.1:8000/api/test/capt",
             data={"captcha": json.loads(captcha_request_response.text)["data"]},
