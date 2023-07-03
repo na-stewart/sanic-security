@@ -500,7 +500,7 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        image = ImageCaptcha(190, 90)
+        image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
         with BytesIO() as output:
             image.generate_image(self.code).save(output, format="JPEG")
             return raw(output.getvalue(), content_type="image/jpeg")
