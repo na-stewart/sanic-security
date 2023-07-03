@@ -285,7 +285,7 @@ downloading a .ttf font and defining the file's path in the configuration.
 
 Captcha challenge example:
 
-[![Captcha image.](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)](https://github.com/sunset-developer/sanic-security/blob/main/images/captcha.png)
+[![Captcha image.](https://github.com/na-stewart/sanic-security/blob/main/images/captcha.png?raw=true)](https://github.com/na-stewart/sanic-security/blob/main/images/captcha.png?raw=true)
 
 * Request Captcha
 
