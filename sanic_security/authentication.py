@@ -350,7 +350,7 @@ def create_initial_admin_account(app: Sanic) -> None:
                 name="Head Admin",
             )
         try:
-            account = await Account.filter(username="Head-Admin").get()
+            account = await Account.filter(email=security_config.INITIAL_ADMIN_EMAIL).get()
             await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)

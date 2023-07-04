@@ -35,7 +35,7 @@ def get_ip(request: Request) -> str:
     Returns:
         ip
     """
-    return request.remote_addr or request.ip
+    return request.remote_addr or request.headers.get("x-real-ip") or request.ip
 
 
 def get_code() -> str:
