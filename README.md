@@ -56,7 +56,7 @@ This library contains a variety of features including:
 
 Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation,
 
-and check out [blog.na-stewart.com](https://blog.na-stewart.com) for an example implementation.
+and check out [blog.na-stewart.com]([https://blog.na-stewart.com](https://github.com/na-stewart/Aidans-Page)) for an example implementation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
