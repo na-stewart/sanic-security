@@ -268,7 +268,7 @@ async def on_authenticate(request):
 
 ```python
 @app.post("api/security/auth")
-@requires_authentication()
+@requires_authentication
 async def on_authenticate(request):
     return json(
         "You have been authenticated.",
@@ -321,7 +321,7 @@ async def on_captcha(request):
 
 ```python
 @app.post("ap/security/captcha")
-@requires_captcha()
+@requires_captcha
 async def on_captcha(request):
     return json("Captcha attempt successful!", request.ctx.captcha_session.json)
 ```
@@ -384,7 +384,7 @@ async def on_two_step_verification(request):
 
 ```python
 @app.post("api/security/two-step")
-@requires_two_step_verification()
+@requires_two_step_verification
 async def on_two_step_verification(request):
     response = json(
         "Two-step verification attempt successful!",

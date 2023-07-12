@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "sanic-security"
-version = "1.11.4"
+version = "1.11.5"
 description = "An effective, simple, and async security library for the Sanic framework."
 authors = ["Aidan Stewart <na.stewart365@gmail.com>"]
 readme = "README.md"

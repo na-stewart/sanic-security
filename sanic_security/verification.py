@@ -4,7 +4,6 @@ from contextlib import suppress
 from sanic.request import Request
 
 from sanic_security.exceptions import (
-    AccountError,
     JWTDecodeError,
     NotFoundError,
     VerifiedError,
@@ -90,7 +89,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-def requires_two_step_verification():
+def requires_two_step_verification(arg=None):
     """
     Validates a two-step verification attempt.
 
@@ -98,7 +97,7 @@ def requires_two_step_verification():
         This method is not called directly and instead used as a decorator:
 
             @app.post("api/verification/attempt")
-            @requires_two_step_verification()
+            @requires_two_step_verification
             async def on_verified(request):
                 response = json("Two-step verification attempt successful!", two_step_session.json())
                 return response
@@ -115,15 +114,18 @@ def requires_two_step_verification():
         MaxedOutChallengeError
     """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        async def wrapped(request, *args, **kwargs):
+        async def wrapper(request, *args, **kwargs):
             request.ctx.two_step_session = await two_step_verification(request)
             return await func(request, *args, **kwargs)
 
-        return wrapped
+        return wrapper
 
-    return wrapper
+    if callable(arg):
+        return decorator(arg)
+    else:
+        return decorator
 
 
 async def verify_account(request: Request) -> TwoStepSession:
@@ -198,7 +200,7 @@ async def captcha(request: Request) -> CaptchaSession:
     return captcha_session
 
 
-def requires_captcha():
+def requires_captcha(arg=None):
     """
     Validates a captcha challenge attempt.
 
@@ -206,7 +208,7 @@ def requires_captcha():
         This method is not called directly and instead used as a decorator:
 
             @app.post("api/captcha/attempt")
-            @requires_captcha()
+            @requires_captcha
             async def on_captcha_attempt(request):
                 return json("Captcha attempt successful!", captcha_session.json())
 
@@ -220,12 +222,15 @@ def requires_captcha():
         MaxedOutChallengeError
     """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        async def wrapped(request, *args, **kwargs):
+        async def wrapper(request, *args, **kwargs):
             request.ctx.captcha_session = await captcha(request)
             return await func(request, *args, **kwargs)
 
-        return wrapped
+        return wrapper
 
-    return wrapper
+    if callable(arg):
+        return decorator(arg)
+    else:
+        return decorator

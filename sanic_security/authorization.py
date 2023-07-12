@@ -10,7 +10,6 @@ from sanic_security.exceptions import AuthorizationError
 from sanic_security.models import Role, Account, AuthenticationSession
 from sanic_security.utils import get_ip
 
-
 """
 An effective, simple, and async security library for the Sanic framework.
 Copyright (C) 2020-present Aidan Stewart
@@ -121,17 +120,17 @@ def require_permissions(*required_permissions: str):
         AuthorizationError
     """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        async def wrapped(request, *args, **kwargs):
+        async def wrapper(request, *args, **kwargs):
             request.ctx.authentication_session = await check_permissions(
                 request, *required_permissions
             )
             return await func(request, *args, **kwargs)
 
-        return wrapped
+        return wrapper
 
-    return wrapper
+    return decorator(required_permissions)
 
 
 def require_roles(*required_roles: str):
@@ -160,17 +159,17 @@ def require_roles(*required_roles: str):
         AuthorizationError
     """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        async def wrapped(request, *args, **kwargs):
+        async def wrapper(request, *args, **kwargs):
             request.ctx.authentication_session = await check_roles(
                 request, *required_roles
             )
             return await func(request, *args, **kwargs)
 
-        return wrapped
+        return wrapper
 
-    return wrapper
+    return decorator(required_roles)
 
 
 async def assign_role(

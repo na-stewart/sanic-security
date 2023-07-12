@@ -45,7 +45,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-app = Sanic("security-test")
+app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
 
 
@@ -130,7 +130,7 @@ async def on_logout(request):
 
 
 @app.post("api/test/auth")
-@requires_authentication()
+@requires_authentication
 async def on_authenticate(request):
     """
     Authenticate client session and account.
@@ -141,7 +141,7 @@ async def on_authenticate(request):
 
 
 @app.post("api/test/auth/associated")
-@requires_authentication()
+@requires_authentication
 async def on_get_associated_authentication_sessions(request):
     """
     Retrieves authentication sessions associated with logged in account.
@@ -178,7 +178,7 @@ async def on_captcha_image(request):
 
 
 @app.post("api/test/capt")
-@requires_captcha()
+@requires_captcha
 async def on_captcha_attempt(request):
     """
     Attempt captcha challenge.
@@ -198,7 +198,7 @@ async def on_request_verification(request):
 
 
 @app.post("api/test/two-step")
-@requires_two_step_verification()
+@requires_two_step_verification
 async def on_verification_attempt(request):
     """
     Attempt two-step verification challenge.
@@ -209,7 +209,7 @@ async def on_verification_attempt(request):
 
 
 @app.post("api/test/auth/roles")
-@requires_authentication()
+@requires_authentication
 async def on_authorization(request):
     """
     Check if client is authorized with sufficient roles and permissions.
@@ -223,7 +223,7 @@ async def on_authorization(request):
 
 
 @app.post("api/test/auth/roles/assign")
-@requires_authentication()
+@requires_authentication
 async def on_role_assign(request):
     """
     Assign authenticated account a role.

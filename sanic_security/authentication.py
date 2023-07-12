@@ -298,7 +298,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     return authentication_session
 
 
-def requires_authentication():
+def requires_authentication(arg=None):
     """
     Validates client's authentication session and account.
 
@@ -306,7 +306,7 @@ def requires_authentication():
         This method is not called directly and instead used as a decorator:
 
             @app.post('api/authenticate')
-            @requires_authentication()
+            @requires_authentication
             async def on_authenticate(request):
                 return text('User is authenticated!')
 
@@ -320,15 +320,18 @@ def requires_authentication():
         DisabledError
     """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        async def wrapped(request, *args, **kwargs):
+        async def wrapper(request, *args, **kwargs):
             request.ctx.authentication_session = await authenticate(request)
             return await func(request, *args, **kwargs)
 
-        return wrapped
+        return wrapper
 
-    return wrapper
+    if callable(arg):
+        return decorator(arg)
+    else:
+        return decorator
 
 
 def create_initial_admin_account(app: Sanic) -> None:
