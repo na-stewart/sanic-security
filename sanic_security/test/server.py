@@ -130,7 +130,7 @@ async def on_logout(request):
 
 
 @app.post("api/test/auth")
-@requires_authentication
+@requires_authentication()
 async def on_authenticate(request):
     """
     Authenticate client session and account.
