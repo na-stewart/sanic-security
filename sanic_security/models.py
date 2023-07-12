@@ -222,7 +222,6 @@ class Session(BaseModel):
         active (bool): Determines if the session can be used.
         ip (str): IP address of client creating session.
         bearer (ForeignKeyRelation[Account]): Account associated with this session.
-        ctx (SimpleNamespace): Store whatever additional information you need about the session. Fields stored will be encoded.
     """
 
     expiration_date: datetime.datetime = fields.DatetimeField(null=True)
@@ -231,7 +230,6 @@ class Session(BaseModel):
     bearer: fields.ForeignKeyRelation["Account"] = fields.ForeignKeyField(
         "models.Account", null=True
     )
-    ctx = SimpleNamespace()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
