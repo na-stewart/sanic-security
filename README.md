@@ -54,7 +54,9 @@ This library contains a variety of features including:
 * Two-step verification
 * Role based authorization with wildcard permissions
 
-Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
+Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation,
+
+and check out [blog.na-stewart.com](https://github.com/na-stewart/Aidans-Page) for an example implementation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
