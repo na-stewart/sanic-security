@@ -1,6 +1,5 @@
 import datetime
 from io import BytesIO
-from types import SimpleNamespace
 from typing import Union
 
 import jwt
