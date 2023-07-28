@@ -129,6 +129,7 @@ def require_permissions(*required_permissions: str):
             return await func(request, *args, **kwargs)
 
         return wrapper
+
     return decorator
 
 

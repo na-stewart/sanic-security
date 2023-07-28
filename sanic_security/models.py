@@ -240,7 +240,9 @@ class Session(BaseModel):
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "bearer": self.bearer.email if isinstance(self.bearer, Account) else None,
+            "bearer": self.bearer.username
+            if isinstance(self.bearer, Account)
+            else None,
             "active": self.active,
         }
 
