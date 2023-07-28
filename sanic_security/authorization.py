@@ -129,8 +129,7 @@ def require_permissions(*required_permissions: str):
             return await func(request, *args, **kwargs)
 
         return wrapper
-
-    return decorator(required_permissions)
+    return decorator
 
 
 def require_roles(*required_roles: str):
@@ -169,7 +168,7 @@ def require_roles(*required_roles: str):
 
         return wrapper
 
-    return decorator(required_roles)
+    return decorator
 
 
 async def assign_role(
