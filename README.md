@@ -172,7 +172,7 @@ async def on_register(request):
     )  # Custom method for emailing verification code.
     response = json(
         "Registration successful! Email verification required.",
-        two_step_session.bearer.json,
+        two_step_session.json,
     )
     two_step_session.encode(response)
     return response
@@ -191,7 +191,7 @@ Verifies the client's account via two-step session code.
 async def on_verify(request):
     two_step_session = await verify_account(request)
     return json(
-        "You have verified your account and may login!", two_step_session.bearer.json
+        "You have verified your account and may login!", two_step_session.json
     )
 ```
 
@@ -215,7 +215,7 @@ async def on_login(request):
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
-        authentication_session.bearer.json,
+        authentication_session.json,
     )
     authentication_session.encode(response)
     two_step_session.encode(response)
@@ -236,7 +236,7 @@ async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
         "Authentication session second-factor fulfilled! You are now authenticated.",
-        authentication_session.bearer.json,
+        authentication_session.json,
     )
     authentication_session.encode(response)
     return response
@@ -248,7 +248,7 @@ async def on_two_factor_authentication(request):
 @app.post("api/security/logout")
 async def on_logout(request):
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.bearer.json)
+    response = json("Logout successful!", authentication_session.json)
     return response
 ```
 
@@ -260,7 +260,7 @@ async def on_authenticate(request):
     authentication_session = await authenticate(request)
     return json(
         "You have been authenticated.",
-        authentication_session.bearer.json,
+        authentication_session.json,
     )
 ```
 
@@ -272,7 +272,7 @@ async def on_authenticate(request):
 async def on_authenticate(request):
     return json(
         "You have been authenticated.",
-        request.ctx.authentication_session.bearer.json,
+        request.ctx.authentication_session.json,
     )
 ```
 
@@ -343,7 +343,7 @@ async def on_two_step_request(request):
     await email_code(
         account.email, two_step_session.code  # Code = DT6JZX
     )  # Custom method for emailing verification code.
-    response = json("Verification request successful!", two_step_session.bearer.json)
+    response = json("Verification request successful!", two_step_session.json)
     two_step_session.encode(response)
     return response
 ```
@@ -357,7 +357,7 @@ async def on_two_step_resend(request):
     await email_code(
         account.email, two_step_session.code  # Code = DT6JZX
     )  # Custom method for emailing verification code.
-    return json("Verification code resend successful!", two_step_session.bearer.json)
+    return json("Verification code resend successful!", two_step_session.json)
 ```
 
 * Two-step Verification
@@ -371,7 +371,7 @@ async def on_two_step_resend(request):
 async def on_two_step_verification(request):
     two_step_session = await two_step_verification(request)
     response = json(
-        "Two-step verification attempt successful!", two_step_session.bearer.json
+        "Two-step verification attempt successful!", two_step_session.json
     )
     return response
 ```
@@ -388,7 +388,7 @@ async def on_two_step_verification(request):
 async def on_two_step_verification(request):
     response = json(
         "Two-step verification attempt successful!",
-        request.ctx.two_step_session.bearer.json,
+        request.ctx.two_step_session.json,
     )
     return response
 ```
