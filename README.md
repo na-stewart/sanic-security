@@ -190,9 +190,7 @@ Verifies the client's account via two-step session code.
 @app.post("api/security/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json(
-        "You have verified your account and may login!", two_step_session.json
-    )
+    return json("You have verified your account and may login!", two_step_session.json)
 ```
 
 * Login (With Two-factor Authentication)
@@ -370,9 +368,7 @@ async def on_two_step_resend(request):
 @app.post("api/security/two-step")
 async def on_two_step_verification(request):
     two_step_session = await two_step_verification(request)
-    response = json(
-        "Two-step verification attempt successful!", two_step_session.json
-    )
+    response = json("Two-step verification attempt successful!", two_step_session.json)
     return response
 ```
 
