@@ -8,7 +8,7 @@
 -->
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Downloads](https://pepy.tech/badge/sanic-security)](https://pepy.tech/project/sanic-security)
+[![Downloads](https://static.pepy.tech/badge/sanic-security)](https://pepy.tech/project/sanic-security)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/sanic-security.svg)](https://anaconda.org/conda-forge/sanic-security)
 
 
