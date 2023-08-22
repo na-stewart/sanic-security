@@ -318,7 +318,7 @@ async def on_captcha(request):
 | **captcha** | FV9NMQ |
 
 ```python
-@app.post("ap/security/captcha")
+@app.post("api/security/captcha")
 @requires_captcha
 async def on_captcha(request):
     return json("Captcha attempt successful!", request.ctx.captcha_session.json)
