@@ -373,10 +373,7 @@ class Session(BaseModel):
             else:
                 return jwt.decode(
                     cookie,
-                    security_config.SECRET
-                    if not security_config.PUBLIC_SECRET
-                    else security_config.PUBLIC_SECRET,
-                    security_config.SESSION_ENCODING_ALGORITHM,
+                    security_config.SECRET or security_config.PUBLIC_SECRET
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))

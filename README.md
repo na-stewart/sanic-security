@@ -344,7 +344,7 @@ async def on_two_step_request(request):
     response = json("Verification request successful!", two_step_session.json)
     two_step_session.encode(response)
     return response
-```
+``` 
 
 * Resend Two-step Verification Code
 
