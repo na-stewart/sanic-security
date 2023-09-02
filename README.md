@@ -54,9 +54,7 @@ This library contains a variety of features including:
 * Two-step verification
 * Role based authorization with wildcard permissions
 
-Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation,
-
-and check out [blog.na-stewart.com](https://github.com/na-stewart/Aidans-Page) for an example implementation.
+Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation and [click here for a comprehensive implementation guide](https://blog.na-stewart.com/entry?id=3).
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -229,7 +227,7 @@ Fulfills client authentication session's second factor requirement via two-step 
 | **code** | BG5KLP |
 
 ```python
-@app.post("api/security/validate-2fa")
+@app.post("api/security/fulfill-2fa")
 async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
