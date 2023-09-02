@@ -227,7 +227,7 @@ Fulfills client authentication session's second factor requirement via two-step 
 | **code** | BG5KLP |
 
 ```python
-@app.post("api/security/validate-2fa")
+@app.post("api/security/fulfill-2fa")
 async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
