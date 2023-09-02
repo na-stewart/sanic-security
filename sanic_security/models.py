@@ -372,8 +372,7 @@ class Session(BaseModel):
                 raise JWTDecodeError("Session token not provided or expired.", 401)
             else:
                 return jwt.decode(
-                    cookie,
-                    security_config.SECRET or security_config.PUBLIC_SECRET
+                    cookie, security_config.SbECRET or security_config.PUBLIC_SECRET
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))
