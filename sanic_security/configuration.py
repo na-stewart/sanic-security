@@ -4,7 +4,7 @@ from sanic.utils import str_to_bool
 
 
 """
-Copyright (c) 2020-Present Nicholas Aidan Stewart
+Copyright (c) 2020-present Nicholas Aidan Stewart
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ DEFAULT_CONFIG = {
     "SESSION_ENCODING_ALGORITHM": "HS256",
     "MAX_CHALLENGE_ATTEMPTS": 5,
     "CAPTCHA_SESSION_EXPIRATION": 60,
-    "CAPTCHA_FONT": "captcha-font.ttf",
+    "CAPTCHA_FONT": "resources/captcha-font.ttf",
     "TWO_STEP_SESSION_EXPIRATION": 200,
     "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
     "ALLOW_LOGIN_WITH_USERNAME": False,
