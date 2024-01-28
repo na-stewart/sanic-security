@@ -283,7 +283,7 @@ downloading a .ttf font and defining the file's path in the configuration.
 
 Captcha challenge example:
 
-[![Captcha image.](https://github.com/na-stewart/sanic-security/blob/main/resources/captcha.png?raw=true)](https://github.com/na-stewart/sanic-security/blob/main/resources/captcha.png?raw=true)
+[![Captcha image.](https://cdn.discordapp.com/attachments/1127810511279489086/1200998594010959932/captcha.png?ex=65c8381a&is=65b5c31a&hm=a214e5a63e478780d4c5a6ac7ddcdefdc5e29d97889ae7ca6c8da1f91de87ac0&)](https://cdn.discordapp.com/attachments/1127810511279489086/1200998594010959932/captcha.png?ex=65c8381a&is=65b5c31a&hm=a214e5a63e478780d4c5a6ac7ddcdefdc5e29d97889ae7ca6c8da1f91de87ac0&)
 
 * Request Captcha
 

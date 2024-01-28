@@ -289,17 +289,16 @@ class Session(BaseModel):
         Args:
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
-        payload = {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "expiration_date": str(self.expiration_date),
-            "ip": self.ip,
-        }
         cookie = (
             f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:7]}"
         )
         encoded_session = jwt.encode(
-            payload, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
+            {
+                "id": self.id,
+                "date_created": str(self.date_created),
+                "expiration_date": str(self.expiration_date),
+                "ip": self.ip,
+            }, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
         )
         if isinstance(encoded_session, bytes):
             encoded_session = encoded_session.decode()

@@ -26,3 +26,4 @@ pdoc3 = {version="*", optional=true}
 [tool.poetry.extras]
 dev = ["httpx", "black", "blacken-docs", "pdoc3", "cryptography"]
 crypto = ["cryptography"]
+
