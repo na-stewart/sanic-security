@@ -531,6 +531,9 @@ class AuthenticationSession(Session):
         if self.requires_second_factor:
             raise SecondFactorRequiredError()
 
+    # TODO: Create refresh token on new session creation.
+    # TODO: Encode authentication session and refresh session into cookies simultaneously.
+
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         return await AuthenticationSession.create(
