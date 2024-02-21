@@ -1,3 +1,5 @@
+import traceback
+
 from argon2 import PasswordHasher
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
@@ -266,6 +268,7 @@ async def on_security_error(request, exception):
     """
     Handles security errors with correct response.
     """
+    traceback.print_exc()
     return exception.json
 
 
