@@ -546,6 +546,26 @@ class AuthenticationSession(Session):
         table = "authentication_session"
 
 
+class AuthenticationRefreshSession(Session):
+    authentication_session: fields.ForeignKeyRelation["AuthenticationSession"] = fields.ForeignKeyField(
+        "models.AuthenticationSession", null=True
+    )
+
+    @classmethod
+    async def new(cls, request: Request, authentication_session: AuthenticationSession, **kwargs):
+        return await AuthenticationSession.create(
+            **kwargs,
+            authentication_session=authentication_session,
+            ip=get_ip(request),
+            expiration_date=get_expiration_date(
+                security_config.AUTHENTICATION_SESSION_EXPIRATION * 2
+            ),
+        )
+
+    class Meta:
+        table = "authentication_refresh_session"
+
+
 class Role(BaseModel):
     """
     Assigned to an account to authorize an action.
