@@ -9,3 +9,4 @@
 .idea
 /sanic_security/lib/
 /captcha-font.ttf
+/poetry.lock
