@@ -248,16 +248,12 @@ async def on_account_creation(request):
     """
     Quick account creation.
     """
-    if await Account.filter(email=request.form.get("email").lower()).exists():
-        raise CredentialsError("An account with this email already exists.", 409)
-    elif await Account.filter(username=request.form.get("username")).exists():
-        raise CredentialsError("An account with this username already exists.", 409)
     account = await Account.create(
         username=request.form.get("username"),
         email=request.form.get("email").lower(),
         password=password_hasher.hash("password"),
         verified=True,
-        dbisabled=False,
+        disabled=False,
     )
     response = json("Account creation successful!", account.json)
     return response

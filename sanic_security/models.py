@@ -113,19 +113,6 @@ class Account(BaseModel):
         "models.Role", through="account_role"
     )
 
-    @property
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "email": self.email,
-            "username": self.username,
-            "phone": self.phone,
-            "disabled": self.disabled,
-            "verified": self.verified,
-        }
-
     def validate(self) -> None:
         """
         Raises an error with respect to account state.
@@ -154,6 +141,19 @@ class Account(BaseModel):
         else:
             self.disabled = True
             await self.save(update_fields=["disabled"])
+
+    @property
+    def json(self) -> dict:
+        return {
+            "id": self.id,
+            "date_created": str(self.date_created),
+            "date_updated": str(self.date_updated),
+            "email": self.email,
+            "username": self.username,
+            "phone": self.phone,
+            "disabled": self.disabled,
+            "verified": self.verified,
+        }
 
     @staticmethod
     async def get_via_email(email: str):
@@ -237,19 +237,6 @@ class Session(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @property
-    def json(self) -> dict:
-        return {
-            "id": self.id,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
-            "expiration_date": str(self.expiration_date),
-            "bearer": self.bearer.username
-            if isinstance(self.bearer, Account)
-            else None,
-            "active": self.active,
-        }
-
     def validate(self) -> None:
         """
         Raises an error with respect to session state.
@@ -261,13 +248,10 @@ class Session(BaseModel):
         """
         if self.deleted:
             raise DeletedError("Session has been deleted.")
-        elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
-        ):
-            raise ExpiredError()
         elif not self.active:
             raise DeactivatedError()
+        elif self.expiration_date and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date:
+            raise ExpiredError()
 
     async def deactivate(self):
         """
@@ -314,12 +298,49 @@ class Session(BaseModel):
         if security_config.SESSION_DOMAIN:
             response.cookies.get_cookie(cookie).domain = security_config.SESSION_DOMAIN
 
+    async def location_familiarity(self, request):
+        """
+        Checks if the client is accessing session from a familiar location.
+
+        Args:
+            request (Request): Sanic request parameter.
+
+        Raises:
+            UnfamiliarLocationError
+        """
+        client_ip = get_ip(request)
+        if client_ip != self.ip and not await self.filter(ip=client_ip, deleted=False).exists():
+            raise UnfamiliarLocationError()
+
+    @property
+    def is_anonymous(self) -> bool:
+        """
+        Determines if an account is associated with session.
+
+        Returns:
+            is_anonymous
+        """
+        return self.bearer is None
+
+    @property
+    def json(self) -> dict:
+        return {
+            "id": self.id,
+            "date_created": str(self.date_created),
+            "date_updated": str(self.date_updated),
+            "expiration_date": str(self.expiration_date),
+            "bearer": self.bearer.username
+            if isinstance(self.bearer, Account)
+            else None,
+            "active": self.active,
+        }
+
     @classmethod
     async def new(
-        cls,
-        request: Request,
-        account: Account,
-        **kwargs: Union[int, str, bool, float, list, dict],
+            cls,
+            request: Request,
+            account: Account,
+            **kwargs: Union[int, str, bool, float, list, dict],
     ):
         """
         Creates session with pre-set values.
@@ -348,7 +369,7 @@ class Session(BaseModel):
         Raises:
             NotFoundError
         """
-        sessions = await cls.filter(bearer=account).prefetch_related("bearer").all()
+        sessions = await cls.filter(bearer=account, deleted=False).all()
         if not sessions:
             raise NotFoundError("No sessions associated to account were found.")
         return sessions
@@ -375,7 +396,8 @@ class Session(BaseModel):
                 raise JWTDecodeError("Session token not provided or expired.", 401)
             else:
                 return jwt.decode(
-                    cookie, security_config.PUBLIC_SECRET or security_config.SECRET, algorithms=[security_config.SESSION_ENCODING_ALGORITHM]
+                    cookie, security_config.PUBLIC_SECRET or security_config.SECRET,
+                    security_config.SESSION_ENCODING_ALGORITHM
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))
@@ -516,6 +538,7 @@ class AuthenticationSession(Session):
     """
 
     requires_second_factor: bool = fields.BooleanField(default=False)
+    refresh_date: datetime.datetime = fields.DatetimeField(null=True)
 
     def validate(self) -> None:
         """
@@ -531,6 +554,28 @@ class AuthenticationSession(Session):
         if self.requires_second_factor:
             raise SecondFactorRequiredError()
 
+    async def refresh(self, request: Request):
+        """
+        Seamlessly creates new session if within refresh date.
+
+        Raises:
+            DeletedError
+            ExpiredError
+            DeactivatedError
+            SecondFactorRequiredError
+            NotExpiredError
+        """
+        try:
+            self.validate()
+            raise NotExpiredError()
+        except ExpiredError as e:
+            if datetime.datetime.now(datetime.timezone.utc) <= self.refresh_date:
+                self.active = False
+                await self.save(update_fields=["active"])
+                return self.new(request, self.bearer)
+            else:
+                raise e
+
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         return await AuthenticationSession.create(
@@ -540,6 +585,9 @@ class AuthenticationSession(Session):
             expiration_date=get_expiration_date(
                 security_config.AUTHENTICATION_SESSION_EXPIRATION
             ),
+            refresh_date=get_expiration_date(
+                security_config.AUTHENTICATION_SESSION_REFRESH
+            )
         )
 
     class Meta:

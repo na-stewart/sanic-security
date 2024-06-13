@@ -38,8 +38,9 @@ DEFAULT_CONFIG = {
     "MAX_CHALLENGE_ATTEMPTS": 5,
     "CAPTCHA_SESSION_EXPIRATION": 60,
     "CAPTCHA_FONT": "captcha-font.ttf",
-    "TWO_STEP_SESSION_EXPIRATION": 200,
-    "AUTHENTICATION_SESSION_EXPIRATION": 2592000,
+    "TWO_STEP_SESSION_EXPIRATION": 300,
+    "AUTHENTICATION_SESSION_EXPIRATION": 86400,
+    "AUTHENTICATION_SESSION_REFRESH": 2592000,
     "ALLOW_LOGIN_WITH_USERNAME": False,
     "INITIAL_ADMIN_EMAIL": "admin@example.com",
     "INITIAL_ADMIN_PASSWORD": "admin123",
@@ -63,8 +64,9 @@ class Config(dict):
         MAX_CHALLENGE_ATTEMPTS (str): The maximum amount of session challenge attempts allowed.
         CAPTCHA_SESSION_EXPIRATION (int): The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
-        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two step session expiration on creation. Setting to 0 will disable expiration.
+        TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
+        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session refresh expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
         INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
         INITIAL_ADMIN_PASSWORD (str): Password used when creating the initial admin account.
@@ -84,6 +86,7 @@ class Config(dict):
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
+    AUTHENTICATION_SESSION_REFRESH: int
     ALLOW_LOGIN_WITH_USERNAME: bool
     INITIAL_ADMIN_EMAIL: str
     INITIAL_ADMIN_PASSWORD: str

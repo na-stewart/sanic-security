@@ -123,13 +123,31 @@ class DeactivatedError(SessionError):
         super().__init__(message, code)
 
 
+class UnfamiliarLocationError(SessionError):
+    """
+    Raised when session is accessed from an unfamiliar ip address
+    """
+
+    def __init__(self):
+        super().__init__("Session accessed from an unfamiliar location.")
+
+
 class ExpiredError(SessionError):
     """
     Raised when session has expired.
     """
 
     def __init__(self):
-        super().__init__("Session has expired")
+        super().__init__("Session has expired.")
+
+
+class NotExpiredError(SessionError):
+    """
+    Raised when session needs to be expired.
+    """
+
+    def __init__(self):
+        super().__init__("Session has not expired yet.", 403)
 
 
 class SecondFactorRequiredError(SessionError):

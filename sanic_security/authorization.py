@@ -57,6 +57,8 @@ async def check_permissions(
         AuthorizationError
     """
     authentication_session = await authenticate(request)
+    if authentication_session.is_anonymous:
+        raise AuthorizationError("Session is anonymous.")
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         for required_permission, role_permission in zip(
@@ -90,6 +92,8 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         AuthorizationError
     """
     authentication_session = await authenticate(request)
+    if authentication_session.is_anonymous:
+        raise AuthorizationError("Session is anonymous.")
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         if role.name in required_roles:

@@ -143,18 +143,18 @@ async def register(
     """
     email_lower = validate_email(request.form.get("email").lower())
     if await Account.filter(email=email_lower).exists():
-        raise CredentialsError("An account with this email already exists.", 409)
+        raise CredentialsError("An account with this email may already exist.", 409)
     elif await Account.filter(
         username=validate_username(request.form.get("username"))
     ).exists():
-        raise CredentialsError("An account with this username already exists.", 409)
+        raise CredentialsError("An account with this username may already exist.", 409)
     elif (
         request.form.get("phone")
         and await Account.filter(
             phone=validate_phone(request.form.get("phone"))
         ).exists()
     ):
-        raise CredentialsError("An account with this phone number already exists.", 409)
+        raise CredentialsError("An account with this phone number may already exist.", 409)
     validate_password(request.form.get("password"))
     account = await Account.create(
         email=email_lower,
@@ -267,7 +267,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
     """
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
-    authentication_session.bearer.validate()
+    if not authentication_session.is_anonymous:
+        authentication_session.bearer.validate()
     return authentication_session
 
 
