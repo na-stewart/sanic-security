@@ -80,7 +80,7 @@ def get_expiration_date(seconds: int) -> datetime.datetime:
         expiration_date
     """
     return (
-        datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
+        datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=seconds)
         if seconds > 0
         else None
     )
