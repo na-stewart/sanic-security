@@ -66,7 +66,7 @@ class Config(dict):
         CAPTCHA_FONT (str): The file path to the font being used for captcha generation.
         TWO_STEP_SESSION_EXPIRATION (int):  The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.
         AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
-        AUTHENTICATION_SESSION_EXPIRATION (bool): The amount of seconds till authentication session refresh expiration.
+        AUTHENTICATION_REFRESH_EXPIRATION (bool): The amount of seconds till authentication session refresh expiration.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
         INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
         INITIAL_ADMIN_PASSWORD (str): Password used when creating the initial admin account.
@@ -86,7 +86,7 @@ class Config(dict):
     CAPTCHA_FONT: str
     TWO_STEP_SESSION_EXPIRATION: int
     AUTHENTICATION_SESSION_EXPIRATION: int
-    AUTHENTICATION_SESSION_REFRESH: int
+    AUTHENTICATION_REFRESH_EXPIRATION: int
     ALLOW_LOGIN_WITH_USERNAME: bool
     INITIAL_ADMIN_EMAIL: str
     INITIAL_ADMIN_PASSWORD: str

@@ -586,7 +586,7 @@ class AuthenticationSession(Session):
                 security_config.AUTHENTICATION_SESSION_EXPIRATION
             ),
             refresh_date=get_expiration_date(
-                security_config.AUTHENTICATION_SESSION_REFRESH
+                security_config.AUTHENTICATION_REFRESH_EXPIRATION
             )
         )
 

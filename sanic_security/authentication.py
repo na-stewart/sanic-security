@@ -267,6 +267,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
     """
     authentication_session = await AuthenticationSession.decode(request)
     authentication_session.validate()
+    # Automatic refresh?
     if not authentication_session.is_anonymous:
         authentication_session.bearer.validate()
     return authentication_session
