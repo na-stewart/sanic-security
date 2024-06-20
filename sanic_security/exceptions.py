@@ -57,7 +57,7 @@ class DeletedError(SecurityError):
     """
 
     def __init__(self, message):
-        super().__init__(message, 410)
+        super().__init__(message, 404)
 
 
 class AccountError(SecurityError):
