@@ -271,7 +271,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
     authentication_session = await AuthenticationSession.decode(request)
     try:
         authentication_session.validate()
-        if not authentication_session.is_anonymous:
+        if not authentication_session.anonymous:
             authentication_session.bearer.validate()
     except ExpiredError as e:
         if security_config.AUTHENTICATION_REFRESH_AUTO:

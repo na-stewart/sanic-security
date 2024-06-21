@@ -55,9 +55,10 @@ async def check_permissions(
         UnverifiedError
         DisabledError
         AuthorizationError
+        AnonymousError
     """
     authentication_session = await authenticate(request)
-    if authentication_session.is_anonymous:
+    if authentication_session.anonymous:
         raise AnonymousError()
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
@@ -90,9 +91,10 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         UnverifiedError
         DisabledError
         AuthorizationError
+        AnonymousError
     """
     authentication_session = await authenticate(request)
-    if authentication_session.is_anonymous:
+    if authentication_session.anonymous:
         raise AnonymousError()
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:

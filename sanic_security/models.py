@@ -289,11 +289,9 @@ class Session(BaseModel):
             security_config.SECRET,
             security_config.SESSION_ENCODING_ALGORITHM,
         )
-        if isinstance(encoded_session, bytes):
-            encoded_session = encoded_session.decode()
         response.cookies.add_cookie(
             cookie,
-            encoded_session,
+            str(encoded_session),
             httponly=security_config.SESSION_HTTPONLY,
             samesite=security_config.SESSION_SAMESITE,
             secure=security_config.SESSION_SECURE,
@@ -321,12 +319,12 @@ class Session(BaseModel):
             raise UnfamiliarLocationError()
 
     @property
-    def is_anonymous(self) -> bool:
+    def anonymous(self) -> bool:
         """
         Determines if an account is associated with session.
 
         Returns:
-            is_anonymous
+            anonymous
         """
         return self.bearer is None
 
