@@ -547,6 +547,7 @@ class AuthenticationSession(Session):
         requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
     """
+
     refreshed: bool = fields.BooleanField(default=False)
     requires_second_factor: bool = fields.BooleanField(default=False)
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
@@ -580,7 +581,10 @@ class AuthenticationSession(Session):
             self.validate()
             raise NotExpiredError()
         except ExpiredError as e:
-            if datetime.datetime.now(datetime.timezone.utc) <= self.refresh_expiration_date:
+            if (
+                datetime.datetime.now(datetime.timezone.utc)
+                <= self.refresh_expiration_date
+            ):
                 self.active = False
                 self.refreshed = True
                 await self.save(update_fields=["active", "refreshed"])
