@@ -6,7 +6,7 @@ from sanic.request import Request
 from tortoise.exceptions import DoesNotExist
 
 from sanic_security.authentication import authenticate
-from sanic_security.exceptions import AuthorizationError
+from sanic_security.exceptions import AuthorizationError, AnonymousError
 from sanic_security.models import Role, Account, AuthenticationSession
 from sanic_security.utils import get_ip
 
@@ -58,7 +58,7 @@ async def check_permissions(
     """
     authentication_session = await authenticate(request)
     if authentication_session.is_anonymous:
-        raise AuthorizationError("Session is anonymous.")
+        raise AnonymousError()
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         for required_permission, role_permission in zip(
@@ -93,7 +93,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     """
     authentication_session = await authenticate(request)
     if authentication_session.is_anonymous:
-        raise AuthorizationError("Session is anonymous.")
+        raise AnonymousError()
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         if role.name in required_roles:

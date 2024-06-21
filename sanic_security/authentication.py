@@ -16,7 +16,6 @@ from sanic_security.exceptions import (
     DeactivatedError,
     SecondFactorFulfilledError,
     ExpiredError,
-    RequiredRefreshError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip

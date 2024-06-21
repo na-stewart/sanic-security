@@ -195,6 +195,15 @@ class AuthorizationError(SecurityError):
         super().__init__(message, 403)
 
 
+class AnonymousError(AuthorizationError):
+    """
+    Raised when attempting to authorize an anonymous session.
+    """
+
+    def __init__(self):
+        super().__init__("Session is anonymous.")
+
+
 class CredentialsError(SecurityError):
     """
     Raised when credentials are invalid.
