@@ -14,7 +14,7 @@ from sanic_security.exceptions import (
     NotFoundError,
     CredentialsError,
     DeactivatedError,
-    SecondFactorFulfilledError,
+    SecondFactorFulfilledError, ExpiredError, RequiredRefreshError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip
@@ -268,10 +268,16 @@ async def authenticate(request: Request) -> AuthenticationSession:
         SecondFactorRequiredError
     """
     authentication_session = await AuthenticationSession.decode(request)
-    authentication_session.validate()
-    # Automatic refresh?
-    if not authentication_session.is_anonymous:
-        authentication_session.bearer.validate()
+    try:
+        authentication_session.validate()
+        if not authentication_session.is_anonymous:
+            authentication_session.bearer.validate()
+    except ExpiredError as e:
+        if security_config.AUTHENTICATION_REFRESH_AUTO:
+            authentication_session = await authentication_session.refresh(request)
+            logger.debug("Authentication session has been auto-refreshed.")
+        else:
+            raise e
     return authentication_session
 
 

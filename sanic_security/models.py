@@ -543,11 +543,13 @@ class AuthenticationSession(Session):
     Used to authenticate and identify a client.
 
     Attributes:
+        refreshed (bool): Determines if session has been refreshed.
         requires_second_factor (bool): Determines if session requires a second factor.
+        refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
     """
-
+    refreshed: bool = fields.BooleanField(default=False)
     requires_second_factor: bool = fields.BooleanField(default=False)
-    refresh_date: datetime.datetime = fields.DatetimeField(null=True)
+    refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
 
     def validate(self) -> None:
         """
@@ -578,9 +580,10 @@ class AuthenticationSession(Session):
             self.validate()
             raise NotExpiredError()
         except ExpiredError as e:
-            if datetime.datetime.now(datetime.timezone.utc) <= self.refresh_date:
+            if datetime.datetime.now(datetime.timezone.utc) <= self.refresh_expiration_date:
                 self.active = False
-                await self.save(update_fields=["active"])
+                self.refreshed = True
+                await self.save(update_fields=["active", "refreshed"])
                 return self.new(request, self.bearer)
             else:
                 raise e
