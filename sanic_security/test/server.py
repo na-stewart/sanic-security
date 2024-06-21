@@ -54,7 +54,9 @@ SOFTWARE.
 app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
 
+
 # TODO: Testing for new functionality.
+
 
 @app.post("api/test/auth/register")
 async def on_register(request):

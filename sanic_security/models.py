@@ -250,7 +250,10 @@ class Session(BaseModel):
             raise DeletedError("Session has been deleted.")
         elif not self.active:
             raise DeactivatedError()
-        elif self.expiration_date and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date:
+        elif (
+            self.expiration_date
+            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
+        ):
             raise ExpiredError()
 
     async def deactivate(self):
@@ -282,7 +285,9 @@ class Session(BaseModel):
                 "date_created": str(self.date_created),
                 "expiration_date": str(self.expiration_date),
                 "ip": self.ip,
-            }, security_config.SECRET, security_config.SESSION_ENCODING_ALGORITHM
+            },
+            security_config.SECRET,
+            security_config.SESSION_ENCODING_ALGORITHM,
         )
         if isinstance(encoded_session, bytes):
             encoded_session = encoded_session.decode()
@@ -309,7 +314,10 @@ class Session(BaseModel):
             UnfamiliarLocationError
         """
         client_ip = get_ip(request)
-        if client_ip != self.ip and not await self.filter(ip=client_ip, deleted=False).exists():
+        if (
+            client_ip != self.ip
+            and not await self.filter(ip=client_ip, deleted=False).exists()
+        ):
             raise UnfamiliarLocationError()
 
     @property
@@ -329,18 +337,18 @@ class Session(BaseModel):
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "bearer": self.bearer.username
-            if isinstance(self.bearer, Account)
-            else None,
+            "bearer": (
+                self.bearer.username if isinstance(self.bearer, Account) else None
+            ),
             "active": self.active,
         }
 
     @classmethod
     async def new(
-            cls,
-            request: Request,
-            account: Account,
-            **kwargs: Union[int, str, bool, float, list, dict],
+        cls,
+        request: Request,
+        account: Account,
+        **kwargs: Union[int, str, bool, float, list, dict],
     ):
         """
         Creates session with pre-set values.
@@ -396,8 +404,9 @@ class Session(BaseModel):
                 raise JWTDecodeError("Session token not provided or expired.", 401)
             else:
                 return jwt.decode(
-                    cookie, security_config.PUBLIC_SECRET or security_config.SECRET,
-                    security_config.SESSION_ENCODING_ALGORITHM
+                    cookie,
+                    security_config.PUBLIC_SECRET or security_config.SECRET,
+                    security_config.SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))
@@ -587,7 +596,7 @@ class AuthenticationSession(Session):
             ),
             refresh_date=get_expiration_date(
                 security_config.AUTHENTICATION_REFRESH_EXPIRATION
-            )
+            ),
         )
 
     class Meta:

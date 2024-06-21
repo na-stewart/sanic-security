@@ -154,7 +154,9 @@ async def register(
             phone=validate_phone(request.form.get("phone"))
         ).exists()
     ):
-        raise CredentialsError("An account with this phone number may already exist.", 409)
+        raise CredentialsError(
+            "An account with this phone number may already exist.", 409
+        )
     validate_password(request.form.get("password"))
     account = await Account.create(
         email=email_lower,
