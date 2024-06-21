@@ -1,5 +1,4 @@
 import functools
-import logging
 from fnmatch import fnmatch
 
 from sanic.request import Request
@@ -8,7 +7,6 @@ from tortoise.exceptions import DoesNotExist
 from sanic_security.authentication import authenticate
 from sanic_security.exceptions import AuthorizationError, AnonymousError
 from sanic_security.models import Role, Account, AuthenticationSession
-from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -67,7 +65,6 @@ async def check_permissions(
         ):
             if fnmatch(required_permission, role_permission):
                 return authentication_session
-    logging.warning(f"Client ({get_ip(request)}) has insufficient permissions.")
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
@@ -100,8 +97,29 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     for role in roles:
         if role.name in required_roles:
             return authentication_session
-    logging.warning(f"Client ({get_ip(request)}) has insufficient roles.")
     raise AuthorizationError("Insufficient roles required for this action.")
+
+
+async def assign_role(
+    name: str, account: Account, permissions: str = None, description: str = None
+) -> Role:
+    """
+    Easy account role assignment. Role being assigned to an account will be created if it doesn't exist.
+
+    Args:
+        name (str):  The name of the role associated with the account.
+        account (Account): The account associated with the created role.
+        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
+        description (str):  The description of the role associated with the account.
+    """
+    try:
+        role = await Role.filter(name=name).get()
+    except DoesNotExist:
+        role = await Role.create(
+            description=description, permissions=permissions, name=name
+        )
+    await account.roles.add(role)
+    return role
 
 
 def require_permissions(*required_permissions: str):
@@ -180,25 +198,3 @@ def require_roles(*required_roles: str):
         return wrapper
 
     return decorator
-
-
-async def assign_role(
-    name: str, account: Account, permissions: str = None, description: str = None
-) -> Role:
-    """
-    Easy account role assignment. Role being assigned to an account will be created if it doesn't exist.
-
-    Args:
-        name (str):  The name of the role associated with the account.
-        account (Account): The account associated with the created role.
-        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
-        description (str):  The description of the role associated with the account.
-    """
-    try:
-        role = await Role.filter(name=name).get()
-    except DoesNotExist:
-        role = await Role.create(
-            description=description, permissions=permissions, name=name
-        )
-    await account.roles.add(role)
-    return role

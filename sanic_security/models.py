@@ -301,33 +301,6 @@ class Session(BaseModel):
         if security_config.SESSION_DOMAIN:
             response.cookies.get_cookie(cookie).domain = security_config.SESSION_DOMAIN
 
-    async def location_familiarity(self, request):
-        """
-        Checks if the client is accessing session from a familiar location.
-
-        Args:
-            request (Request): Sanic request parameter.
-
-        Raises:
-            UnfamiliarLocationError
-        """
-        client_ip = get_ip(request)
-        if (
-            client_ip != self.ip
-            and not await self.filter(ip=client_ip, deleted=False).exists()
-        ):
-            raise UnfamiliarLocationError()
-
-    @property
-    def anonymous(self) -> bool:
-        """
-        Determines if an account is associated with session.
-
-        Returns:
-            anonymous
-        """
-        return self.bearer is None
-
     @property
     def json(self) -> dict:
         return {
@@ -340,6 +313,16 @@ class Session(BaseModel):
             ),
             "active": self.active,
         }
+
+    @property
+    def anonymous(self) -> bool:
+        """
+        Determines if an account is associated with session.
+
+        Returns:
+            anonymous
+        """
+        return self.bearer is None
 
     @classmethod
     async def new(
@@ -449,10 +432,6 @@ class VerificationSession(Session):
     attempts: int = fields.IntField(default=0)
     code: str = fields.CharField(max_length=10, default=get_code, null=True)
 
-    @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
-        raise NotImplementedError
-
     async def check_code(self, request: Request, code: str) -> None:
         """
         Checks if code passed is equivalent to the session code.
@@ -480,6 +459,10 @@ class VerificationSession(Session):
         else:
             self.active = False
             await self.save(update_fields=["active"])
+
+    @classmethod
+    async def new(cls, request: Request, account: Account, **kwargs):
+        raise NotImplementedError
 
     class Meta:
         abstract = True

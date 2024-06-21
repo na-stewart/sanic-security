@@ -60,6 +60,15 @@ class DeletedError(SecurityError):
         super().__init__(message, 404)
 
 
+class CredentialsError(SecurityError):
+    """
+    Raised when credentials are invalid.
+    """
+
+    def __init__(self, message, code=400):
+        super().__init__(message, code)
+
+
 class AccountError(SecurityError):
     """
     Base account error that all other account errors derive from.
@@ -121,15 +130,6 @@ class DeactivatedError(SessionError):
 
     def __init__(self, message: str = "Session is deactivated.", code: int = 401):
         super().__init__(message, code)
-
-
-class UnfamiliarLocationError(SessionError):
-    """
-    Raised when session is accessed from an unfamiliar ip address
-    """
-
-    def __init__(self):
-        super().__init__("Session accessed from an unfamiliar location.")
 
 
 class ExpiredError(SessionError):
@@ -202,12 +202,3 @@ class AnonymousError(AuthorizationError):
 
     def __init__(self):
         super().__init__("Session is anonymous.")
-
-
-class CredentialsError(SecurityError):
-    """
-    Raised when credentials are invalid.
-    """
-
-    def __init__(self, message, code=400):
-        super().__init__(message, code)

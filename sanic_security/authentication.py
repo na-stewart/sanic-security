@@ -18,7 +18,6 @@ from sanic_security.exceptions import (
     ExpiredError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
-from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -43,86 +42,6 @@ SOFTWARE.
 """
 
 password_hasher = PasswordHasher()
-
-
-def validate_email(email: str) -> str:
-    """
-    Validates email format.
-
-    Args:
-        email (str): Email being validated.
-
-    Returns:
-        email
-
-    Raises:
-        CredentialsError
-    """
-    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
-        raise CredentialsError("Please use a valid email address.", 400)
-    return email
-
-
-def validate_username(username: str) -> str:
-    """
-    Validates username format.
-
-    Args:
-        username (str): Username being validated.
-
-    Returns:
-        username
-
-    Raises:
-        CredentialsError
-    """
-    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", username):
-        raise CredentialsError(
-            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
-            400,
-        )
-    return username
-
-
-def validate_phone(phone: str) -> str:
-    """
-    Validates phone number format.
-
-    Args:
-        phone (str): Phone number being validated.
-
-    Returns:
-        phone
-
-    Raises:
-        CredentialsError
-    """
-    if phone and not re.search(
-        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
-    ):
-        raise CredentialsError("Please use a valid phone number.", 400)
-    return phone
-
-
-def validate_password(password: str) -> str:
-    """
-    Validates password requirements.
-
-    Args:
-        password (str): Password being validated.
-
-    Returns:
-        password
-
-    Raises:
-        CredentialsError
-    """
-    if not re.search(r"^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).*$", password):
-        raise CredentialsError(
-            "Password must contain one capital letter, one number, and one special character",
-            400,
-        )
-    return password
 
 
 async def register(
@@ -219,9 +138,6 @@ async def login(
             request, account, requires_second_factor=require_second_factor
         )
     except VerifyMismatchError:
-        logger.warning(
-            f"Client ({get_ip(request)}) login password attempt is incorrect"
-        )
         raise CredentialsError("Incorrect password.", 401)
 
 
@@ -303,9 +219,9 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
          authentication_Session
     """
     authentication_session = await AuthenticationSession.decode(request)
-    two_step_session = await TwoStepSession.decode(request)
     if not authentication_session.requires_second_factor:
         raise SecondFactorFulfilledError()
+    two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     await two_step_session.check_code(request, request.form.get("code"))
     authentication_session.requires_second_factor = False
@@ -358,7 +274,7 @@ def create_initial_admin_account(app: Sanic) -> None:
     """
 
     @app.listener("before_server_start")
-    async def generate(app, loop):
+    async def create(app, loop):
         try:
             role = await Role.filter(name="Head Admin").get()
         except DoesNotExist:
@@ -386,3 +302,83 @@ def create_initial_admin_account(app: Sanic) -> None:
             )
             await account.roles.add(role)
             logger.info("Initial admin account created.")
+
+
+def validate_email(email: str) -> str:
+    """
+    Validates email format.
+
+    Args:
+        email (str): Email being validated.
+
+    Returns:
+        email
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+        raise CredentialsError("Please use a valid email address.", 400)
+    return email
+
+
+def validate_username(username: str) -> str:
+    """
+    Validates username format.
+
+    Args:
+        username (str): Username being validated.
+
+    Returns:
+        username
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", username):
+        raise CredentialsError(
+            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
+            400,
+        )
+    return username
+
+
+def validate_phone(phone: str) -> str:
+    """
+    Validates phone number format.
+
+    Args:
+        phone (str): Phone number being validated.
+
+    Returns:
+        phone
+
+    Raises:
+        CredentialsError
+    """
+    if phone and not re.search(
+        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
+    ):
+        raise CredentialsError("Please use a valid phone number.", 400)
+    return phone
+
+
+def validate_password(password: str) -> str:
+    """
+    Validates password requirements.
+
+    Args:
+        password (str): Password being validated.
+
+    Returns:
+        password
+
+    Raises:
+        CredentialsError
+    """
+    if not re.search(r"^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).*$", password):
+        raise CredentialsError(
+            "Password must contain one capital letter, one number, and one special character",
+            400,
+        )
+    return password
