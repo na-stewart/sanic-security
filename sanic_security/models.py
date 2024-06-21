@@ -524,12 +524,12 @@ class AuthenticationSession(Session):
     Used to authenticate and identify a client.
 
     Attributes:
-        refreshed (bool): Determines if session has been refreshed.
+        is_refresh (bool): Determines if current session was created during previous session refresh.
         requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
     """
 
-    refreshed: bool = fields.BooleanField(default=False)
+    is_refresh: bool = fields.BooleanField(default=False)
     requires_second_factor: bool = fields.BooleanField(default=False)
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
 
@@ -567,9 +567,8 @@ class AuthenticationSession(Session):
                 <= self.refresh_expiration_date
             ):
                 self.active = False
-                self.refreshed = True
-                await self.save(update_fields=["active", "refreshed"])
-                return self.new(request, self.bearer)
+                await self.save(update_fields=["active"])
+                return self.new(request, self.bearer, refresh=True)
             else:
                 raise e
 

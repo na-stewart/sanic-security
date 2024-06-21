@@ -542,3 +542,20 @@ class MiscTest(TestCase):
         assert (
             retrieve_associated_response.status_code == 200
         ), retrieve_associated_response.text
+
+    def test_authentication_refresh(self):
+        self.client.post(
+            "http://127.0.0.1:8000/api/test/account",
+            data={
+                "email": "refreshed@misc.test",
+                "username": "refreshed",
+            },
+        )
+        login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login",
+            auth=("refreshed@misc.test", "password"),
+        )
+        assert login_response.status_code == 200, login_response.text
+        refresh_response = self.client.post("http://127.0.0.1:8000/api/test/auth/refresh")
+        assert refresh_response.status_code == 200, refresh_response.text
+

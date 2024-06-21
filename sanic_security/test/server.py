@@ -151,11 +151,23 @@ async def on_logout(request):
     return response
 
 
+@app.post("api/test/auth/refresh")
+@requires_authentication
+async def on_authentication_refresh(request):
+    """
+    Refreshes current authentication session. Requires data persistence and date change to
+    expire previous session.
+    """
+    authentication_session = await request.ctx.authentication_session.refresh(request)
+    response = json("Refresh successful!", authentication_session.json)
+    return response
+
+
 @app.post("api/test/auth")
-@requires_authentication()
+@requires_authentication
 async def on_authenticate(request):
     """
-    Authenticate client session and account, encode refreshed session if necessary.
+    Authenticate client session and account.
     """
     authentication_session = request.ctx.authentication_session
     response = json(
@@ -166,7 +178,7 @@ async def on_authenticate(request):
                 if not authentication_session.anonymous
                 else None
             ),
-            "auto-refreshed": authentication_session.refreshed,
+            "auto-refreshed": authentication_session.is_refresh
         },
     )
     request.ctx.authentication_session.encode(response)
