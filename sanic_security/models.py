@@ -574,7 +574,7 @@ class AuthenticationSession(Session):
                 raise e
 
     @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
+    async def new(cls, request: Request, account: Account = None, **kwargs):
         return await AuthenticationSession.create(
             **kwargs,
             bearer=account,

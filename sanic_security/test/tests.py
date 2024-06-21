@@ -294,6 +294,16 @@ class LoginTest(TestCase):
         )
         assert authenticate_response.status_code == 200, authenticate_response.text
 
+    def test_anonymous_login(self):
+        anon_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/anon"
+        )
+        assert anon_login_response.status_code == 200, anon_login_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
+
 
 class VerificationTest(TestCase):
     """
@@ -467,6 +477,23 @@ class AuthorizationTest(TestCase):
         prohibited_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={"role": "InvalidRole"},
+        )
+        assert (
+            prohibited_authorization_response.status_code == 403
+        ), prohibited_authorization_response.text
+
+    def test_anonymous_authorization(self):
+        anon_login_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/login/anon"
+        )
+        assert anon_login_response.status_code == 200, anon_login_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
+        prohibited_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={"role": "AuthTestPerms"},
         )
         assert (
             prohibited_authorization_response.status_code == 403

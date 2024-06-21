@@ -114,6 +114,19 @@ async def on_login(request):
     return response
 
 
+@app.post("api/test/auth/login/anon")
+async def on_login_anonymous(request):
+    """
+    Login as anonymous user.
+    """
+    authentication_session = await AuthenticationSession.new(request)
+    response = json(
+        "Anonymous user now associated with session!", authentication_session.json
+    )
+    authentication_session.encode(response)
+    return response
+
+
 @app.post("api/test/auth/validate-2fa")
 async def on_two_factor_authentication(request):
     """
@@ -142,9 +155,20 @@ async def on_logout(request):
 @requires_authentication()
 async def on_authenticate(request):
     """
-    Authenticate client session and account.
+    Authenticate client session and account, encode refreshed session if necessary.
     """
-    response = json("Authenticated!", request.ctx.authentication_session.bearer.json)
+    authentication_session = request.ctx.authentication_session
+    response = json(
+        "Authenticated!",
+        {
+            "bearer": (
+                authentication_session.bearer.json
+                if not authentication_session.anonymous
+                else None
+            ),
+            "auto-refreshed": authentication_session.refreshed,
+        },
+    )
     request.ctx.authentication_session.encode(response)
     return response
 
