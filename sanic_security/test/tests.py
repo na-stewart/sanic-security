@@ -556,7 +556,10 @@ class MiscTest(TestCase):
             auth=("refreshed@misc.test", "password"),
         )
         assert login_response.status_code == 200, login_response.text
-        refresh_response = self.client.post("http://127.0.0.1:8000/api/test/auth/refresh")
-        assert refresh_response.status_code == 200, refresh_response.text
-        # Authenticate and check is_refresh
+        expire_response = self.client.post("http://127.0.0.1:8000/api/test/auth/expire")
+        assert expire_response.status_code == 200, expire_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )
+        assert authenticate_response.status_code == 200, authenticate_response.text
 

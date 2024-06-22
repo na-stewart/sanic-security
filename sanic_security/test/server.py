@@ -1,3 +1,4 @@
+import datetime
 import traceback
 
 from argon2 import PasswordHasher
@@ -151,18 +152,6 @@ async def on_logout(request):
     return response
 
 
-@app.post("api/test/auth/refresh")
-@requires_authentication
-async def on_authentication_refresh(request):
-    """
-    Refreshes current authentication session. Requires data persistence and date change to
-    expire previous session.
-    """
-    authentication_session = await request.ctx.authentication_session.refresh(request)
-    response = json("Refresh successful!", authentication_session.json)
-    return response
-
-
 @app.post("api/test/auth")
 @requires_authentication
 async def on_authenticate(request):
@@ -178,11 +167,24 @@ async def on_authenticate(request):
                 if not authentication_session.anonymous
                 else None
             ),
-            "auto-refreshed": authentication_session.is_refresh
+            "refresh": authentication_session.is_refresh
         },
     )
-    request.ctx.authentication_session.encode(response)
+    if authentication_session.is_refresh:
+        request.ctx.authentication_session.encode(response)
     return response
+
+
+@app.post("api/test/auth/expire")
+@requires_authentication
+async def on_authentication_expire(request):
+    """
+    Expire client's session.
+    """
+    authentication_session = request.ctx.authentication_session
+    authentication_session.expiration_date = datetime.datetime.now(datetime.UTC)
+    await authentication_session.save(update_fields=["expiration_date"])
+    return json("Authentication expired!", authentication_session.json)
 
 
 @app.post("api/test/auth/associated")

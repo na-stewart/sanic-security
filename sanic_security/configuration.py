@@ -1,7 +1,7 @@
 from os import environ
 
 from sanic.utils import str_to_bool
-
+from sanic.log import logger
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart

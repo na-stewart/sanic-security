@@ -197,8 +197,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Validates client's authentication session and account. If auto refresh is enabled, session property is_refresh will
-    only be true for the first time the refreshed session is returned.
+    Validates client's authentication session and account.
 
     Args:
         request (Request): Sanic request parameter.
@@ -222,9 +221,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
         if not authentication_session.anonymous:
             authentication_session.bearer.validate()
     except ExpiredError as e:
-        if security_config.AUTHENTICATION_REFRESH_AUTO: #
+        if security_config.AUTHENTICATION_REFRESH_AUTO:
             authentication_session = await authentication_session.refresh(request)
-            logger.debug("Authentication session has been auto-refreshed.")
         else:
             raise e
     return authentication_session
