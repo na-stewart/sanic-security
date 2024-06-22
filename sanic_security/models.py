@@ -529,7 +529,7 @@ class AuthenticationSession(Session):
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
     """
 
-    is_refresh: bool = fields.BooleanField(default=False)
+    is_refresh: bool = False
     requires_second_factor: bool = fields.BooleanField(default=False)
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
 
@@ -568,7 +568,9 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
-                return self.new(request, self.bearer, refresh=True)
+                session = await self.new(request, self.bearer)
+                session.is_refresh = True
+                return session
             else:
                 raise e
 

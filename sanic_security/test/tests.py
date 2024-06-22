@@ -558,4 +558,5 @@ class MiscTest(TestCase):
         assert login_response.status_code == 200, login_response.text
         refresh_response = self.client.post("http://127.0.0.1:8000/api/test/auth/refresh")
         assert refresh_response.status_code == 200, refresh_response.text
+        # Authenticate and check is_refresh
 
