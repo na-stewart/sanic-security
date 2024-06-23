@@ -128,7 +128,7 @@ class DeactivatedError(SessionError):
     Raised when session is deactivated.
     """
 
-    def __init__(self, message: str = "Session is deactivated.", code: int = 401):
+    def __init__(self, message: str = "Session has been deactivated or refreshed.", code: int = 401):
         super().__init__(message, code)
 
 

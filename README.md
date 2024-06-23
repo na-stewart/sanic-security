@@ -288,7 +288,7 @@ New/Refreshed session automatically returned if expired during authentication, r
 @app.post("api/security/auth")
 @requires_authentication
 async def on_authenticate(request):
-    authentication_session = request.ctx.authentication_session.json
+    authentication_session = request.ctx.authentication_session
     response = json(
         "You have been authenticated.",
         authentication_session.json,

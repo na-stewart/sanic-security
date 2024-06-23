@@ -526,7 +526,7 @@ class AuthenticationSession(Session):
     Attributes:
         requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
-        is_refresh (bool): Will only be true when instantiated during refresh of expired session.
+        is_refresh (bool): Will only be true once when instantiated during refresh of expired session.
     """
 
     requires_second_factor: bool = fields.BooleanField(default=False)
