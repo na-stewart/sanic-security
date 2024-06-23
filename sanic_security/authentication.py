@@ -214,6 +214,7 @@ async def authenticate(request: Request) -> tuple[bool, AuthenticationSession]:
         UnverifiedError
         DisabledError
         SecondFactorRequiredError
+        ExpiredError
     """
     authentication_session = await AuthenticationSession.decode(request)
     try:
@@ -245,6 +246,7 @@ def requires_authentication(arg=None):
         DeactivatedError
         UnverifiedError
         DisabledError
+        ExpiredError
     """
 
     def decorator(func):
