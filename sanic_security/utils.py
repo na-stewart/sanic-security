@@ -1,10 +1,8 @@
 import datetime
 import random
-import string
 
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
-
 
 """
 Copyright (c) 2020-Present Nicholas Aidan Stewart
@@ -49,7 +47,7 @@ def get_code() -> str:
     Returns:
         code
     """
-    return "".join(random.choices(string.digits + string.ascii_uppercase, k=6))
+    return str(random.randint(100000, 999999))
 
 
 def json(
