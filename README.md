@@ -267,7 +267,7 @@ async def on_logout(request):
 
 * Authenticate
 
-New/Refreshed session automatically returned if expired during authentication, requires encoding.
+New/Refreshed session will be returned if expired, requires encoding.
 
 ```python
 @app.post("api/security/auth")
@@ -284,7 +284,7 @@ async def on_authenticate(request):
 
 * Requires Authentication (This method is not called directly and instead used as a decorator.)
 
-New/Refreshed session automatically returned if expired during authentication, requires encoding.
+New/Refreshed session will be returned if expired, requires encoding.
 
 ```python
 @app.post("api/security/auth")
@@ -298,6 +298,18 @@ async def on_authenticate(request):
     if authentication_session.is_refresh:
         authentication_session.encode(response)
     return response
+```
+
+* Authentication Refresh Middleware
+
+If it's inconvenient to encode the refreshed session during authentication, it can also be done automatically via middleware.
+
+```python
+@app.on_response
+async def authentication_refresh_encoder(request, response):
+    authentication_session = request.ctx.authentication_session
+    if authentication_session and authentication_session.is_refresh:
+        authentication_session.encode(response)
 ```
 
 ## Captcha
