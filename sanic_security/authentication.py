@@ -209,7 +209,6 @@ async def authenticate(request: Request) -> tuple[bool, AuthenticationSession]:
         NotFoundError
         JWTDecodeError
         DeletedError
-        ExpiredError
         DeactivatedError
         UnverifiedError
         DisabledError
@@ -241,7 +240,6 @@ def requires_authentication(arg=None):
         NotFoundError
         JWTDecodeError
         DeletedError
-        ExpiredError
         DeactivatedError
         UnverifiedError
         DisabledError
