@@ -526,7 +526,7 @@ class AuthenticationSession(Session):
     Attributes:
         requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
-        is_refresh (bool): Will only be true in the instance the session is created during refresh.
+        is_refresh (bool): Will only be true when instantiated during refresh of expired session.
     """
 
     requires_second_factor: bool = fields.BooleanField(default=False)
@@ -604,7 +604,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be separated via comma and in wildcard format (printer:query, printer:query,delete).
+        permissions (str): Permissions of the role. Must be separated via comma + space and in wildcard format (printer:query, dashboard:info,delete).
     """
 
     name: str = fields.CharField(unique=True, max_length=255)

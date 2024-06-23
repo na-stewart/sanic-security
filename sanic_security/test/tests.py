@@ -295,6 +295,9 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_anonymous_login(self):
+        """
+        Test login of anonymous user.
+        """
         anon_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/anon"
         )
@@ -544,6 +547,9 @@ class MiscTest(TestCase):
         ), retrieve_associated_response.text
 
     def test_authentication_refresh(self):
+        """
+        Test automatic authentication refresh.
+        """
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={

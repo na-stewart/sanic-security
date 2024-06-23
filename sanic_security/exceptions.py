@@ -197,7 +197,7 @@ class AuthorizationError(SecurityError):
 
 class AnonymousError(AuthorizationError):
     """
-    Raised when attempting to authorize an anonymous session.
+    Raised when attempting to authorize an anonymous user.
     """
 
     def __init__(self):

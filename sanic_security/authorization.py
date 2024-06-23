@@ -146,6 +146,7 @@ def require_permissions(*required_permissions: str):
         UnverifiedError
         DisabledError
         AuthorizationError
+        AnonymousError
     """
 
     def decorator(func):
@@ -185,6 +186,7 @@ def require_roles(*required_roles: str):
         UnverifiedError
         DisabledError
         AuthorizationError
+        AnonymousError
     """
 
     def decorator(func):
