@@ -72,7 +72,7 @@ pip3 install sanic-security
 
 If you are planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
 the public secret and private secret), you will need to install the `cryptography` library. This can be installed explicitly, or 
-as a required extra in the `sanic-security` requirement.
+as an extra requirement.
 
 ```shell
 pip3 install sanic-security[crypto]
@@ -165,11 +165,9 @@ Phone can be null or empty.
 @app.post("api/security/register")
 async def on_register(request):
     account = await register(request)
-    two_step_session = await request_two_step_verification(
-        request, account
-    )  # Code = 197251
+    two_step_session = await request_two_step_verification(request, account)  
     await email_code(
-        account.email, two_step_session.code
+        account.email, two_step_session.code # Code = 197251
     )  # Custom method for emailing verification code.
     response = json(
         "Registration successful! Email verification required.",
@@ -206,11 +204,9 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 @app.post("api/security/login")
 async def on_login(request):
     authentication_session = await login(request, require_second_factor=True)
-    two_step_session = await request_two_step_verification(
-        request, authentication_session.bearer
-    )  # Code = 197251
+    two_step_session = await request_two_step_verification(request, authentication_session.bearer)
     await email_code(
-        authentication_session.bearer.email, two_step_session.code
+        authentication_session.bearer.email, two_step_session.code # Code = 197251
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
@@ -326,8 +322,8 @@ downloading a .ttf font and defining the file's path in the configuration.
 ```python
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
-    captcha_session = await request_captcha(request)  # Captcha: 192731
-    response = captcha_session.get_image()
+    captcha_session = await request_captcha(request)  
+    response = captcha_session.get_image() # Captcha: 192731
     captcha_session.encode(response)
     return response
 ```

@@ -549,7 +549,7 @@ class AuthenticationSession(Session):
 
     async def refresh(self, request: Request):
         """
-        Seamlessly creates new session if within refresh date.
+        Refreshes session if expired and within refresh date.
 
         Raises:
             DeletedError
