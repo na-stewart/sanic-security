@@ -110,7 +110,7 @@ async def on_login(request):
         )
         two_step_session.encode(response)
     else:
-        response = json("Login successful!", authentication_session.bearer.json)
+        response = json("Login successful!", authentication_session.json)
     authentication_session.encode(response)
     return response
 
@@ -148,7 +148,7 @@ async def on_logout(request):
     Logout of currently logged in account.
     """
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.bearer.json)
+    response = json("Logout successful!", authentication_session.json)
     return response
 
 

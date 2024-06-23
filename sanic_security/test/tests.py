@@ -306,6 +306,8 @@ class LoginTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth",
         )
         assert authenticate_response.status_code == 200, authenticate_response.text
+        logout_response = self.client.post("http://127.0.0.1:8000/api/test/auth/logout")
+        assert logout_response.status_code == 200, logout_response.text
 
 
 class VerificationTest(TestCase):
