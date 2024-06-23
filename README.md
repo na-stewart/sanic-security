@@ -48,7 +48,7 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
 This library contains a variety of features including:
 
-* Login, registration, and authentication
+* Login, registration, and authentication with refresh mechanisms
 * Two-factor authentication
 * Captcha
 * Two-step verification
@@ -126,7 +126,7 @@ You can load environment variables with a different prefix via calling the `conf
 | **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation.                                                                     |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
-| **AUTHENTICATION_REFRESH_EXPIRATION** | 2592000                      | The amount of seconds till authentication session refresh expiration.                                                            |
+| **AUTHENTICATION_REFRESH_EXPIRATION** | 2592000                      | The amount of seconds till authentication refresh expiration.                                                                    |
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
@@ -167,7 +167,7 @@ async def on_register(request):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
     await email_code(
-        account.email, two_step_session.code  # Code = AJ8HGD
+        account.email, two_step_session.code  # Code = 197251
     )  # Custom method for emailing verification code.
     response = json(
         "Registration successful! Email verification required.",
@@ -208,7 +208,7 @@ async def on_login(request):
         request, authentication_session.bearer
     )
     await email_code(
-        authentication_session.bearer.email, two_step_session.code  # Code = BG5KLP
+        authentication_session.bearer.email, two_step_session.code  # Code = 197251
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
@@ -239,38 +239,63 @@ async def on_two_factor_authentication(request):
     return response
 ```
 
+* Anonymous Login
+
+Simply create a new session and encode it.
+
+```python
+@app.post("api/security/login/anon")
+async def on_anonymous_login(request):
+    authentication_session = await AuthenticationSession.new(request)
+    response = json(
+        "Anonymous client now associated with session!", authentication_session.json
+    )
+    authentication_session.encode(response)
+    return response
+```
+
 * Logout
 
 ```python
 @app.post("api/security/logout")
 async def on_logout(request):
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.json)
-    return response
+    return json("Logout successful!", authentication_session.json)
 ```
 
 * Authenticate
+
+New/Refreshed session automatically returned if expired during authentication, requires encoding.
 
 ```python
 @app.post("api/security/auth")
 async def on_authenticate(request):
     authentication_session = await authenticate(request)
-    return json(
+    response = json(
         "You have been authenticated.",
         authentication_session.json,
     )
+    if authentication_session.is_refresh:
+        authentication_session.encode(response)
+    return response
 ```
 
 * Requires Authentication (This method is not called directly and instead used as a decorator.)
+
+New/Refreshed session automatically returned if expired during authentication, requires encoding.
 
 ```python
 @app.post("api/security/auth")
 @requires_authentication
 async def on_authenticate(request):
-    return json(
+    authentication_session = request.ctx.authentication_session.json
+    response = json(
         "You have been authenticated.",
-        request.ctx.authentication_session.json,
+        authentication_session.json,
     )
+    if authentication_session.is_refresh:
+        authentication_session.encode(response)
+    return response
 ```
 
 ## Captcha
@@ -334,7 +359,7 @@ Two-step verification should be integrated with other custom functionality. For 
 async def on_two_step_request(request):
     two_step_session = await request_two_step_verification(request)
     await email_code(
-        two_step_session.bearer.email, two_step_session.code  # Code = DT6JZX
+        two_step_session.bearer.email, two_step_session.code  # Code = 197251
     )  # Custom method for emailing verification code.
     response = json("Verification request successful!", two_step_session.json)
     two_step_session.encode(response)
@@ -348,7 +373,7 @@ async def on_two_step_request(request):
 async def on_two_step_resend(request):
     two_step_session = await TwoStepSession.decode(request)
     await email_code(
-        two_step_session.bearer.email, two_step_session.code  # Code = DT6JZX
+        two_step_session.bearer.email, two_step_session.code  # Code = 197251
     )  # Custom method for emailing verification code.
     return json("Verification code resend successful!", two_step_session.json)
 ```
