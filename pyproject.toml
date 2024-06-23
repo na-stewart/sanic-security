@@ -19,6 +19,14 @@ authors = [
   { name="Aidan Stewart", email="na.stewart365@gmail.com" },
 ]
 readme = "README.md"
+keywords = ["security", "authentication", "authorization", "verification", "async", "sanic"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python,
+]
 
 [project.optional-dependencies]
 dev = ["httpx", "black", "blacken-docs", "pdoc3", "cryptography"]
