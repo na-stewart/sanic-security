@@ -45,7 +45,7 @@ password_hasher = PasswordHasher()
 
 
 async def register(
-        request: Request, verified: bool = False, disabled: bool = False
+    request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account that can be logged into.
@@ -65,14 +65,14 @@ async def register(
     if await Account.filter(email=email_lower).exists():
         raise CredentialsError("An account with this email may already exist.", 409)
     elif await Account.filter(
-            username=validate_username(request.form.get("username"))
+        username=validate_username(request.form.get("username"))
     ).exists():
         raise CredentialsError("An account with this username may already exist.", 409)
     elif (
-            request.form.get("phone")
-            and await Account.filter(
-        phone=validate_phone(request.form.get("phone"))
-    ).exists()
+        request.form.get("phone")
+        and await Account.filter(
+            phone=validate_phone(request.form.get("phone"))
+        ).exists()
     ):
         raise CredentialsError(
             "An account with this phone number may already exist.", 409
@@ -90,7 +90,7 @@ async def register(
 
 
 async def login(
-        request: Request, account: Account = None, require_second_factor: bool = False
+    request: Request, account: Account = None, require_second_factor: bool = False
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
@@ -195,7 +195,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     return authentication_session
 
 
-async def authenticate(request: Request) -> AuthenticationSession:
+async def authenticate(request: Request) -> tuple[bool, AuthenticationSession]:
     """
     Validates client's authentication session and account.
 
@@ -220,11 +220,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
         authentication_session.validate()
         if not authentication_session.anonymous:
             authentication_session.bearer.validate()
-    except ExpiredError as e:
-        if security_config.AUTHENTICATION_REFRESH_AUTO:
-            authentication_session = await authentication_session.refresh(request)
-        else:
-            raise e
+    except ExpiredError:
+        authentication_session = await authentication_session.refresh(request)
     return authentication_session
 
 
@@ -258,10 +255,7 @@ def requires_authentication(arg=None):
 
         return wrapper
 
-    if callable(arg):
-        return decorator(arg)
-    else:
-        return decorator
+    return decorator(arg) if callable(arg) else decorator
 
 
 def create_initial_admin_account(app: Sanic) -> None:
@@ -356,7 +350,7 @@ def validate_phone(phone: str) -> str:
         CredentialsError
     """
     if phone and not re.search(
-            r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
+        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
     ):
         raise CredentialsError("Please use a valid phone number.", 400)
     return phone

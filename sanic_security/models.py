@@ -526,12 +526,12 @@ class AuthenticationSession(Session):
     Attributes:
         requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
-        is_refresh (bool): Will only be true for the first time session is created during refresh.
+        is_refresh (bool): Will only be true in the instance the session is created during refresh.
     """
 
     requires_second_factor: bool = fields.BooleanField(default=False)
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
-    is_refresh: bool
+    is_refresh: bool = False
 
     def validate(self) -> None:
         """
@@ -571,13 +571,15 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
-                return await self.new(request, self.bearer, is_refresh=True)
+                return await self.new(request, self.bearer, True)
             else:
                 raise e
 
     @classmethod
-    async def new(cls, request: Request, account: Account = None, **kwargs):
-        return await AuthenticationSession.create(
+    async def new(
+        cls, request: Request, account: Account = None, is_refresh=False, **kwargs
+    ):
+        authentication_session = await AuthenticationSession.create(
             **kwargs,
             bearer=account,
             ip=get_ip(request),
@@ -588,6 +590,8 @@ class AuthenticationSession(Session):
                 security_config.AUTHENTICATION_REFRESH_EXPIRATION
             ),
         )
+        authentication_session.is_refresh = is_refresh
+        return authentication_session
 
     class Meta:
         table = "authentication_session"

@@ -126,10 +126,7 @@ def requires_two_step_verification(arg=None):
 
         return wrapper
 
-    if callable(arg):
-        return decorator(arg)
-    else:
-        return decorator
+    return decorator(arg) if callable(arg) else decorator
 
 
 async def verify_account(request: Request) -> TwoStepSession:

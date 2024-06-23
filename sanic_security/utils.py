@@ -52,7 +52,9 @@ def get_code() -> str:
     return "".join(random.choices(string.digits + string.ascii_uppercase, k=6))
 
 
-def json(message: str, data, status_code: int = 200) -> HTTPResponse:  # May be causing fixture error bc of json property
+def json(
+    message: str, data, status_code: int = 200
+) -> HTTPResponse:  # May be causing fixture error bc of json property
     """
     A preformatted Sanic json response.
 

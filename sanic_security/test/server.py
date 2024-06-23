@@ -167,7 +167,7 @@ async def on_authenticate(request):
                 if not authentication_session.anonymous
                 else None
             ),
-            "refresh": authentication_session.is_refresh
+            "refresh": authentication_session.is_refresh,
         },
     )
     if authentication_session.is_refresh:

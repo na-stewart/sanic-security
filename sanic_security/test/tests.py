@@ -558,8 +558,15 @@ class MiscTest(TestCase):
         assert login_response.status_code == 200, login_response.text
         expire_response = self.client.post("http://127.0.0.1:8000/api/test/auth/expire")
         assert expire_response.status_code == 200, expire_response.text
-        authenticate_response = self.client.post(
+        authenticate_refresh_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth",
         )
-        assert authenticate_response.status_code == 200, authenticate_response.text
-
+        assert (
+            json.loads(authenticate_refresh_response.text)["data"]["refresh"] is True
+        ), authenticate_refresh_response.text
+        authenticate_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth",
+        )  # Since session refresh handling is complete, it will be returned as a regular session now.
+        assert (
+            json.loads(authenticate_response.text)["data"]["refresh"] is False
+        ), authenticate_response.text
