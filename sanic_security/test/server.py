@@ -19,7 +19,7 @@ from sanic_security.authorization import (
     check_roles,
 )
 from sanic_security.configuration import config as security_config
-from sanic_security.exceptions import SecurityError, CredentialsError
+from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession, AuthenticationSession
 from sanic_security.utils import json
 from sanic_security.verification import (
