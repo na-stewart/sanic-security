@@ -107,7 +107,7 @@ You can also use the update() method like on regular dictionaries.
 Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the config. For example, setting 
 SANIC_SECURITY_SECRET will be loaded by the application automatically and fed into the SECRET config variable.
 
-You can load environment variables with a different prefix via calling the `config.load_environment_variables("NEW_PREFIX_")` method.
+You can load environment variables with a different prefix via `config.load_environment_variables("NEW_PREFIX_")` method.
 
 * Default configuration values:
 
