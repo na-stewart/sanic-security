@@ -17,7 +17,7 @@
 <p align="center">
   <h3 align="center">Sanic Security</h3>
   <p align="center">
-   An effective, simple, and async security library for the Sanic framework.
+   An async security library for the Sanic framework.
   </p>
 </p>
 
