@@ -14,7 +14,7 @@ dependencies = [
     "argon2-cffi>=20.1.0",
     "sanic>=21.3.0"
 ]
-description = "An effective, simple, and async security library for the Sanic framework."
+description = "An async security library for the Sanic framework."
 authors = [
   { name="Aidan Stewart", email="na.stewart365@gmail.com" },
 ]
