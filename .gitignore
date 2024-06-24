@@ -8,5 +8,4 @@
 /sanic_security.egg-info/
 .idea
 /sanic_security/lib/
-/captcha-font.ttf
 /poetry.lock

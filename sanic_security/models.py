@@ -524,13 +524,13 @@ class AuthenticationSession(Session):
     Used to authenticate and identify a client.
 
     Attributes:
-        requires_second_factor (bool): Determines if session requires a second factor.
         refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
+        requires_second_factor (bool): Determines if session requires a second factor.
         is_refresh (bool): Will only be true once when instantiated during refresh of expired session.
     """
 
-    requires_second_factor: bool = fields.BooleanField(default=False)
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
+    requires_second_factor: bool = fields.BooleanField(default=False)
     is_refresh: bool = False
 
     def validate(self) -> None:
