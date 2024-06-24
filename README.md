@@ -46,7 +46,6 @@
 ## About The Project
 
 Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
-This library contains a variety of features including:
 
 * Login, registration, and authentication with refresh mechanisms
 * Two-factor authentication
@@ -54,7 +53,7 @@ This library contains a variety of features including:
 * Two-step verification
 * Role based authorization with wildcard permissions
 
-Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation and [click here for a comprehensive implementation guide](https://blog.na-stewart.com/entry?id=3).
+Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation and [here for an implementation guide](https://blog.na-stewart.com/entry?id=3).
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -150,7 +149,7 @@ This account can be logged into and has complete authoritative access. Login cre
       app.run(host="127.0.0.1", port=8000)
   ```
   
-* Registration (With Two-step Verification)
+* Registration (With two-step account verification)
 
 Phone can be null or empty.
 
@@ -192,7 +191,7 @@ async def on_verify(request):
     return json("You have verified your account and may login!", two_step_session.json)
 ```
 
-* Login (With Two-factor Authentication)
+* Login (With two-factor authentication)
 
 Login credentials are retrieved via the Authorization header. Credentials are constructed by first combining the 
 username and the password with a colon (aladdin:opensesame), and then by encoding the resulting string in base64 
@@ -280,7 +279,7 @@ async def on_authenticate(request):
     return response
 ```
 
-* Requires Authentication (This method is not called directly and instead used as a decorator.)
+* Requires Authentication (This method is not called directly and instead used as a decorator)
 
 New/Refreshed session will be returned if expired, requires encoding.
 
@@ -305,9 +304,12 @@ If it's inconvenient to encode the refreshed session during authentication, it c
 ```python
 @app.on_response
 async def authentication_refresh_encoder(request, response):
-    authentication_session = request.ctx.authentication_session
-    if authentication_session and authentication_session.is_refresh:
-        authentication_session.encode(response)
+    try:
+        authentication_session = request.ctx.authentication_session
+        if authentication_session.is_refresh:
+            authentication_session.encode(response)
+    except AttributeError:
+        pass
 ```
 
 ## Captcha
@@ -343,7 +345,7 @@ async def on_captcha(request):
     return json("Captcha attempt successful!", captcha_session.json)
 ```
 
-* Requires Captcha (This method is not called directly and instead used as a decorator.)
+* Requires Captcha (This method is not called directly and instead used as a decorator)
 
 | Key         | Value  |
 |-------------|--------|
@@ -404,7 +406,7 @@ async def on_two_step_verification(request):
     return response
 ```
 
-* Requires Two-step Verification (This method is not called directly and instead used as a decorator.)
+* Requires Two-step Verification (This method is not called directly and instead used as a decorator)
 
 | Key      | Value  |
 |----------|--------|
@@ -473,7 +475,7 @@ async def on_check_roles(request):
     return text("Account is authorized.")
 ```
 
-* Require Roles (This method is not called directly and instead used as a decorator.)
+* Require Roles (This method is not called directly and instead used as a decorator)
 
 ```python
 @app.post("api/security/roles")
