@@ -195,7 +195,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     return authentication_session
 
 
-async def authenticate(request: Request) -> tuple[bool, AuthenticationSession]:
+async def authenticate(request: Request) -> AuthenticationSession:
     """
     Validates client's authentication session and account. New/Refreshed session automatically returned
     if expired during authentication, requires encoding.
@@ -274,7 +274,7 @@ def create_initial_admin_account(app: Sanic) -> None:
             role = await Role.filter(name="Head Admin").get()
         except DoesNotExist:
             role = await Role.create(
-                description="Has the ability to control any aspect of the API, assign sparingly.",
+                description="Has root abilities, assign sparingly.",
                 permissions="*:*",
                 name="Head Admin",
             )
@@ -285,9 +285,7 @@ def create_initial_admin_account(app: Sanic) -> None:
             await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
-                logger.warning(
-                    'The initial admin account role "Head Admin" was removed and has been reinstated.'
-                )
+                logger.warning("Initial admin account role has been reinstated.")
         except DoesNotExist:
             account = await Account.create(
                 username="Head-Admin",
