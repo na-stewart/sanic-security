@@ -125,7 +125,7 @@ You can load environment variables with a different prefix via `config.load_envi
 | **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation.                                                                     |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
-| **AUTHENTICATION_REFRESH_EXPIRATION** | 2592000                      | The amount of seconds till authentication refresh expiration.                                                                    |
+| **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                       |
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
@@ -264,7 +264,7 @@ async def on_logout(request):
 
 * Authenticate
 
-New/Refreshed session will be returned if expired, requires encoding.
+New/Refreshed session returned if client's session expired during authentication, requires encoding.
 
 ```python
 @app.post("api/security/auth")
@@ -281,7 +281,7 @@ async def on_authenticate(request):
 
 * Requires Authentication (This method is not called directly and instead used as a decorator)
 
-New/Refreshed session will be returned if expired, requires encoding.
+New/Refreshed session returned if client's session expired during authentication, requires encoding.
 
 ```python
 @app.post("api/security/auth")
@@ -299,14 +299,14 @@ async def on_authenticate(request):
 
 * Authentication Refresh Middleware
 
-If it's inconvenient to encode the refreshed session during authentication, it can also be done automatically via middleware.
+Refreshed session can be encoded automatically via middleware.
 
 ```python
 @app.on_response
 async def authentication_refresh_encoder(request, response):
     try:
         authentication_session = request.ctx.authentication_session
-        if authentication_session.is_refresh:
+        if authentication_session and authentication_session.is_refresh:
             authentication_session.encode(response)
     except AttributeError:
         pass

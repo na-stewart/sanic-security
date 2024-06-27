@@ -198,7 +198,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
 async def authenticate(request: Request) -> AuthenticationSession:
     """
     Validates client's authentication session and account. New/Refreshed session automatically returned
-    if expired during authentication, requires encoding.
+    if client's session expired during authentication, requires encoding.
 
     Args:
         request (Request): Sanic request parameter.
@@ -228,8 +228,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication(arg=None):
     """
-    Validates client's authentication session and account. New/Refreshed session automatically returned if expired
-    during authentication, requires encoding.
+    Validates client's authentication session and account. New/Refreshed session automatically returned
+    if client's session expired during authentication, requires encoding.
 
     Example:
         This method is not called directly and instead used as a decorator:

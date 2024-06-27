@@ -566,7 +566,8 @@ class AuthenticationSession(Session):
             raise NotExpiredError()
         except ExpiredError as e:
             if (
-                datetime.datetime.now(datetime.timezone.utc)
+                self.refresh_expiration_date
+                and datetime.datetime.now(datetime.timezone.utc)
                 <= self.refresh_expiration_date
             ):
                 self.active = False
