@@ -306,7 +306,7 @@ Refreshed session can be encoded automatically via middleware.
 async def authentication_refresh_encoder(request, response):
     try:
         authentication_session = request.ctx.authentication_session
-        if authentication_session and authentication_session.is_refresh:
+        if authentication_session.is_refresh:
             authentication_session.encode(response)
     except AttributeError:
         pass
