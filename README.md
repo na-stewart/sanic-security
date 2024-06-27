@@ -297,7 +297,7 @@ async def on_authenticate(request):
     return response
 ```
 
-* Authentication Refresh Middleware
+* Authentication Middleware
 
 Refreshed session can be encoded automatically via middleware.
 
