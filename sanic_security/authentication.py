@@ -223,6 +223,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
             authentication_session.bearer.validate()
     except ExpiredError:
         authentication_session = await authentication_session.refresh(request)
+    request.ctx.authentication_session = authentication_session
     return authentication_session
 
 
