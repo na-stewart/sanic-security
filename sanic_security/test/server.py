@@ -175,12 +175,10 @@ async def on_authenticate(request):
 
 @app.on_response
 async def authentication_refresh_encoder(request, response):
-    try:
+    if hasattr(request.ctx, "authentication_session"):
         authentication_session = request.ctx.authentication_session
         if authentication_session.is_refresh:
             authentication_session.encode(response)
-    except AttributeError:
-        pass
 
 
 @app.post("api/test/auth/expire")

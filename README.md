@@ -298,12 +298,10 @@ Middleware is recommended to automatically encode the refreshed session.
 ```python
 @app.on_response
 async def authentication_refresh_encoder(request, response):
-    try:
+    if hasattr(request.ctx, "authentication_session"):
         authentication_session = request.ctx.authentication_session
         if authentication_session.is_refresh:
             authentication_session.encode(response)
-    except AttributeError:
-        pass
 ```
 
 ## Captcha
