@@ -253,7 +253,7 @@ def requires_authentication(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.authentication_session = await authenticate(request)
+            await authenticate(request)
             return await func(request, *args, **kwargs)
 
         return wrapper
