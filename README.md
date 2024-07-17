@@ -264,8 +264,6 @@ async def on_logout(request):
 
 * Authenticate
 
-New/Refreshed session returned if client's session expired during authentication, requires encoding.
-
 ```python
 @app.post("api/security/auth")
 async def on_authenticate(request):
@@ -274,14 +272,10 @@ async def on_authenticate(request):
         "You have been authenticated.",
         authentication_session.json,
     )
-    if authentication_session.is_refresh:
-        authentication_session.encode(response)
     return response
 ```
 
 * Requires Authentication (This method is not called directly and instead used as a decorator)
-
-New/Refreshed session returned if client's session expired during authentication, requires encoding.
 
 ```python
 @app.post("api/security/auth")
@@ -292,14 +286,14 @@ async def on_authenticate(request):
         "You have been authenticated.",
         authentication_session.json,
     )
-    if authentication_session.is_refresh:
-        authentication_session.encode(response)
     return response
 ```
 
 * Authentication Middleware
 
-Refreshed session can be encoded automatically via middleware.
+New/Refreshed session returned if client's session expired during authentication, requires encoding.
+
+Middleware is recommended to automatically encode the refreshed session.
 
 ```python
 @app.on_response
