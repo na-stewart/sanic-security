@@ -291,7 +291,7 @@ def create_initial_admin_account(app: Sanic) -> None:
             account = await Account.create(
                 username="Head-Admin",
                 email=security_config.INITIAL_ADMIN_EMAIL,
-                password=PasswordHasher().hash(security_config.INITIAL_ADMIN_PASSWORD),
+                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
                 verified=True,
             )
             await account.roles.add(role)
