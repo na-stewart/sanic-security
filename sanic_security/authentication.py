@@ -16,8 +16,10 @@ from sanic_security.exceptions import (
     DeactivatedError,
     SecondFactorFulfilledError,
     ExpiredError,
+    UnrecognizedLocationError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
+from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -96,8 +98,8 @@ async def login(
     Login with email or username (if enabled) and password.
 
     Args:
-        request (Request): Sanic request parameter. Login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into, overrides retrieving account via email or username in form-data.
+        request (Request): Sanic request parameter, login credentials are retrieved via the authorization header.
+        account (Account): Account being logged into, overrides account retrieved via email or username.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
 
     Returns:
@@ -296,6 +298,27 @@ def create_initial_admin_account(app: Sanic) -> None:
             )
             await account.roles.add(role)
             logger.info("Initial admin account created.")
+
+
+async def validate_location(request: Request, account: Account):
+    """
+    Validates that the client has previously utilized the account from their current location.
+
+    Args:
+        request (Request): Sanic request parameter.
+        account (Account): Account being checked.
+
+    Raises:
+        UnrecognizedLocationError
+    """
+    account_session_count = await AuthenticationSession.filter(
+        bearer=account, deleted=False
+    ).count()
+    location_recognized = await AuthenticationSession.filter(
+        ip=get_ip(request), bearer=account, deleted=False
+    ).exists()
+    if account_session_count > 0 and not location_recognized:
+        raise UnrecognizedLocationError()
 
 
 def validate_email(email: str) -> str:
