@@ -172,15 +172,6 @@ class SecondFactorFulfilledError(SessionError):
         super().__init__("Session second factor requirement already met.", 403)
 
 
-class UnrecognizedLocationError(SessionError):
-    """
-    Raised when client's ip address is not recognized.
-    """
-
-    def __init__(self):
-        super().__init__("Session requires second factor for authentication.")
-
-
 class ChallengeError(SessionError):
     """
     Raised when a session challenge attempt is invalid.
