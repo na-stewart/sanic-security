@@ -300,7 +300,7 @@ def create_initial_admin_account(app: Sanic) -> None:
             logger.info("Initial admin account created.")
 
 
-async def location_recognized(request: Request, account: Account):
+async def client_recognized(request: Request, account: Account):
     """
     Validates that the client has previously utilized the account from their current location.
 
@@ -308,18 +308,18 @@ async def location_recognized(request: Request, account: Account):
         request (Request): Sanic request parameter.
         account (Account): Account being checked.
 
-    Raises:
-        UnrecognizedLocationError
+    Returns:
+        location_recognized
     """
-    recognized = True
+    location_recognized = True
     account_session_count = await AuthenticationSession.filter(
         bearer=account, deleted=False
     ).count()
     if account_session_count > 0:
-        recognized = await AuthenticationSession.filter(
+        location_recognized = await AuthenticationSession.filter(
             ip=get_ip(request), bearer=account, deleted=False
         ).exists()
-    return recognized
+    return location_recognized
 
 
 def validate_email(email: str) -> str:
