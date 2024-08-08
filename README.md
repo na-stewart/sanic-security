@@ -53,7 +53,7 @@ Sanic Security is an authentication, authorization, and verification library des
 * Two-step verification
 * Role based authorization with wildcard permissions
 
-Please visit [security.na-stewart.com](https://security.na-stewart.com) for documentation and [here for an implementation guide](https://blog.na-stewart.com/entry?id=3).
+Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -141,13 +141,13 @@ The tables in the below examples represent example [request form-data](https://s
 
 * Initial Administrator Account
 
-This account can be logged into and has complete authoritative access. Login credentials should be modified in config!
+Creates initial admin account, you should modify its credentials in config!
   
-  ```python
-  create_initial_admin_account(app)
-  if __name__ == "__main__":
-      app.run(host="127.0.0.1", port=8000)
-  ```
+```python
+create_initial_admin_account(app)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000)
+```
   
 * Registration (With two-step account verification)
 
@@ -193,9 +193,12 @@ async def on_verify(request):
 
 * Login (With two-factor authentication)
 
-Login credentials are retrieved via the Authorization header. Credentials are constructed by first combining the 
-username and the password with a colon (aladdin:opensesame), and then by encoding the resulting string in base64 
-(YWxhZGRpbjpvcGVuc2VzYW1l). Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`.
+Credentials are retrieved via header are constructed by first combining the username and the password with a colon 
+(aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
+Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`.
+
+If retrieving credentials via the basic authorization header is undesirable, account and password attempt can be
+directly passed into login method.
 
 You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
