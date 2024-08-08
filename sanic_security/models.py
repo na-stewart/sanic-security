@@ -1,3 +1,4 @@
+import base64
 import datetime
 from io import BytesIO
 from typing import Union
@@ -194,6 +195,57 @@ class Account(BaseModel):
             return account
         except DoesNotExist:
             raise NotFoundError("Account with this username does not exist.")
+
+    @staticmethod
+    async def get_via_credential(credential: str):
+        """
+        Retrieve an account with an email or username.
+
+        Args:
+            credential (str): Email or username associated to account being retrieved.
+
+        Returns:
+            account
+
+        Raises:
+            NotFoundError
+        """
+        try:
+            account = await Account.get_via_email(credential)
+        except NotFoundError as e:
+            if security_config.ALLOW_LOGIN_WITH_USERNAME:
+                account = await Account.get_via_username(credential)
+            else:
+                raise e
+        return account
+
+    @staticmethod
+    async def get_via_header(request: Request):
+        """
+        Retrieve the account the client is logging into and client's password attempt via the basic authorization header.
+
+        Args:
+            request (Request): Sanic request parameter.
+
+        Returns:
+            account, password
+
+        Raises:
+            NotFoundError
+        """
+        if request.headers.get("Authorization"):
+            authorization_type, credentials = request.headers.get(
+                "Authorization"
+            ).split()
+            if authorization_type == "Basic":
+                email_or_username, password = (
+                    base64.b64decode(credentials).decode().split(":")
+                )
+                return Account.get_via_credential(email_or_username), password
+            else:
+                raise CredentialsError("Invalid authorization type.")
+        else:
+            raise CredentialsError("Authorization header not provided.")
 
     @staticmethod
     async def get_via_phone(phone: str):

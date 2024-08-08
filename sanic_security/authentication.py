@@ -1,4 +1,3 @@
-import base64
 import functools
 import re
 
@@ -11,15 +10,12 @@ from tortoise.exceptions import DoesNotExist
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import (
-    NotFoundError,
     CredentialsError,
     DeactivatedError,
     SecondFactorFulfilledError,
     ExpiredError,
-    UnrecognizedLocationError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
-from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -92,7 +88,10 @@ async def register(
 
 
 async def login(
-    request: Request, account: Account = None, require_second_factor: bool = False
+    request: Request,
+    account: Account = None,
+    require_second_factor: bool = False,
+    password: str = None,
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
@@ -101,6 +100,7 @@ async def login(
         request (Request): Sanic request parameter, login credentials are retrieved via the authorization header.
         account (Account): Account being logged into, overrides account retrieved via email or username.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
+        password (str): Overrides password retrieved via the authorization header.
 
     Returns:
         authentication_session
@@ -112,24 +112,10 @@ async def login(
         UnverifiedError
         DisabledError
     """
-    if request.headers.get("Authorization"):
-        authorization_type, credentials = request.headers.get("Authorization").split()
-        if authorization_type == "Basic":
-            email_or_username, password = (
-                base64.b64decode(credentials).decode().split(":")
-            )
-        else:
-            raise CredentialsError("Invalid authorization type.")
-    else:
-        raise CredentialsError("Credentials not provided.")
     if not account:
-        try:
-            account = await Account.get_via_email(email_or_username.lower())
-        except NotFoundError as e:
-            if security_config.ALLOW_LOGIN_WITH_USERNAME:
-                account = await Account.get_via_username(email_or_username)
-            else:
-                raise e
+        account, password = await Account.get_via_header(request)
+    elif not password:
+        raise CredentialsError("Password parameter is empty.")
     try:
         password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
@@ -298,28 +284,6 @@ def create_initial_admin_account(app: Sanic) -> None:
             )
             await account.roles.add(role)
             logger.info("Initial admin account created.")
-
-
-async def client_recognized(request: Request, account: Account):
-    """
-    Validates that the client has previously utilized the account from their current location.
-
-    Args:
-        request (Request): Sanic request parameter.
-        account (Account): Account being checked.
-
-    Returns:
-        location_recognized
-    """
-    location_recognized = True
-    account_session_count = await AuthenticationSession.filter(
-        bearer=account, deleted=False
-    ).count()
-    if account_session_count > 0:
-        location_recognized = await AuthenticationSession.filter(
-            ip=get_ip(request), bearer=account, deleted=False
-        ).exists()
-    return location_recognized
 
 
 def validate_email(email: str) -> str:
