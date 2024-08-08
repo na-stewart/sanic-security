@@ -241,7 +241,8 @@ class Account(BaseModel):
                 email_or_username, password = (
                     base64.b64decode(credentials).decode().split(":")
                 )
-                return Account.get_via_credential(email_or_username), password
+                account = await Account.get_via_credential(email_or_username)
+                return account, password
             else:
                 raise CredentialsError("Invalid authorization type.")
         else:
