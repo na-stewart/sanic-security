@@ -350,15 +350,15 @@ class Session(BaseModel):
             secure=security_config.SESSION_SECURE,
         )
         if self.expiration_date:  # Overrides refresh expiration.
-            if (
-                hasattr(self, "refresh_expiration_date")
-                and self.refresh_expiration_date
-            ):
-                response.cookies.get_cookie(cookie).expires = (
-                    self.refresh_expiration_date
+            response.cookies.get_cookie(cookie).expires = (
+                self.refresh_expiration_date
+                if (
+                    hasattr(self, "refresh_expiration_date")
+                    and self.refresh_expiration_date
                 )
-            else:
-                response.cookies.get_cookie(cookie).expires = self.expiration_date
+                else self.expiration_date
+            )
+
         if security_config.SESSION_DOMAIN:
             response.cookies.get_cookie(cookie).domain = security_config.SESSION_DOMAIN
 

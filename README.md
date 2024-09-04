@@ -197,9 +197,6 @@ Credentials are retrieved via header are constructed by first combining the user
 (aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
 Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`.
 
-If retrieving credentials via the basic authorization header is undesirable, account and password attempt can be
-directly passed into login method.
-
 You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
@@ -220,6 +217,14 @@ async def on_login(request):
     two_step_session.encode(response)
     return response
 ```
+
+* Login
+
+If retrieving credentials via the basic authorization header is undesirable, account and password attempt can be
+directly passed into login method.
+
+
+
 
 * Fulfill Second Factor
 
