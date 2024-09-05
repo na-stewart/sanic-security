@@ -100,7 +100,7 @@ async def login(
         request (Request): Sanic request parameter, login credentials are retrieved via the authorization header.
         account (Account): Account being logged into, overrides account retrieved via email or username.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
-        password (str): Overrides password retrieved via the authorization header.
+        password (str): Overrides user's password attempt retrieved via the authorization header.
 
     Returns:
         authentication_session
