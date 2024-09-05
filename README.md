@@ -195,9 +195,8 @@ async def on_verify(request):
 
 Credentials are retrieved via header are constructed by first combining the username and the password with a colon 
 (aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
-Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`.
-
-You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
+Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`. You can use a username 
+as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
 @app.post("api/security/login")
@@ -218,13 +217,7 @@ async def on_login(request):
     return response
 ```
 
-* Login
-
-If retrieving credentials via the basic authorization header is undesirable, account and password attempt can be
-directly passed into login method.
-
-
-
+If this isn't desired, you can pass an account and password attempt directly into login instead.
 
 * Fulfill Second Factor
 
