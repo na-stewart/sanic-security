@@ -217,7 +217,7 @@ async def on_login(request):
     return response
 ```
 
-If this isn't desired, you can pass an account and password attempt directly into login instead.
+If this isn't desired, you can pass an account and password attempt directly into the login instead.
 
 * Fulfill Second Factor
 
