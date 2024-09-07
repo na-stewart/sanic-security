@@ -292,8 +292,8 @@ async def on_authenticate(request):
 
 * Refresh Encoder
 
-A new/refreshed session is returned during authentication if the client's session expired during authentication and
-requires encoding. Rather than doing so manually, it can be done automatically via middleware.
+A new/refreshed session is returned during authentication if the client's current session expired and it
+requires encoding. This should be be done automatically via middleware.
 
 ```python
 attach_refresh_encoder(app)
