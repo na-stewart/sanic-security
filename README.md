@@ -290,19 +290,15 @@ async def on_authenticate(request):
     return response
 ```
 
-* Authentication Middleware
+* Refresh Encoder
 
-New/Refreshed session returned if client's session expired during authentication, requires encoding.
-
-Middleware is recommended to automatically encode the refreshed session.
+A new/refreshed session is returned during authentication if the client's session expired during authentication and
+requires encoding. Rather than doing so manually, it can be done automatically via middleware.
 
 ```python
-@app.on_response
-async def authentication_refresh_encoder(request, response):
-    if hasattr(request.ctx, "authentication_session"):
-        authentication_session = request.ctx.authentication_session
-        if authentication_session.is_refresh:
-            authentication_session.encode(response)
+attach_refresh_encoder(app)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000)
 ```
 
 ## Captcha

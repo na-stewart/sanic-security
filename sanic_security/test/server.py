@@ -12,6 +12,7 @@ from sanic_security.authentication import (
     logout,
     create_initial_admin_account,
     fulfill_second_factor,
+    attach_refresh_encoder,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -171,14 +172,6 @@ async def on_authenticate(request):
         },
     )
     return response
-
-
-@app.on_response
-async def authentication_refresh_encoder(request, response):
-    if hasattr(request.ctx, "authentication_session"):
-        authentication_session = request.ctx.authentication_session
-        if authentication_session.is_refresh:
-            authentication_session.encode(response)
 
 
 @app.post("api/test/auth/expire")
@@ -351,6 +344,7 @@ register_tortoise(
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
+attach_refresh_encoder(app)
 create_initial_admin_account(app)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, workers=1, debug=True)

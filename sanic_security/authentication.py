@@ -249,6 +249,22 @@ def requires_authentication(arg=None):
     return decorator(arg) if callable(arg) else decorator
 
 
+def attach_refresh_encoder(app: Sanic):
+    """
+    Automatically encodes the new/refreshed session returned during authentication when client's current session expires.
+
+    Args:
+        app: (Sanic): The main Sanic application instance.
+    """
+
+    @app.on_response
+    async def refresh_encoder_middleware(request, response):
+        if hasattr(request.ctx, "authentication_session"):
+            authentication_session = request.ctx.authentication_session
+            if authentication_session.is_refresh:
+                authentication_session.encode(response)
+
+
 def create_initial_admin_account(app: Sanic) -> None:
     """
     Creates the initial admin account that can be logged into and has complete authoritative access.

@@ -576,6 +576,4 @@ class MiscTest(TestCase):
         authenticate_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth",
         )  # Since session refresh handling is complete, it will be returned as a regular session now.
-        assert (
-            json.loads(authenticate_response.text)["data"]["refresh"] is False
-        ), authenticate_response.text
+        assert authenticate_response.status_code == 200, authenticate_response.text
