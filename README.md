@@ -166,7 +166,7 @@ async def on_register(request):
     account = await register(request)
     two_step_session = await request_two_step_verification(request, account)
     await email_code(
-        account.email, two_step_session.code  # Code = 197251
+        account.email, two_step_session.code  # Code = 24KF19
     )  # Custom method for emailing verification code.
     response = json(
         "Registration successful! Email verification required.",
@@ -182,7 +182,7 @@ Verifies the client's account via two-step session code.
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 197251 |
+| **code** | 24KF19 |
 
 ```python
 @app.post("api/security/verify")
@@ -206,7 +206,7 @@ async def on_login(request):
         request, authentication_session.bearer
     )
     await email_code(
-        authentication_session.bearer.email, two_step_session.code  # Code = 197251
+        authentication_session.bearer.email, two_step_session.code  # Code = XGED2U
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
@@ -225,7 +225,7 @@ Fulfills client authentication session's second factor requirement via two-step 
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 197251 |
+| **code** | XGED2U |
 
 ```python
 @app.post("api/security/fulfill-2fa")
@@ -316,7 +316,7 @@ downloading a .ttf font and defining the file's path in the configuration.
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
-    response = captcha_session.get_image()  # Captcha: 192731
+    response = captcha_session.get_image()  # Captcha: LJ0F3U
     captcha_session.encode(response)
     return response
 ```
@@ -325,7 +325,7 @@ async def on_captcha_img_request(request):
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | 192731 |
+| **captcha** | LJ0F3U |
 
 ```python
 @app.post("api/security/captcha")
@@ -338,7 +338,7 @@ async def on_captcha(request):
 
 | Key         | Value  |
 |-------------|--------|
-| **captcha** | 192731 |
+| **captcha** | LJ0F3U |
 
 ```python
 @app.post("api/security/captcha")
@@ -360,7 +360,7 @@ Two-step verification should be integrated with other custom functionality. For 
 ```python
 @app.post("api/security/two-step/request")
 async def on_two_step_request(request):
-    two_step_session = await request_two_step_verification(request)  # Code = 197251
+    two_step_session = await request_two_step_verification(request)  # Code = T2I58I
     await email_code(
         two_step_session.bearer.email, two_step_session.code
     )  # Custom method for emailing verification code.
@@ -374,7 +374,7 @@ async def on_two_step_request(request):
 ```python
 @app.post("api/security/two-step/resend")
 async def on_two_step_resend(request):
-    two_step_session = await TwoStepSession.decode(request)  # Code = 197251
+    two_step_session = await TwoStepSession.decode(request)  # Code = T2I58I
     await email_code(
         two_step_session.bearer.email, two_step_session.code
     )  # Custom method for emailing verification code.
@@ -385,7 +385,7 @@ async def on_two_step_resend(request):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 197251 |
+| **code** | T2I58I |
 
 ```python
 @app.post("api/security/two-step")
@@ -399,7 +399,7 @@ async def on_two_step_verification(request):
 
 | Key      | Value  |
 |----------|--------|
-| **code** | 197251 |
+| **code** | T2I58I |
 
 ```python
 @app.post("api/security/two-step")

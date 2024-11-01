@@ -1,5 +1,6 @@
 import datetime
 import random
+import string
 
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
@@ -47,7 +48,9 @@ def get_code() -> str:
     Returns:
         code
     """
-    return str(random.randint(100000, 999999))
+    return "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
+    )
 
 
 def json(
