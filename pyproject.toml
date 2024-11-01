@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sanic-security"
-version = "1.12.5"
+version = "1.12.6"
 requires-python = ">=3.8"
 dependencies = [
     "tortoise-orm>=0.17.0",
@@ -16,7 +16,7 @@ dependencies = [
 ]
 description = "An async security library for the Sanic framework."
 authors = [
-  { name="Aidan Stewart", email="na.stewart365@gmail.com" },
+  { name="Aidan Stewart", email="me@na-stewart.com" },
 ]
 readme = "README.md"
 keywords = ["security", "authentication", "authorization", "verification", "async", "sanic"]
