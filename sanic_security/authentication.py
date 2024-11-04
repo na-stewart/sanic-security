@@ -1,5 +1,6 @@
 import functools
 import re
+import warnings
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -8,12 +9,12 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import DoesNotExist
 
-from sanic_security.configuration import config as security_config
+from sanic_security.configuration import config as security_config, DEFAULT_CONFIG
 from sanic_security.exceptions import (
     CredentialsError,
     DeactivatedError,
     SecondFactorFulfilledError,
-    ExpiredError,
+    ExpiredError, AuditWarning,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip
@@ -44,7 +45,7 @@ password_hasher = PasswordHasher()
 
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+        request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account that can be logged into.
@@ -64,14 +65,14 @@ async def register(
     if await Account.filter(email=email_lower).exists():
         raise CredentialsError("An account with this email may already exist.", 409)
     elif await Account.filter(
-        username=validate_username(request.form.get("username"))
+            username=validate_username(request.form.get("username"))
     ).exists():
         raise CredentialsError("An account with this username may already exist.", 409)
     elif (
-        request.form.get("phone")
-        and await Account.filter(
-            phone=validate_phone(request.form.get("phone"))
-        ).exists()
+            request.form.get("phone")
+            and await Account.filter(
+        phone=validate_phone(request.form.get("phone"))
+    ).exists()
     ):
         raise CredentialsError(
             "An account with this phone number may already exist.", 409
@@ -89,10 +90,10 @@ async def register(
 
 
 async def login(
-    request: Request,
-    account: Account = None,
-    require_second_factor: bool = False,
-    password: str = None,
+        request: Request,
+        account: Account = None,
+        require_second_factor: bool = False,
+        password: str = None,
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
@@ -155,7 +156,7 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client has logged out{" anonymously" if authentication_session.anonymous else 
+        f"Client has logged out{" anonymously" if authentication_session.anonymous else
         f" of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
     )
     return authentication_session
@@ -287,6 +288,10 @@ def create_initial_admin_account(app: Sanic) -> None:
 
     @app.listener("before_server_start")
     async def create(app, loop):
+        if security_config.INITIAL_ADMIN_EMAIL == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]:
+            warnings.warn("Initial admin email must be changed from default.", AuditWarning)
+        if security_config.INITIAL_ADMIN_PASSWORD == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]:
+            raise AuditError("Initial admin password must be changed from default.", AuditWarning)
         try:
             role = await Role.filter(name="Admin").get()
         except DoesNotExist:
@@ -367,7 +372,7 @@ def validate_phone(phone: str) -> str:
         CredentialsError
     """
     if phone and not re.search(
-        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
+            r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
     ):
         raise CredentialsError("Please use a valid phone number.", 400)
     return phone

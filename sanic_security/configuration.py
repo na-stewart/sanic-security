@@ -1,6 +1,9 @@
+import warnings
 from os import environ
 
 from sanic.utils import str_to_bool
+
+from sanic_security.exceptions import AuditWarning
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -23,7 +26,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
 
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
@@ -111,13 +113,12 @@ class Config(dict):
                 except ValueError:
                     pass
 
-    def audit(self):
-        pass
-
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
         self.__dict__ = self
         self.load_environment_variables()
+        if self.SECRET == DEFAULT_CONFIG["SECRET"]:
+            warnings.warn("Secret should be changed from default.", AuditWarning)
 
 
 config = Config()

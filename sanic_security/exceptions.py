@@ -129,9 +129,9 @@ class DeactivatedError(SessionError):
     """
 
     def __init__(
-        self,
-        message: str = "Session has been deactivated.",
-        code: int = 401,
+            self,
+            message: str = "Session has been deactivated.",
+            code: int = 401,
     ):
         super().__init__(message, code)
 
@@ -206,3 +206,9 @@ class AnonymousError(AuthorizationError):
 
     def __init__(self):
         super().__init__("Session is anonymous.")
+
+
+class AuditWarning(Warning):
+    """
+    Raised when configuration value is invalid.
+    """

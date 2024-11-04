@@ -516,7 +516,9 @@ class VerificationSession(Session):
             else:
                 raise MaxedOutChallengeError()
         else:
-            logger.info(f"Client has completed session {self.id} challenge.")
+            logger.info(
+                f"Client has completed verification session {self.id} challenge."
+            )
             await self.deactivate()
 
     @classmethod
