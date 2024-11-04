@@ -155,8 +155,8 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client has logged out{" anonymously" if authentication_session.anonymous 
-        else f" of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
+        f"Client has logged out{" anonymously" if authentication_session.anonymous else 
+        f" of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
     )
     return authentication_session
 
