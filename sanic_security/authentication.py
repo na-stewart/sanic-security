@@ -123,10 +123,13 @@ async def login(
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        logger.info(f"Client has logged into account {account.id}.")
-        return await AuthenticationSession.new(
+        authentication_session = await AuthenticationSession.new(
             request, account, requires_second_factor=require_second_factor
         )
+        logger.info(
+            f"Client has logged into account {account.id} with authentication session {authentication_session.id}."
+        )
+        return authentication_session
     except VerifyMismatchError:
         raise CredentialsError("Incorrect password.", 401)
 
@@ -152,7 +155,8 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client has logged out{'' if authentication_session.anonymous else f' of account {authentication_session.bearer.id}.'}."
+        f"Client has logged out{" anonymously" if authentication_session.anonymous 
+        else f" of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
     )
     return authentication_session
 
