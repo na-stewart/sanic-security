@@ -141,7 +141,7 @@ The tables in the below examples represent example [request form-data](https://s
 
 * Initial Administrator Account
 
-Creates initial admin account, you should modify its credentials in config!
+Creates root account if it doesn't exist, you should modify its credentials in config!
   
 ```python
 create_initial_admin_account(app)
