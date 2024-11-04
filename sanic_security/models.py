@@ -495,13 +495,12 @@ class VerificationSession(Session):
     attempts: int = fields.IntField(default=0)
     code: str = fields.CharField(max_length=10, default=get_code, null=True)
 
-    async def check_code(self, request: Request, code: str) -> None:
+    async def check_code(self, code: str) -> None:
         """
         Checks if code passed is equivalent to the session code.
 
         Args:
             code (str): Code being cross-checked with session code.
-            request (Request): Sanic request parameter.
 
         Raises:
             ChallengeError
@@ -517,9 +516,7 @@ class VerificationSession(Session):
             else:
                 raise MaxedOutChallengeError()
         else:
-            logger.info(
-                f"Client {get_ip(request)} has completed session {self.id} challenge."
-            )
+            logger.info(f"Client has completed session {self.id} challenge.")
             await self.deactivate()
 
     @classmethod
@@ -634,9 +631,7 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
-                logger.info(
-                    f"Client {get_ip(request)} has refreshed authentication session."
-                )
+                logger.info(f"Client has refreshed authentication session {self.id}.")
                 return await self.new(request, self.bearer, True)
             else:
                 raise e

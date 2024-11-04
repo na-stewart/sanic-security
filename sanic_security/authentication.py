@@ -123,7 +123,7 @@ async def login(
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
-        logger.info(f"Client {get_ip(request)} has logged into account {account.id}.")
+        logger.info(f"Client has logged into account {account.id}.")
         return await AuthenticationSession.new(
             request, account, requires_second_factor=require_second_factor
         )
@@ -152,7 +152,7 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client {get_ip(request)} has logged out{'' if authentication_session.anonymous else f' of account {authentication_session.bearer.id}.'}."
+        f"Client has logged out{'' if authentication_session.anonymous else f' of account {authentication_session.bearer.id}.'}."
     )
     return authentication_session
 
@@ -182,11 +182,11 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
         raise SecondFactorFulfilledError()
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
-    await two_step_session.check_code(request, request.form.get("code"))
+    await two_step_session.check_code(request.form.get("code"))
     authentication_session.requires_second_factor = False
     await authentication_session.save(update_fields=["requires_second_factor"])
     logger.info(
-        f"Client {get_ip(request)} has fulfilled session {authentication_session.id} second factor."
+        f"Authentication session {authentication_session.id} second factor has been fulfilled."
     )
     return authentication_session
 
