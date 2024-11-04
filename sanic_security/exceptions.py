@@ -129,9 +129,9 @@ class DeactivatedError(SessionError):
     """
 
     def __init__(
-            self,
-            message: str = "Session has been deactivated.",
-            code: int = 401,
+        self,
+        message: str = "Session has been deactivated.",
+        code: int = 401,
     ):
         super().__init__(message, code)
 
