@@ -111,6 +111,9 @@ class Config(dict):
                 except ValueError:
                     pass
 
+    def audit(self):
+        pass
+
     def __init__(self):
         super().__init__(DEFAULT_CONFIG)
         self.__dict__ = self

@@ -30,9 +30,7 @@ SOFTWARE.
 
 
 class RegistrationTest(TestCase):
-    """
-    Registration tests.
-    """
+    """Registration tests."""
 
     def setUp(self):
         self.client = httpx.Client()
@@ -62,9 +60,7 @@ class RegistrationTest(TestCase):
         return registration_response
 
     def test_registration(self):
-        """
-        Account registration and login.
-        """
+        """Account registration and login."""
         registration_response = self.register(
             "account_registration@register.test",
             "account_registration",
@@ -80,9 +76,7 @@ class RegistrationTest(TestCase):
         assert login_response.status_code == 200, login_response.text
 
     def test_invalid_registration(self):
-        """
-        Registration with an intentionally invalid email, username, and phone.
-        """
+        """Registration with an intentionally invalid email, username, and phone."""
         invalid_email_registration_response = self.register(
             "invalid_register.test", "invalid_register", False, True
         )
@@ -112,9 +106,7 @@ class RegistrationTest(TestCase):
         ), too_many_characters_registration_response.text
 
     def test_registration_disabled(self):
-        """
-        Registration and login with a disabled account.
-        """
+        """Registration and login with a disabled account."""
         registration_response = self.register(
             "disabled@register.test", "disabled", True, True
         )
@@ -126,9 +118,7 @@ class RegistrationTest(TestCase):
         assert "DisabledError" in login_response.text, login_response.text
 
     def test_registration_unverified(self):
-        """
-        Registration and login with an unverified account.
-        """
+        """Registration and login with an unverified account."""
         registration_response = self.register(
             "unverified@register.test", "unverified", False, False
         )
@@ -140,9 +130,7 @@ class RegistrationTest(TestCase):
         assert "UnverifiedError" in login_response.text, login_response.text
 
     def test_registration_unverified_disabled(self):
-        """
-        Registration and login with an unverified and disabled account.
-        """
+        """Registration and login with an unverified and disabled account."""
         registration_response = self.register(
             "unverified_disabled@register.test", "unverified_disabled", True, False
         )
@@ -155,9 +143,7 @@ class RegistrationTest(TestCase):
 
 
 class LoginTest(TestCase):
-    """
-    Login tests.
-    """
+    """Login tests."""
 
     def setUp(self):
         self.client = httpx.Client()
@@ -166,9 +152,7 @@ class LoginTest(TestCase):
         self.client.close()
 
     def test_login(self):
-        """
-        Login with an email and password.
-        """
+        """Login with an email and password."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "email_pass@login.test", "username": "email_pass"},
@@ -184,9 +168,7 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_login_with_username(self):
-        """
-        Login with a username instead of an email and password.
-        """
+        """Login with a username instead of an email and password."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "user_pass@login.test", "username": "user_pass"},
@@ -202,9 +184,7 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_invalid_login(self):
-        """
-        Login with an intentionally incorrect password and into a non existent account.
-        """
+        """Login with an intentionally incorrect password and into a non-existent account."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "incorrect_pass@login.test", "username": "incorrect_pass"},
@@ -225,9 +205,7 @@ class LoginTest(TestCase):
         ), unavailable_account_login_response
 
     def test_logout(self):
-        """
-        Logout of logged in account and attempt to authenticate.
-        """
+        """Logout of logged in account and attempt to authenticate."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "logout@login.test", "username": "logout"},
@@ -244,9 +222,7 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 401, authenticate_response.text
 
     def test_initial_admin_login(self):
-        """
-        Initial admin account login and authorization.
-        """
+        """Initial admin account login and authorization."""
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
             auth=("admin@login.test", "admin123"),
@@ -264,9 +240,7 @@ class LoginTest(TestCase):
         ), permitted_authorization_response.text
 
     def test_two_factor_login(self):
-        """
-        Test login with two-factor authentication requirement.
-        """
+        """Test login with two-factor authentication requirement."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "two-factor@login.test", "username": "two-factor"},
@@ -295,9 +269,7 @@ class LoginTest(TestCase):
         assert authenticate_response.status_code == 200, authenticate_response.text
 
     def test_anonymous_login(self):
-        """
-        Test login of anonymous user.
-        """
+        """Test login of anonymous user."""
         anon_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/anon"
         )
@@ -311,9 +283,7 @@ class LoginTest(TestCase):
 
 
 class VerificationTest(TestCase):
-    """
-    Two-step verification and captcha tests.
-    """
+    """Two-step verification and captcha tests."""
 
     def setUp(self):
         self.client = httpx.Client()
@@ -322,9 +292,7 @@ class VerificationTest(TestCase):
         self.client.close()
 
     def test_captcha(self):
-        """
-        Captcha request and attempt.
-        """
+        """Captcha request and attempt."""
         captcha_request_response = self.client.get(
             "http://127.0.0.1:8000/api/test/capt/request"
         )
@@ -344,9 +312,7 @@ class VerificationTest(TestCase):
         ), captcha_attempt_response.text
 
     def test_two_step_verification(self):
-        """
-        Two-step verification request and attempt.
-        """
+        """Two-step verification request and attempt."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "two_step@verification.test", "username": "two_step"},
@@ -382,9 +348,7 @@ class VerificationTest(TestCase):
         ), two_step_verification_no_email_request_response.text
 
     def test_account_verification(self):
-        """
-        Account registration and verification process with successful login.
-        """
+        """Account registration and verification process with successful login."""
         registration_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/register",
             data={
@@ -404,9 +368,7 @@ class VerificationTest(TestCase):
 
 
 class AuthorizationTest(TestCase):
-    """
-    Role and permissions based authorization tests.
-    """
+    """Role and permissions based authorization tests."""
 
     def setUp(self):
         self.client = httpx.Client()
@@ -415,9 +377,7 @@ class AuthorizationTest(TestCase):
         self.client.close()
 
     def test_permissions_authorization(self):
-        """
-        Authorization with permissions.
-        """
+        """Authorization with permissions."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "permissions@authorization.test", "username": "permissions"},
@@ -455,9 +415,7 @@ class AuthorizationTest(TestCase):
         ), prohibited_authorization_response.text
 
     def test_roles_authorization(self):
-        """
-        Authorization with roles.
-        """
+        """Authorization with roles."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={"email": "roles@authorization.test", "username": "roles"},
@@ -488,6 +446,7 @@ class AuthorizationTest(TestCase):
         ), prohibited_authorization_response.text
 
     def test_anonymous_authorization(self):
+        """Authorization with anonymous client."""
         anon_login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login/anon"
         )
@@ -506,9 +465,7 @@ class AuthorizationTest(TestCase):
 
 
 class MiscTest(TestCase):
-    """
-    Miscellaneous tests that cannot be categorized.
-    """
+    """Miscellaneous tests that cannot be categorized."""
 
     def setUp(self):
         self.client = httpx.Client()
@@ -517,18 +474,14 @@ class MiscTest(TestCase):
         self.client.close()
 
     def test_environment_variable_load(self):
-        """
-        Config loads environment variables.
-        """
+        """Config loads environment variables."""
         os.environ["SANIC_SECURITY_SECRET"] = "test-secret"
         security_config = Config()
         security_config.load_environment_variables()
         assert security_config.SECRET == "test-secret"
 
     def test_get_associated_sessions(self):
-        """
-        Retrieve sessions associated to logged in account.
-        """
+        """Retrieve sessions associated to logged in account."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={
@@ -549,9 +502,7 @@ class MiscTest(TestCase):
         ), retrieve_associated_response.text
 
     def test_authentication_refresh(self):
-        """
-        Test automatic authentication refresh.
-        """
+        """Test automatic authentication refresh."""
         self.client.post(
             "http://127.0.0.1:8000/api/test/account",
             data={

@@ -62,9 +62,7 @@ password_hasher = PasswordHasher()
 
 @app.post("api/test/auth/register")
 async def on_register(request):
-    """
-    Register an account with email and password.
-    """
+    """Register an account with email and password."""
     account = await register(
         request,
         verified=request.form.get("verified") == "true",
@@ -83,9 +81,7 @@ async def on_register(request):
 
 @app.post("api/test/auth/verify")
 async def on_verify(request):
-    """
-    Verifies client account.
-    """
+    """Verifies client account."""
     two_step_session = await verify_account(request)
     return json(
         "You have verified your account and may login!", two_step_session.bearer.json
@@ -94,9 +90,7 @@ async def on_verify(request):
 
 @app.post("api/test/auth/login")
 async def on_login(request):
-    """
-    Login to an account with an email and password.
-    """
+    """Login to an account with an email and password."""
     two_factor_authentication = request.args.get("two-factor-authentication") == "true"
     authentication_session = await login(
         request, require_second_factor=two_factor_authentication
@@ -118,9 +112,7 @@ async def on_login(request):
 
 @app.post("api/test/auth/login/anon")
 async def on_login_anonymous(request):
-    """
-    Login as anonymous user.
-    """
+    """Login as anonymous user."""
     authentication_session = await AuthenticationSession.new(request)
     response = json(
         "Anonymous user now associated with session!", authentication_session.json
@@ -131,9 +123,7 @@ async def on_login_anonymous(request):
 
 @app.post("api/test/auth/validate-2fa")
 async def on_two_factor_authentication(request):
-    """
-    Fulfills client authentication session's second factor requirement.
-    """
+    """Fulfills client authentication session's second factor requirement."""
     authentication_session = await fulfill_second_factor(request)
     response = json(
         "Authentication session second-factor fulfilled! You are now authenticated.",
@@ -145,9 +135,7 @@ async def on_two_factor_authentication(request):
 
 @app.post("api/test/auth/logout")
 async def on_logout(request):
-    """
-    Logout of currently logged in account.
-    """
+    """Logout of currently logged in account."""
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.json)
     return response
@@ -156,9 +144,7 @@ async def on_logout(request):
 @app.post("api/test/auth")
 @requires_authentication
 async def on_authenticate(request):
-    """
-    Authenticate client session and account.
-    """
+    """Authenticate client session and account."""
     authentication_session = request.ctx.authentication_session
     response = json(
         "Authenticated!",
@@ -177,9 +163,7 @@ async def on_authenticate(request):
 @app.post("api/test/auth/expire")
 @requires_authentication
 async def on_authentication_expire(request):
-    """
-    Expire client's session.
-    """
+    """Expire client's session."""
     authentication_session = request.ctx.authentication_session
     authentication_session.expiration_date = datetime.datetime.now(datetime.UTC)
     await authentication_session.save(update_fields=["expiration_date"])
@@ -189,9 +173,7 @@ async def on_authentication_expire(request):
 @app.post("api/test/auth/associated")
 @requires_authentication
 async def on_get_associated_authentication_sessions(request):
-    """
-    Retrieves authentication sessions associated with logged in account.
-    """
+    """Retrieves authentication sessions associated with logged in account."""
     authentication_sessions = await AuthenticationSession.get_associated(
         request.ctx.authentication_session.bearer
     )
@@ -203,9 +185,7 @@ async def on_get_associated_authentication_sessions(request):
 
 @app.get("api/test/capt/request")
 async def on_captcha_request(request):
-    """
-    Request captcha with solution in response.
-    """
+    """Request captcha with solution in response."""
     captcha_session = await request_captcha(request)
     response = json("Captcha request successful!", captcha_session.code)
     captcha_session.encode(response)
@@ -214,9 +194,7 @@ async def on_captcha_request(request):
 
 @app.get("api/test/capt/image")
 async def on_captcha_image(request):
-    """
-    Request captcha image.
-    """
+    """Request captcha image."""
     captcha_session = await CaptchaSession.decode(request)
     response = captcha_session.get_image()
     captcha_session.encode(response)
@@ -226,17 +204,13 @@ async def on_captcha_image(request):
 @app.post("api/test/capt")
 @requires_captcha
 async def on_captcha_attempt(request):
-    """
-    Attempt captcha challenge.
-    """
+    """Attempt captcha challenge."""
     return json("Captcha attempt successful!", request.ctx.captcha_session.json)
 
 
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
-    """
-    Request two-step verification with code in the response.
-    """
+    """Request two-step verification with code in the response."""
     two_step_session = await request_two_step_verification(request)
     response = json("Verification request successful!", two_step_session.code)
     two_step_session.encode(response)
@@ -246,9 +220,7 @@ async def on_request_verification(request):
 @app.post("api/test/two-step")
 @requires_two_step_verification
 async def on_verification_attempt(request):
-    """
-    Attempt two-step verification challenge.
-    """
+    """Attempt two-step verification challenge."""
     return json(
         "Two step verification attempt successful!", request.ctx.two_step_session.json
     )
@@ -257,9 +229,7 @@ async def on_verification_attempt(request):
 @app.post("api/test/auth/roles")
 @requires_authentication
 async def on_authorization(request):
-    """
-    Check if client is authorized with sufficient roles and permissions.
-    """
+    """Check if client is authorized with sufficient roles and permissions."""
     await check_roles(request, request.form.get("role"))
     if request.form.get("permissions_required"):
         await check_permissions(
@@ -271,9 +241,7 @@ async def on_authorization(request):
 @app.post("api/test/auth/roles/assign")
 @requires_authentication
 async def on_role_assign(request):
-    """
-    Assign authenticated account a role.
-    """
+    """Assign authenticated account a role."""
     await assign_role(
         request.form.get("name"),
         request.ctx.authentication_session.bearer,
@@ -285,9 +253,7 @@ async def on_role_assign(request):
 
 @app.post("api/test/account")
 async def on_account_creation(request):
-    """
-    Quick account creation.
-    """
+    """Quick account creation."""
     account = await Account.create(
         username=request.form.get("username"),
         email=request.form.get("email").lower(),
@@ -301,9 +267,7 @@ async def on_account_creation(request):
 
 @app.exception(SecurityError)
 async def on_security_error(request, exception):
-    """
-    Handles security errors with correct response.
-    """
+    """Handles security errors with correct response."""
     traceback.print_exc()
     return exception.json
 
