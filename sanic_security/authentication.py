@@ -291,7 +291,7 @@ def create_initial_admin_account(app: Sanic) -> None:
         if security_config.INITIAL_ADMIN_EMAIL == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]:
             warnings.warn("Initial admin email must be changed from default.", AuditWarning)
         if security_config.INITIAL_ADMIN_PASSWORD == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]:
-            raise AuditError("Initial admin password must be changed from default.", AuditWarning)
+            warnings.warn("Initial admin password must be changed from default.", AuditWarning)
         try:
             role = await Role.filter(name="Admin").get()
         except DoesNotExist:
