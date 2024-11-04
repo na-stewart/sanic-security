@@ -14,7 +14,7 @@ from sanic_security.exceptions import (
     CredentialsError,
     DeactivatedError,
     SecondFactorFulfilledError,
-    ExpiredError, AuditWarning,
+    ExpiredError
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip
@@ -288,10 +288,12 @@ def create_initial_admin_account(app: Sanic) -> None:
 
     @app.listener("before_server_start")
     async def create(app, loop):
+        if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
+            warnings.warn("Secret should be changed from default.")
         if security_config.INITIAL_ADMIN_EMAIL == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]:
-            warnings.warn("Initial admin email must be changed from default.", AuditWarning)
+            warnings.warn("Initial admin email should be changed from default.")
         if security_config.INITIAL_ADMIN_PASSWORD == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]:
-            warnings.warn("Initial admin password must be changed from default.", AuditWarning)
+            warnings.warn("Initial admin password should be changed from default.")
         try:
             role = await Role.filter(name="Admin").get()
         except DoesNotExist:
