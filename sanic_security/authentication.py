@@ -16,6 +16,7 @@ from sanic_security.exceptions import (
     ExpiredError,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
+from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -75,15 +76,15 @@ async def register(
         raise CredentialsError(
             "An account with this phone number may already exist.", 409
         )
-    validate_password(request.form.get("password"))
     account = await Account.create(
         email=email_lower,
         username=request.form.get("username"),
-        password=password_hasher.hash(request.form.get("password")),
+        password=password_hasher.hash(validate_password(request.form.get("password"))),
         phone=request.form.get("phone"),
         verified=verified,
         disabled=disabled,
     )
+    logger.info(f"Client {get_ip(request)} has registered account {account.id}.")
     return account
 
 
@@ -122,6 +123,7 @@ async def login(
             account.password = password_hasher.hash(password)
             await account.save(update_fields=["password"])
         account.validate()
+        logger.info(f"Client {get_ip(request)} has logged into account {account.id}.")
         return await AuthenticationSession.new(
             request, account, requires_second_factor=require_second_factor
         )
@@ -149,6 +151,9 @@ async def logout(request: Request) -> AuthenticationSession:
         raise DeactivatedError("Already logged out.", 403)
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
+    logger.info(
+        f"Client {get_ip(request)} has logged out{'' if authentication_session.anonymous else f' of account {authentication_session.bearer.id}.'}."
+    )
     return authentication_session
 
 
@@ -180,6 +185,9 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     await two_step_session.check_code(request, request.form.get("code"))
     authentication_session.requires_second_factor = False
     await authentication_session.save(update_fields=["requires_second_factor"])
+    logger.info(
+        f"Client {get_ip(request)} has fulfilled session {authentication_session.id} second factor."
+    )
     return authentication_session
 
 
@@ -276,12 +284,12 @@ def create_initial_admin_account(app: Sanic) -> None:
     @app.listener("before_server_start")
     async def create(app, loop):
         try:
-            role = await Role.filter(name="Head Admin").get()
+            role = await Role.filter(name="Admin").get()
         except DoesNotExist:
             role = await Role.create(
                 description="Has root abilities, assign sparingly.",
                 permissions="*:*",
-                name="Head Admin",
+                name="Admin",
             )
         try:
             account = await Account.filter(
@@ -293,7 +301,7 @@ def create_initial_admin_account(app: Sanic) -> None:
                 logger.warning("Initial admin account role has been reinstated.")
         except DoesNotExist:
             account = await Account.create(
-                username="Head-Admin",
+                username="Admin",
                 email=security_config.INITIAL_ADMIN_EMAIL,
                 password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
                 verified=True,

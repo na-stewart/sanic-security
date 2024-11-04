@@ -1,6 +1,7 @@
 import functools
 from fnmatch import fnmatch
 
+from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import DoesNotExist
 
@@ -119,6 +120,7 @@ async def assign_role(
             description=description, permissions=permissions, name=name
         )
     await account.roles.add(role)
+    logger.info(f"Role {role.id} has been assigned to account {account.id}.")
     return role
 
 

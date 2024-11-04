@@ -142,6 +142,7 @@ class Account(BaseModel):
         else:
             self.disabled = True
             await self.save(update_fields=["disabled"])
+            logger.info(f"Account {self.id} has been disabled.")
 
     @property
     def json(self) -> dict:
@@ -319,6 +320,7 @@ class Session(BaseModel):
         if self.active:
             self.active = False
             await self.save(update_fields=["active"])
+            logger.info(f"Session {self.id} has been deactivated.")
         else:
             raise DeactivatedError("Session is already deactivated.", 403)
 
@@ -513,13 +515,12 @@ class VerificationSession(Session):
                     "Your code does not match verification session code."
                 )
             else:
-                logger.warning(
-                    f"Client ({get_ip(request)}) has maxed out on session challenge attempts"
-                )
                 raise MaxedOutChallengeError()
         else:
-            self.active = False
-            await self.save(update_fields=["active"])
+            logger.info(
+                f"Client {get_ip(request)} has completed session {self.id} challenge."
+            )
+            await self.deactivate()
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -633,6 +634,9 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
+                logger.info(
+                    f"Client {get_ip(request)} has refreshed authentication session."
+                )
                 return await self.new(request, self.bearer, True)
             else:
                 raise e
