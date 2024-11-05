@@ -1,18 +1,21 @@
 import functools
 from contextlib import suppress
 
+from sanic.log import logger
 from sanic.request import Request
 
 from sanic_security.exceptions import (
     JWTDecodeError,
     NotFoundError,
     VerifiedError,
+    MaxedOutChallengeError,
 )
 from sanic_security.models import (
     Account,
     TwoStepSession,
     CaptchaSession,
 )
+from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -89,7 +92,16 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     two_step_session.bearer.validate()
-    await two_step_session.check_code(request.form.get("code"))
+    try:
+        await two_step_session.check_code(request.form.get("code"))
+    except MaxedOutChallengeError as e:
+        logger.warning(
+            f"Client {get_ip(request)} has exceeded maximum two-step session {two_step_session.id} challenge attempts."
+        )
+        raise e
+    logger.info(
+        f"Client {get_ip(request)} has completed two-step session {two_step_session.id} challenge."
+    )
     return two_step_session
 
 
@@ -153,9 +165,19 @@ async def verify_account(request: Request) -> TwoStepSession:
     if two_step_session.bearer.verified:
         raise VerifiedError()
     two_step_session.validate()
-    await two_step_session.check_code(request.form.get("code"))
+    try:
+        await two_step_session.check_code(request.form.get("code"))
+    except MaxedOutChallengeError as e:
+        logger.warning(
+            f"Client {get_ip(request)} has exceeded maximum two-step session {two_step_session.id} challenge attempts "
+            "during account verification."
+        )
+        raise e
     two_step_session.bearer.verified = True
     await two_step_session.bearer.save(update_fields=["verified"])
+    logger.info(
+        f"Client {get_ip(request)} has verified account {two_step_session.bearer.id}."
+    )
     return two_step_session
 
 
@@ -197,7 +219,16 @@ async def captcha(request: Request) -> CaptchaSession:
     """
     captcha_session = await CaptchaSession.decode(request)
     captcha_session.validate()
-    await captcha_session.check_code(request.form.get("captcha"))
+    try:
+        await captcha_session.check_code(request.form.get("captcha"))
+    except MaxedOutChallengeError as e:
+        logger.warning(
+            f"Client {get_ip(request)} has exceeded maximum captcha session {captcha_session.id} challenge attempts."
+        )
+        raise e
+    logger.info(
+        f"Client {get_ip(request)} has completed captcha session {captcha_session.id} challenge."
+    )
     return captcha_session
 
 

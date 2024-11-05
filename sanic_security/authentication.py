@@ -86,6 +86,7 @@ async def register(
         verified=verified,
         disabled=disabled,
     )
+    logger.info(f"Client {get_ip(request)} has registered account {account.id}.")
     return account
 
 
@@ -128,7 +129,7 @@ async def login(
             request, account, requires_second_factor=require_second_factor
         )
         logger.info(
-            f"Client {get_ip(request)} has logged into account {account.id} with authentication session {authentication_session.id}."
+            f"Client {get_ip(request)} has logged in with authentication session {authentication_session.id}."
         )
         return authentication_session
     except VerifyMismatchError:
@@ -159,8 +160,7 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client {get_ip(request)} has logged out {"anonymously" if authentication_session.anonymous 
-        else f"of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
+        f"Client {get_ip(request)} has logged out with authentication session {authentication_session.id}."
     )
     return authentication_session
 
@@ -193,6 +193,10 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     await two_step_session.check_code(request.form.get("code"))
     authentication_session.requires_second_factor = False
     await authentication_session.save(update_fields=["requires_second_factor"])
+    logger.info(
+        f"Client {get_ip(request)} has fulfilled authentication session {authentication_session.id} "
+        "second factor."
+    )
     return authentication_session
 
 
