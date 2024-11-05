@@ -27,11 +27,11 @@ SOFTWARE.
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "PUBLIC_SECRET": None,
-    "SESSION_SAMESITE": "strict",
+    "SESSION_SAMESITE": "Strict",
     "SESSION_SECURE": True,
     "SESSION_HTTPONLY": True,
     "SESSION_DOMAIN": None,
-    "SESSION_PREFIX": "token",
+    "SESSION_PREFIX": "tkn",
     "SESSION_ENCODING_ALGORITHM": "HS256",
     "MAX_CHALLENGE_ATTEMPTS": 5,
     "CAPTCHA_SESSION_EXPIRATION": 60,

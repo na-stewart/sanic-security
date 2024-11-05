@@ -114,12 +114,12 @@ You can load environment variables with a different prefix via `config.load_envi
 |---------------------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
 | **SECRET**                            | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.               |
 | **PUBLIC_SECRET**                     | None                         | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.  |
-| **SESSION_SAMESITE**                  | strict                       | The SameSite attribute of session cookies.                                                                                       |
+| **SESSION_SAMESITE**                  | Strict                       | The SameSite attribute of session cookies.                                                                                       |
 | **SESSION_SECURE**                    | True                         | The Secure attribute of session cookies.                                                                                         |
 | **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing. |
 | **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                         |
 | **SESSION_ENCODING_ALGORITHM**        | HS256                        | The algorithm used to encode and decode session JWT's.                                                                           |
-| **SESSION_PREFIX**                    | token                        | Prefix attached to the beginning of session cookies.                                                                             |
+| **SESSION_PREFIX**                    | tkn                          | Prefix attached to the beginning of session cookies.                                                                             |
 | **MAX_CHALLENGE_ATTEMPTS**            | 5                            | The maximum amount of session challenge attempts allowed.                                                                        |
 | **CAPTCHA_SESSION_EXPIRATION**        | 60                           | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                         |
 | **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation.                                                                     |
@@ -132,22 +132,21 @@ You can load environment variables with a different prefix via `config.load_envi
 
 ## Usage
 
+
 Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent
 along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
+
+
+*  Initialize sanic-security as follows:
+```python
+initialize_security(app)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000, workers=1, debug=True)
+```
 
 The tables in the below examples represent example [request form-data](https://sanicframework.org/en/guide/basics/request.html#form).
 
 ## Authentication
-
-* Initial Administrator Account
-
-Creates root account if it doesn't exist, you should modify its credentials in config!
-  
-```python
-create_initial_admin_account(app)
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
-```
   
 * Registration (With two-step account verification)
 
@@ -288,17 +287,6 @@ async def on_authenticate(request):
         authentication_session.json,
     )
     return response
-```
-
-* Refresh Encoder
-
-A new/refreshed session is returned during authentication when the client's current session expires and it
-requires encoding. This should be done automatically via middleware.
-
-```python
-attach_refresh_encoder(app)
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
 ```
 
 ## Captcha

@@ -1,7 +1,6 @@
 import functools
 from contextlib import suppress
 
-from sanic.log import logger
 from sanic.request import Request
 
 from sanic_security.exceptions import (
@@ -157,7 +156,6 @@ async def verify_account(request: Request) -> TwoStepSession:
     await two_step_session.check_code(request.form.get("code"))
     two_step_session.bearer.verified = True
     await two_step_session.bearer.save(update_fields=["verified"])
-    logger.info(f"Account {two_step_session.bearer.id} has been verified.")
     return two_step_session
 
 

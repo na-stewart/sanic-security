@@ -15,6 +15,7 @@ from sanic_security.exceptions import (
     DeactivatedError,
     SecondFactorFulfilledError,
     ExpiredError,
+    AuditWarning,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
 from sanic_security.utils import get_ip
@@ -128,10 +129,13 @@ async def login(
             request, account, requires_second_factor=require_second_factor
         )
         logger.info(
-            f"Client has logged into account {account.id} with authentication session {authentication_session.id}."
+            f"Client {get_ip(request)} has logged into account {account.id} with authentication session {authentication_session.id}."
         )
         return authentication_session
     except VerifyMismatchError:
+        logger.warning(
+            f"Client {get_ip(request)} has failed to log into account {account.id}."
+        )
         raise CredentialsError("Incorrect password.", 401)
 
 
@@ -156,8 +160,8 @@ async def logout(request: Request) -> AuthenticationSession:
     authentication_session.active = False
     await authentication_session.save(update_fields=["active"])
     logger.info(
-        f"Client has logged out{" anonymously" if authentication_session.anonymous else
-        f" of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
+        f"Client {get_ip(request)} has logged out {"anonymously" if authentication_session.anonymous 
+        else f"of account {authentication_session.bearer.id}"} with authentication session {authentication_session.id}."
     )
     return authentication_session
 
@@ -190,9 +194,6 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     await two_step_session.check_code(request.form.get("code"))
     authentication_session.requires_second_factor = False
     await authentication_session.save(update_fields=["requires_second_factor"])
-    logger.info(
-        f"Authentication session {authentication_session.id} second factor has been fulfilled."
-    )
     return authentication_session
 
 
@@ -260,68 +261,6 @@ def requires_authentication(arg=None):
         return wrapper
 
     return decorator(arg) if callable(arg) else decorator
-
-
-def attach_refresh_encoder(app: Sanic):
-    """
-    Automatically encodes the new/refreshed session returned during authentication when client's current session expires.
-
-    Args:
-        app: (Sanic): The main Sanic application instance.
-    """
-
-    @app.on_response
-    async def refresh_encoder_middleware(request, response):
-        if hasattr(request.ctx, "authentication_session"):
-            authentication_session = request.ctx.authentication_session
-            if authentication_session.is_refresh:
-                authentication_session.encode(response)
-
-
-def create_initial_admin_account(app: Sanic) -> None:
-    """
-    Creates the initial admin account that can be logged into and has complete authoritative access.
-
-    Args:
-        app (Sanic): The main Sanic application instance.
-    """
-
-    @app.listener("before_server_start")
-    async def create(app, loop):
-        if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
-            warnings.warn("Secret should be changed from default.")
-        if security_config.INITIAL_ADMIN_EMAIL == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]:
-            warnings.warn("Initial admin email should be changed from default.")
-        if (
-            security_config.INITIAL_ADMIN_PASSWORD
-            == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
-        ):
-            warnings.warn("Initial admin password should be changed from default.")
-        try:
-            role = await Role.filter(name="Admin").get()
-        except DoesNotExist:
-            role = await Role.create(
-                description="Has root abilities, assign sparingly.",
-                permissions="*:*",
-                name="Admin",
-            )
-        try:
-            account = await Account.filter(
-                email=security_config.INITIAL_ADMIN_EMAIL
-            ).get()
-            await account.fetch_related("roles")
-            if role not in account.roles:
-                await account.roles.add(role)
-                logger.warning("Initial admin account role has been reinstated.")
-        except DoesNotExist:
-            account = await Account.create(
-                username="Admin",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
-                verified=True,
-            )
-            await account.roles.add(role)
-            logger.info("Initial admin account created.")
 
 
 def validate_email(email: str) -> str:
@@ -402,3 +341,77 @@ def validate_password(password: str) -> str:
             400,
         )
     return password
+
+
+def initialize_security(app: Sanic, create_root=True) -> None:
+    """
+    Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
+
+    Args:
+        app (Sanic): The main Sanic application instance.
+        create_root (bool): Determines root account creation on initialization.
+    """
+
+    @app.on_response
+    async def refresh_encoder_middleware(request, response):
+        if hasattr(request.ctx, "authentication_session"):
+            authentication_session = request.ctx.authentication_session
+            if authentication_session.is_refresh:
+                authentication_session.encode(response)
+
+    @app.listener("before_server_start")
+    async def audit_configuration(app, loop):
+        if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
+            warnings.warn("Secret should be changed from default.", AuditWarning)
+        if not security_config.SESSION_HTTPONLY:
+            warnings.warn("HttpOnly should be enabled.", AuditWarning)
+        if not security_config.SESSION_SECURE:
+            warnings.warn("Secure should be enabled.", AuditWarning)
+        if security_config.SESSION_SAMESITE.lower() == "none":
+            warnings.warn("SameSite should not be set to none.", AuditWarning)
+        if (
+            create_root
+            and security_config.INITIAL_ADMIN_EMAIL
+            == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
+        ):
+            warnings.warn(
+                "Initial admin email should be changed from default.", AuditWarning
+            )
+        if (
+            create_root
+            and security_config.INITIAL_ADMIN_PASSWORD
+            == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
+        ):
+            warnings.warn(
+                "Initial admin password should be changed from default.", AuditWarning
+            )
+
+    @app.listener("before_server_start")
+    async def create_root_account(app, loop):
+        if not create_root:
+            return
+        try:
+            role = await Role.filter(name="Root").get()
+        except DoesNotExist:
+            role = await Role.create(
+                description="Has administrator abilities, assign sparingly.",
+                permissions="*:*",
+                name="Root",
+            )
+        try:
+            account = await Account.filter(
+                email=security_config.INITIAL_ADMIN_EMAIL
+            ).get()
+            await account.fetch_related("roles")
+            if role not in account.roles:
+                await account.roles.add(role)
+                logger.warning("Initial admin account role has been reinstated.")
+        except DoesNotExist:
+            account = await Account.create(
+                username="Root",
+                email=security_config.INITIAL_ADMIN_EMAIL,
+                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
+                verified=True,
+            )
+            await account.roles.add(role)
+            logger.info("Initial admin account created.")

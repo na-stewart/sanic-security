@@ -206,3 +206,9 @@ class AnonymousError(AuthorizationError):
 
     def __init__(self):
         super().__init__("Session is anonymous.")
+
+
+class AuditWarning(Warning):
+    """
+    Raised when configuration is invalid.
+    """

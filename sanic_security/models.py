@@ -6,7 +6,6 @@ from typing import Union
 import jwt
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
-from sanic.log import logger
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
 from tortoise import fields, Model
@@ -142,7 +141,6 @@ class Account(BaseModel):
         else:
             self.disabled = True
             await self.save(update_fields=["disabled"])
-            logger.info(f"Account {self.id} has been disabled.")
 
     @property
     def json(self) -> dict:
@@ -320,7 +318,6 @@ class Session(BaseModel):
         if self.active:
             self.active = False
             await self.save(update_fields=["active"])
-            logger.info(f"Session {self.id} has been deactivated.")
         else:
             raise DeactivatedError("Session is already deactivated.", 403)
 
@@ -516,9 +513,6 @@ class VerificationSession(Session):
             else:
                 raise MaxedOutChallengeError()
         else:
-            logger.info(
-                f"Client has completed verification session {self.id} challenge."
-            )
             await self.deactivate()
 
     @classmethod
@@ -530,9 +524,7 @@ class VerificationSession(Session):
 
 
 class TwoStepSession(VerificationSession):
-    """
-    Validates a client using a code sent via email or text.
-    """
+    """Validates a client using a code sent via email or text."""
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -550,9 +542,7 @@ class TwoStepSession(VerificationSession):
 
 
 class CaptchaSession(VerificationSession):
-    """
-    Validates a client with a captcha challenge.
-    """
+    """Validates a client with a captcha challenge."""
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
@@ -612,6 +602,9 @@ class AuthenticationSession(Session):
         """
         Refreshes session if expired and within refresh date.
 
+        Args:
+            request (Request): Sanic request parameter.
+
         Raises:
             DeletedError
             ExpiredError
@@ -633,7 +626,6 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
-                logger.info(f"Client has refreshed authentication session {self.id}.")
                 return await self.new(request, self.bearer, True)
             else:
                 raise e

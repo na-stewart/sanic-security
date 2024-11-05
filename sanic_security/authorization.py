@@ -8,6 +8,7 @@ from tortoise.exceptions import DoesNotExist
 from sanic_security.authentication import authenticate
 from sanic_security.exceptions import AuthorizationError, AnonymousError
 from sanic_security.models import Role, Account, AuthenticationSession
+from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -66,6 +67,10 @@ async def check_permissions(
         ):
             if fnmatch(required_permission, role_permission):
                 return authentication_session
+    logger.warning(
+        f"Client {get_ip(request)} with account {authentication_session.bearer.id} has insufficient permissions for "
+        "attempted action."
+    )
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
@@ -98,6 +103,10 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     for role in roles:
         if role.name in required_roles:
             return authentication_session
+    logger.warning(
+        f"Client {get_ip(request)} with account {authentication_session.bearer.id} has insufficient roles for "
+        "attempted action."
+    )
     raise AuthorizationError("Insufficient roles required for this action.")
 
 
@@ -120,7 +129,6 @@ async def assign_role(
             description=description, permissions=permissions, name=name
         )
     await account.roles.add(role)
-    logger.info(f"Role {role.id} has been assigned to account {account.id}.")
     return role
 
 

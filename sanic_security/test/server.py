@@ -10,9 +10,8 @@ from sanic_security.authentication import (
     register,
     requires_authentication,
     logout,
-    create_initial_admin_account,
     fulfill_second_factor,
-    attach_refresh_encoder,
+    initialize_security,
 )
 from sanic_security.authorization import (
     assign_role,
@@ -308,7 +307,6 @@ register_tortoise(
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
-attach_refresh_encoder(app)
-create_initial_admin_account(app)
+initialize_security(app, True)
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, workers=1, debug=True)
+    app.run(host="127.0.0.1", port=8000, workers=1)
