@@ -86,7 +86,6 @@ async def register(
         verified=verified,
         disabled=disabled,
     )
-    logger.info(f"Client {get_ip(request)} has registered account {account.id}.")
     return account
 
 

@@ -33,7 +33,7 @@
 * [Usage](#usage)
     * [Authentication](#authentication)
     * [Captcha](#captcha)
-    * [Two Step Verification](#two-step-verification)
+    * [Two-Step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Testing](#testing)
     * [Tortoise](#tortoise)
@@ -132,12 +132,10 @@ You can load environment variables with a different prefix via `config.load_envi
 
 ## Usage
 
-
 Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent
 along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
 
-
-*  Initialize sanic-security as follows:
+* Initialize sanic-security as follows:
 ```python
 initialize_security(app)
 if __name__ == "__main__":
