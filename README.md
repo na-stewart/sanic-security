@@ -33,7 +33,7 @@
 * [Usage](#usage)
     * [Authentication](#authentication)
     * [Captcha](#captcha)
-    * [Two-Step Verification](#two-step-verification)
+    * [Two-step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Testing](#testing)
     * [Tortoise](#tortoise)
