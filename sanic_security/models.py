@@ -4,8 +4,6 @@ import re
 from typing import Union
 
 import jwt
-from captcha.audio import AudioCaptcha
-from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
@@ -15,7 +13,13 @@ from tortoise.validators import RegexValidator
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
-from sanic_security.utils import get_ip, get_code, get_expiration_date
+from sanic_security.utils import (
+    get_ip,
+    get_code,
+    get_expiration_date,
+    image_generator,
+    audio_generator,
+)
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -554,11 +558,6 @@ class TwoStepSession(VerificationSession):
 class CaptchaSession(VerificationSession):
     """Validates a client with a captcha challenge."""
 
-    image_generator = ImageCaptcha(
-        190, 90, fonts=security_config.CAPTCHA_FONT.split(", ")
-    )
-    audio_generator = AudioCaptcha(voicedir=security_config.CAPTCHA_VOICE)
-
     @classmethod
     async def new(cls, request: Request, **kwargs):
         return await CaptchaSession.create(
@@ -577,7 +576,7 @@ class CaptchaSession(VerificationSession):
             captcha_image
         """
         return raw(
-            self.image_generator.generate(self.code, "jpeg").getvalue(),
+            image_generator.generate(self.code, "jpeg").getvalue(),
             content_type="image/jpeg",
         )
 
@@ -589,7 +588,7 @@ class CaptchaSession(VerificationSession):
             captcha_audio
         """
         return raw(
-            bytes(self.audio_generator.generate(self.code)), content_type="audio/mpeg"
+            bytes(audio_generator.generate(self.code)), content_type="audio/mpeg"
         )
 
     class Meta:

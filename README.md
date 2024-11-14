@@ -49,7 +49,7 @@ Sanic Security is an authentication, authorization, and verification library des
 
 * Login, registration, and authentication with refresh mechanisms
 * Role based authorization with wildcard permissions
-* Image & Audio CAPTCHA
+* Image & audio CAPTCHA
 * Two-factor authentication
 * Two-step verification
 * Logging & Auditing
@@ -313,7 +313,7 @@ export ESLANG=en
 # Create a directory for the specified language code
 mkdir "$ESLANG"
 
-# Loop through each character (a-z, A-Z, 0-9) and create a directory for each
+# Loop through each character (A-Z, 0-9) and create a directory for each
 for i in {A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9}; do
     mkdir "$ESLANG/$i"
     espeak -a 150 -s 100 -p 15 -v "$ESLANG" "$i" -w "$ESLANG/$i/orig_default.wav"
@@ -329,7 +329,7 @@ done
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
     response = captcha_session.get_image()  # Captcha: LJ0F3U
-    captcha_session.encode( response)
+    captcha_session.encode(response)
     return response
 ```
 
@@ -445,13 +445,14 @@ user's account; this simplifies common operations, such as adding a user, or cha
 
 Wildcard permissions support the concept of multiple levels or parts. For example, you could grant a user the permission
 `printer:query`, `printer:query,delete`, or `printer:*`.
+
 * Assign Role
 
 ```python
 await assign_role(
     "Chat Room Moderator",
     account,
-    "channels:view,delete, account:suspend,mute, voice:*",
+    "channels:view,delete, voice:*, account:suspend,mute",
     "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
 )
 ```

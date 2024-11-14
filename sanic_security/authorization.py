@@ -71,7 +71,7 @@ async def check_permissions(
             if fnmatch(required_permission, role_permission):
                 return authentication_session
     logger.warning(
-        f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action. "
+        f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action."
     )
     raise AuthorizationError("Insufficient permissions required for this action.")
 
@@ -123,14 +123,16 @@ async def assign_role(
     Args:
         name (str):  The name of the role associated with the account.
         account (Account): The account associated with the created role.
-        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via comma and in wildcard format.
+        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via ", " and in wildcard format.
         description (str):  The description of the role associated with the account.
     """
     try:
         role = await Role.filter(name=name).get()
     except DoesNotExist:
         role = await Role.create(
-            description=description, permissions=permissions, name=name
+            name=name,
+            description=description,
+            permissions=permissions,
         )
     await account.roles.add(role)
     return role

@@ -2,8 +2,14 @@ import datetime
 import random
 import string
 
+from argon2 import PasswordHasher
+from captcha.audio import AudioCaptcha
+from captcha.image import ImageCaptcha
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
+from secure import Secure
+
+from sanic_security.configuration import config
 
 """
 Copyright (c) 2020-Present Nicholas Aidan Stewart
@@ -26,6 +32,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+image_generator = ImageCaptcha(
+    190, 90, fonts=config.CAPTCHA_FONT.replace(" ", "").split(",")
+)
+audio_generator = AudioCaptcha(voicedir=config.CAPTCHA_VOICE)
+password_hasher = PasswordHasher()
+secure_headers = Secure.with_default_headers()
 
 
 def get_ip(request: Request) -> str:

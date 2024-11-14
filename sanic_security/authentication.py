@@ -2,7 +2,6 @@ import functools
 import re
 import warnings
 
-from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from sanic import Sanic
 from sanic.log import logger
@@ -18,7 +17,7 @@ from sanic_security.exceptions import (
     AuditWarning,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
-from sanic_security.utils import get_ip
+from sanic_security.utils import get_ip, password_hasher, secure_headers
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -41,8 +40,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-password_hasher = PasswordHasher()
 
 
 async def register(
@@ -193,8 +190,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     authentication_session.requires_second_factor = False
     await authentication_session.save(update_fields=["requires_second_factor"])
     logger.info(
-        f"Client {get_ip(request)} has fulfilled authentication session {authentication_session.id} "
-        "second factor."
+        f"Client {get_ip(request)} has fulfilled authentication session {authentication_session.id} second factor."
     )
     return authentication_session
 
@@ -288,7 +284,7 @@ def validate_password(password: str) -> str:
 
 def initialize_security(app: Sanic, create_root=True) -> None:
     """
-    Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
+    Audits configuration, creates root administrator account, and attaches response handler middleware.
 
     Args:
         app (Sanic): The main Sanic application instance.
@@ -296,7 +292,8 @@ def initialize_security(app: Sanic, create_root=True) -> None:
     """
 
     @app.on_response
-    async def refresh_encoder_middleware(request, response):
+    async def response_handler_middleware(request, response):
+        secure_headers.set_headers(response)
         if hasattr(request.ctx, "authentication_session"):
             authentication_session = request.ctx.authentication_session
             if authentication_session.is_refresh:
