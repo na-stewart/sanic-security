@@ -49,9 +49,9 @@ Sanic Security is an authentication, authorization, and verification library des
 
 * Login, registration, and authentication with refresh mechanisms
 * Role based authorization with wildcard permissions
+* Image & Audio CAPTCHA
 * Two-factor authentication
 * Two-step verification
-* Image & Audio CAPTCHA
 * Logging & Auditing
 
 Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
