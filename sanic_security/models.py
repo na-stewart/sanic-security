@@ -119,7 +119,7 @@ class Account(BaseModel):
     )
     phone: str = fields.CharField(
         unique=True,
-        max_length=14,
+        max_length=15,
         null=True,
         validators=[
             RegexValidator(r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", re.I)
