@@ -7,7 +7,7 @@ from argon2.exceptions import VerifyMismatchError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import DoesNotExist, ValidationError
+from tortoise.exceptions import DoesNotExist, ValidationError, IntegrityError
 
 from sanic_security.configuration import config as security_config, DEFAULT_CONFIG
 from sanic_security.exceptions import (
@@ -63,25 +63,8 @@ async def register(
         CredentialsError
     """
     try:
-        email_lower = request.form.get("email").lower()
-        if await Account.filter(email=email_lower).exists():
-            raise CredentialsError("An account with this email may already exist.", 409)
-        elif (
-            security_config.ALLOW_LOGIN_WITH_USERNAME
-            and await Account.filter(username=request.form.get("username")).exists()
-        ):
-            raise CredentialsError(
-                "An account with this username may already exist.", 409
-            )
-        elif (
-            request.form.get("phone")
-            and await Account.filter(phone=request.form.get("phone")).exists()
-        ):
-            raise CredentialsError(
-                "An account with this phone number may already exist.", 409
-            )
         account = await Account.create(
-            email=email_lower,
+            email=request.form.get("email").lower(),
             username=request.form.get("username"),
             password=password_hasher.hash(
                 validate_password(request.form.get("password"))
@@ -97,6 +80,12 @@ async def register(
             "Username must be 3-32 characters long and can only include _ or -."
             if "username" in e.args[0]
             else "Invalid email or phone number."
+        )
+    except IntegrityError as e:
+        raise CredentialsError(
+            f"An account with this "
+            f"{"username" if "username" in str(e.args[0]) else "email or phone number"} may already exist.",
+            409,
         )
 
 
