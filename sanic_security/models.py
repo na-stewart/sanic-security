@@ -1,10 +1,10 @@
 import base64
 import datetime
 import re
-from io import BytesIO
 from typing import Union
 
 import jwt
+from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
 from jwt import DecodeError
 from sanic.request import Request
@@ -68,7 +68,7 @@ class BaseModel(Model):
     @property
     def json(self) -> dict:
         """
-        A JSON serializable dict to be used in a HTTP request or response.
+        A JSON serializable dict to be used in an HTTP request or response.
 
         Example:
             Below is an example of this method returning a dict to be used for JSON serialization.
@@ -557,6 +557,11 @@ class TwoStepSession(VerificationSession):
 class CaptchaSession(VerificationSession):
     """Validates a client with a captcha challenge."""
 
+    image_generator = ImageCaptcha(
+        190, 90, fonts=security_config.CAPTCHA_FONT.split(", ")
+    )
+    audio_generator = AudioCaptcha(voicedir=security_config.CAPTCHA_VOICE)
+
     @classmethod
     async def new(cls, request: Request, **kwargs):
         return await CaptchaSession.create(
@@ -574,10 +579,21 @@ class CaptchaSession(VerificationSession):
         Returns:
             captcha_image
         """
-        image = ImageCaptcha(190, 90, fonts=[security_config.CAPTCHA_FONT])
-        with BytesIO() as output:
-            image.generate_image(self.code).save(output, format="JPEG")
-            return raw(output.getvalue(), content_type="image/jpeg")
+        return raw(
+            self.image_generator.generate(self.code, "jpeg").getvalue(),
+            content_type="image/jpeg",
+        )
+
+    def get_audio(self) -> HTTPResponse:
+        """
+        Retrieves captcha audio file.
+
+        Returns:
+            captcha_audio
+        """
+        return raw(
+            bytes(self.audio_generator.generate(self.code)), content_type="audio/mpeg"
+        )
 
     class Meta:
         table = "captcha_session"

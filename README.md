@@ -32,7 +32,7 @@
   * [Configuration](#configuration)
 * [Usage](#usage)
     * [Authentication](#authentication)
-    * [Captcha](#captcha)
+    * [CAPTCHA](#captcha)
     * [Two-step Verification](#two-step-verification)
     * [Authorization](#authorization)
     * [Testing](#testing)
@@ -51,8 +51,8 @@ Sanic Security is an authentication, authorization, and verification library des
 * Role based authorization with wildcard permissions
 * Two-factor authentication
 * Two-step verification
+* Image & Audio CAPTCHA
 * Logging & Auditing
-* Captcha
 
 Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
 
@@ -123,7 +123,8 @@ You can load environment variables with a different prefix via `config.load_envi
 | **SESSION_PREFIX**                    | tkn                          | Prefix attached to the beginning of session cookies.                                                                             |
 | **MAX_CHALLENGE_ATTEMPTS**            | 5                            | The maximum amount of session challenge attempts allowed.                                                                        |
 | **CAPTCHA_SESSION_EXPIRATION**        | 60                           | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                         |
-| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation.                                                                     |
+| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation, several fonts can be used by separating them via comma.             |
+| **CAPTCHA_VOICE**                     | captcha-voice/               | The directory of the voice library being used for audio captcha generation.                                                      |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
 | **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                       |
@@ -288,27 +289,60 @@ async def on_authenticate(request):
     return response
 ```
 
-## Captcha
+## CAPTCHA
 
-A pre-existing font for captcha challenges is included in the Sanic Security repository. You may set your own font by 
-downloading a .ttf font and defining the file's path in the configuration.
+Protects against spam and malicious activities by ensuring that only real humans can complete certain actions, like 
+submitting a form or creating an account.
+
+* Fonts
+
+A font for captcha challenges is included in the repository. You can set a custom font by downloading a .ttf file and 
+specifying its path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
-[Recommended Font](https://www.1001fonts.com/source-sans-pro-font.html)
+* Voice Library
 
-* Request Captcha
+A voice library for captcha challenges is included in the repository. You can generate your own using `espeak` and 
+`ffmpeg`, then specify the library's directory in the configuration.
+
+```bash
+# Set the language code
+export ESLANG=en
+
+# Create a directory for the specified language code
+mkdir "$ESLANG"
+
+# Loop through each character (a-z, A-Z, 0-9) and create a directory for each
+for i in {A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9}; do
+    mkdir "$ESLANG/$i"
+    espeak -a 150 -s 100 -p 15 -v "$ESLANG" "$i" -w "$ESLANG/$i/orig_default.wav"
+    ffmpeg -i "$ESLANG/$i/orig_default.wav" -ar 8000 -ac 1 -acodec pcm_u8 "$ESLANG/$i/default.wav"
+    rm "$ESLANG/$i/orig_default.wav"
+done
+```
+
+* Request CAPTCHA Image
 
 ```python
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
     response = captcha_session.get_image()  # Captcha: LJ0F3U
-    captcha_session.encode(response)
+    captcha_session.encode( response)
     return response
 ```
 
-* Captcha
+* Request CAPTCHA Audio
+
+```python
+@app.get("api/security/captcha/audio")
+async def on_captcha_audio_request(request):
+    captcha_session = await CaptchaSession.decode(request)
+    return captcha_session.get_audio()  # Captcha: LJ0F3U
+```
+
+* Attempt CAPTCHA
 
 | Key         | Value  |
 |-------------|--------|
@@ -321,7 +355,7 @@ async def on_captcha(request):
     return json("Captcha attempt successful!", captcha_session.json)
 ```
 
-* Requires Captcha (This method is not called directly and instead used as a decorator)
+* Requires CAPTCHA (This method is not called directly and instead used as a decorator)
 
 | Key         | Value  |
 |-------------|--------|
@@ -368,7 +402,7 @@ async def on_two_step_resend(request):
     return json("Verification code resend successful!", two_step_session.json)
 ```
 
-* Two-step Verification
+* Attempt Two-step Verification
 
 | Key      | Value  |
 |----------|--------|

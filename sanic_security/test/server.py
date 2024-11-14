@@ -195,9 +195,14 @@ async def on_captcha_request(request):
 async def on_captcha_image(request):
     """Request captcha image."""
     captcha_session = await CaptchaSession.decode(request)
-    response = captcha_session.get_image()
-    captcha_session.encode(response)
-    return response
+    return captcha_session.get_image()
+
+
+@app.get("api/test/capt/audio")
+async def on_captcha_audio(request):
+    """Request captcha audio."""
+    captcha_session = await CaptchaSession.decode(request)
+    return captcha_session.get_audio()
 
 
 @app.post("api/test/capt")
