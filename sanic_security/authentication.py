@@ -370,8 +370,13 @@ def initialize_security(app: Sanic, create_root=True) -> None:
             warnings.warn("HttpOnly should be enabled.", AuditWarning)
         if not security_config.SESSION_SECURE:
             warnings.warn("Secure should be enabled.", AuditWarning)
-        if security_config.SESSION_SAMESITE.lower() == "none":
-            warnings.warn("SameSite should not be set to none.", AuditWarning)
+        if (
+            not security_config.SESSION_SAMESITE
+            or security_config.SESSION_SAMESITE.lower() == "none"
+        ):
+            warnings.warn("SameSite should not be none.", AuditWarning)
+        if not security_config.SESSION_DOMAIN:
+            warnings.warn("Domain should not be none.", AuditWarning)
         if (
             create_root
             and security_config.INITIAL_ADMIN_EMAIL

@@ -348,19 +348,14 @@ class Session(BaseModel):
             httponly=security_config.SESSION_HTTPONLY,
             samesite=security_config.SESSION_SAMESITE,
             secure=security_config.SESSION_SECURE,
-        )
-        if self.expiration_date:  # Overrides refresh expiration.
-            response.cookies.get_cookie(cookie).expires = (
+            domain=security_config.SESSION_DOMAIN,
+            expires=(
                 self.refresh_expiration_date
-                if (
-                    hasattr(self, "refresh_expiration_date")
-                    and self.refresh_expiration_date
-                )
+                if hasattr(self, "refresh_expiration_date")
+                and self.refresh_expiration_date
                 else self.expiration_date
-            )
-
-        if security_config.SESSION_DOMAIN:
-            response.cookies.get_cookie(cookie).domain = security_config.SESSION_DOMAIN
+            ),
+        )
 
     @property
     def json(self) -> dict:
