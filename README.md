@@ -123,7 +123,7 @@ You can load environment variables with a different prefix via `config.load_envi
 | **SESSION_PREFIX**                    | tkn                          | Prefix attached to the beginning of session cookies.                                                                             |
 | **MAX_CHALLENGE_ATTEMPTS**            | 5                            | The maximum amount of session challenge attempts allowed.                                                                        |
 | **CAPTCHA_SESSION_EXPIRATION**        | 60                           | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                         |
-| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation, several fonts can be used by separating them via comma.             |
+| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation. Several fonts can be used by separating them via comma.             |
 | **CAPTCHA_VOICE**                     | captcha-voice/               | The directory of the voice library being used for audio captcha generation.                                                      |
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
