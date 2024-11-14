@@ -62,27 +62,26 @@ async def register(
     Raises:
         CredentialsError
     """
-    email_lower = validate_email(request.form.get("email").lower())
+    email_lower = request.form.get("email").lower()
     if await Account.filter(email=email_lower).exists():
         raise CredentialsError("An account with this email may already exist.", 409)
-    elif await Account.filter(
-        username=validate_username(request.form.get("username"))
-    ).exists():
+    elif (
+        security_config.ALLOW_LOGIN_WITH_USERNAME
+        and Account.filter(username=request.form.get("username")).exists()
+    ):
         raise CredentialsError("An account with this username may already exist.", 409)
     elif (
         request.form.get("phone")
-        and await Account.filter(
-            phone=validate_phone(request.form.get("phone"))
-        ).exists()
+        and await Account.filter(phone=request.form.get("phone")).exists()
     ):
         raise CredentialsError(
             "An account with this phone number may already exist.", 409
         )
     account = await Account.create(
-        email=email_lower,
-        username=request.form.get("username"),
+        email=validate_email(email_lower),
+        username=validate_username(request.form.get("username")),
         password=password_hasher.hash(validate_password(request.form.get("password"))),
-        phone=request.form.get("phone"),
+        phone=validate_phone(request.form.get("phone")),
         verified=verified,
         disabled=disabled,
     )

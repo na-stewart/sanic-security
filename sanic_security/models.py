@@ -103,7 +103,9 @@ class Account(BaseModel):
         roles (ManyToManyRelation[Role]): Roles associated with this account.
     """
 
-    username: str = fields.CharField(unique=True, max_length=32)
+    username: str = fields.CharField(
+        unique=security_config.ALLOW_LOGIN_WITH_USERNAME, max_length=32
+    )
     email: str = fields.CharField(unique=True, max_length=255)
     phone: str = fields.CharField(unique=True, max_length=14, null=True)
     password: str = fields.CharField(max_length=255)
