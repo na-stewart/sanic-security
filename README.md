@@ -45,21 +45,22 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security is an authentication, authorization, and verification library designed for use with [Sanic](https://github.com/huge-success/sanic).
+Sanic Security is an authentication, authorization, and verification library designed for use with the 
+[Sanic](https://github.com/huge-success/sanic) framework.
 
 * Login, registration, and authentication with refresh mechanisms
 * Role based authorization with wildcard permissions
 * Image & audio CAPTCHA
 * Two-factor authentication
 * Two-step verification
-* Logging & Auditing
+* Logging & auditing
 
 Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-In order to get started, please install [Pip](https://pypi.org/).
+In order to get started, please install [PyPI](https://pypi.org/).
 
 ### Installation
 
@@ -78,14 +79,9 @@ as an extra requirement.
 pip3 install sanic-security[crypto]
 ````
 
-* For developers, fork Sanic Security and install development dependencies.
-```shell
-pip3 install -e ".[dev]"
-````
-
 * Update sanic-security if already installed.
 ```shell
-pip3 install --upgrade sanic-security
+pip3 install sanic-security --upgrade
 ```
 
 ### Configuration
@@ -322,7 +318,7 @@ for i in {A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,
 done
 ```
 
-* Request CAPTCHA Image
+* Request CAPTCHA
 
 ```python
 @app.get("api/security/captcha")
@@ -370,7 +366,7 @@ async def on_captcha(request):
 
 ## Two-step Verification
 
-Two-step verification should be integrated with other custom functionality. For example, account verification during registration.
+Two-step verification should be integrated with other custom functionalities, such as account verification during registration.
 
 * Request Two-step Verification
 
@@ -501,7 +497,7 @@ async def on_check_roles(request):
 
 * Make sure the test Sanic instance (`test/server.py`) is running on your machine.
 
-* Run the unit test client (`test/tests.py`) for results.
+* Run the test client (`test/tests.py`) for results.
 
 ## Tortoise
 
