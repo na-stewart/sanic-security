@@ -1,5 +1,6 @@
 import base64
 import datetime
+import re
 from io import BytesIO
 from typing import Union
 
@@ -9,7 +10,8 @@ from jwt import DecodeError
 from sanic.request import Request
 from sanic.response import HTTPResponse, raw
 from tortoise import fields, Model
-from tortoise.exceptions import DoesNotExist
+from tortoise.exceptions import DoesNotExist, ValidationError
+from tortoise.validators import RegexValidator
 
 from sanic_security.configuration import config as security_config
 from sanic_security.exceptions import *
@@ -104,10 +106,25 @@ class Account(BaseModel):
     """
 
     username: str = fields.CharField(
-        unique=security_config.ALLOW_LOGIN_WITH_USERNAME, max_length=32
+        unique=security_config.ALLOW_LOGIN_WITH_USERNAME,
+        max_length=32,
+        validators=[RegexValidator(r"^[A-Za-z0-9_-]*$", re.I)],
     )
-    email: str = fields.CharField(unique=True, max_length=255)
-    phone: str = fields.CharField(unique=True, max_length=14, null=True)
+    email: str = fields.CharField(
+        unique=True,
+        max_length=255,
+        validators=[
+            RegexValidator(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", re.I)
+        ],
+    )
+    phone: str = fields.CharField(
+        unique=True,
+        max_length=14,
+        null=True,
+        validators=[
+            RegexValidator(r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", re.I)
+        ],
+    )
     password: str = fields.CharField(max_length=255)
     disabled: bool = fields.BooleanField(default=False)
     verified: bool = fields.BooleanField(default=False)
@@ -194,7 +211,7 @@ class Account(BaseModel):
         try:
             account = await Account.filter(username=username, deleted=False).get()
             return account
-        except DoesNotExist:
+        except (DoesNotExist, ValidationError):
             raise NotFoundError("Account with this username does not exist.")
 
     @staticmethod
@@ -213,7 +230,7 @@ class Account(BaseModel):
         """
         try:
             account = await Account.get_via_email(credential)
-        except NotFoundError as e:
+        except (NotFoundError, ValidationError) as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(credential)
             else:
@@ -366,9 +383,7 @@ class Session(BaseModel):
             "date_created": str(self.date_created),
             "date_updated": str(self.date_updated),
             "expiration_date": str(self.expiration_date),
-            "bearer": (
-                self.bearer.username if isinstance(self.bearer, Account) else None
-            ),
+            "bearer": self.bearer.id if isinstance(self.bearer, Account) else None,
             "active": self.active,
         }
 
@@ -488,7 +503,7 @@ class VerificationSession(Session):
     """
 
     attempts: int = fields.IntField(default=0)
-    code: str = fields.CharField(max_length=10, default=get_code, null=True)
+    code: str = fields.CharField(max_length=6, default=get_code, null=True)
 
     async def check_code(self, code: str) -> None:
         """

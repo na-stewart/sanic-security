@@ -7,7 +7,7 @@ from argon2.exceptions import VerifyMismatchError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
-from tortoise.exceptions import DoesNotExist
+from tortoise.exceptions import DoesNotExist, ValidationError
 
 from sanic_security.configuration import config as security_config, DEFAULT_CONFIG
 from sanic_security.exceptions import (
@@ -62,31 +62,42 @@ async def register(
     Raises:
         CredentialsError
     """
-    email_lower = request.form.get("email").lower()
-    if await Account.filter(email=email_lower).exists():
-        raise CredentialsError("An account with this email may already exist.", 409)
-    elif (
-        security_config.ALLOW_LOGIN_WITH_USERNAME
-        and Account.filter(username=request.form.get("username")).exists()
-    ):
-        raise CredentialsError("An account with this username may already exist.", 409)
-    elif (
-        request.form.get("phone")
-        and await Account.filter(phone=request.form.get("phone")).exists()
-    ):
-        raise CredentialsError(
-            "An account with this phone number may already exist.", 409
+    try:
+        email_lower = request.form.get("email").lower()
+        if await Account.filter(email=email_lower).exists():
+            raise CredentialsError("An account with this email may already exist.", 409)
+        elif (
+            security_config.ALLOW_LOGIN_WITH_USERNAME
+            and await Account.filter(username=request.form.get("username")).exists()
+        ):
+            raise CredentialsError(
+                "An account with this username may already exist.", 409
+            )
+        elif (
+            request.form.get("phone")
+            and await Account.filter(phone=request.form.get("phone")).exists()
+        ):
+            raise CredentialsError(
+                "An account with this phone number may already exist.", 409
+            )
+        account = await Account.create(
+            email=email_lower,
+            username=request.form.get("username"),
+            password=password_hasher.hash(
+                validate_password(request.form.get("password"))
+            ),
+            phone=request.form.get("phone"),
+            verified=verified,
+            disabled=disabled,
         )
-    account = await Account.create(
-        email=validate_email(email_lower),
-        username=validate_username(request.form.get("username")),
-        password=password_hasher.hash(validate_password(request.form.get("password"))),
-        phone=validate_phone(request.form.get("phone")),
-        verified=verified,
-        disabled=disabled,
-    )
-    logger.info(f"Client {get_ip(request)} has registered account {account.id}.")
-    return account
+        logger.info(f"Client {get_ip(request)} has registered account {account.id}.")
+        return account
+    except ValidationError as e:
+        raise CredentialsError(
+            "Username must be 3-32 characters long and can only include _ or -."
+            if "username" in e.args[0]
+            else "Invalid email or phone number."
+        )
 
 
 async def login(
@@ -263,65 +274,6 @@ def requires_authentication(arg=None):
         return wrapper
 
     return decorator(arg) if callable(arg) else decorator
-
-
-def validate_email(email: str) -> str:
-    """
-    Validates email format.
-
-    Args:
-        email (str): Email being validated.
-
-    Returns:
-        email
-
-    Raises:
-        CredentialsError
-    """
-    if not re.search(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
-        raise CredentialsError("Please use a valid email address.", 400)
-    return email
-
-
-def validate_username(username: str) -> str:
-    """
-    Validates username format.
-
-    Args:
-        username (str): Username being validated.
-
-    Returns:
-        username
-
-    Raises:
-        CredentialsError
-    """
-    if not re.search(r"^[A-Za-z0-9_-]{3,32}$", username):
-        raise CredentialsError(
-            "Username must be between 3-32 characters and not contain any special characters other than _ or -.",
-            400,
-        )
-    return username
-
-
-def validate_phone(phone: str) -> str:
-    """
-    Validates phone number format.
-
-    Args:
-        phone (str): Phone number being validated.
-
-    Returns:
-        phone
-
-    Raises:
-        CredentialsError
-    """
-    if phone and not re.search(
-        r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", phone
-    ):
-        raise CredentialsError("Please use a valid phone number.", 400)
-    return phone
 
 
 def validate_password(password: str) -> str:

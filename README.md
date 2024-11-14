@@ -51,8 +51,8 @@ Sanic Security is an authentication, authorization, and verification library des
 * Role based authorization with wildcard permissions
 * Two-factor authentication
 * Two-step verification
+* Logging & Auditing
 * Captcha
-* Logging
 
 Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
 
@@ -127,7 +127,7 @@ You can load environment variables with a different prefix via `config.load_envi
 | **TWO_STEP_SESSION_EXPIRATION**       | 200                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
 | **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                       |
-| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username and email.                                                                                             |
+| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username; unique constraint is disabled when set to false.                                                      |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
 
