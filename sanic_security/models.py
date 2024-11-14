@@ -189,9 +189,8 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(email=email, deleted=False).get()
-            return account
-        except DoesNotExist:
+            return await Account.filter(email=email, deleted=False).get()
+        except (DoesNotExist, ValidationError):
             raise NotFoundError("Account with this email does not exist.")
 
     @staticmethod
@@ -209,8 +208,7 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(username=username, deleted=False).get()
-            return account
+            return await Account.filter(username=username, deleted=False).get()
         except (DoesNotExist, ValidationError):
             raise NotFoundError("Account with this username does not exist.")
 
@@ -230,7 +228,7 @@ class Account(BaseModel):
         """
         try:
             account = await Account.get_via_email(credential)
-        except (NotFoundError, ValidationError) as e:
+        except NotFoundError as e:
             if security_config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(credential)
             else:
@@ -281,9 +279,8 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            account = await Account.filter(phone=phone, deleted=False).get()
-            return account
-        except DoesNotExist:
+            return await Account.filter(phone=phone, deleted=False).get()
+        except (DoesNotExist, ValidationError):
             raise NotFoundError("Account with this phone number does not exist.")
 
 
