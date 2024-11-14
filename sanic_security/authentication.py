@@ -83,10 +83,11 @@ async def register(
         )
     except IntegrityError as e:
         raise CredentialsError(
-            f"An account with this "
-            f"{"username" if "username" in str(e.args[0]) else "email or phone number"} may already exist.",
+            f"An account with this {"username" if "username" in str(e.args[0]) else "email or phone number"} "
+            "may already exist.",
             409,
         )
+
 
 
 async def login(
