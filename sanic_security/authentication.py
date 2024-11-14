@@ -46,7 +46,7 @@ password_hasher = PasswordHasher()
 
 
 async def register(
-    request: Request, verified: bool = False, disabled: bool = False
+        request: Request, verified: bool = False, disabled: bool = False
 ) -> Account:
     """
     Registers a new account that can be logged into.
@@ -89,12 +89,11 @@ async def register(
         )
 
 
-
 async def login(
-    request: Request,
-    account: Account = None,
-    require_second_factor: bool = False,
-    password: str = None,
+        request: Request,
+        account: Account = None,
+        require_second_factor: bool = False,
+        password: str = None,
 ) -> AuthenticationSession:
     """
     Login with email or username (if enabled) and password.
@@ -312,24 +311,24 @@ def initialize_security(app: Sanic, create_root=True) -> None:
         if not security_config.SESSION_SECURE:
             warnings.warn("Secure should be enabled.", AuditWarning)
         if (
-            not security_config.SESSION_SAMESITE
-            or security_config.SESSION_SAMESITE.lower() == "none"
+                not security_config.SESSION_SAMESITE
+                or security_config.SESSION_SAMESITE.lower() == "none"
         ):
             warnings.warn("SameSite should not be none.", AuditWarning)
         if not security_config.SESSION_DOMAIN:
             warnings.warn("Domain should not be none.", AuditWarning)
         if (
-            create_root
-            and security_config.INITIAL_ADMIN_EMAIL
-            == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
+                create_root
+                and security_config.INITIAL_ADMIN_EMAIL
+                == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
         ):
             warnings.warn(
                 "Initial admin email should be changed from default.", AuditWarning
             )
         if (
-            create_root
-            and security_config.INITIAL_ADMIN_PASSWORD
-            == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
+                create_root
+                and security_config.INITIAL_ADMIN_PASSWORD
+                == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
         ):
             warnings.warn(
                 "Initial admin password should be changed from default.", AuditWarning
