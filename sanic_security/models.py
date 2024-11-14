@@ -336,6 +336,7 @@ class Session(BaseModel):
                 "id": self.id,
                 "date_created": str(self.date_created),
                 "expiration_date": str(self.expiration_date),
+                "bearer": self.bearer.id if isinstance(self.bearer, Account) else None,
                 "ip": self.ip,
             },
             security_config.SECRET,
