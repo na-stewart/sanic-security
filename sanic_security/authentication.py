@@ -302,25 +302,25 @@ def initialize_security(app: Sanic, create_root=True) -> None:
     @app.listener("before_server_start")
     async def audit_configuration(app, loop):
         if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
-            warnings.warn("Secret should be changed from default.", AuditWarning)
+            warnings.warn("Secret should be changed from default.", AuditWarning, 2)
         if not security_config.SESSION_HTTPONLY:
-            warnings.warn("HttpOnly should be enabled.", AuditWarning)
+            warnings.warn("HttpOnly should be enabled.", AuditWarning, 2)
         if not security_config.SESSION_SECURE:
-            warnings.warn("Secure should be enabled.", AuditWarning)
+            warnings.warn("Secure should be enabled.", AuditWarning, 2)
         if (
             not security_config.SESSION_SAMESITE
             or security_config.SESSION_SAMESITE.lower() == "none"
         ):
-            warnings.warn("SameSite should not be none.", AuditWarning)
+            warnings.warn("SameSite should not be none.", AuditWarning, 2)
         if not security_config.SESSION_DOMAIN:
-            warnings.warn("Domain should not be none.", AuditWarning)
+            warnings.warn("Domain should not be none.", AuditWarning, 2)
         if (
             create_root
             and security_config.INITIAL_ADMIN_EMAIL
             == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
         ):
             warnings.warn(
-                "Initial admin email should be changed from default.", AuditWarning
+                "Initial admin email should be changed from default.", AuditWarning, 2
             )
         if (
             create_root
@@ -328,7 +328,9 @@ def initialize_security(app: Sanic, create_root=True) -> None:
             == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
         ):
             warnings.warn(
-                "Initial admin password should be changed from default.", AuditWarning
+                "Initial admin password should be changed from default.",
+                AuditWarning,
+                2,
             )
 
     @app.listener("before_server_start")
