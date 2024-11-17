@@ -288,31 +288,17 @@ submitting a form or creating an account.
 
 * Fonts
 
-A font for captcha challenges is included in the repository. You can set a custom font by downloading a .ttf file and 
+A font for CAPTCHA challenges is included in the repository. You can set a custom font by downloading a .ttf file and 
 specifying its path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
 * Voice Library
 
-A voice library for captcha challenges is included in the repository. You can generate your own using `espeak` and 
-`ffmpeg`, then specify the library's directory in the configuration.
+A voice library for CAPTCHA challenges is included in the repository, or you can generate your own and specify the 
+library's directory in the configuration.
 
-```bash
-# Set the language code
-export ESLANG=en
-
-# Create a directory for the specified language code
-mkdir "$ESLANG"
-
-# Loop through each character (A-Z, 0-9) and create a directory for each
-for i in {A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9}; do
-    mkdir "$ESLANG/$i"
-    espeak -a 150 -s 100 -p 15 -v "$ESLANG" "$i" -w "$ESLANG/$i/orig_default.wav"
-    ffmpeg -i "$ESLANG/$i/orig_default.wav" -ar 8000 -ac 1 -acodec pcm_u8 "$ESLANG/$i/default.wav"
-    rm "$ESLANG/$i/orig_default.wav"
-done
-```
+[Voice Library Generator](https://github.com/lepture/captcha/blob/master/docs/audio.rst)
 
 * Request CAPTCHA
 

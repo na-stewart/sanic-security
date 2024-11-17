@@ -102,6 +102,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     logger.info(
         f"Client {get_ip(request)} has completed two-step session {two_step_session.id} challenge."
     )
+    request.ctx.session = two_step_session
     return two_step_session
 
 
@@ -133,7 +134,7 @@ def requires_two_step_verification(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.session = await two_step_verification(request)
+            await two_step_verification(request)
             return await func(request, *args, **kwargs)
 
         return wrapper
@@ -229,6 +230,7 @@ async def captcha(request: Request) -> CaptchaSession:
     logger.info(
         f"Client {get_ip(request)} has completed captcha session {captcha_session.id} challenge."
     )
+    request.ctx.session = captcha_session
     return captcha_session
 
 
@@ -257,7 +259,7 @@ def requires_captcha(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.session = await captcha(request)
+            await captcha(request)
             return await func(request, *args, **kwargs)
 
         return wrapper
