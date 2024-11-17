@@ -286,20 +286,6 @@ async def on_authenticate(request):
 Protects against spam and malicious activities by ensuring that only real humans can complete certain actions, like 
 submitting a form or creating an account.
 
-* Fonts
-
-A font for CAPTCHA challenges is included in the repository, or you can set a custom font by downloading a .ttf file 
-and specifying its path in the configuration.
-
-[1001 Free Fonts](https://www.1001fonts.com/)
-
-* Voice Library
-
-A voice library for CAPTCHA challenges is included in the repository, or you can generate one and specify the library's 
-directory in the configuration.
-
-[Voice Generator](https://github.com/lepture/captcha/blob/master/docs/audio.rst)
-
 * Request CAPTCHA
 
 ```python
