@@ -288,8 +288,8 @@ submitting a form or creating an account.
 
 * Fonts
 
-A font for CAPTCHA challenges is included in the repository. You can set a custom font by downloading a .ttf file and 
-specifying its path in the configuration.
+A font for CAPTCHA challenges is included in the repository, or you can set a custom font by downloading a .ttf file 
+and specifying its path in the configuration.
 
 [1001 Free Fonts](https://www.1001fonts.com/)
 
