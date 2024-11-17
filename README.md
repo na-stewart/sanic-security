@@ -284,7 +284,8 @@ async def on_authenticate(request):
 ## CAPTCHA
 
 Protects against spam and malicious activities by ensuring that only real humans can complete certain actions, like 
-submitting a form or creating an account.
+submitting a form or creating an account. A font and voice library for CAPTCHA challenges is included in the repository, 
+or you can download/create your own and specify its path in the configuration.
 
 * Request CAPTCHA
 
