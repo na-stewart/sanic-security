@@ -69,6 +69,7 @@ async def check_permissions(
             required_permissions, role.permissions.split(", ")
         ):
             if fnmatch(required_permission, role_permission):
+                request.ctx.session = authentication_session
                 return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action."
@@ -107,6 +108,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         if role.name in required_roles:
+            request.ctx.session = authentication_session
             return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action. "
@@ -168,9 +170,7 @@ def require_permissions(*required_permissions: str):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.session = await check_permissions(
-                request, *required_permissions
-            )
+            await check_permissions(request, *required_permissions)
             return await func(request, *args, **kwargs)
 
         return wrapper
@@ -208,7 +208,7 @@ def require_roles(*required_roles: str):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.session = await check_roles(request, *required_roles)
+            await check_roles(request, *required_roles)
             return await func(request, *args, **kwargs)
 
         return wrapper
