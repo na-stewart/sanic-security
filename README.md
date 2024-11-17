@@ -295,10 +295,10 @@ and specifying its path in the configuration.
 
 * Voice Library
 
-A voice library for CAPTCHA challenges is included in the repository, or you can generate your own and specify the 
-library's directory in the configuration.
+A voice library for CAPTCHA challenges is included in the repository, or you can generate one and specify the library's 
+directory in the configuration.
 
-[Voice Library Generator](https://github.com/lepture/captcha/blob/master/docs/audio.rst)
+[Voice Generator](https://github.com/lepture/captcha/blob/master/docs/audio.rst)
 
 * Request CAPTCHA
 
