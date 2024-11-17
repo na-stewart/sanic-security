@@ -293,11 +293,10 @@ def initialize_security(app: Sanic, create_root=True) -> None:
 
     @app.on_response
     async def response_handler_middleware(request, response):
-        secure_headers.set_headers(response)
         if hasattr(request.ctx, "authentication_session"):
-            authentication_session = request.ctx.authentication_session
-            if authentication_session.is_refresh:
-                authentication_session.encode(response)
+            secure_headers.set_headers(response)
+            if request.ctx.authentication_session.is_refresh:
+                request.ctx.authentication_session.encode(response)
 
     @app.listener("before_server_start")
     async def audit_configuration(app, loop):
