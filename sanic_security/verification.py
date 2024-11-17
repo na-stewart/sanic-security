@@ -133,7 +133,7 @@ def requires_two_step_verification(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.two_step_session = await two_step_verification(request)
+            request.ctx.session = await two_step_verification(request)
             return await func(request, *args, **kwargs)
 
         return wrapper
@@ -257,7 +257,7 @@ def requires_captcha(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.captcha_session = await captcha(request)
+            request.ctx.session = await captcha(request)
             return await func(request, *args, **kwargs)
 
         return wrapper

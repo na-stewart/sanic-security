@@ -223,7 +223,7 @@ async def authenticate(request: Request) -> AuthenticationSession:
             authentication_session.bearer.validate()
     except ExpiredError:
         authentication_session = await authentication_session.refresh(request)
-    request.ctx.authentication_session = authentication_session
+    request.ctx.session = authentication_session
     return authentication_session
 
 
@@ -293,10 +293,10 @@ def initialize_security(app: Sanic, create_root=True) -> None:
 
     @app.on_response
     async def response_handler_middleware(request, response):
-        if hasattr(request.ctx, "authentication_session"):
+        if hasattr(request.ctx, "session"):
             secure_headers.set_headers(response)
-            if request.ctx.authentication_session.is_refresh:
-                request.ctx.authentication_session.encode(response)
+            if request.ctx.session.is_refresh:
+                request.ctx.session.encode(response)
 
     @app.listener("before_server_start")
     async def audit_configuration(app, loop):

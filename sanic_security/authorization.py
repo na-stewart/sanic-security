@@ -168,7 +168,7 @@ def require_permissions(*required_permissions: str):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.authentication_session = await check_permissions(
+            request.ctx.session = await check_permissions(
                 request, *required_permissions
             )
             return await func(request, *args, **kwargs)
@@ -208,9 +208,7 @@ def require_roles(*required_roles: str):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            request.ctx.authentication_session = await check_roles(
-                request, *required_roles
-            )
+            request.ctx.session = await check_roles(request, *required_roles)
             return await func(request, *args, **kwargs)
 
         return wrapper

@@ -144,16 +144,15 @@ async def on_logout(request):
 @requires_authentication
 async def on_authenticate(request):
     """Authenticate client session and account."""
-    authentication_session = request.ctx.authentication_session
     response = json(
         "Authenticated!",
         {
             "bearer": (
-                authentication_session.bearer.json
-                if not authentication_session.anonymous
+                request.ctx.session.bearer.json
+                if not request.ctx.session.anonymous
                 else None
             ),
-            "refresh": authentication_session.is_refresh,
+            "refresh": request.ctx.session.is_refresh,
         },
     )
     return response
@@ -163,10 +162,9 @@ async def on_authenticate(request):
 @requires_authentication
 async def on_authentication_expire(request):
     """Expire client's session."""
-    authentication_session = request.ctx.authentication_session
-    authentication_session.expiration_date = datetime.datetime.now(datetime.UTC)
-    await authentication_session.save(update_fields=["expiration_date"])
-    return json("Authentication expired!", authentication_session.json)
+    request.ctx.session.expiration_date = datetime.datetime.now(datetime.UTC)
+    await request.ctx.session.save(update_fields=["expiration_date"])
+    return json("Authentication expired!", request.ctx.session.json)
 
 
 @app.post("api/test/auth/associated")
@@ -174,7 +172,7 @@ async def on_authentication_expire(request):
 async def on_get_associated_authentication_sessions(request):
     """Retrieves authentication sessions associated with logged in account."""
     authentication_sessions = await AuthenticationSession.get_associated(
-        request.ctx.authentication_session.bearer
+        request.ctx.session.bearer
     )
     return json(
         "Associated authentication sessions retrieved!",
@@ -209,7 +207,7 @@ async def on_captcha_audio(request):
 @requires_captcha
 async def on_captcha_attempt(request):
     """Attempt captcha challenge."""
-    return json("Captcha attempt successful!", request.ctx.captcha_session.json)
+    return json("Captcha attempt successful!", request.ctx.session.json)
 
 
 @app.post("api/test/two-step/request")
@@ -225,9 +223,7 @@ async def on_request_verification(request):
 @requires_two_step_verification
 async def on_verification_attempt(request):
     """Attempt two-step verification challenge."""
-    return json(
-        "Two step verification attempt successful!", request.ctx.two_step_session.json
-    )
+    return json("Two step verification attempt successful!", request.ctx.session.json)
 
 
 @app.post("api/test/auth/roles")
@@ -248,7 +244,7 @@ async def on_role_assign(request):
     """Assign authenticated account a role."""
     await assign_role(
         request.form.get("name"),
-        request.ctx.authentication_session.bearer,
+        request.ctx.session.bearer,
         request.form.get("permissions"),
         "Role used for testing.",
     )
