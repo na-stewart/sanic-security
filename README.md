@@ -180,7 +180,7 @@ Verifies the client's account via two-step session code.
 | **code** | 24KF19 |
 
 ```python
-@app.post("api/security/verify")
+@app.put("api/security/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
     return json("You have verified your account and may login!", two_step_session.json)
@@ -223,7 +223,7 @@ Fulfills client authentication session's second factor requirement via two-step 
 | **code** | XGED2U |
 
 ```python
-@app.post("api/security/fulfill-2fa")
+@app.put("api/security/fulfill-2fa")
 async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
