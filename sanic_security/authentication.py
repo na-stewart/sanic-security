@@ -291,13 +291,6 @@ def initialize_security(app: Sanic, create_root=True) -> None:
         create_root (bool): Determines root account creation on initialization.
     """
 
-    @app.on_response
-    async def response_handler_middleware(request, response):
-        if hasattr(request.ctx, "session"):
-            secure_headers.set_headers(response)
-            if hasattr(request.ctx.session, "is_refresh") and request.ctx.session.is_refresh:
-                request.ctx.session.encode(response)
-
     @app.listener("before_server_start")
     async def audit_configuration(app, loop):
         if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
@@ -361,3 +354,13 @@ def initialize_security(app: Sanic, create_root=True) -> None:
             )
             await account.roles.add(role)
             logger.info("Initial admin account created.")
+
+        @app.on_response
+        async def response_handler_middleware(request, response):
+            if hasattr(request.ctx, "session"):
+                secure_headers.set_headers(response)
+                if (
+                    hasattr(request.ctx.session, "is_refresh")
+                    and request.ctx.session.is_refresh
+                ):
+                    request.ctx.session.encode(response)
