@@ -230,7 +230,6 @@ async def on_two_factor_authentication(request):
         "Authentication session second-factor fulfilled! You are now authenticated.",
         authentication_session.json,
     )
-    authentication_session.encode(response)
     return response
 ```
 
