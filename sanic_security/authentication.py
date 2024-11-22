@@ -295,7 +295,7 @@ def initialize_security(app: Sanic, create_root=True) -> None:
     async def response_handler_middleware(request, response):
         if hasattr(request.ctx, "session"):
             secure_headers.set_headers(response)
-            if request.ctx.session.is_refresh:
+            if hasattr(request.ctx.session, "is_refresh") and request.ctx.session.is_refresh:
                 request.ctx.session.encode(response)
 
     @app.listener("before_server_start")
