@@ -164,8 +164,7 @@ async def on_register(request):
         account.email, two_step_session.code  # Code = 24KF19
     )  # Custom method for emailing verification code.
     response = json(
-        "Registration successful! Email verification required.",
-        two_step_session.json,
+        "Registration successful! Email verification required.", account.json
     )
     two_step_session.encode(response)
     return response
@@ -183,7 +182,9 @@ Verifies the client's account via two-step session code.
 @app.put("api/security/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json("You have verified your account and may login!", two_step_session.json)
+    return json(
+        "You have verified your account and may login!", two_step_session.bearer.json
+    )
 ```
 
 * Login (With two-factor authentication)
@@ -205,7 +206,7 @@ async def on_login(request):
     )  # Custom method for emailing verification code.
     response = json(
         "Login successful! Two-factor authentication required.",
-        authentication_session.json,
+        authentication_session.bearer.json,
     )
     authentication_session.encode(response)
     two_step_session.encode(response)
@@ -228,7 +229,7 @@ async def on_two_factor_authentication(request):
     authentication_session = await fulfill_second_factor(request)
     response = json(
         "Authentication session second-factor fulfilled! You are now authenticated.",
-        authentication_session.json,
+        authentication_session.bearer.json,
     )
     return response
 ```
