@@ -62,7 +62,7 @@ async def check_permissions(
         logger.warning(
             f"Client {get_ip(request)} attempted an unauthorized action anonymously."
         )
-        raise AnonymousError()
+        raise AnonymousError
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         for required_permission, role_permission in zip(
@@ -104,7 +104,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
         logger.warning(
             f"Client {get_ip(request)} attempted an unauthorized action anonymously."
         )
-        raise AnonymousError()
+        raise AnonymousError
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
         if role.name in required_roles:

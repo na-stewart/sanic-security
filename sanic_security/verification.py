@@ -164,7 +164,7 @@ async def verify_account(request: Request) -> TwoStepSession:
     """
     two_step_session = await TwoStepSession.decode(request)
     if two_step_session.bearer.verified:
-        raise VerifiedError()
+        raise VerifiedError
     two_step_session.validate()
     try:
         await two_step_session.check_code(request.form.get("code"))

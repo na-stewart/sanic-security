@@ -67,7 +67,7 @@ class BaseModel(Model):
         Raises:
             SecurityError
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def json(self) -> dict:
@@ -89,7 +89,7 @@ class BaseModel(Model):
                     }
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     class Meta:
         abstract = True
@@ -148,9 +148,9 @@ class Account(BaseModel):
         if self.deleted:
             raise DeletedError("Account has been deleted.")
         elif not self.verified:
-            raise UnverifiedError()
+            raise UnverifiedError
         elif self.disabled:
-            raise DisabledError()
+            raise DisabledError
 
     async def disable(self):
         """
@@ -321,12 +321,12 @@ class Session(BaseModel):
         if self.deleted:
             raise DeletedError("Session has been deleted.")
         elif not self.active:
-            raise DeactivatedError()
+            raise DeactivatedError
         elif (
             self.expiration_date
             and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
         ):
-            raise ExpiredError()
+            raise ExpiredError
 
     async def deactivate(self):
         """
@@ -416,7 +416,7 @@ class Session(BaseModel):
         Returns:
             session
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     async def get_associated(cls, account: Account):
@@ -525,7 +525,7 @@ class VerificationSession(Session):
                     "Your code does not match verification session code."
                 )
             else:
-                raise MaxedOutChallengeError()
+                raise MaxedOutChallengeError
         else:
             await self.deactivate()
 
@@ -621,7 +621,7 @@ class AuthenticationSession(Session):
         """
         super().validate()
         if self.requires_second_factor:
-            raise SecondFactorRequiredError()
+            raise SecondFactorRequiredError
 
     async def refresh(self, request: Request):
         """
@@ -642,7 +642,7 @@ class AuthenticationSession(Session):
         """
         try:
             self.validate()
-            raise NotExpiredError()
+            raise NotExpiredError
         except ExpiredError as e:
             if (
                 self.refresh_expiration_date
@@ -692,7 +692,7 @@ class Role(BaseModel):
     permissions: str = fields.CharField(max_length=255, null=True)
 
     def validate(self) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def json(self) -> dict:

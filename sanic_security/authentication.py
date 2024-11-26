@@ -183,7 +183,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
     """
     authentication_session = await AuthenticationSession.decode(request)
     if not authentication_session.requires_second_factor:
-        raise SecondFactorFulfilledError()
+        raise SecondFactorFulfilledError
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     await two_step_session.check_code(request.form.get("code"))
