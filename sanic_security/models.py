@@ -1,5 +1,6 @@
 import base64
 import datetime
+import logging
 import re
 from typing import Union
 
@@ -651,6 +652,7 @@ class AuthenticationSession(Session):
             ):
                 self.active = False
                 await self.save(update_fields=["active"])
+                logging.warning(f"Client {get_ip(request)} has refreshed authentication session {self.id}.")
                 return await self.new(request, self.bearer, True)
             else:
                 raise e
