@@ -639,7 +639,7 @@ class AuthenticationSession(Session):
         if not is_expired(self.refresh_expiration_date):
             self.active = False
             await self.save(update_fields=["active"])
-            logging.warning(
+            logging.info(
                 f"Client {get_ip(request)} has refreshed authentication session {self.id}."
             )
             return await self.new(request, self.bearer, True)
