@@ -1,6 +1,7 @@
 import datetime
 import random
 import string
+import uuid
 
 from argon2 import PasswordHasher
 from captcha.audio import AudioCaptcha
@@ -66,23 +67,27 @@ def get_code() -> str:
     )
 
 
-def json(
-    message: str, data, status_code: int = 200
-) -> HTTPResponse:  # May be causing fixture error bc of json property
+def get_id() -> str:
     """
-    A preformatted Sanic json response.
-
-    Args:
-        message (int): Message describing data or relaying human-readable information.
-        data (Any): Raw information to be used by client.
-        status_code (int): HTTP response code.
+    Generates uuid to be used for primary key.
 
     Returns:
-        json
+        id
     """
-    return sanic_json(
-        {"message": message, "code": status_code, "data": data}, status=status_code
-    )
+    return str(uuid.uuid4())
+
+
+def is_expired(date):
+    """
+    Checks if current date has surpassed the date passed into the function.
+
+    Args:
+        date: The date being checked for expiration.
+
+    Returns:
+        is_expired
+    """
+    return date and datetime.datetime.now(datetime.timezone.utc) >= date
 
 
 def get_expiration_date(seconds: int) -> datetime.datetime:
@@ -99,4 +104,23 @@ def get_expiration_date(seconds: int) -> datetime.datetime:
         datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=seconds)
         if seconds > 0
         else None
+    )
+
+
+def json(
+    message: str, data, status_code: int = 200
+) -> HTTPResponse:  # May be causing fixture error bc of json property
+    """
+    A preformatted Sanic json response.
+
+    Args:
+        message (int): Message describing data or relaying human-readable information.
+        data (Any): Raw information to be used by client.
+        status_code (int): HTTP response code.
+
+    Returns:
+        json
+    """
+    return sanic_json(
+        {"message": message, "code": status_code, "data": data}, status=status_code
     )
