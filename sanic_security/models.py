@@ -517,9 +517,9 @@ class VerificationSession(Session):
             ChallengeError
             MaxedOutChallengeError
         """
-        if self.code != code.upper():
+        if not code or self.code != code.upper():
+            self.attempts += 1
             if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
-                self.attempts += 1
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError(
                     "Your code does not match verification session code."
