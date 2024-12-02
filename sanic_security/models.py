@@ -20,6 +20,8 @@ from sanic_security.utils import (
     get_expiration_date,
     image_generator,
     audio_generator,
+    get_id,
+    is_expired,
 )
 
 """
@@ -56,7 +58,7 @@ class BaseModel(Model):
         deleted (bool): Renders the model filterable without removing from the database.
     """
 
-    id: int = fields.IntField(pk=True)
+    id: str = fields.CharField(pk=True, max_length=36, default=get_id)
     date_created: datetime.datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
     deleted: bool = fields.BooleanField(default=False)
@@ -323,10 +325,7 @@ class Session(BaseModel):
             raise DeletedError("Session has been deleted.")
         elif not self.active:
             raise DeactivatedError
-        elif (
-            self.expiration_date
-            and datetime.datetime.now(datetime.timezone.utc) >= self.expiration_date
-        ):
+        elif is_expired(self.expiration_date):
             raise ExpiredError
 
     async def deactivate(self):
@@ -626,36 +625,26 @@ class AuthenticationSession(Session):
 
     async def refresh(self, request: Request):
         """
-        Refreshes session if expired and within refresh date.
+        Refreshes session if within refresh date.
 
         Args:
             request (Request): Sanic request parameter.
 
         Raises:
-            DeletedError
             ExpiredError
-            DeactivatedError
-            SecondFactorRequiredError
-            NotExpiredError
 
         Returns:
             session
         """
-        try:
-            self.validate()
-            raise NotExpiredError
-        except ExpiredError as e:
-            if (
-                self.refresh_expiration_date
-                and datetime.datetime.now(datetime.timezone.utc)
-                <= self.refresh_expiration_date
-            ):
-                self.active = False
-                await self.save(update_fields=["active"])
-                logging.warning(f"Client {get_ip(request)} has refreshed authentication session {self.id}.")
-                return await self.new(request, self.bearer, True)
-            else:
-                raise e
+        if not is_expired(self.refresh_expiration_date):
+            self.active = False
+            await self.save(update_fields=["active"])
+            logging.warning(
+                f"Client {get_ip(request)} has refreshed authentication session {self.id}."
+            )
+            return await self.new(request, self.bearer, True)
+        else:
+            raise ExpiredError
 
     @classmethod
     async def new(

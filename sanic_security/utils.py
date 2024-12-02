@@ -8,7 +8,6 @@ from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
-from secure import Secure
 
 from sanic_security.configuration import config
 
@@ -39,7 +38,6 @@ image_generator = ImageCaptcha(
 )
 audio_generator = AudioCaptcha(voicedir=config.CAPTCHA_VOICE)
 password_hasher = PasswordHasher()
-secure_headers = Secure.with_default_headers()
 
 
 def get_ip(request: Request) -> str:

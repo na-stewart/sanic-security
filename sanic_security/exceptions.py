@@ -145,15 +145,6 @@ class ExpiredError(SessionError):
         super().__init__("Session has expired.")
 
 
-class NotExpiredError(SessionError):
-    """
-    Raised when session needs to be expired.
-    """
-
-    def __init__(self):
-        super().__init__("Session has not expired yet.", 403)
-
-
 class SecondFactorRequiredError(SessionError):
     """
     Raised when authentication session two-factor requirement isn't met.

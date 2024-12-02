@@ -17,7 +17,7 @@ from sanic_security.exceptions import (
     AuditWarning,
 )
 from sanic_security.models import Account, AuthenticationSession, Role, TwoStepSession
-from sanic_security.utils import get_ip, password_hasher, secure_headers
+from sanic_security.utils import get_ip, password_hasher
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -284,7 +284,7 @@ def validate_password(password: str) -> str:
 
 def initialize_security(app: Sanic, create_root=True) -> None:
     """
-    Audits configuration, creates root administrator account, and attaches response handler middleware.
+    Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
 
     Args:
         app (Sanic): The main Sanic application instance.
@@ -356,11 +356,8 @@ def initialize_security(app: Sanic, create_root=True) -> None:
             logger.info("Initial admin account created.")
 
         @app.on_response
-        async def response_handler_middleware(request, response):
-            if hasattr(request.ctx, "session"):
-                secure_headers.set_headers(response)
-                if (
-                    hasattr(request.ctx.session, "is_refresh")
-                    and request.ctx.session.is_refresh
-                ):
-                    request.ctx.session.encode(response)
+        async def refresh_encoder_middleware(request, response):
+            if hasattr(request.ctx, "session") and getattr(
+                request.ctx.session, "is_refresh", False
+            ):
+                request.ctx.session.encode(response)
