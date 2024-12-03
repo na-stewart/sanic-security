@@ -542,7 +542,7 @@ class TwoStepSession(VerificationSession):
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
-        return await TwoStepSession.create(
+        return await cls.create(
             **kwargs,
             ip=get_ip(request),
             bearer=account,
@@ -560,7 +560,7 @@ class CaptchaSession(VerificationSession):
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
-        return await CaptchaSession.create(
+        return await cls.create(
             **kwargs,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
@@ -650,7 +650,7 @@ class AuthenticationSession(Session):
     async def new(
         cls, request: Request, account: Account = None, is_refresh=False, **kwargs
     ):
-        authentication_session = await AuthenticationSession.create(
+        authentication_session = await cls.create(
             **kwargs,
             bearer=account,
             ip=get_ip(request),
