@@ -2,6 +2,7 @@ import base64
 import datetime
 import logging
 import re
+import uuid
 from typing import Union
 
 import jwt
@@ -20,7 +21,6 @@ from sanic_security.utils import (
     get_expiration_date,
     image_generator,
     audio_generator,
-    get_id,
     is_expired,
 )
 
@@ -58,7 +58,9 @@ class BaseModel(Model):
         deleted (bool): Renders the model filterable without removing from the database.
     """
 
-    id: str = fields.CharField(pk=True, max_length=36, default=get_id)
+    id: str = fields.CharField(
+        pk=True, max_length=36, default=lambda: str(uuid.uuid4())
+    )
     date_created: datetime.datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime.datetime = fields.DatetimeField(auto_now=True)
     deleted: bool = fields.BooleanField(default=False)
@@ -539,6 +541,10 @@ class VerificationSession(Session):
 
 class TwoStepSession(VerificationSession):
     """Validates a client using a code sent via email or text."""
+
+    code: str = fields.CharField(
+        max_length=6, default=lambda: get_code(True), null=True
+    )
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):

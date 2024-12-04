@@ -1,7 +1,6 @@
 import datetime
 import random
-import string
-import uuid
+from string import ascii_uppercase, digits
 
 from argon2 import PasswordHasher
 from captcha.audio import AudioCaptcha
@@ -53,26 +52,20 @@ def get_ip(request: Request) -> str:
     return request.remote_addr or request.ip
 
 
-def get_code() -> str:
+def get_code(digits_only: bool = False) -> str:
     """
     Generates random code to be used for verification.
+
+    Args:
+        digits_only: Determines if code should only contain digits.
 
     Returns:
         code
     """
     return "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
+        random.choice(("" if digits_only else ascii_uppercase) + digits)
+        for _ in range(6)
     )
-
-
-def get_id() -> str:
-    """
-    Generates uuid to be used for primary key.
-
-    Returns:
-        id
-    """
-    return str(uuid.uuid4())
 
 
 def is_expired(date):
