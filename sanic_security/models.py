@@ -506,7 +506,7 @@ class VerificationSession(Session):
     """
 
     attempts: int = fields.IntField(default=0)
-    code: str = fields.CharField(max_length=6, default=get_code, null=True)
+    code: str = fields.CharField(max_length=6, null=True)
 
     async def check_code(self, code: str) -> None:
         """
@@ -542,10 +542,6 @@ class VerificationSession(Session):
 class TwoStepSession(VerificationSession):
     """Validates a client using a code sent via email or text."""
 
-    code: str = fields.CharField(
-        max_length=6, default=lambda: get_code(True), null=True
-    )
-
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
         return await cls.create(
@@ -555,6 +551,7 @@ class TwoStepSession(VerificationSession):
             expiration_date=get_expiration_date(
                 security_config.TWO_STEP_SESSION_EXPIRATION
             ),
+            code=get_code(True),
         )
 
     class Meta:
@@ -569,6 +566,7 @@ class CaptchaSession(VerificationSession):
         return await cls.create(
             **kwargs,
             ip=get_ip(request),
+            code=get_code(),
             expiration_date=get_expiration_date(
                 security_config.CAPTCHA_SESSION_EXPIRATION
             ),
