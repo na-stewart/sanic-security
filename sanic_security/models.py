@@ -198,7 +198,7 @@ class Account(BaseModel):
             NotFoundError
         """
         try:
-            return await Account.filter(email=email, deleted=False).get()
+            return await Account.filter(email=email.lower(), deleted=False).get()
         except (DoesNotExist, ValidationError):
             raise NotFoundError("Account with this email does not exist.")
 
