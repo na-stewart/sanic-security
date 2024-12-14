@@ -247,6 +247,7 @@ def requires_authentication(arg=None):
         DeactivatedError
         UnverifiedError
         DisabledError
+        SecondFactorRequiredError
         ExpiredError
     """
 
@@ -287,7 +288,7 @@ def initialize_security(app: Sanic, create_root=True) -> None:
     Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
 
     Args:
-        app (Sanic): The main Sanic application instance.
+        app (Sanic): Sanic application instance.
         create_root (bool): Determines root account creation on initialization.
     """
 

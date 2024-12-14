@@ -52,7 +52,7 @@ class BaseModel(Model):
     Base Sanic Security model that all other models derive from.
 
     Attributes:
-        id (int): Primary key of model.
+        id (str): Primary key of model.
         date_created (datetime): Time this model was created in the database.
         date_updated (datetime): Time this model was updated in the database.
         deleted (bool): Renders the model filterable without removing from the database.
@@ -67,7 +67,7 @@ class BaseModel(Model):
 
     def validate(self) -> None:
         """
-        Raises an error with respect to state.
+        Raises an error with respect to model's state.
 
         Raises:
             SecurityError
@@ -77,7 +77,7 @@ class BaseModel(Model):
     @property
     def json(self) -> dict:
         """
-        A JSON serializable dict to be used in an HTTP request or response.
+        A JSON serializable dict to be used in a request or response.
 
         Example:
             Below is an example of this method returning a dict to be used for JSON serialization.
@@ -108,7 +108,7 @@ class Account(BaseModel):
         username (str): Public identifier.
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. Can be null or empty.
-        password (str): Password of account for protection. Must be hashed via Argon2.
+        password (str): Password of account for user protection. must be hashed via Argon2.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
         roles (ManyToManyRelation[Role]): Roles associated with this account.
@@ -247,7 +247,7 @@ class Account(BaseModel):
     @staticmethod
     async def get_via_header(request: Request):
         """
-        Retrieve the account the client is logging into and client's password attempt via the basic authorization header.
+         Retrieve an account via the basic authorization header.
 
         Args:
             request (Request): Sanic request parameter.
@@ -276,7 +276,7 @@ class Account(BaseModel):
     @staticmethod
     async def get_via_phone(phone: str):
         """
-        Retrieve an account with a phone number.
+        Retrieve an account via a phone number.
 
         Args:
             phone (str): Phone number associated to account being retrieved.
@@ -332,7 +332,7 @@ class Session(BaseModel):
 
     async def deactivate(self):
         """
-        Renders session deactivated and unusable.
+        Renders session deactivated and therefor unusable.
 
         Raises:
             DeactivatedError
@@ -426,7 +426,7 @@ class Session(BaseModel):
         Retrieves sessions associated to an account.
 
         Args:
-            account (Request): Account associated with sessions being retrieved.
+            account (Account): Account associated with sessions being retrieved.
 
         Returns:
             sessions
@@ -442,7 +442,7 @@ class Session(BaseModel):
     @classmethod
     def decode_raw(cls, request: Request) -> dict:
         """
-        Decodes JWT token from client cookie into a python dict.
+        Decodes session JWT token from client cookie into a python dict.
 
         Args:
             request (Request): Sanic request parameter.
@@ -471,7 +471,7 @@ class Session(BaseModel):
     @classmethod
     async def decode(cls, request: Request):
         """
-        Decodes session JWT from client cookie to a Sanic Security session.
+        Decodes session JWT token from client cookie into a session model.
 
         Args:
             request (Request): Sanic request parameter.
@@ -498,11 +498,11 @@ class Session(BaseModel):
 
 class VerificationSession(Session):
     """
-    Used for a client verification method that requires some form of code, challenge, or key.
+    Used for client verification challenges that require some form of code or key.
 
     Attributes:
-        attempts (int): The amount of incorrect times a user entered a code not equal to this verification sessions code.
-        code (str): Used as a secret key that would be sent via email, text, etc to complete the verification challenge.
+        attempts (int): The amount of times a user entered a code not equal to this verification sessions code.
+        code (str): A secret key that would be sent via email, text, etc.
     """
 
     attempts: int = fields.IntField(default=0)
@@ -540,7 +540,7 @@ class VerificationSession(Session):
 
 
 class TwoStepSession(VerificationSession):
-    """Validates a client using a code sent via email or text."""
+    """Validates client using a code sent via email or text."""
 
     @classmethod
     async def new(cls, request: Request, account: Account, **kwargs):
@@ -559,7 +559,7 @@ class TwoStepSession(VerificationSession):
 
 
 class CaptchaSession(VerificationSession):
-    """Validates a client with a captcha challenge."""
+    """Validates client with a captcha challenge via image or audio."""
 
     @classmethod
     async def new(cls, request: Request, **kwargs):
@@ -574,7 +574,7 @@ class CaptchaSession(VerificationSession):
 
     def get_image(self) -> HTTPResponse:
         """
-        Retrieves captcha image file.
+        Retrieves captcha image data.
 
         Returns:
             captcha_image
@@ -586,7 +586,7 @@ class CaptchaSession(VerificationSession):
 
     def get_audio(self) -> HTTPResponse:
         """
-        Retrieves captcha audio file.
+        Retrieves captcha audio data.
 
         Returns:
             captcha_audio
@@ -604,9 +604,9 @@ class AuthenticationSession(Session):
     Used to authenticate and identify a client.
 
     Attributes:
-        refresh_expiration_date (bool): Date and time the session can no longer be refreshed.
+        refresh_expiration_date (datetime): Date and time the session can no longer be refreshed.
         requires_second_factor (bool): Determines if session requires a second factor.
-        is_refresh (bool): Will only be true once when instantiated during refresh of expired session.
+        is_refresh (bool): Will only be true once when instantiated during the refresh of expired session.
     """
 
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
@@ -679,7 +679,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be separated via comma + space and in wildcard format (printer:query, dashboard:info,delete).
+        permissions (str): Permissions of the role. Must be separated via comma & space and in wildcard format (printer:query, dashboard:info,delete).
     """
 
     name: str = fields.CharField(unique=True, max_length=255)
