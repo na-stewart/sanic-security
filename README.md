@@ -335,7 +335,7 @@ async def on_captcha(request):
 
 ## Two-step Verification
 
-Two-step verification should be integrated with other custom functionalities, such as account verification during registration.
+Two-step verification should be integrated with other custom functionalities, such as password recovery.
 
 * Request Two-step Verification
 
