@@ -264,7 +264,4 @@ def requires_captcha(arg=None):
 
         return wrapper
 
-    if callable(arg):
-        return decorator(arg)
-    else:
-        return decorator
+    return decorator(arg) if callable(arg) else decorator
