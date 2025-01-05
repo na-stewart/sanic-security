@@ -32,11 +32,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-image_generator = ImageCaptcha(
+image_generator: ImageCaptcha = ImageCaptcha(
     190, 90, fonts=config.CAPTCHA_FONT.replace(" ", "").split(",")
 )
-audio_generator = AudioCaptcha(voicedir=config.CAPTCHA_VOICE)
-password_hasher = PasswordHasher()
+audio_generator: AudioCaptcha = AudioCaptcha(voicedir=config.CAPTCHA_VOICE)
+password_hasher: PasswordHasher = PasswordHasher()
 
 
 def get_ip(request: Request) -> str:

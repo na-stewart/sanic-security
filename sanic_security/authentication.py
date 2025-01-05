@@ -8,7 +8,7 @@ from sanic.log import logger
 from sanic.request import Request
 from tortoise.exceptions import DoesNotExist, ValidationError, IntegrityError
 
-from sanic_security.configuration import config as security_config, DEFAULT_CONFIG
+from sanic_security.configuration import config, DEFAULT_CONFIG
 from sanic_security.exceptions import (
     CredentialsError,
     DeactivatedError,
@@ -74,7 +74,7 @@ async def register(
         return account
     except ValidationError as e:
         raise CredentialsError(
-            "Username must be 3-32 characters long and can only include _ or -."
+            "Username must be 3-32 characters long."
             if "username" in e.args[0]
             else "Invalid email or phone number."
         )
@@ -283,7 +283,7 @@ def validate_password(password: str) -> str:
     return password
 
 
-def initialize_security(app: Sanic, create_root=True) -> None:
+def initialize_security(app: Sanic, create_root: bool = True) -> None:
     """
     Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
 
@@ -294,30 +294,26 @@ def initialize_security(app: Sanic, create_root=True) -> None:
 
     @app.listener("before_server_start")
     async def audit_configuration(app, loop):
-        if security_config.SECRET == DEFAULT_CONFIG["SECRET"]:
+        if config.SECRET == DEFAULT_CONFIG["SECRET"]:
             warnings.warn("Secret should be changed from default.", AuditWarning, 2)
-        if not security_config.SESSION_HTTPONLY:
+        if not config.SESSION_HTTPONLY:
             warnings.warn("HttpOnly should be enabled.", AuditWarning, 2)
-        if not security_config.SESSION_SECURE:
+        if not config.SESSION_SECURE:
             warnings.warn("Secure should be enabled.", AuditWarning, 2)
-        if (
-            not security_config.SESSION_SAMESITE
-            or security_config.SESSION_SAMESITE.lower() == "none"
-        ):
+        if not config.SESSION_SAMESITE or config.SESSION_SAMESITE.lower() == "none":
             warnings.warn("SameSite should not be none.", AuditWarning, 2)
-        if not security_config.SESSION_DOMAIN:
+        if not config.SESSION_DOMAIN:
             warnings.warn("Domain should not be none.", AuditWarning, 2)
         if (
             create_root
-            and security_config.INITIAL_ADMIN_EMAIL
-            == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
+            and config.INITIAL_ADMIN_EMAIL == DEFAULT_CONFIG["INITIAL_ADMIN_EMAIL"]
         ):
             warnings.warn(
                 "Initial admin email should be changed from default.", AuditWarning, 2
             )
         if (
             create_root
-            and security_config.INITIAL_ADMIN_PASSWORD
+            and config.INITIAL_ADMIN_PASSWORD
             == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
         ):
             warnings.warn(
@@ -339,9 +335,7 @@ def initialize_security(app: Sanic, create_root=True) -> None:
                 name="Root",
             )
         try:
-            account = await Account.filter(
-                email=security_config.INITIAL_ADMIN_EMAIL
-            ).get()
+            account = await Account.filter(email=config.INITIAL_ADMIN_EMAIL).get()
             await account.fetch_related("roles")
             if role not in account.roles:
                 await account.roles.add(role)
@@ -349,8 +343,8 @@ def initialize_security(app: Sanic, create_root=True) -> None:
         except DoesNotExist:
             account = await Account.create(
                 username="Root",
-                email=security_config.INITIAL_ADMIN_EMAIL,
-                password=password_hasher.hash(security_config.INITIAL_ADMIN_PASSWORD),
+                email=config.INITIAL_ADMIN_EMAIL,
+                password=password_hasher.hash(config.INITIAL_ADMIN_PASSWORD),
                 verified=True,
             )
             await account.roles.add(role)

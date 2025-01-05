@@ -13,7 +13,7 @@ from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist, ValidationError
 from tortoise.validators import RegexValidator
 
-from sanic_security.configuration import config as security_config
+from sanic_security.configuration import config
 from sanic_security.exceptions import *
 from sanic_security.utils import (
     get_ip,
@@ -115,9 +115,8 @@ class Account(BaseModel):
     """
 
     username: str = fields.CharField(
-        unique=security_config.ALLOW_LOGIN_WITH_USERNAME,
+        unique=config.ALLOW_LOGIN_WITH_USERNAME,
         max_length=32,
-        validators=[RegexValidator(r"^[A-Za-z0-9_-]*$", re.I)],
     )
     email: str = fields.CharField(
         unique=True,
@@ -134,7 +133,7 @@ class Account(BaseModel):
             RegexValidator(r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", re.I)
         ],
     )
-    password: str = fields.CharField(max_length=255)
+    password: str = fields.CharField(max_length=255, null=True)
     oauth_id: str = fields.CharField(unique=True, null=True, max_length=255)
     disabled: bool = fields.BooleanField(default=False)
     verified: bool = fields.BooleanField(default=False)
@@ -239,7 +238,7 @@ class Account(BaseModel):
         try:
             account = await Account.get_via_email(credential)
         except NotFoundError as e:
-            if security_config.ALLOW_LOGIN_WITH_USERNAME:
+            if config.ALLOW_LOGIN_WITH_USERNAME:
                 account = await Account.get_via_username(credential)
             else:
                 raise e
@@ -351,9 +350,6 @@ class Session(BaseModel):
         Args:
             response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         """
-        cookie = (
-            f"{security_config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:7]}"
-        )
         encoded_session = jwt.encode(
             {
                 "id": self.id,
@@ -362,22 +358,18 @@ class Session(BaseModel):
                 "bearer": self.bearer.id if isinstance(self.bearer, Account) else None,
                 "ip": self.ip,
             },
-            security_config.SECRET,
-            security_config.SESSION_ENCODING_ALGORITHM,
+            config.SECRET,
+            config.SESSION_ENCODING_ALGORITHM,
         )
         response.cookies.add_cookie(
-            cookie,
+            f"{config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:7]}",
             str(encoded_session),
-            httponly=security_config.SESSION_HTTPONLY,
-            samesite=security_config.SESSION_SAMESITE,
-            secure=security_config.SESSION_SECURE,
-            domain=security_config.SESSION_DOMAIN,
-            expires=(
-                self.refresh_expiration_date
-                if hasattr(self, "refresh_expiration_date")
-                and self.refresh_expiration_date
-                else self.expiration_date
-            ),
+            httponly=config.SESSION_HTTPONLY,
+            samesite=config.SESSION_SAMESITE,
+            secure=config.SESSION_SECURE,
+            domain=config.SESSION_DOMAIN,
+            expires=getattr(self, "refresh_expiration_date", None)
+            or self.expiration_date,
         )
 
     @property
@@ -455,7 +447,7 @@ class Session(BaseModel):
             JWTDecodeError
         """
         cookie = request.cookies.get(
-            f"{security_config.SESSION_PREFIX}_{cls.__name__.lower()[:7]}"
+            f"{config.SESSION_PREFIX}_{cls.__name__.lower()[:7]}"
         )
         try:
             if not cookie:
@@ -463,8 +455,8 @@ class Session(BaseModel):
             else:
                 return jwt.decode(
                     cookie,
-                    security_config.PUBLIC_SECRET or security_config.SECRET,
-                    security_config.SESSION_ENCODING_ALGORITHM,
+                    config.PUBLIC_SECRET or config.SECRET,
+                    config.SESSION_ENCODING_ALGORITHM,
                 )
         except DecodeError as e:
             raise JWTDecodeError(str(e))
@@ -522,7 +514,7 @@ class VerificationSession(Session):
         """
         if not code or self.code != code.upper():
             self.attempts += 1
-            if self.attempts < security_config.MAX_CHALLENGE_ATTEMPTS:
+            if self.attempts < config.MAX_CHALLENGE_ATTEMPTS:
                 await self.save(update_fields=["attempts"])
                 raise ChallengeError(
                     "Your code does not match verification session code."
@@ -549,9 +541,7 @@ class TwoStepSession(VerificationSession):
             **kwargs,
             ip=get_ip(request),
             bearer=account,
-            expiration_date=get_expiration_date(
-                security_config.TWO_STEP_SESSION_EXPIRATION
-            ),
+            expiration_date=get_expiration_date(config.TWO_STEP_SESSION_EXPIRATION),
             code=get_code(True),
         )
 
@@ -568,9 +558,7 @@ class CaptchaSession(VerificationSession):
             **kwargs,
             ip=get_ip(request),
             code=get_code(),
-            expiration_date=get_expiration_date(
-                security_config.CAPTCHA_SESSION_EXPIRATION
-            ),
+            expiration_date=get_expiration_date(config.CAPTCHA_SESSION_EXPIRATION),
         )
 
     def get_image(self) -> HTTPResponse:
@@ -660,10 +648,10 @@ class AuthenticationSession(Session):
             bearer=account,
             ip=get_ip(request),
             expiration_date=get_expiration_date(
-                security_config.AUTHENTICATION_SESSION_EXPIRATION
+                config.AUTHENTICATION_SESSION_EXPIRATION
             ),
             refresh_expiration_date=get_expiration_date(
-                security_config.AUTHENTICATION_REFRESH_EXPIRATION
+                config.AUTHENTICATION_REFRESH_EXPIRATION
             ),
         )
         authentication_session.is_refresh = is_refresh
