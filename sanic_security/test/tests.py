@@ -232,7 +232,7 @@ class LoginTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
                 "role": "Root",
-                "permissions_required": "perm1:create,add, perm2:*",
+                "permissions_required": ["perm1:create,add", "perm2:*"],
             },
         )
         assert (
@@ -390,14 +390,14 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/roles/assign",
             data={
                 "name": "AuthTestPerms",
-                "permissions": "perm1:create,add, perm2:delete",
+                "permissions": ["perm1:create,add", "perm2:delete"],
             },
         )
         permitted_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
                 "role": "AuthTestPerms",
-                "permissions_required": "perm1:create,add, perm2:*",
+                "permissions_required": ["perm1:create", "perm2:*"],
             },
         )
         assert (
@@ -407,7 +407,7 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
                 "role": "AuthTestPerms",
-                "permissions_required": "perm2:add, perm1:delete",
+                "permissions_required": ["perm2:add", "perm1:delete"],
             },
         )
         assert (

@@ -226,7 +226,6 @@ async def on_verification_attempt(request):
 
 
 @app.post("api/test/auth/roles")
-@requires_authentication
 async def on_authorization(request):
     """Check if client is authorized with sufficient roles and permissions."""
     await check_roles(request, request.form.get("role"))
@@ -244,10 +243,10 @@ async def on_role_assign(request):
     await assign_role(
         request.form.get("name"),
         request.ctx.session.bearer,
-        request.form.get("permissions"),
         "Role used for testing.",
+        request.form.get("permissions"),
     )
-    return text("Role assigned.b")
+    return text("Role assigned.")
 
 
 @app.post("api/test/account")

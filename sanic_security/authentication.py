@@ -335,7 +335,7 @@ def initialize_security(app: Sanic, create_root=True) -> None:
         except DoesNotExist:
             role = await Role.create(
                 description="Has administrator abilities, assign sparingly.",
-                permissions="*:*",
+                permissions=["*:*"],
                 name="Root",
             )
         try:

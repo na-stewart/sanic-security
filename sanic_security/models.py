@@ -679,12 +679,12 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (str): Permissions of the role. Must be separated via comma & space and in wildcard format (printer:query, dashboard:info,delete).
+        permissions (list): Permissions of the role. Must in wildcard format (printer:query, dashboard:info,delete).
     """
 
     name: str = fields.CharField(unique=True, max_length=255)
     description: str = fields.CharField(max_length=255, null=True)
-    permissions: str = fields.CharField(max_length=255, null=True)
+    permissions: list = fields.JSONField(null=True)
 
     def validate(self) -> None:
         raise NotImplementedError

@@ -1,5 +1,4 @@
 import functools
-from fnmatch import fnmatch
 
 from sanic.log import logger
 from sanic.request import Request
@@ -65,16 +64,38 @@ async def check_permissions(
         raise AnonymousError
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
-        for required_permission, role_permission in zip(
-            required_permissions, role.permissions.split(", ")
+        for role_permission, required_permission in zip(
+            role.permissions, required_permissions
         ):
-            if fnmatch(required_permission, role_permission):
+            if _implies(required_permission, role_permission):
                 request.ctx.session = authentication_session
                 return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action."
     )
     raise AuthorizationError("Insufficient permissions required for this action.")
+
+
+def _implies(input_string: str, pattern: str):
+    input_parts = input_string.split(":")
+    pattern_parts = pattern.split(":")
+
+    for i, pattern_part in enumerate(pattern_parts):
+        if i >= len(input_parts):
+            if "*" in pattern_part.split():
+                continue
+            return False
+
+        input_part = input_parts[i]
+        pattern_subparts = pattern_part.split(",")
+        if "*" not in pattern_subparts and input_part not in pattern_subparts:
+            return False
+
+    for i in range(len(pattern_parts), len(input_parts)):
+        if "*" not in pattern_parts[-1].split(","):
+            return False
+
+    return True
 
 
 async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
@@ -105,19 +126,22 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
             f"Client {get_ip(request)} attempted an unauthorized action anonymously."
         )
         raise AnonymousError
-    roles = await authentication_session.bearer.roles.filter(deleted=False).all()
-    for role in roles:
-        if role.name in required_roles:
-            request.ctx.session = authentication_session
-            return authentication_session
+    if set(required_roles) & {
+        role.name
+        for role in await authentication_session.bearer.roles.filter(
+            deleted=False
+        ).all()
+    }:
+        request.ctx.session = authentication_session
+        return authentication_session
     logger.warning(
-        f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action. "
+        f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action"
     )
-    raise AuthorizationError("Insufficient roles required for this action.")
+    raise AuthorizationError("Insufficient roles required for this action")
 
 
 async def assign_role(
-    name: str, account: Account, permissions: str = None, description: str = None
+    name: str, account: Account, description: str = None, *permissions: str,
 ) -> Role:
     """
     Easy account role assignment. Role being assigned to an account will be created if it doesn't exist.
@@ -125,8 +149,8 @@ async def assign_role(
     Args:
         name (str):  The name of the role associated with the account.
         account (Account): The account associated with the created role.
-        permissions (str):  The permissions of the role associated with the account. Permissions must be separated via ", " and in wildcard format.
         description (str):  The description of the role associated with the account.
+        *permissions (Tuple[str, ...]): The permissions of the role associated with the account. Permissions must in wildcard format.
     """
     try:
         role = await Role.filter(name=name).get()
