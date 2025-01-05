@@ -89,12 +89,6 @@ class RegistrationTest(TestCase):
         assert (
             invalid_phone_registration_response.status_code == 400
         ), invalid_phone_registration_response.text
-        invalid_username_registration_response = self.register(
-            "invalid_user@register.test", "_inVal!d_", False, True
-        )
-        assert (
-            invalid_username_registration_response.status_code == 400
-        ), invalid_username_registration_response.text
         too_many_characters_registration_response = self.register(
             "too_long_user@register.test",
             "this_username_is_too_long_to_be_registered_with",

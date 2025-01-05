@@ -27,6 +27,9 @@ SOFTWARE.
 DEFAULT_CONFIG = {
     "SECRET": "This is a big secret. Shhhhh",
     "PUBLIC_SECRET": None,
+    "OAUTH_CLIENT": None,
+    "OAUTH_SECRET": None,
+    "OAUTH_REDIRECT": None,
     "SESSION_SAMESITE": "Strict",
     "SESSION_SECURE": True,
     "SESSION_HTTPONLY": True,
@@ -54,6 +57,9 @@ class Config(dict):
     Attributes:
         SECRET (str): The secret used by the hashing algorithm for generating and signing JWTs. This should be a string unique to your application. Keep it safe.
         PUBLIC_SECRET (str): The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.
+        OAUTH_CLIENT (str): The client ID provided by the OAuth provider, this is used to identify the application making the OAuth request.
+        OAUTH_SECRET (str): The client secret provided by the OAuth provider, this is used in conjunction with the client ID to authenticate the application.
+        OAUTH_REDIRECT (str): The redirect URI registered with the OAuth provider, This is the URI where the user will be redirected after a successful authentication.
         SESSION_SAMESITE (str): The SameSite attribute of session cookies.
         SESSION_SECURE (bool): The Secure attribute of session cookies.
         SESSION_HTTPONLY (bool): The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.
@@ -75,6 +81,9 @@ class Config(dict):
 
     SECRET: str
     PUBLIC_SECRET: str
+    OAUTH_CLIENT: str
+    OAUTH_SECRET: str
+    OAUTH_REDIRECT: str
     SESSION_SAMESITE: str
     SESSION_SECURE: bool
     SESSION_HTTPONLY: bool
