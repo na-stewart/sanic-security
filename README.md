@@ -416,8 +416,10 @@ Wildcard permissions support the concept of multiple levels or parts. For exampl
 await assign_role(
     "Chat Room Moderator",
     account,
-    "channels:view,delete, voice:*, account:suspend,mute",
     "Can read and delete messages in all chat rooms, suspend and mute accounts, and control voice chat.",
+    "channels:view,delete",
+    "voice:*",
+    "account:suspend,mute",
 )
 ```
 
