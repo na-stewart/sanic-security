@@ -135,6 +135,7 @@ class Account(BaseModel):
         ],
     )
     password: str = fields.CharField(max_length=255)
+    oauth_id: str = fields.CharField(unique=True, null=True, max_length=255)
     disabled: bool = fields.BooleanField(default=False)
     verified: bool = fields.BooleanField(default=False)
     roles: fields.ManyToManyRelation["Role"] = fields.ManyToManyField(

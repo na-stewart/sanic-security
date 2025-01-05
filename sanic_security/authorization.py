@@ -67,7 +67,7 @@ async def check_permissions(
         for role_permission, required_permission in zip(
             role.permissions, required_permissions
         ):
-            if _implies(required_permission, role_permission):
+            if check_wildcard(required_permission, role_permission):
                 request.ctx.session = authentication_session
                 return authentication_session
     logger.warning(
@@ -76,23 +76,32 @@ async def check_permissions(
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
-def _implies(input_string: str, pattern: str):
+def check_wildcard(input_string: str, pattern: str):
+    """
+    Evaluates if the input matches the pattern considering wildcards (`*`) and comma-separated options in the `pattern`.
+
+    Args:
+        input_string (str): A wildcard string (e.g., "a:b:c").
+        pattern (str): A wildcard pattern optional (`*`) or comma-separated values to match against (e.g., "a:b,c:*").
+
+    Returns:
+        is_match
+    """
     input_parts = input_string.split(":")
     pattern_parts = pattern.split(":")
+    input_len = len(input_parts)
 
     for i, pattern_part in enumerate(pattern_parts):
-        if i >= len(input_parts):
-            if "*" in pattern_part.split():
-                continue
+        if i >= input_len:
+            if "*" not in pattern_part:
+                return False
+            continue
+        pattern_subparts = set(pattern_part.split(","))
+        if "*" not in pattern_subparts and input_parts[i] not in pattern_subparts:
             return False
 
-        input_part = input_parts[i]
-        pattern_subparts = pattern_part.split(",")
-        if "*" not in pattern_subparts and input_part not in pattern_subparts:
-            return False
-
-    for i in range(len(pattern_parts), len(input_parts)):
-        if "*" not in pattern_parts[-1].split(","):
+    if input_len > len(pattern_parts):
+        if "*" not in set(pattern_parts[-1].split(",")):
             return False
 
     return True
