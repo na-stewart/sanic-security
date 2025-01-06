@@ -1,12 +1,10 @@
-import datetime
-from difflib import get_close_matches
+import time
 
 import jwt
 from httpx_oauth.oauth2 import BaseOAuth2
-from sanic import Sanic, Request, HTTPResponse
+from sanic import Request, HTTPResponse, redirect, Sanic
 
 from sanic_security.configuration import config
-from sanic_security.utils import is_expired
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -34,23 +32,28 @@ oauth_clients: dict[str, BaseOAuth2]
 
 
 async def oauth(
-    client: BaseOAuth2, redirect: str = config.OAUTH_REDIRECT, **kwargs
-) -> str:
-    authorization_url = await client.get_authorization_url(redirect, **kwargs)
-    return authorization_url
+    client: BaseOAuth2, redirect_uri: str = config.OAUTH_REDIRECT, **kwargs
+) -> HTTPResponse:
+    return redirect(await client.get_authorization_url(redirect_uri, **kwargs))
 
 
 async def oauth_callback(
     request: Request,
-    response: HTTPResponse,
     client: BaseOAuth2,
+    redirect_uri: str = config.OAUTH_REDIRECT,
     code_verifier: str = None,
 ) -> dict:
     token_info = await client.get_access_token(
         request.args.get("code"),
-        "https://www.vitapath.io/api/v1/security/oauth/callback",
+        redirect_uri,
         code_verifier,
     )
+    if "expires_at" not in token_info:
+        token_info["expires_at"] = time.time() + token_info["expires_in"]
+    return token_info
+
+
+def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     response.cookies.add_cookie(
         f"{config.SESSION_PREFIX}_oauth",
         str(
@@ -64,9 +67,8 @@ async def oauth_callback(
         samesite=config.SESSION_SAMESITE,
         secure=config.SESSION_SECURE,
         domain=config.SESSION_DOMAIN,
-        expires=token_info["expires_at"] + datetime.timedelta(seconds=config.AUTHENTICATION_REFRESH_EXPIRATION),
+        max_age=token_info["expires_in"] + config.AUTHENTICATION_REFRESH_EXPIRATION,
     )
-    return token_info
 
 
 async def get_oauth(request: Request, client: BaseOAuth2) -> dict:
@@ -77,7 +79,19 @@ async def get_oauth(request: Request, client: BaseOAuth2) -> dict:
         config.PUBLIC_SECRET or config.SECRET,
         config.SESSION_ENCODING_ALGORITHM,
     )
-    if is_expired(token_info["expires_at"]):
+    if time.time() > token_info["expires_at"]:
         token_info = await client.refresh_token(token_info["refresh_token"])
+        token_info["is_refresh"] = True
+        if "expires_at" not in token_info:
+            token_info["expires_at"] = time.time() + token_info["expires_in"]
     request.ctx.oauth = token_info
     return token_info
+
+
+def initialize_oauth(app: Sanic) -> None:
+    @app.on_response
+    async def refresh_encoder_middleware(request, response):
+        if hasattr(request.ctx, "oauth") and getattr(
+            request.ctx.o_auth, "is_refresh", False
+        ):
+            oauth_encode(response, request.ctx.o_auth)

@@ -2,6 +2,7 @@ import datetime
 import traceback
 
 from argon2 import PasswordHasher
+from httpx_oauth.oauth2 import OAuth2
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
 
@@ -18,9 +19,10 @@ from sanic_security.authorization import (
     check_permissions,
     check_roles,
 )
-from sanic_security.configuration import config as security_config
+from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession, AuthenticationSession
+from sanic_security.oauth import oauth, oauth_callback, oauth_encode
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -54,9 +56,14 @@ SOFTWARE.
 
 app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
-
-
-# TODO: Testing for new functionality.
+fitbit_oauth = OAuth2(
+    config.OAUTH_CLIENT,
+    config.OAUTH_SECRET,
+    "https://www.fitbit.com/oauth2/authorize",
+    "https://api.fitbit.com/oauth2/token",
+    refresh_token_endpoint="https://api.fitbit.com/oauth2/token",
+    token_endpoint_auth_method="client_secret_basic",
+)
 
 
 @app.post("api/test/auth/register")
@@ -263,6 +270,23 @@ async def on_account_creation(request):
     return response
 
 
+@app.get("api/test/oauth")
+async def on_oauth_request(request):
+    return await oauth(
+        fitbit_oauth, "http://localhost:8000/api/test/oauth/callback", scope=["profile"]
+    )
+
+
+@app.get("api/test/oauth/callback")
+async def on_oauth_callback(request):
+    token_info = await oauth_callback(
+        request, fitbit_oauth, "http://localhost:8000/api/test/oauth/callback"
+    )
+    response = json("OAuth successful and token cached.", token_info)
+    oauth_encode(response, token_info)
+    return response
+
+
 @app.exception(SecurityError)
 async def on_security_error(request, exception):
     """Handles security errors with correct response."""
@@ -270,7 +294,7 @@ async def on_security_error(request, exception):
     return exception.json
 
 
-security_config.SECRET = """
+config.SECRET = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU4vHCHEEZjdZIQRqwriFpeeoqMA1
 ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStfVn25+ZfSfKH+WYBUglZBmz/K6uW
@@ -288,7 +312,7 @@ mQ4BjbU1slel/eXlhomQpxoBCH3J/Ba9qd+uBql29QZMQXtKFg/mryjprapq8sUcbgazr9u1x+zJz9w+
 1G1CHHo/vq8zPNkVWmhciIUeHR3YJbw==
 -----END RSA PRIVATE KEY-----
 """
-security_config.PUBLIC_SECRET = """
+config.PUBLIC_SECRET = """
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAww3pEiUx6wMFawJNAHCI80Qj3eyrP6Yx3LNNluQZXMyZkd+6ugBN9e1hw7v2z2PwmJENhYrqbBHU
 4vHCHEEZjdZIQRqwriFpeeoqMA1ecgwJz3fOuYo6WrUbS6pEyJ9vtjh5TaeZLzER+KIK2uvsjsQnFVt41hh3Xd+tR9p+QXT8aRep9hp4XLF87QlDVDrZIStf
@@ -296,13 +320,13 @@ Vn25+ZfSfKH+WYBUglZBmz/K6uW41mSRuuH3Pu/lnPgGvsxtT7KE8dkbyrI+Tyg0pniOYdxBxgpu06S6
 MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
-security_config.INITIAL_ADMIN_EMAIL = "admin@login.test"
-security_config.SESSION_ENCODING_ALGORITHM = "RS256"
-security_config.ALLOW_LOGIN_WITH_USERNAME = True
-security_config.SESSION_SECURE = False
+config.INITIAL_ADMIN_EMAIL = "admin@login.test"
+config.SESSION_ENCODING_ALGORITHM = "RS256"
+config.ALLOW_LOGIN_WITH_USERNAME = True
+config.SESSION_SECURE = False
 register_tortoise(
     app,
-    db_url=security_config.TEST_DATABASE_URL,
+    db_url=config.TEST_DATABASE_URL,
     modules={"models": ["sanic_security.models"]},
     generate_schemas=True,
 )
