@@ -33,32 +33,31 @@ SOFTWARE.
 oauth_clients: dict[str, BaseOAuth2]
 
 
-async def oauth(scopes: list[str], client: str = None, **kwargs) -> str:
-    authorization_url = await oauth_clients[
-        get_client_name(client)
-    ].get_authorization_url(config.OAUTH_REDIRECT, scope=scopes, **kwargs)
+async def oauth(
+    client: BaseOAuth2, redirect: str = config.OAUTH_REDIRECT, **kwargs
+) -> str:
+    authorization_url = await client.get_authorization_url(redirect, **kwargs)
     return authorization_url
 
 
 async def oauth_callback(
-    request: Request, client: str = None, code_verifier: str = None
+    request: Request,
+    response: HTTPResponse,
+    client: BaseOAuth2,
+    code_verifier: str = None,
 ) -> dict:
-    token_info = await oauth_clients[get_client_name(client)].get_access_token(
+    token_info = await client.get_access_token(
         request.args.get("code"),
         "https://www.vitapath.io/api/v1/security/oauth/callback",
         code_verifier,
     )
-    return token_info
-
-
-def oauth_encode(response: HTTPResponse, token_info: dict, client: str = None) -> None:
     response.cookies.add_cookie(
         f"{config.SESSION_PREFIX}_oauth",
         str(
             jwt.encode(
-                {"client": get_client_name(client), "token_info": token_info},
+                token_info,
                 config.SECRET,
-                algorithm=config.SESSION_ENCODING_ALGORITHM,
+                config.SESSION_ENCODING_ALGORITHM,
             ),
         ),
         httponly=config.SESSION_HTTPONLY,
@@ -68,40 +67,18 @@ def oauth_encode(response: HTTPResponse, token_info: dict, client: str = None) -
         expires=token_info["expires_at"]
         + datetime.timedelta(seconds=config.AUTHENTICATION_REFRESH_EXPIRATION),
     )
+    return token_info
 
 
-def oauth_decode(request: Request) -> dict:
-    decoded = jwt.decode(
+async def get_oauth(request: Request, client: BaseOAuth2) -> dict:
+    token_info = jwt.decode(
         request.cookies.get(
             f"{config.SESSION_PREFIX}_oauth",
         ),
         config.PUBLIC_SECRET or config.SECRET,
         config.SESSION_ENCODING_ALGORITHM,
     )
-    request.ctx.oauth = decoded["token_info"]
-    return decoded
-
-
-async def refresh(request: Request, client: str = None) -> dict:
-    token_info = oauth_decode(request)
     if is_expired(token_info["expires_at"]):
-        token_info = await oauth_clients[get_client_name(client)].refresh_token(
-            request.ctx.oauth["refresh_token"]
-        )
-        token_info["is_refresh"] = True
-        request.ctx.oauth = token_info
+        token_info = await client.refresh_token(token_info["refresh_token"])
+    request.ctx.oauth = token_info
     return token_info
-
-
-def get_client_name(client: str) -> str:
-    if not client:
-        return next(iter(oauth_clients.keys()))
-    else:
-        closest_match = get_close_matches(client, oauth_clients.keys(), n=1)
-        return closest_match[0] if closest_match else None
-
-
-def initialize_oauth(app: Sanic, *clients: BaseOAuth2) -> None:
-    global oauth_clients
-    for client in clients:
-        oauth_clients[client.__class__.__name__.lower()] = client
