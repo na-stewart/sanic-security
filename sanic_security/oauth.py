@@ -64,8 +64,7 @@ async def oauth_callback(
         samesite=config.SESSION_SAMESITE,
         secure=config.SESSION_SECURE,
         domain=config.SESSION_DOMAIN,
-        expires=token_info["expires_at"]
-        + datetime.timedelta(seconds=config.AUTHENTICATION_REFRESH_EXPIRATION),
+        expires=token_info["expires_at"] + datetime.timedelta(seconds=config.AUTHENTICATION_REFRESH_EXPIRATION),
     )
     return token_info
 
