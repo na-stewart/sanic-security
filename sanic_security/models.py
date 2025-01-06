@@ -362,7 +362,7 @@ class Session(BaseModel):
             config.SESSION_ENCODING_ALGORITHM,
         )
         response.cookies.add_cookie(
-            f"{config.SESSION_PREFIX}_{self.__class__.__name__.lower()[:7]}",
+            f"{config.SESSION_PREFIX}_{self.__class__.__name__[:7].lower()}",
             str(encoded_session),
             httponly=config.SESSION_HTTPONLY,
             samesite=config.SESSION_SAMESITE,
@@ -447,7 +447,7 @@ class Session(BaseModel):
             JWTDecodeError
         """
         cookie = request.cookies.get(
-            f"{config.SESSION_PREFIX}_{cls.__name__.lower()[:7]}"
+            f"{config.SESSION_PREFIX}_{cls.__name__[:7].lower()}"
         )
         try:
             if not cookie:
