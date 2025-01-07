@@ -2,7 +2,7 @@ import functools
 import re
 import warnings
 
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import VerificationError
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
@@ -128,7 +128,7 @@ async def login(
             f"Client {get_ip(request)} has logged in with authentication session {authentication_session.id}."
         )
         return authentication_session
-    except VerifyMismatchError:
+    except VerificationError:
         logger.warning(
             f"Client {get_ip(request)} has failed to log into account {account.id}."
         )

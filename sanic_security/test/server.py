@@ -22,7 +22,7 @@ from sanic_security.authorization import (
 from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession, AuthenticationSession
-from sanic_security.oauth import oauth, oauth_callback, oauth_encode
+from sanic_security.oauth import oauth_callback, oauth_encode, oauth_login
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -272,7 +272,7 @@ async def on_account_creation(request):
 
 @app.get("api/test/oauth")
 async def on_oauth_request(request):
-    return await oauth(
+    return await oauth_login(
         fitbit_oauth, "http://localhost:8000/api/test/oauth/callback", scope=["profile"]
     )
 

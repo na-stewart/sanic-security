@@ -1,7 +1,10 @@
 import time
+from typing import Literal
 
 import jwt
-from httpx_oauth.oauth2 import BaseOAuth2
+from httpx_oauth.exceptions import GetIdEmailError
+from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError, GetAccessTokenError
+from jwt import DecodeError
 from sanic import Request, HTTPResponse, redirect, Sanic
 
 from sanic_security.configuration import config
@@ -28,13 +31,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-oauth_clients: dict[str, BaseOAuth2]
 
-
-async def oauth(
-    client: BaseOAuth2, redirect_uri: str = config.OAUTH_REDIRECT, **kwargs
+async def oauth_login(
+    client: BaseOAuth2,
+    redirect_uri: str = config.OAUTH_REDIRECT,
+    scope: list[str] = None,
+    state: str = None,
+    code_challenge: str = None,
+    code_challenge_method: Literal["plain", "S256"] = None,
+    **extra_params: str,
 ) -> HTTPResponse:
-    return redirect(await client.get_authorization_url(redirect_uri, **kwargs))
+    return redirect(
+        await client.get_authorization_url(
+            redirect_uri,
+            state,
+            scope,
+            code_challenge,
+            code_challenge_method,
+            extra_params,
+        )
+    )
 
 
 async def oauth_callback(
@@ -43,14 +59,20 @@ async def oauth_callback(
     redirect_uri: str = config.OAUTH_REDIRECT,
     code_verifier: str = None,
 ) -> dict:
-    token_info = await client.get_access_token(
-        request.args.get("code"),
-        redirect_uri,
-        code_verifier,
-    )
-    if "expires_at" not in token_info:
-        token_info["expires_at"] = time.time() + token_info["expires_in"]
-    return token_info
+    try:
+        token_info = await client.get_access_token(
+            request.args.get("code"),
+            redirect_uri,
+            code_verifier,
+        )
+        if "expires_at" not in token_info:
+            token_info["expires_at"] = time.time() + token_info["expires_in"]
+        client.get_id_email()
+        return token_info
+    except GetIdEmailError:
+        pass
+    except GetAccessTokenError:
+        pass
 
 
 def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
@@ -71,21 +93,26 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     )
 
 
-async def get_oauth(request: Request, client: BaseOAuth2) -> dict:
-    token_info = jwt.decode(
-        request.cookies.get(
-            f"{config.SESSION_PREFIX}_oauth",
-        ),
-        config.PUBLIC_SECRET or config.SECRET,
-        config.SESSION_ENCODING_ALGORITHM,
-    )
-    if time.time() > token_info["expires_at"]:
-        token_info = await client.refresh_token(token_info["refresh_token"])
-        token_info["is_refresh"] = True
-        if "expires_at" not in token_info:
-            token_info["expires_at"] = time.time() + token_info["expires_in"]
-    request.ctx.oauth = token_info
-    return token_info
+async def oauth_decode(request: Request, client: BaseOAuth2) -> dict:
+    try:
+        token_info = jwt.decode(
+            request.cookies.get(
+                f"{config.SESSION_PREFIX}_oauth",
+            ),
+            config.PUBLIC_SECRET or config.SECRET,
+            config.SESSION_ENCODING_ALGORITHM,
+        )
+        if time.time() > token_info["expires_at"]:
+            token_info = await client.refresh_token(token_info["refresh_token"])
+            token_info["is_refresh"] = True
+            if "expires_at" not in token_info:
+                token_info["expires_at"] = time.time() + token_info["expires_in"]
+        request.ctx.oauth = token_info
+        return token_info
+    except RefreshTokenError:
+        pass
+    except DecodeError:
+        pass
 
 
 def initialize_oauth(app: Sanic) -> None:

@@ -398,7 +398,7 @@ class Session(BaseModel):
         cls,
         request: Request,
         account: Account,
-        **kwargs: Union[int, str, bool, float, list, dict],
+        **kwargs: dict[str, Union[int, str, bool, float, list, dict]],
     ):
         """
         Creates session with pre-set values.
@@ -406,7 +406,7 @@ class Session(BaseModel):
         Args:
             request (Request): Sanic request parameter.
             account (Account): Account being associated to the session.
-            **kwargs (dict[str, Union[int, str, bool, float, list, dict]]): Extra arguments applied during session creation.
+            **kwargs (Union[int, str, bool, float, list, dict]): Extra arguments applied during session creation.
 
         Returns:
             session
@@ -525,7 +525,12 @@ class VerificationSession(Session):
             await self.deactivate()
 
     @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
+    async def new(
+        cls,
+        request: Request,
+        account: Account,
+        **kwargs: Union[int, str, bool, float, list, dict],
+    ):
         raise NotImplementedError
 
     class Meta:
@@ -536,7 +541,12 @@ class TwoStepSession(VerificationSession):
     """Validates client using a code sent via email or text."""
 
     @classmethod
-    async def new(cls, request: Request, account: Account, **kwargs):
+    async def new(
+        cls,
+        request: Request,
+        account: Account,
+        **kwargs: Union[int, str, bool, float, list, dict],
+    ):
         return await cls.create(
             **kwargs,
             ip=get_ip(request),
@@ -553,7 +563,11 @@ class CaptchaSession(VerificationSession):
     """Validates client with a captcha challenge via image or audio."""
 
     @classmethod
-    async def new(cls, request: Request, **kwargs):
+    async def new(
+        cls,
+        request: Request,
+        **kwargs: Union[int, str, bool, float, list, dict],
+    ):
         return await cls.create(
             **kwargs,
             ip=get_ip(request),
@@ -641,7 +655,11 @@ class AuthenticationSession(Session):
 
     @classmethod
     async def new(
-        cls, request: Request, account: Account = None, is_refresh=False, **kwargs
+        cls,
+        request: Request,
+        account: Account = None,
+        is_refresh=False,
+        **kwargs: Union[int, str, bool, float, list, dict],
     ):
         authentication_session = await cls.create(
             **kwargs,
