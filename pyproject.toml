@@ -24,7 +24,7 @@ classifiers = ["Development Status :: 5 - Production/Stable", "Intended Audience
 
 [project.optional-dependencies]
 oauth= ["httpx_oauth>=0.16.1"]
-dev = ["httpx", "black", "blacken-docs", "pdoc3", "cryptography"]
+dev = ["httpx_oauth", "black", "blacken-docs", "pdoc3", "cryptography"]
 crypto = ["cryptography>=3.3.1"]
 
 [project.urls]
