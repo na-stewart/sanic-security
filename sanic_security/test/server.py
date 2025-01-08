@@ -4,7 +4,6 @@ import traceback
 from argon2 import PasswordHasher
 from httpx_oauth.clients.discord import DiscordOAuth2
 from httpx_oauth.clients.google import GoogleOAuth2
-from httpx_oauth.exceptions import GetIdEmailError
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
 
