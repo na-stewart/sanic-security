@@ -63,12 +63,12 @@ SOFTWARE.
 app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
 discord_oauth = DiscordOAuth2(
-    "1325594509043830895",
-    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",
+    "132559450904383089",
+    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EX",
 )
 google_oauth = GoogleOAuth2(
-    "480512993828-e2e9tqtl2b8or62hc4l7hpoh478s3ni1.apps.googleusercontent.com",
-    "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",
+    "4805129938-e2e9tqtl2b8or62hc4l7hpoh478s3ni1.apps.googleusercontent.com",
+    "GOCSPX-yr9DFtEAtXC7K4NeZ9xm0rHdCSc",
 )
 
 
