@@ -31,6 +31,7 @@
   * [Installation](#installation)
   * [Configuration](#configuration)
 * [Usage](#usage)
+    * [OAuth](#oauth)
     * [Authentication](#authentication)
     * [CAPTCHA](#captcha)
     * [Two-step Verification](#two-step-verification)
@@ -48,6 +49,7 @@
 Sanic Security is an authentication, authorization, and verification library designed for use with the 
 [Sanic](https://github.com/huge-success/sanic) framework.
 
+* OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
 * Role based authorization with wildcard permissions
 * Image & audio CAPTCHA
@@ -79,7 +81,17 @@ as an extra requirement.
 pip3 install sanic-security[crypto]
 ````
 
-* Update sanic-security if already installed.
+* Install the Sanic Security pip package with the `httpx-oauth` dependency included.
+
+If you are planning on utilizing OAuth, you will need to install the `httpx-oauth` library. This can be installed explicitly, or 
+as an extra requirement.
+
+```shell
+pip3 install sanic-security[oauth]
+````
+
+* Update Sanic Security if already installed.
+
 ```shell
 pip3 install sanic-security --upgrade
 ```
@@ -107,40 +119,52 @@ You can load environment variables with a different prefix via `config.load_envi
 
 * Default configuration values:
 
-| Key                                   | Value                        | Description                                                                                                                      |
-|---------------------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| **SECRET**                            | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.               |
-| **PUBLIC_SECRET**                     | None                         | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.  |
-| **SESSION_SAMESITE**                  | Strict                       | The SameSite attribute of session cookies.                                                                                       |
-| **SESSION_SECURE**                    | True                         | The Secure attribute of session cookies.                                                                                         |
-| **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing. |
-| **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                         |
-| **SESSION_ENCODING_ALGORITHM**        | HS256                        | The algorithm used to encode and decode session JWT's.                                                                           |
-| **SESSION_PREFIX**                    | tkn                          | Prefix attached to the beginning of session cookies.                                                                             |
-| **MAX_CHALLENGE_ATTEMPTS**            | 3                            | The maximum amount of session challenge attempts allowed.                                                                        |
-| **CAPTCHA_SESSION_EXPIRATION**        | 180                          | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                         |
-| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation. Several fonts can be used by separating them via comma.             |
-| **CAPTCHA_VOICE**                     | captcha-voice/               | The directory of the voice library being used for audio captcha generation.                                                      |
-| **TWO_STEP_SESSION_EXPIRATION**       | 300                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                        |
-| **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                  |
-| **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                       |
-| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username; unique constraint is disabled when set to false.                                                      |
-| **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                              |
-| **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                           |
+| Key                                   | Value                        | Description                                                                                                                       |
+|---------------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| **SECRET**                            | This is a big secret. Shhhhh | The secret used for generating and signing JWTs. This should be a string unique to your application. Keep it safe.                |
+| **PUBLIC_SECRET**                     | None                         | The secret used for verifying and decoding JWTs and can be publicly shared. This should be a string unique to your application.   |
+| **OAUTH_CLIENT**                      | None                         | The client ID provided by the OAuth provider, this is used to identify the application making the OAuth request.                  |
+| **OAUTH_SECRET**                      | None                         | The client secret provided by the OAuth provider, this is used in conjunction with the client ID to authenticate the application. |
+| **SESSION_SAMESITE**                  | Strict                       | The SameSite attribute of session cookies.                                                                                        |
+| **SESSION_SECURE**                    | True                         | The Secure attribute of session cookies.                                                                                          |
+| **SESSION_HTTPONLY**                  | True                         | The HttpOnly attribute of session cookies. HIGHLY recommended that you do not turn this off, unless you know what you are doing.  |
+| **SESSION_DOMAIN**                    | None                         | The Domain attribute of session cookies.                                                                                          |
+| **SESSION_ENCODING_ALGORITHM**        | HS256                        | The algorithm used to encode and decode session JWT's.                                                                            |
+| **SESSION_PREFIX**                    | tkn                          | Prefix attached to the beginning of session cookies.                                                                              |
+| **MAX_CHALLENGE_ATTEMPTS**            | 3                            | The maximum amount of session challenge attempts allowed.                                                                         |
+| **CAPTCHA_SESSION_EXPIRATION**        | 180                          | The amount of seconds till captcha session expiration on creation. Setting to 0 will disable expiration.                          |
+| **CAPTCHA_FONT**                      | captcha-font.ttf             | The file path to the font being used for captcha generation. Several fonts can be used by separating them via comma.              |
+| **CAPTCHA_VOICE**                     | captcha-voice/               | The directory of the voice library being used for audio captcha generation.                                                       |
+| **TWO_STEP_SESSION_EXPIRATION**       | 300                          | The amount of seconds till two-step session expiration on creation. Setting to 0 will disable expiration.                         |
+| **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                   |
+| **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                        |
+| **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username; unique constraint is disabled when set to false.                                                       |
+| **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                               |
+| **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                            |
 
 ## Usage
 
 Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent
 along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
 
-* Initialize sanic-security as follows:
+* Initialize Sanic Security as follows:
 ```python
 initialize_security(app)
+initialize_oauth(app)  # Remove if not utilizing OAuth
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, workers=1, debug=True)
 ```
 
 The tables in the below examples represent example [request form-data](https://sanicframework.org/en/guide/basics/request.html#form).
+
+## OAuth
+
+OAuth2 provides users with a familiar and streamlined login experience by allowing them to authenticate using their existing credentials from other trusted services (such as Google, Facebook, Apple, or Microsoft) instead of creating a new account or remembering additional login details.
+
+This feature has been seamlessly integrated to complement existing authentication protocols by linking a Sanic Security account with the user's OAuth credentials. As a result users can effortlessly leverage all of Sanic Security's capabilities, including robust account management and session handling.
+
+* 
+
 
 ## Authentication
   
@@ -293,7 +317,7 @@ or you can download/create your own and specify its path in the configuration.
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
-    response = captcha_session.get_image()  # Captcha: LJ0F3U
+    response = raw(captcha_session.get_image())  # Captcha: LJ0F3U
     captcha_session.encode(response)
     return response
 ```
@@ -303,8 +327,10 @@ async def on_captcha_img_request(request):
 ```python
 @app.get("api/security/captcha/audio")
 async def on_captcha_audio_request(request):
-    captcha_session = await CaptchaSession.decode(request)
-    return captcha_session.get_audio()  # Captcha: LJ0F3U
+    captcha_session = await request_captcha(request)
+    response = raw(captcha_session.get_audio())  # Captcha: LJ0F3U
+    captcha_session.encode(response)
+    return response
 ```
 
 * Attempt CAPTCHA
@@ -438,7 +464,7 @@ async def on_check_perms(request):
 
 ```python
 @app.post("api/security/perms")
-@require_permissions("channels:view", "voice:*")
+@requires_permission("channels:view", "voice:*")
 async def on_check_perms(request):
     return text("Account is authorized.")
 ```
@@ -456,7 +482,7 @@ async def on_check_roles(request):
 
 ```python
 @app.post("api/security/roles")
-@require_roles("Chat Room Moderator")
+@requires_role("Chat Room Moderator")
 async def on_check_roles(request):
     return text("Account is authorized.")
 ```
@@ -553,16 +579,3 @@ Distributed under the MIT License. See `LICENSE` for more information.
 * PATCH version when you make backwards compatible bug fixes.
 
 [https://semver.org/](https://semver.org/)
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/sunset-developer/sanic-security.svg?style=flat-square
-[contributors-url]: https://github.com/sunset-developer/sanic-security/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/sunset-developer/sanic-security.svg?style=flat-square
-[forks-url]: https://github.com/sunset-developer/sanic-security/network/members
-[stars-shield]: https://img.shields.io/github/stars/sunset-developer/sanic-security.svg?style=flat-square
-[stars-url]: https://github.com/sunset-developer/sanic-security/stargazers
-[issues-shield]: https://img.shields.io/github/issues/sunset-developer/sanic-security.svg?style=flat-square
-[issues-url]: https://github.com/sunset-developer/sanic-security/issues
-[license-shield]: https://img.shields.io/github/license/sunset-developer/sanic-security.svg?style=flat-square
-[license-url]: https://github.com/sunset-developer/sanic-security/blob/master/LICENSE

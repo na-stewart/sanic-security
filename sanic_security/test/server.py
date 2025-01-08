@@ -4,7 +4,7 @@ import traceback
 from argon2 import PasswordHasher
 from httpx_oauth.clients.discord import DiscordOAuth2
 from httpx_oauth.clients.google import GoogleOAuth2
-from sanic import Sanic, text
+from sanic import Sanic, text, raw, redirect
 from tortoise.contrib.sanic import register_tortoise
 
 from sanic_security.authentication import (
@@ -24,10 +24,10 @@ from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession, AuthenticationSession
 from sanic_security.oauth import (
-    oauth_callback,
     oauth_encode,
-    oauth_redirect,
     initialize_oauth,
+    on_oauth_callback,
+    oauth_url,
 )
 from sanic_security.utils import json
 from sanic_security.verification import (
@@ -205,14 +205,14 @@ async def on_captcha_request(request):
 async def on_captcha_image(request):
     """Request captcha image."""
     captcha_session = await CaptchaSession.decode(request)
-    return captcha_session.get_image()
+    return raw(captcha_session.get_image())
 
 
 @app.get("api/test/capt/audio")
 async def on_captcha_audio(request):
     """Request captcha audio."""
     captcha_session = await CaptchaSession.decode(request)
-    return captcha_session.get_audio()
+    return raw(captcha_session.get_audio())
 
 
 @app.post("api/test/capt")
@@ -277,16 +277,18 @@ async def on_account_creation(request):
 
 
 @app.get("api/test/oauth")
-async def on_oauth_request_discord(request):
-    return await oauth_redirect(
-        google_oauth if request.args.get("type") == "google" else discord_oauth,
-        f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
+async def on_oauth_request(request):
+    return redirect(
+        await oauth_url(
+            google_oauth if request.args.get("type") == "google" else discord_oauth,
+            f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
+        )
     )
 
 
 @app.get("api/test/oauth/callback")
-async def on_oauth_callback_discord(request):
-    token_info, authentication_session = await oauth_callback(
+async def on_oauth_callback(request):
+    token_info, authentication_session = await on_oauth_callback(
         request,
         google_oauth if request.args.get("type") == "google" else discord_oauth,
         f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",

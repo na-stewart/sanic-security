@@ -576,28 +576,23 @@ class CaptchaSession(VerificationSession):
             expiration_date=get_expiration_date(config.CAPTCHA_SESSION_EXPIRATION),
         )
 
-    def get_image(self) -> HTTPResponse:
+    def get_image(self) -> bytes:
         """
         Retrieves captcha image data.
 
         Returns:
             captcha_image
         """
-        return raw(
-            image_generator.generate(self.code, "jpeg").getvalue(),
-            content_type="image/jpeg",
-        )
+        return image_generator.generate(self.code, "jpeg").getvalue()
 
-    def get_audio(self) -> HTTPResponse:
+    def get_audio(self) -> bytes:
         """
         Retrieves captcha audio data.
 
         Returns:
             captcha_audio
         """
-        return raw(
-            bytes(audio_generator.generate(self.code)), content_type="audio/mpeg"
-        )
+        return bytes(audio_generator.generate(self.code))
 
     class Meta:
         table = "captcha_session"

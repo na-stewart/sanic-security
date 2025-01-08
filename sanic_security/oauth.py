@@ -37,7 +37,7 @@ SOFTWARE.
 """
 
 
-async def oauth_redirect(
+async def oauth_url(
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
     state: str = None,
@@ -45,7 +45,7 @@ async def oauth_redirect(
     code_challenge: str = None,
     code_challenge_method: Literal["plain", "S256"] = None,
     **extra_params: str,
-) -> HTTPResponse:
+) -> str:
     """
     Constructs the authorization URL and returns a redirect response to prompt the user to authorize the application.
 
@@ -55,25 +55,23 @@ async def oauth_redirect(
         state (str): An opaque value used by the client to maintain state between the request and the callback.
         scopes (list[str]): The scopes to be requested. If not provided, `base_scopes` will be used.
         code_challenge (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge.
-        code_challenge_method (str) [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge method.
+        code_challenge_method (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge method.
         **extra_params (dict[str, str]): Optional extra parameters specific to the service.
 
     Returns:
         oauth_redirect
     """
-    return redirect(
-        await client.get_authorization_url(
-            redirect_uri,
-            state,
-            scopes or client.base_scopes,
-            code_challenge,
-            code_challenge_method,
-            extra_params,
-        )
+    return await client.get_authorization_url(
+        redirect_uri,
+        state,
+        scopes or client.base_scopes,
+        code_challenge,
+        code_challenge_method,
+        extra_params,
     )
 
 
-async def oauth_callback(
+async def on_oauth_callback(
     request: Request,
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
