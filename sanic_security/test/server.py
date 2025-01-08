@@ -22,7 +22,12 @@ from sanic_security.authorization import (
 from sanic_security.configuration import config
 from sanic_security.exceptions import SecurityError
 from sanic_security.models import Account, CaptchaSession, AuthenticationSession
-from sanic_security.oauth import oauth_callback, oauth_encode, oauth_login
+from sanic_security.oauth import (
+    oauth_callback,
+    oauth_encode,
+    oauth_redirect,
+    initialize_oauth,
+)
 from sanic_security.utils import json
 from sanic_security.verification import (
     request_two_step_verification,
@@ -272,18 +277,19 @@ async def on_account_creation(request):
 
 @app.get("api/test/oauth")
 async def on_oauth_request(request):
-    return await oauth_login(
+    return await oauth_redirect(
         fitbit_oauth, "http://localhost:8000/api/test/oauth/callback", scope=["profile"]
     )
 
 
 @app.get("api/test/oauth/callback")
 async def on_oauth_callback(request):
-    token_info = await oauth_callback(
+    token_info, authentication_session = await oauth_callback(
         request, fitbit_oauth, "http://localhost:8000/api/test/oauth/callback"
     )
     response = json("OAuth successful and token cached.", token_info)
-    oauth_encode(response, token_info)
+    oauth_encode(response, fitbit_oauth, token_info)
+    authentication_session.encode(response)
     return response
 
 
@@ -331,5 +337,6 @@ register_tortoise(
     generate_schemas=True,
 )
 initialize_security(app, True)
+initialize_oauth(app)
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, workers=1, debug=True)

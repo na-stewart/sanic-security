@@ -1,13 +1,16 @@
+import functools
 import time
-from typing import Literal
+from typing import Literal, Union
 
 import jwt
-from httpx_oauth.exceptions import GetIdEmailError
-from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError, GetAccessTokenError
+from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
 from jwt import DecodeError
 from sanic import Request, HTTPResponse, redirect, Sanic
+from tortoise.exceptions import IntegrityError
 
 from sanic_security.configuration import config
+from sanic_security.exceptions import JWTDecodeError, ExpiredError, CredentialsError
+from sanic_security.models import Account, AuthenticationSession
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -32,7 +35,7 @@ SOFTWARE.
 """
 
 
-async def oauth_login(
+async def oauth_redirect(
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
     scope: list[str] = None,
@@ -41,6 +44,21 @@ async def oauth_login(
     code_challenge_method: Literal["plain", "S256"] = None,
     **extra_params: str,
 ) -> HTTPResponse:
+    """
+    Constructs the authorization URL and returns a redirect response to prompt the user to authorize the application.
+
+    Args:
+        client: oauth client
+        redirect_uri (str): The URL where the user will be redirected after authorization.
+        scope (list[str]): The scopes to be requested. If not provided, `base_scopes` will be used.
+        state (str): An opaque value used by the client to maintain state between the request and the callback.
+        code_challenge (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge.
+        code_challenge_method (str) [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge method.
+        **extra_params (dict[str, str]): Optional extra parameters specific to the service.
+
+    Returns:
+        oauth_redirect
+    """
     return redirect(
         await client.get_authorization_url(
             redirect_uri,
@@ -58,26 +76,31 @@ async def oauth_callback(
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
     code_verifier: str = None,
-) -> dict:
+) -> tuple[dict, AuthenticationSession]:
+    access_token = await client.get_access_token(
+        request.args.get("code"),
+        redirect_uri,
+        code_verifier,
+    )
+    if "expires_at" not in access_token:
+        access_token["expires_at"] = time.time() + access_token["expires_in"]
+    oauth_id, email = await client.get_id_email(access_token["access_token"])
     try:
-        token_info = await client.get_access_token(
-            request.args.get("code"),
-            redirect_uri,
-            code_verifier,
+        account, _ = await Account.get_or_create(email=email, oauth_id=oauth_id)
+        authentication_session = await AuthenticationSession.new(
+            request,
+            account,
         )
-        if "expires_at" not in token_info:
-            token_info["expires_at"] = time.time() + token_info["expires_in"]
-        client.get_id_email()
-        return token_info
-    except GetIdEmailError:
-        pass
-    except GetAccessTokenError:
-        pass
+        return access_token, authentication_session
+    except IntegrityError:
+        raise CredentialsError(f"An account with this email may already exist.", 409)
 
 
-def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
+def oauth_encode(
+    response: HTTPResponse, client: Union[BaseOAuth2, str], token_info: dict
+) -> None:
     response.cookies.add_cookie(
-        f"{config.SESSION_PREFIX}_oauth",
+        f"{config.SESSION_PREFIX}_{(client if isinstance(client, str) else client.__class__.__name__)[:7].lower()}",
         str(
             jwt.encode(
                 token_info,
@@ -93,32 +116,47 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     )
 
 
-async def oauth_decode(request: Request, client: BaseOAuth2) -> dict:
+async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> dict:
     try:
-        token_info = jwt.decode(
+        access = jwt.decode(
             request.cookies.get(
-                f"{config.SESSION_PREFIX}_oauth",
+                f"{config.SESSION_PREFIX}_{client.__class__.__name__[:7].lower()}",
             ),
             config.PUBLIC_SECRET or config.SECRET,
             config.SESSION_ENCODING_ALGORITHM,
         )
-        if time.time() > token_info["expires_at"]:
-            token_info = await client.refresh_token(token_info["refresh_token"])
-            token_info["is_refresh"] = True
-            if "expires_at" not in token_info:
-                token_info["expires_at"] = time.time() + token_info["expires_in"]
-        request.ctx.oauth = token_info
-        return token_info
+        if time.time() > access["expires_at"] or refresh:
+            access = await client.refresh_token(access["refresh_token"])
+            access["is_refresh"] = True
+            access["client"] = client.__class__.__name__
+            if "expires_at" not in access:
+                access["expires_at"] = time.time() + access["expires_in"]
+        request.ctx.oauth_redirect = access
+        return access
     except RefreshTokenError:
-        pass
+        raise ExpiredError
     except DecodeError:
-        pass
+        raise JWTDecodeError
+
+
+def requires_oauth(client: BaseOAuth2):
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(request, *args, **kwargs):
+            await oauth_decode(request, client)
+            return await func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def initialize_oauth(app: Sanic) -> None:
     @app.on_response
     async def refresh_encoder_middleware(request, response):
         if hasattr(request.ctx, "oauth") and getattr(
-            request.ctx.o_auth, "is_refresh", False
+            request.ctx.oauth_redirect, "is_refresh", False
         ):
-            oauth_encode(response, request.ctx.o_auth)
+            oauth_encode(
+                response, request.ctx.oauth_redirect["client"], request.ctx.oauth_redirect
+            )

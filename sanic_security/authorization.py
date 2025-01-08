@@ -176,7 +176,7 @@ async def assign_role(
     return role
 
 
-def require_permissions(*required_permissions: str):
+def requires_permission(*required_permissions: str):
     """
     Authenticates client and determines if the account has sufficient permissions for an action.
 
@@ -214,7 +214,7 @@ def require_permissions(*required_permissions: str):
     return decorator
 
 
-def require_roles(*required_roles: str):
+def requires_role(*required_roles: str):
     """
     Authenticates client and determines if the account has sufficient roles for an action.
 

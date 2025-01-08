@@ -109,6 +109,7 @@ class Account(BaseModel):
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. Can be null or empty.
         password (str): Password of account for user protection, must be hashed via Argon2.
+        oauth_id (str): Identifier associated with an OAuth 2.0 authorization flow.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
         roles (ManyToManyRelation[Role]): Roles associated with this account.
@@ -451,7 +452,7 @@ class Session(BaseModel):
         )
         try:
             if not cookie:
-                raise JWTDecodeError("Session token not provided or expired.", 401)
+                raise JWTDecodeError
             else:
                 return jwt.decode(
                     cookie,

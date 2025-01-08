@@ -119,7 +119,9 @@ class JWTDecodeError(SessionError):
     Raised when client JWT is invalid.
     """
 
-    def __init__(self, message, code=400):
+    def __init__(
+        self, message="Session token invalid, not provided, or expired.", code=400
+    ):
         super().__init__(message, code)
 
 
@@ -141,8 +143,8 @@ class ExpiredError(SessionError):
     Raised when session has expired.
     """
 
-    def __init__(self):
-        super().__init__("Session has expired.")
+    def __init__(self, message="Session has expired."):
+        super().__init__(message)
 
 
 class SecondFactorRequiredError(SessionError):
