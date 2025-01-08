@@ -2,7 +2,7 @@ import datetime
 import traceback
 
 from argon2 import PasswordHasher
-from httpx_oauth.oauth2 import OAuth2
+from httpx_oauth.clients.discord import DiscordOAuth2
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
 
@@ -61,13 +61,9 @@ SOFTWARE.
 
 app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
-fitbit_oauth = OAuth2(
-    config.OAUTH_CLIENT,
-    config.OAUTH_SECRET,
-    "https://www.fitbit.com/oauth2/authorize",
-    "https://api.fitbit.com/oauth2/token",
-    refresh_token_endpoint="https://api.fitbit.com/oauth2/token",
-    token_endpoint_auth_method="client_secret_basic",
+discord_oauth = DiscordOAuth2(
+    "1325594509043830895",  # config.OAUTH_CLIENT,
+    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",  # config.OAUTH_SECRET,
 )
 
 
@@ -278,17 +274,21 @@ async def on_account_creation(request):
 @app.get("api/test/oauth")
 async def on_oauth_request(request):
     return await oauth_redirect(
-        fitbit_oauth, "http://localhost:8000/api/test/oauth/callback", scope=["profile"]
+        discord_oauth,
+        "http://localhost:8000/api/test/oauth/callback",
     )
 
 
 @app.get("api/test/oauth/callback")
 async def on_oauth_callback(request):
     token_info, authentication_session = await oauth_callback(
-        request, fitbit_oauth, "http://localhost:8000/api/test/oauth/callback"
+        request, discord_oauth, "http://localhost:8000/api/test/oauth/callback"
     )
-    response = json("OAuth successful and token cached.", token_info)
-    oauth_encode(response, fitbit_oauth, token_info)
+    response = json(
+        "OAuth successful and token cached.",
+        {"token_info": token_info, "auth_session": authentication_session.json},
+    )
+    oauth_encode(response, discord_oauth, token_info)
     authentication_session.encode(response)
     return response
 

@@ -134,7 +134,7 @@ class Account(BaseModel):
             RegexValidator(r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", re.I)
         ],
     )
-    password: str = fields.CharField(max_length=255, null=True)
+    password: str = fields.CharField(max_length=255)
     oauth_id: str = fields.CharField(unique=True, null=True, max_length=255)
     disabled: bool = fields.BooleanField(default=False)
     verified: bool = fields.BooleanField(default=False)

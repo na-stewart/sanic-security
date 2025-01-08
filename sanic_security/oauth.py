@@ -3,6 +3,7 @@ import time
 from typing import Literal, Union
 
 import jwt
+from httpx_oauth.exceptions import GetIdEmailError
 from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
 from jwt import DecodeError
 from sanic import Request, HTTPResponse, redirect, Sanic
@@ -63,7 +64,7 @@ async def oauth_redirect(
         await client.get_authorization_url(
             redirect_uri,
             state,
-            scope,
+            scope or client.base_scopes,
             code_challenge,
             code_challenge_method,
             extra_params,
@@ -95,21 +96,23 @@ async def oauth_callback(
     Returns:
         oauth_redirect
     """
-    access_token = await client.get_access_token(
+    token_info = await client.get_access_token(
         request.args.get("code"),
         redirect_uri,
         code_verifier,
     )
-    if "expires_at" not in access_token:
-        access_token["expires_at"] = time.time() + access_token["expires_in"]
-    oauth_id, email = await client.get_id_email(access_token["access_token"])
+    if "expires_at" not in token_info:
+        token_info["expires_at"] = time.time() + token_info["expires_in"]
+    oauth_id, email = await client.get_id_email(token_info["access_token"])
     try:
-        account, _ = await Account.get_or_create(email=email, oauth_id=oauth_id)
+        account, _ = await Account.get_or_create(
+            email=email, username=email.split("@")[0], password="", oauth_id=oauth_id
+        )
         authentication_session = await AuthenticationSession.new(
             request,
             account,
         )
-        return access_token, authentication_session
+        return token_info, authentication_session
     except IntegrityError:
         raise CredentialsError(
             f"Account may not be linked to an OAuth provider if it already exists.", 409
@@ -121,7 +124,7 @@ async def oauth_callback(
 
 
 def oauth_encode(
-    response: HTTPResponse, client: Union[BaseOAuth2, str], access_token: dict
+    response: HTTPResponse, client: Union[BaseOAuth2, str], token_info: dict
 ) -> None:
     """
     Transforms OAuth access token into JWT and then is stored in a cookie.
@@ -129,13 +132,13 @@ def oauth_encode(
     Args:
         response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
         client (Union[BaseOAuth2, str]): OAuth provider.
-        access_token (dict): OAuth access token.
+        token_info (dict): OAuth access token.
     """
     response.cookies.add_cookie(
         f"{config.SESSION_PREFIX}_{(client if isinstance(client, str) else client.__class__.__name__)[:7].lower()}",
         str(
             jwt.encode(
-                access_token,
+                token_info,
                 config.SECRET,
                 config.SESSION_ENCODING_ALGORITHM,
             ),
@@ -144,7 +147,7 @@ def oauth_encode(
         samesite=config.SESSION_SAMESITE,
         secure=config.SESSION_SECURE,
         domain=config.SESSION_DOMAIN,
-        max_age=access_token["expires_in"] + config.AUTHENTICATION_REFRESH_EXPIRATION,
+        max_age=token_info["expires_in"] + config.AUTHENTICATION_REFRESH_EXPIRATION,
     )
 
 
@@ -163,25 +166,25 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
         RefreshTokenNotSupportedError
 
     Returns:
-        access_token
+        token_info
 
     """
     try:
-        access_token = jwt.decode(
+        token_info = jwt.decode(
             request.cookies.get(
                 f"{config.SESSION_PREFIX}_{client.__class__.__name__[:7].lower()}",
             ),
             config.PUBLIC_SECRET or config.SECRET,
             config.SESSION_ENCODING_ALGORITHM,
         )
-        if time.time() > access_token["expires_at"] or refresh:
-            access_token = await client.refresh_token(access_token["refresh_token"])
-            access_token["is_refresh"] = True
-            access_token["client"] = client.__class__.__name__
-            if "expires_at" not in access_token:
-                access_token["expires_at"] = time.time() + access_token["expires_in"]
-        request.ctx.oauth = access_token
-        return access_token
+        if time.time() > token_info["expires_at"] or refresh:
+            token_info = await client.refresh_token(token_info["refresh_token"])
+            token_info["is_refresh"] = True
+            token_info["client"] = client.__class__.__name__
+            if "expires_at" not in token_info:
+                token_info["expires_at"] = time.time() + token_info["expires_in"]
+        request.ctx.oauth = token_info
+        return token_info
     except RefreshTokenError:
         raise ExpiredError
     except DecodeError:
