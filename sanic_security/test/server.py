@@ -3,6 +3,8 @@ import traceback
 
 from argon2 import PasswordHasher
 from httpx_oauth.clients.discord import DiscordOAuth2
+from httpx_oauth.clients.google import GoogleOAuth2
+from httpx_oauth.exceptions import GetIdEmailError
 from sanic import Sanic, text
 from tortoise.contrib.sanic import register_tortoise
 
@@ -62,8 +64,12 @@ SOFTWARE.
 app = Sanic("sanic-security-test")
 password_hasher = PasswordHasher()
 discord_oauth = DiscordOAuth2(
-    "1325594509043830895",  # config.OAUTH_CLIENT,
-    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",  # config.OAUTH_SECRET,
+    "1325594509043830895",
+    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",
+)
+google_oauth = GoogleOAuth2(
+    "480512993828-e2e9tqtl2b8or62hc4l7hpoh478s3ni1.apps.googleusercontent.com",
+    "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",
 )
 
 
@@ -272,17 +278,19 @@ async def on_account_creation(request):
 
 
 @app.get("api/test/oauth")
-async def on_oauth_request(request):
+async def on_oauth_request_discord(request):
     return await oauth_redirect(
-        discord_oauth,
-        "http://localhost:8000/api/test/oauth/callback",
+        google_oauth if request.args.get("type") == "google" else discord_oauth,
+        f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
     )
 
 
 @app.get("api/test/oauth/callback")
-async def on_oauth_callback(request):
+async def on_oauth_callback_discord(request):
     token_info, authentication_session = await oauth_callback(
-        request, discord_oauth, "http://localhost:8000/api/test/oauth/callback"
+        request,
+        google_oauth if request.args.get("type") == "google" else discord_oauth,
+        f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
     )
     response = json(
         "OAuth successful and token cached.",

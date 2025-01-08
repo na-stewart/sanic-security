@@ -3,15 +3,16 @@ import time
 from typing import Literal, Union
 
 import jwt
-from httpx_oauth.exceptions import GetIdEmailError
 from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
 from jwt import DecodeError
 from sanic import Request, HTTPResponse, redirect, Sanic
+from sanic.log import logger
 from tortoise.exceptions import IntegrityError, DoesNotExist
 
 from sanic_security.configuration import config
 from sanic_security.exceptions import JWTDecodeError, ExpiredError, CredentialsError
 from sanic_security.models import Account, AuthenticationSession
+from sanic_security.utils import get_ip
 
 """
 Copyright (c) 2020-present Nicholas Aidan Stewart
@@ -39,8 +40,8 @@ SOFTWARE.
 async def oauth_redirect(
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
-    scope: list[str] = None,
     state: str = None,
+    scopes: list[str] = None,
     code_challenge: str = None,
     code_challenge_method: Literal["plain", "S256"] = None,
     **extra_params: str,
@@ -51,8 +52,8 @@ async def oauth_redirect(
     Args:
         client (BaseOAuth2): OAuth provider.
         redirect_uri (str): The URL where the user will be redirected after authorization.
-        scope (list[str]): The scopes to be requested. If not provided, `base_scopes` will be used.
         state (str): An opaque value used by the client to maintain state between the request and the callback.
+        scopes (list[str]): The scopes to be requested. If not provided, `base_scopes` will be used.
         code_challenge (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge.
         code_challenge_method (str) [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge method.
         **extra_params (dict[str, str]): Optional extra parameters specific to the service.
@@ -64,7 +65,7 @@ async def oauth_redirect(
         await client.get_authorization_url(
             redirect_uri,
             state,
-            scope or client.base_scopes,
+            scopes or client.base_scopes,
             code_challenge,
             code_challenge_method,
             extra_params,
@@ -105,21 +106,27 @@ async def oauth_callback(
         token_info["expires_at"] = time.time() + token_info["expires_in"]
     oauth_id, email = await client.get_id_email(token_info["access_token"])
     try:
-        account, _ = await Account.get_or_create(
-            email=email, username=email.split("@")[0], password="", oauth_id=oauth_id
-        )
+        try:
+            account = await Account.get(oauth_id=oauth_id)
+        except DoesNotExist:
+            account = await Account.create(
+                email=email,
+                username=email.split("@")[0],
+                password="",
+                oauth_id=oauth_id,
+            )
         authentication_session = await AuthenticationSession.new(
             request,
             account,
         )
+        logger.info(
+            f"Client {get_ip(request)} has logged in via {client.__class__.__name__} with authentication session {authentication_session.id}."
+        )
         return token_info, authentication_session
     except IntegrityError:
         raise CredentialsError(
-            f"Account may not be linked to an OAuth provider if it already exists.", 409
-        )
-    except DoesNotExist:
-        raise CredentialsError(
-            "Account may already be linked to an OAuth provider.", 409
+            f"Account may not be linked to this OAuth provider if it already exists.",
+            409,
         )
 
 
@@ -167,7 +174,6 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
 
     Returns:
         token_info
-
     """
     try:
         token_info = jwt.decode(
