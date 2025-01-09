@@ -10,7 +10,6 @@ dependencies = [
     "tortoise-orm>=0.17.0",
     "pyjwt>=1.7.0",
     "captcha>=0.4",
-    "pillow>=9.5.0",
     "argon2-cffi>=20.1.0",
     "sanic>=21.3.0",
 ]
@@ -23,8 +22,8 @@ keywords = ["security", "authentication", "authorization", "verification", "asyn
 classifiers = ["Development Status :: 5 - Production/Stable", "Intended Audience :: Developers", "Topic :: Security", "License :: OSI Approved :: MIT License", "Programming Language :: Python"]
 
 [project.optional-dependencies]
-oauth= ["httpx_oauth>=0.16.1"]
-dev = ["httpx_oauth", "black", "blacken-docs", "pdoc3", "cryptography"]
+oauth= ["httpx-oauth>=0.16.1"]
+dev = ["httpx-oauth", "black", "blacken-docs", "pdoc3", "cryptography"]
 crypto = ["cryptography>=3.3.1"]
 
 [project.urls]

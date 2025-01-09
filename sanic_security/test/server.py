@@ -1,8 +1,6 @@
 import datetime
 import traceback
 
-from argon2 import PasswordHasher
-from httpx_oauth.clients.discord import DiscordOAuth2
 from httpx_oauth.clients.google import GoogleOAuth2
 from sanic import Sanic, text, raw, redirect
 from tortoise.contrib.sanic import register_tortoise
@@ -30,7 +28,7 @@ from sanic_security.oauth import (
     oauth_callback,
     oauth_decode,
 )
-from sanic_security.utils import json, str_to_bool
+from sanic_security.utils import json, str_to_bool, password_hasher
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -62,15 +60,7 @@ SOFTWARE.
 """
 
 app = Sanic("sanic-security-test")
-password_hasher = PasswordHasher()
-discord_oauth = DiscordOAuth2(
-    "1325594509043830895",
-    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",
-)
-google_oauth = GoogleOAuth2(
-    "480512993828-e2e9tqtl2b8or62hc4l7hpoh478s3ni1.apps.googleusercontent.com",
-    "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",
-)
+google_oauth = GoogleOAuth2(config.OAUTH_CLIENT, config.OAUTH_SECRET)
 
 
 @app.post("api/test/auth/register")
@@ -208,14 +198,14 @@ async def on_captcha_request(request):
 async def on_captcha_image(request):
     """Request captcha image."""
     captcha_session = await CaptchaSession.decode(request)
-    return raw(captcha_session.get_image())
+    return raw(captcha_session.get_image(), content_type="image/jpeg")
 
 
 @app.get("api/test/capt/audio")
 async def on_captcha_audio(request):
     """Request captcha audio."""
     captcha_session = await CaptchaSession.decode(request)
-    return raw(captcha_session.get_audio())
+    return raw(captcha_session.get_audio(), content_type="audio/mpeg")
 
 
 @app.post("api/test/capt")
@@ -249,7 +239,7 @@ async def on_authorization(request):
         await check_permissions(
             request, *request.form.get("permissions_required").split(", ")
         )
-    return text("Account permitted.")
+    return text("Account permitted!")
 
 
 @app.post("api/test/auth/roles/assign")
@@ -260,9 +250,13 @@ async def on_role_assign(request):
         request.form.get("name"),
         request.ctx.session.bearer,
         "Role used for testing.",
-        request.form.get("permissions"),
+        *(
+            request.form.get("permissions").split(", ")
+            if request.form.get("permissions")
+            else []
+        ),
     )
-    return text("Role assigned.")
+    return text("Role assigned!")
 
 
 @app.post("api/test/account")
@@ -270,7 +264,7 @@ async def on_account_creation(request):
     """Quick account creation."""
     account = await Account.create(
         username=request.form.get("username"),
-        email=request.form.get("email").lower(),
+        email=request.form.get("email"),
         password=password_hasher.hash("password"),
         verified=True,
         disabled=False,
@@ -283,8 +277,8 @@ async def on_account_creation(request):
 async def on_oauth_request(request):
     return redirect(
         await oauth_url(
-            google_oauth if request.args.get("type") == "google" else discord_oauth,
-            f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
+            google_oauth,
+            "http://localhost:8000/api/test/oauth/callback",
         )
     )
 
@@ -293,8 +287,8 @@ async def on_oauth_request(request):
 async def on_oauth_callback(request):
     token_info, authentication_session = await oauth_callback(
         request,
-        google_oauth if request.args.get("type") == "google" else discord_oauth,
-        f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
+        google_oauth,
+        "http://localhost:8000/api/test/oauth/callback",
     )
     response = json(
         "OAuth successful.",
@@ -308,11 +302,9 @@ async def on_oauth_callback(request):
 @app.get("api/test/oauth/token")
 async def on_oauth_token(request):
     token_info = await oauth_decode(
-        request,
-        google_oauth if request.args.get("type") == "google" else discord_oauth,
-        str_to_bool(request.args.get("refresh")),
+        request, google_oauth, str_to_bool(request.args.get("refresh"))
     )
-    return json("Access token retrieved.", token_info)
+    return json("Access token retrieved!", token_info)
 
 
 @app.exception(SecurityError)

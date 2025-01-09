@@ -232,7 +232,7 @@ def initialize_oauth(app: Sanic) -> None:
     """
 
     @app.on_response
-    async def oauth_refresh_encoder_middleware(request, response):
+    async def refresh_encoder_middleware(request, response):
         if hasattr(request.ctx, "oauth") and getattr(
             request.ctx.oauth, "is_refresh", False
         ):

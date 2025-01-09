@@ -384,24 +384,45 @@ class AuthorizationTest(TestCase):
             "http://127.0.0.1:8000/api/test/auth/roles/assign",
             data={
                 "name": "AuthTestPerms",
-                "permissions": ["perm1:create,add", "perm2:delete"],
+                "permissions": "perm1:create,update, perm2:delete,retrieve, perm3:*",
             },
         )
         permitted_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
                 "role": "AuthTestPerms",
-                "permissions_required": ["perm1:create", "perm2:*"],
+                "permissions_required": "perm1:create,update, perm3:retrieve",
             },
         )
         assert (
             permitted_authorization_response.status_code == 200
         ), permitted_authorization_response.text
+        permitted_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "AuthTestPerms",
+                "permissions_required": "perm1:retrieve, perm2:delete",
+            },
+        )
+        assert (
+            permitted_authorization_response.status_code == 200
+        ), permitted_authorization_response.text
+
         prohibited_authorization_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/roles",
             data={
                 "role": "AuthTestPerms",
-                "permissions_required": ["perm2:add", "perm1:delete"],
+                "permissions_required": "perm1:create,retrieve",
+            },
+        )
+        assert (
+            prohibited_authorization_response.status_code == 403
+        ), prohibited_authorization_response.text
+        prohibited_authorization_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/auth/roles",
+            data={
+                "role": "AuthTestPerms",
+                "permissions_required": "perm1:delete, perm2:create",
             },
         )
         assert (

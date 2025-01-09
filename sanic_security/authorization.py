@@ -1,4 +1,5 @@
 import functools
+from fnmatch import fnmatch
 
 from sanic.log import logger
 from sanic.request import Request
@@ -64,47 +65,37 @@ async def check_permissions(
         raise AnonymousError
     roles = await authentication_session.bearer.roles.filter(deleted=False).all()
     for role in roles:
-        for role_permission, required_permission in zip(
-            role.permissions, required_permissions
-        ):
-            if check_wildcard(required_permission, role_permission):
-                request.ctx.session = authentication_session
-                return authentication_session
+        for role_permission in role.permissions:
+            for required_permission in required_permissions:
+                if check_wildcard(role_permission, required_permission):
+                    request.ctx.session = authentication_session
+                    return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action."
     )
     raise AuthorizationError("Insufficient permissions required for this action.")
 
 
-def check_wildcard(input_string: str, pattern: str):
+def check_wildcard(wildcard: str, pattern: str):
     """
-    Evaluates if the input matches the pattern considering wildcards (`*`) and comma-separated options in the `pattern`.
+    Evaluates if the input matches the pattern considering wildcards (`*`) and comma-separated options in the pattern.
 
     Args:
-        input_string (str): A wildcard string (e.g., "a:b:c").
+        wildcard (str): A wildcard string (e.g., "a:b:c").
         pattern (str): A wildcard pattern optional (`*`) or comma-separated values to match against (e.g., "a:b,c:*").
 
     Returns:
         is_match
     """
-    input_parts = input_string.split(":")
-    pattern_parts = pattern.split(":")
-    input_len = len(input_parts)
-
+    wildcard_parts = [set(part.split(",")) for part in wildcard.split(":")]
+    pattern_parts = [set(part.split(",")) for part in pattern.split(":")]
     for i, pattern_part in enumerate(pattern_parts):
-        if i >= input_len:
-            if "*" not in pattern_part:
-                return False
-            continue
-        pattern_subparts = set(pattern_part.split(","))
-        if "*" not in pattern_subparts and input_parts[i] not in pattern_subparts:
+        if i >= len(wildcard_parts):
             return False
-
-    if input_len > len(pattern_parts):
-        if "*" not in set(pattern_parts[-1].split(",")):
+        wildcard_part = wildcard_parts[i]
+        if "*" not in wildcard_part and not wildcard_part.issuperset(pattern_part):
             return False
-
-    return True
+    return all("*" in part for part in wildcard_parts[len(pattern_parts) :])
 
 
 async def check_roles(request: Request, *required_roles: str) -> AuthenticationSession:
@@ -162,7 +153,7 @@ async def assign_role(
         name (str):  The name of the role associated with the account.
         account (Account): The account associated with the created role.
         description (str):  The description of the role associated with the account.
-        *permissions (Tuple[str, ...]): The permissions of the role associated with the account. Permissions must in wildcard format.
+        *permissions (Tuple[str, ...]): The permissions of the role associated with the account, must be in wildcard format.
     """
     try:
         role = await Role.filter(name=name).get()

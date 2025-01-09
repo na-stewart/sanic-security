@@ -383,7 +383,9 @@ or you can download/create your own and specify its path in the configuration.
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
     captcha_session = await request_captcha(request)
-    response = raw(captcha_session.get_image())  # Captcha: LJ0F3U
+    response = raw(
+        captcha_session.get_image(), content_type="image/jpeg"
+    )  # Captcha: LJ0F3U
     captcha_session.encode(response)
     return response
 ```
@@ -394,7 +396,9 @@ async def on_captcha_img_request(request):
 @app.get("api/security/captcha/audio")
 async def on_captcha_audio_request(request):
     captcha_session = await request_captcha(request)
-    response = raw(captcha_session.get_audio())  # Captcha: LJ0F3U
+    response = raw(
+        captcha_session.get_audio(), content_type="audio/mpeg"
+    )  # Captcha: LJ0F3U
     captcha_session.encode(response)
     return response
 ```

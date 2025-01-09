@@ -8,7 +8,7 @@ from typing import Union
 import jwt
 from jwt import DecodeError
 from sanic.request import Request
-from sanic.response import HTTPResponse, raw
+from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist, ValidationError
 from tortoise.validators import RegexValidator
@@ -682,12 +682,12 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (list): Permissions of the role. Must in wildcard format (printer:query, dashboard:info,delete).
+        permissions (list[str]): Permissions of the role. Must in wildcard format (printer:query, dashboard:info,delete).
     """
 
     name: str = fields.CharField(unique=True, max_length=255)
     description: str = fields.CharField(max_length=255, null=True)
-    permissions: list = fields.JSONField(null=True)
+    permissions: list[str] = fields.JSONField(null=True)
 
     def validate(self) -> None:
         raise NotImplementedError
