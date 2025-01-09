@@ -1,6 +1,5 @@
 import functools
 import time
-from typing import Literal
 
 import jwt
 from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
@@ -35,40 +34,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-
-async def oauth_url(
-    client: BaseOAuth2,
-    redirect_uri: str = config.OAUTH_REDIRECT,
-    state: str = None,
-    scopes: list[str] = None,
-    code_challenge: str = None,
-    code_challenge_method: Literal["plain", "S256"] = None,
-    **extra_params: str,
-) -> str:
-    """
-    Constructs an authorization URL to prompt the user to authorize the application.
-
-    Args:
-        client (BaseOAuth2): OAuth provider.
-        redirect_uri (str): The URL where the user will be redirected after authorization.
-        state (str): An opaque value used by the client to maintain state between the request and the callback.
-        scopes (list[str]): The scopes to be requested. If not provided, `base_scopes` will be used.
-        code_challenge (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge.
-        code_challenge_method (str): [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) code challenge method.
-        **extra_params (dict[str, str]): Optional extra parameters specific to the service.
-
-    Returns:
-        oauth_redirect
-    """
-    return await client.get_authorization_url(
-        redirect_uri,
-        state,
-        scopes or client.base_scopes,
-        code_challenge,
-        code_challenge_method,
-        extra_params,
-    )
 
 
 async def oauth_callback(

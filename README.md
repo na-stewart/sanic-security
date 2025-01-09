@@ -104,10 +104,10 @@ dictionary.
 For example: 
 
 ```python
-from sanic_security.configuration import config
+from sanic_security.configuration import config as security_config
 
-config.SECRET = "This is a big secret. Shhhhh"
-config["CAPTCHA_FONT"] = "./resources/captcha-font.ttf"
+security_config.SECRET = "This is a big secret. Shhhhh"
+security_config["CAPTCHA_FONT"] = "./resources/captcha-font.ttf"
 ```
 
 You can also use the update() method like on regular dictionaries.
@@ -185,8 +185,9 @@ google_oauth = GoogleOAuth2(
 @app.route("api/security/oauth", methods=["GET", "POST"])
 async def on_oauth_request(request):
     return redirect(
-        await oauth_url(
-            google_oauth, "http://localhost:8000/api/security/oauth/callback"
+        await google_oauth.get_authorization_url(
+            "http://localhost:8000/api/security/oauth/callback",
+            scope=google_oauth.base_scopes,
         )
     )
 ```

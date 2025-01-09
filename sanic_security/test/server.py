@@ -277,9 +277,9 @@ async def on_account_creation(request):
 async def on_oauth_request(request):
     """OAuth request."""
     return redirect(
-        await oauth_url(
-            google_oauth,
+        await google_oauth.get_authorization_url(
             "http://localhost:8000/api/test/oauth/callback",
+            scope=google_oauth.base_scopes,
         )
     )
 
