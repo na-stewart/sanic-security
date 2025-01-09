@@ -203,7 +203,7 @@ async def on_oauth_callback(request):
         "Authorization successful.",
         {"token_info": token_info, "auth_session": authentication_session.json},
     )
-    oauth_encode(response, discord_oauth, token_info)
+    oauth_encode(response, token_info)
     authentication_session.encode(response)
     return response
 ```

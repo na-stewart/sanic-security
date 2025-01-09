@@ -1,11 +1,11 @@
 import functools
 import time
-from typing import Literal, Union
+from typing import Literal
 
 import jwt
 from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
 from jwt import DecodeError
-from sanic import Request, HTTPResponse, redirect, Sanic
+from sanic import Request, HTTPResponse, Sanic
 from sanic.log import logger
 from tortoise.exceptions import IntegrityError, DoesNotExist
 
@@ -129,18 +129,17 @@ async def on_oauth_callback(
 
 
 def oauth_encode(
-    response: HTTPResponse, client: Union[BaseOAuth2, str], token_info: dict
+    response: HTTPResponse, token_info: dict
 ) -> None:
     """
     Transforms OAuth access token into JWT and then is stored in a cookie.
 
     Args:
         response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
-        client (Union[BaseOAuth2, str]): OAuth provider.
         token_info (dict): OAuth access token.
     """
     response.cookies.add_cookie(
-        f"{config.SESSION_PREFIX}_{(client if isinstance(client, str) else client.__class__.__name__)[:7].lower()}",
+        f"{config.SESSION_PREFIX}_oauth",
         str(
             jwt.encode(
                 token_info,
@@ -176,7 +175,7 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
     try:
         token_info = jwt.decode(
             request.cookies.get(
-                f"{config.SESSION_PREFIX}_{client.__class__.__name__[:7].lower()}",
+                f"{config.SESSION_PREFIX}_oauth",
             ),
             config.PUBLIC_SECRET or config.SECRET,
             config.SESSION_ENCODING_ALGORITHM,
@@ -184,7 +183,6 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
         if time.time() > token_info["expires_at"] or refresh:
             token_info = await client.refresh_token(token_info["refresh_token"])
             token_info["is_refresh"] = True
-            token_info["client"] = client.__class__.__name__
             if "expires_at" not in token_info:
                 token_info["expires_at"] = time.time() + token_info["expires_in"]
         request.ctx.oauth = token_info
@@ -240,8 +238,4 @@ def initialize_oauth(app: Sanic) -> None:
         if hasattr(request.ctx, "oauth") and getattr(
             request.ctx.oauth, "is_refresh", False
         ):
-            oauth_encode(
-                response,
-                request.ctx.oauth["client"],
-                request.ctx.oauth,
-            )
+            oauth_encode(response, request.ctx.oauth)
