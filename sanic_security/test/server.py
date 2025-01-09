@@ -59,7 +59,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-app = Sanic("sanic-security-test")
+app = Sanic("tests")
 google_oauth = GoogleOAuth2(config.OAUTH_CLIENT, config.OAUTH_SECRET)
 
 
@@ -275,6 +275,7 @@ async def on_account_creation(request):
 
 @app.get("api/test/oauth")
 async def on_oauth_request(request):
+    """OAuth request."""
     return redirect(
         await oauth_url(
             google_oauth,
@@ -285,6 +286,7 @@ async def on_oauth_request(request):
 
 @app.get("api/test/oauth/callback")
 async def on_oauth_callback(request):
+    """OAuth callback."""
     token_info, authentication_session = await oauth_callback(
         request,
         google_oauth,
@@ -301,6 +303,7 @@ async def on_oauth_callback(request):
 
 @app.get("api/test/oauth/token")
 async def on_oauth_token(request):
+    """OAuth token retrieval."""
     token_info = await oauth_decode(
         request, google_oauth, str_to_bool(request.args.get("refresh"))
     )

@@ -47,7 +47,7 @@ async def oauth_url(
     **extra_params: str,
 ) -> str:
     """
-    Constructs the authorization URL and returns a redirect response to prompt the user to authorize the application.
+    Constructs an authorization URL to prompt the user to authorize the application.
 
     Args:
         client (BaseOAuth2): OAuth provider.
