@@ -28,6 +28,7 @@ from sanic_security.oauth import (
     initialize_oauth,
     on_oauth_callback,
     oauth_url,
+    requires_oauth,
 )
 from sanic_security.utils import json
 from sanic_security.verification import (
@@ -294,12 +295,21 @@ async def on_oauth_callback(request):
         f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
     )
     response = json(
-        "OAuth successful and token cached.",
+        "OAuth successful.",
         {"token_info": token_info, "auth_session": authentication_session.json},
     )
     oauth_encode(response, discord_oauth, token_info)
     authentication_session.encode(response)
     return response
+
+
+@app.get("api/test/oauth/token")
+@requires_oauth(google_oauth)
+async def on_oauth_token(request):
+    return json(
+        "Access token retrieved.",
+        request.ctx.oauth,
+    )
 
 
 @app.exception(SecurityError)

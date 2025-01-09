@@ -73,7 +73,7 @@ pip3 install sanic-security
 
 * Install the Sanic Security pip package with the `cryptography` dependency included.
 
-If you are planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
+If you're planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
 the public secret and private secret), you will need to install the `cryptography` library. This can be installed explicitly, or 
 as an extra requirement.
 
@@ -83,7 +83,7 @@ pip3 install sanic-security[crypto]
 
 * Install the Sanic Security pip package with the `httpx-oauth` dependency included.
 
-If you are planning on utilizing OAuth, you will need to install the `httpx-oauth` library. This can be installed explicitly, or 
+If you're planning on utilizing OAuth, you will need to install the `httpx-oauth` library. This can be installed explicitly, or 
 as an extra requirement.
 
 ```shell
@@ -159,12 +159,78 @@ The tables in the below examples represent example [request form-data](https://s
 
 ## OAuth
 
-OAuth2 provides users with a familiar and streamlined login experience by allowing them to authenticate using their existing credentials from other trusted services (such as Google, Facebook, Apple, or Microsoft) instead of creating a new account or remembering additional login details.
+OAuth2 provides users with a familiar login experience by having them login using their existing credentials from other trusted services (such as Google, Discord, etc.) instead of registering a new account.
 
-This feature has been seamlessly integrated to complement existing authentication protocols by linking a Sanic Security account with the user's OAuth credentials. As a result users can effortlessly leverage all of Sanic Security's capabilities, including robust account management and session handling.
+This feature is designed to complement existing authentication protocols by linking a Sanic Security account with the user's OAuth credentials. As a result, developers can leverage all of Sanic Security's capabilities including robust session handling and account management.
 
-* 
+* Define OAuth clients
 
+You can [utilize various OAuth clients](https://frankie567.github.io/httpx-oauth/reference/httpx_oauth.clients/) based on your needs or [customize one](https://frankie567.github.io/httpx-oauth/usage/).
+ID and secret should be stored and referenced via configuration.
+
+```python
+discord_oauth = DiscordOAuth2(
+    "1325594509043830895",
+    "WNMYbkDJjGlC0ej60qM-50tC9mMy0EXa",
+)
+google_oauth = GoogleOAuth2(
+    "480512993828-e2e9tqtl2b8or62hc4l7hpoh478s3ni1.apps.googleusercontent.com",
+    "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",
+)
+```
+
+* Redirect to authorization URL
+
+```python
+@app.route("api/security/oauth", methods=["GET", "POST"])
+async def on_oauth_request(request):
+    return redirect(
+        await oauth_url(
+            google_oauth, f"http://localhost:8000/api/security/oauth/callback"
+        )
+    )
+```
+
+* Handle OAuth callback
+
+```python
+@app.get("api/security/oauth/callback")
+async def on_oauth_callback(request):
+    token_info, authentication_session = await on_oauth_callback(
+        request, google_oauth, f"http://localhost:8000/api/security/oauth/callback"
+    )
+    response = json(
+        "Authorization successful.",
+        {"token_info": token_info, "auth_session": authentication_session.json},
+    )
+    oauth_encode(response, discord_oauth, token_info)
+    authentication_session.encode(response)
+    return response
+```
+
+* Get access token 
+
+```python
+@app.get("api/security/oauth/token")
+async def on_oauth_token(request):
+    token_info = await decode_oauth(request, google_oauth)
+    return json(
+        "Access token retrieved.",
+        token_info,
+    )
+```
+
+* Requires access token (This method is not called directly and instead used as a decorator)
+
+```python
+@app.get("api/security/oauth/token")
+@requires_oauth(google_oauth)
+async def on_oauth_token(request):
+    return json(
+        "Access token retrieved.",
+        request.ctx.oauth,
+    )
+```
 
 ## Authentication
   
