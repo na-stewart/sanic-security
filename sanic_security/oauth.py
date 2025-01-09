@@ -71,7 +71,7 @@ async def oauth_url(
     )
 
 
-async def on_oauth_callback(
+async def oauth_callback(
     request: Request,
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
@@ -128,9 +128,7 @@ async def on_oauth_callback(
         )
 
 
-def oauth_encode(
-    response: HTTPResponse, token_info: dict
-) -> None:
+def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     """
     Transforms OAuth access token into JWT and then is stored in a cookie.
 
@@ -234,7 +232,7 @@ def initialize_oauth(app: Sanic) -> None:
     """
 
     @app.on_response
-    async def refresh_encoder_middleware(request, response):
+    async def oauth_refresh_encoder_middleware(request, response):
         if hasattr(request.ctx, "oauth") and getattr(
             request.ctx.oauth, "is_refresh", False
         ):

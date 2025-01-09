@@ -26,11 +26,11 @@ from sanic_security.models import Account, CaptchaSession, AuthenticationSession
 from sanic_security.oauth import (
     oauth_encode,
     initialize_oauth,
-    on_oauth_callback,
     oauth_url,
-    requires_oauth,
+    oauth_callback,
+    oauth_decode,
 )
-from sanic_security.utils import json
+from sanic_security.utils import json, str_to_bool
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
@@ -78,8 +78,8 @@ async def on_register(request):
     """Register an account with email and password."""
     account = await register(
         request,
-        verified=request.form.get("verified") == "true",
-        disabled=request.form.get("disabled") == "true",
+        verified=str_to_bool(request.form.get("verified")),
+        disabled=str_to_bool(request.form.get("disabled")),
     )
     if not account.verified:
         two_step_session = await request_two_step_verification(request, account)
@@ -104,11 +104,13 @@ async def on_verify(request):
 @app.post("api/test/auth/login")
 async def on_login(request):
     """Login to an account with an email and password."""
-    two_factor_authentication = request.args.get("two-factor-authentication") == "true"
     authentication_session = await login(
-        request, require_second_factor=two_factor_authentication
+        request,
+        require_second_factor=str_to_bool(
+            request.args.get("two-factor-authentication")
+        ),
     )
-    if two_factor_authentication:
+    if str_to_bool(request.args.get("two-factor-authentication")):
         two_step_session = await request_two_step_verification(
             request, authentication_session.bearer
         )
@@ -289,7 +291,7 @@ async def on_oauth_request(request):
 
 @app.get("api/test/oauth/callback")
 async def on_oauth_callback(request):
-    token_info, authentication_session = await on_oauth_callback(
+    token_info, authentication_session = await oauth_callback(
         request,
         google_oauth if request.args.get("type") == "google" else discord_oauth,
         f"http://localhost:8000/api/test/oauth/callback?type={request.args.get("type")}",
@@ -304,12 +306,13 @@ async def on_oauth_callback(request):
 
 
 @app.get("api/test/oauth/token")
-@requires_oauth(google_oauth)
 async def on_oauth_token(request):
-    return json(
-        "Access token retrieved.",
-        request.ctx.oauth,
+    token_info = await oauth_decode(
+        request,
+        google_oauth if request.args.get("type") == "google" else discord_oauth,
+        str_to_bool(request.args.get("refresh")),
     )
+    return json("Access token retrieved.", token_info)
 
 
 @app.exception(SecurityError)

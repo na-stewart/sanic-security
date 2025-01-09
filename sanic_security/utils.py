@@ -7,6 +7,7 @@ from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
 from sanic.request import Request
 from sanic.response import json as sanic_json, HTTPResponse
+from sanic.utils import str_to_bool as sanic_str_to_bool
 
 from sanic_security.configuration import config
 
@@ -96,6 +97,11 @@ def get_expiration_date(seconds: int) -> datetime.datetime:
         if seconds > 0
         else None
     )
+
+
+def str_to_bool(val: str) -> bool:
+    """Returns false if val is None instead of raising ValueError (Sanic's implementation)."""
+    return sanic_str_to_bool(val) if val else False
 
 
 def json(message: str, data, status_code: int = 200) -> HTTPResponse:

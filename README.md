@@ -159,7 +159,7 @@ The tables in the below examples represent example [request form-data](https://s
 
 ## OAuth
 
-OAuth2 provides users with a familiar login experience by having them login using their existing credentials from other trusted services (such as Google, Discord, etc.) instead of registering a new account.
+OAuth2 provides users with a familiar experience by having them register/login using their existing credentials from other trusted services (such as Google, Discord, etc.).
 
 This feature is designed to complement existing authentication protocols by linking a Sanic Security account with the user's OAuth credentials. As a result, developers can leverage all of Sanic Security's capabilities including robust session handling and account management.
 
@@ -186,7 +186,7 @@ google_oauth = GoogleOAuth2(
 async def on_oauth_request(request):
     return redirect(
         await oauth_url(
-            google_oauth, f"http://localhost:8000/api/security/oauth/callback"
+            google_oauth, "http://localhost:8000/api/security/oauth/callback"
         )
     )
 ```
@@ -196,8 +196,8 @@ async def on_oauth_request(request):
 ```python
 @app.get("api/security/oauth/callback")
 async def on_oauth_callback(request):
-    token_info, authentication_session = await on_oauth_callback(
-        request, google_oauth, f"http://localhost:8000/api/security/oauth/callback"
+    token_info, authentication_session = await oauth_callback(
+        request, google_oauth, "http://localhost:8000/api/security/oauth/callback"
     )
     response = json(
         "Authorization successful.",
