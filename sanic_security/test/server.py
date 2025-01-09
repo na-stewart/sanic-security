@@ -24,7 +24,6 @@ from sanic_security.models import Account, CaptchaSession, AuthenticationSession
 from sanic_security.oauth import (
     oauth_encode,
     initialize_oauth,
-    oauth_url,
     oauth_callback,
     oauth_decode,
 )
