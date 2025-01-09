@@ -112,6 +112,7 @@ async def oauth_callback(
                 username=email.split("@")[0],
                 password="",
                 oauth_id=oauth_id,
+                verified=True,
             )
         authentication_session = await AuthenticationSession.new(
             request,
