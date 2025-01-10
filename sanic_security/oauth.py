@@ -58,7 +58,7 @@ async def oauth_callback(
         GetIdEmailError
 
     Returns:
-        oauth_redirect
+        token_info, authentication_session
     """
     token_info = await client.get_access_token(
         request.args.get("code"),
