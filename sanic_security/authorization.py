@@ -77,7 +77,7 @@ async def check_permissions(
 
 def check_wildcard(wildcard: str, pattern: str):
     """
-    Evaluates if the input matches the pattern considering wildcards (`*`) and comma-separated options in the pattern.
+    Evaluates if the wildcard matches the pattern.
 
     Args:
         wildcard (str): A wildcard string (e.g., "a:b:c").
@@ -146,7 +146,7 @@ async def assign_role(
     *permissions: str,
 ) -> Role:
     """
-    Easy account role assignment. Role being assigned to an account will be created if it doesn't exist.
+    Easy account role assignment, role being assigned to an account will be created if it doesn't exist.
 
     Args:
         name (str):  The name of the role associated with the account.

@@ -305,17 +305,15 @@ async def on_oauth_callback(request):
 @app.get("api/test/oauth/token")
 async def on_oauth_token(request):
     """OAuth token retrieval."""
-    token_info = await oauth_decode(
-        request, google_oauth, str_to_bool(request.args.get("refresh"))
-    )
+    token_info = await oauth_decode(request, google_oauth)
     return json("Access token retrieved!", token_info)
 
 
 @app.route("api/test/oauth/revoke", methods=["GET", "POST"])
 async def on_oauth_revoke(request):
     """OAuth token revocation."""
-    await oauth_revoke(request, google_oauth)
-    return json("Access token revoked!", None)
+    token_info = await oauth_revoke(request, google_oauth)
+    return json("Access token revoked!", token_info)
 
 
 @app.exception(SecurityError)

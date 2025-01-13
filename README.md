@@ -159,7 +159,7 @@ The tables in the below examples represent example [request form-data](https://s
 
 ## OAuth
 
-OAuth2 provides users with a familiar experience by having them register/login using their existing credentials from other trusted services (such as Google, Discord, etc.).
+Provides users with a familiar experience by having them register/login using their existing credentials from other trusted services (such as Google, Discord, etc.).
 
 This feature is designed to complement existing protocols by linking a Sanic Security account with the user's OAuth credentials. As a result, developers can leverage all of Sanic Security's capabilities including robust session handling and account management.
 
@@ -397,12 +397,8 @@ async def on_captcha_img_request(request):
 ```python
 @app.get("api/security/captcha/audio")
 async def on_captcha_audio_request(request):
-    captcha_session = await request_captcha(request)
-    response = raw(
-        captcha_session.get_audio(), content_type="audio/mpeg"
-    )  # Captcha: LJ0F3U
-    captcha_session.encode(response)
-    return response
+    captcha_session = await CaptchaSession.decode(request)
+    return raw(captcha_session.get_audio(), content_type="audio/mpeg")
 ```
 
 * Attempt CAPTCHA

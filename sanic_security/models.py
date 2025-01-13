@@ -109,7 +109,7 @@ class Account(BaseModel):
         email (str): Private identifier and can be used for verification.
         phone (str): Mobile phone number with country code included and can be used for verification. Can be null or empty.
         password (str): Password of account for user protection, must be hashed via Argon2.
-        oauth_id (str): Identifier associated with an OAuth 2.0 authorization flow.
+        oauth_id (str): Identifier associated with an OAuth authorization flow.
         disabled (bool): Renders the account unusable but available.
         verified (bool): Renders the account unusable until verified via two-step verification or other method.
         roles (ManyToManyRelation[Role]): Roles associated with this account.
@@ -301,7 +301,7 @@ class Session(BaseModel):
     Attributes:
         expiration_date (datetime): Date and time the session expires and can no longer be used.
         active (bool): Determines if the session can be used.
-        ip (str): IP address of client creating session.
+        ip (str): IP address of client instantiating session.
         bearer (ForeignKeyRelation[Account]): Account associated with this session.
     """
 
@@ -639,7 +639,7 @@ class AuthenticationSession(Session):
         Returns:
             session
         """
-        if not is_expired(self.refresh_expiration_date):
+        if self.active and not is_expired(self.refresh_expiration_date):
             self.active = False
             await self.save(update_fields=["active"])
             logging.info(
@@ -682,7 +682,7 @@ class Role(BaseModel):
     Attributes:
         name (str): Name of the role.
         description (str): Description of the role.
-        permissions (list[str]): Permissions of the role. Must in wildcard format (printer:query, dashboard:info,delete).
+        permissions (list[str]): Permissions of the role, must in wildcard format (printer:query, dashboard:info,delete).
     """
 
     name: str = fields.CharField(unique=True, max_length=255)

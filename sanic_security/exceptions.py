@@ -212,5 +212,5 @@ class AnonymousError(AuthorizationError):
 
 class AuditWarning(Warning):
     """
-    Raised when configuration is invalid.
+    Raised when configuration may be dangerous.
     """

@@ -179,7 +179,7 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
         SecondFactorFulfilledError
 
     Returns:
-         authentication_Session
+         authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
     if not authentication_session.requires_second_factor:
@@ -197,8 +197,8 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
 
 async def authenticate(request: Request) -> AuthenticationSession:
     """
-    Validates client's authentication session and account. New/Refreshed session automatically returned
-    if client's session expired during authentication, requires encoding.
+    Validates client's authentication session and account. New/Refreshed session automatically returned if client's
+    session expired during authentication.
 
     Args:
         request (Request): Sanic request parameter.
@@ -229,8 +229,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
 
 def requires_authentication(arg=None):
     """
-    Validates client's authentication session and account. New/Refreshed session automatically returned
-    if client's session expired during authentication, requires encoding.
+    Validates client's authentication session and account. New/Refreshed session automatically returned if client's
+    session expired during authentication.
 
     Example:
         This method is not called directly and instead used as a decorator:
