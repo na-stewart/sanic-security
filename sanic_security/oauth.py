@@ -134,7 +134,9 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
 
 
 async def oauth_revoke(
-    request: Request, response: HTTPResponse, client: BaseOAuth2,
+    request: Request,
+    response: HTTPResponse,
+    client: BaseOAuth2,
 ) -> None:
     """
     Revokes the client's access token.
