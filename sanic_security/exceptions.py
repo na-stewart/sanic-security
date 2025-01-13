@@ -69,6 +69,15 @@ class CredentialsError(SecurityError):
         super().__init__(message, code)
 
 
+class OAuthError(SecurityError):
+    """
+    Raised when an error occurs during OAuth flow.
+    """
+
+    def __init__(self, message, code=401):
+        super().__init__(message, code)
+
+
 class AccountError(SecurityError):
     """
     Base account error that all other account errors derive from.

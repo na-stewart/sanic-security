@@ -2,14 +2,25 @@ import functools
 import time
 
 import jwt
-from httpx_oauth.oauth2 import BaseOAuth2, RefreshTokenError
+from httpx_oauth.exceptions import GetIdEmailError
+from httpx_oauth.oauth2 import (
+    BaseOAuth2,
+    RefreshTokenError,
+    RevokeTokenError,
+    RevokeTokenNotSupportedError,
+    GetAccessTokenError,
+)
 from jwt import DecodeError
 from sanic import Request, HTTPResponse, Sanic
 from sanic.log import logger
 from tortoise.exceptions import IntegrityError, DoesNotExist
 
 from sanic_security.configuration import config
-from sanic_security.exceptions import JWTDecodeError, ExpiredError, CredentialsError
+from sanic_security.exceptions import (
+    JWTDecodeError,
+    CredentialsError,
+    OAuthError,
+)
 from sanic_security.models import Account, AuthenticationSession
 from sanic_security.utils import get_ip
 
@@ -54,21 +65,20 @@ async def oauth_callback(
 
     Raises:
         CredentialsError
-        GetAccessTokenError
-        GetIdEmailError
+        OAuthError
 
     Returns:
         token_info, authentication_session
     """
-    token_info = await client.get_access_token(
-        request.args.get("code"),
-        redirect_uri,
-        code_verifier,
-    )
-    if "expires_at" not in token_info:
-        token_info["expires_at"] = time.time() + token_info["expires_in"]
-    oauth_id, email = await client.get_id_email(token_info["access_token"])
     try:
+        token_info = await client.get_access_token(
+            request.args.get("code"),
+            redirect_uri,
+            code_verifier,
+        )
+        if "expires_at" not in token_info:
+            token_info["expires_at"] = time.time() + token_info["expires_in"]
+        oauth_id, email = await client.get_id_email(token_info["access_token"])
         try:
             account = await Account.get(oauth_id=oauth_id)
         except DoesNotExist:
@@ -92,11 +102,15 @@ async def oauth_callback(
             f"Account may not be linked to this OAuth provider if it already exists.",
             409,
         )
+    except GetAccessTokenError as e:
+        raise OAuthError(f"Failed to retrieve access token: {e.response.text}")
+    except GetIdEmailError as e:
+        raise OAuthError(f"Failed to retrieve id and email: {e.response.text}")
 
 
 def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     """
-    Transforms OAuth access token into JWT and then is stored in a cookie.
+    Transforms access token into JWT and then is stored in a cookie.
 
     Args:
         response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
@@ -119,9 +133,37 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     )
 
 
+async def oauth_revoke(
+    request: Request, client: BaseOAuth2, response: HTTPResponse = None
+) -> None:
+    """
+    Revokes the client's access token.
+
+    Args:
+        request (Request): Sanic request parameter.
+        client (BaseOAuth2): OAuth provider.
+        response (HTTPResponse): Sanic response used as fallback when revoking access token is unsupported.
+
+    Raises:
+        OAuthError
+        ValueError
+    """
+    try:
+        token_info = await oauth_decode(request, client)
+        await client.revoke_token(token_info.get("access_token"))
+    except RevokeTokenNotSupportedError:
+        if not response:
+            raise ValueError(
+                "Response parameter must be assigned when revoking access token is unsupported."
+            )
+        response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")
+    except RevokeTokenError as e:
+        raise OAuthError(f"Failed to revoke access token: {e.response.text}")
+
+
 async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> dict:
     """
-    Decodes OAuth JWT token from client cookie into an access token.
+    Decodes JWT token from client cookie into an access token.
 
     Args:
         request (Request): Sanic request parameter.
@@ -129,9 +171,7 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
         refresh (bool): Ensures that the decoded access token is refreshed.
 
     Raises:
-        JWTDecodeError
-        ExpiredError
-        RefreshTokenNotSupportedError
+        OAuthError
 
     Returns:
         token_info
@@ -145,21 +185,21 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=False) -> d
             config.SESSION_ENCODING_ALGORITHM,
         )
         if time.time() > token_info["expires_at"] or refresh:
-            token_info = await client.refresh_token(token_info["refresh_token"])
+            token_info = await client.refresh_token(token_info.get("refresh_token"))
             token_info["is_refresh"] = True
             if "expires_at" not in token_info:
                 token_info["expires_at"] = time.time() + token_info["expires_in"]
         request.ctx.oauth = token_info
         return token_info
-    except RefreshTokenError:
-        raise ExpiredError
+    except RefreshTokenError as e:
+        raise OAuthError(f"Failed to refresh access token: {e.response.text}")
     except DecodeError:
-        raise JWTDecodeError
+        raise OAuthError(f"Access token invalid, not provided, or expired.", 400)
 
 
 def requires_oauth(client: BaseOAuth2):
     """
-    Decodes OAuth JWT token from client cookie into an access token.
+    Decodes JWT token from client cookie into an access token.
 
     Args:
         client (BaseOAuth2): OAuth provider.
@@ -173,9 +213,7 @@ def requires_oauth(client: BaseOAuth2):
                 return text('OAuth access token retrieved!')
 
     Raises:
-        JWTDecodeError
-        ExpiredError
-        RefreshTokenNotSupportedError
+        OAuthError
     """
 
     def decorator(func):

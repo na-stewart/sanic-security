@@ -26,6 +26,7 @@ from sanic_security.oauth import (
     initialize_oauth,
     oauth_callback,
     oauth_decode,
+    oauth_revoke,
 )
 from sanic_security.utils import json, str_to_bool, password_hasher
 from sanic_security.verification import (
@@ -141,6 +142,7 @@ async def on_logout(request):
     """Logout of currently logged in account."""
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.json)
+    await oauth_revoke(request, google_oauth)
     return response
 
 
@@ -272,7 +274,7 @@ async def on_account_creation(request):
     return response
 
 
-@app.get("api/test/oauth")
+@app.route("api/test/oauth", methods=["GET", "POST"])
 async def on_oauth_request(request):
     """OAuth request."""
     return redirect(
@@ -307,6 +309,13 @@ async def on_oauth_token(request):
         request, google_oauth, str_to_bool(request.args.get("refresh"))
     )
     return json("Access token retrieved!", token_info)
+
+
+@app.route("api/test/oauth/revoke", methods=["GET", "POST"])
+async def on_oauth_revoke(request):
+    """OAuth token revocation."""
+    await oauth_revoke(request, google_oauth)
+    return json("Access token revoked!", None)
 
 
 @app.exception(SecurityError)

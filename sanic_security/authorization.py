@@ -177,7 +177,7 @@ def requires_permission(*required_permissions: str):
         This method is not called directly and instead used as a decorator:
 
             @app.post("api/auth/perms")
-            @require_permissions("admin:update", "employee:add")
+            @requires_permission("admin:update", "employee:add")
             async def on_require_perms(request):
                 return text("Account permitted.")
 
@@ -215,7 +215,7 @@ def requires_role(*required_roles: str):
         This method is not called directly and instead used as a decorator:
 
             @app.post("api/auth/roles")
-            @require_roles("Admin", "Moderator")
+            @requires_role("Admin", "Moderator")
             async def on_require_roles(request):
                 return text("Account permitted")
 
