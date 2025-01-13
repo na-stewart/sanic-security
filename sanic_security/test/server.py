@@ -318,8 +318,8 @@ async def on_oauth_token(request):
 async def on_oauth_revoke(request):
     """OAuth token revocation."""
     response = json("Access token revoked!", None)
-    token_info = await oauth_revoke(request, response, google_oauth)
-    return
+    await oauth_revoke(request, response, google_oauth)
+    return response
 
 
 @app.exception(SecurityError)

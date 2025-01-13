@@ -346,8 +346,9 @@ async def on_anonymous_login(request):
 @app.post("api/security/logout")
 async def on_logout(request):
     authentication_session = await logout(request)
-    await oauth_revoke(request, google_oauth)  # Remove if not utilizing OAuth
-    return json("Logout successful!", authentication_session.json)
+    response = json("Logout successful!", authentication_session.json)
+    await oauth_revoke(request, response, google_oauth)  # Remove if not utilizing OAuth
+    return response
 ```
 
 * Authenticate
