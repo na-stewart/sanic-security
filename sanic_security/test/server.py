@@ -143,7 +143,7 @@ async def on_logout(request):
     """Logout of currently logged in account."""
     authentication_session = await logout(request)
     response = json("Logout successful!", authentication_session.json)
-    await oauth_revoke(request, google_oauth)
+    await oauth_revoke(request, response, google_oauth)
     return response
 
 
@@ -174,7 +174,7 @@ async def on_authentication_expire(request):
     return json("Authentication expired!", request.ctx.session.json)
 
 
-@app.post("api/test/auth/associated")
+@app.get("api/test/auth/associated")
 @requires_authentication
 async def on_get_associated_authentication_sessions(request):
     """Retrieves authentication sessions associated with logged in account."""

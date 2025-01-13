@@ -509,7 +509,7 @@ class MiscTest(TestCase):
             auth=("get_associated_sessions@misc.test", "password"),
         )
         assert login_response.status_code == 200, login_response.text
-        retrieve_associated_response = self.client.post(
+        retrieve_associated_response = self.client.get(
             "http://127.0.0.1:8000/api/test/auth/associated"
         )
         assert (
