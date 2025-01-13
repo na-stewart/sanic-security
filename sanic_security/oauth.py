@@ -134,15 +134,15 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
 
 
 async def oauth_revoke(
-    request: Request, client: BaseOAuth2, response: HTTPResponse = None
+    request: Request, response: HTTPResponse, client: BaseOAuth2,
 ) -> None:
     """
     Revokes the client's access token.
 
     Args:
         request (Request): Sanic request parameter.
-        client (BaseOAuth2): OAuth provider.
         response (HTTPResponse): Sanic response used to delete the client's JWT cookie.
+        client (BaseOAuth2): OAuth provider.
 
     Raises:
         OAuthError

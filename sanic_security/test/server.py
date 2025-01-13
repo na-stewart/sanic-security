@@ -317,8 +317,8 @@ async def on_oauth_token(request):
 @app.route("api/test/oauth/revoke", methods=["GET", "POST"])
 async def on_oauth_revoke(request):
     """OAuth token revocation."""
-    response = json("Access token revoked!", token_info)
-    token_info = await oauth_revoke(request, google_oauth, response)
+    response = json("Access token revoked!", None)
+    token_info = await oauth_revoke(request, response, google_oauth)
     return
 
 
