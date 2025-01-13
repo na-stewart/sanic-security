@@ -1,5 +1,6 @@
 import functools
 import time
+from contextlib import suppress
 
 import jwt
 from httpx_oauth.exceptions import GetIdEmailError
@@ -134,34 +135,26 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
 
 async def oauth_revoke(
     request: Request, client: BaseOAuth2, response: HTTPResponse = None
-) -> dict:
+) -> None:
     """
     Revokes the client's access token.
 
     Args:
         request (Request): Sanic request parameter.
         client (BaseOAuth2): OAuth provider.
-        response (HTTPResponse): Sanic response used as fallback when revoking access token is unsupported.
+        response (HTTPResponse): Sanic response used to delete the client's JWT cookie.
 
     Raises:
         OAuthError
-        ValueError
-
-    Returns:
-        token_info
     """
-    token_info = await oauth_decode(request, client, False)
-    try:
-        await client.revoke_token(token_info.get("access_token"))
-    except RevokeTokenNotSupportedError:
-        if not response:
-            raise ValueError(
-                "Response parameter must be assigned when revoking access token is unsupported."
-            )
-        response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")
-    except RevokeTokenError as e:
-        raise OAuthError(f"Failed to revoke access token: {e.response.text}")
-    return token_info
+    if request.cookies.get(f"{config.SESSION_PREFIX}_oauth"):
+        try:
+            token_info = await oauth_decode(request, client, False)
+            with suppress(RevokeTokenNotSupportedError):
+                await client.revoke_token(token_info.get("access_token"))
+            response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")
+        except RevokeTokenError as e:
+            raise OAuthError(f"Failed to revoke access token {e.response.text}")
 
 
 async def oauth_decode(request: Request, client: BaseOAuth2, refresh=True) -> dict:
