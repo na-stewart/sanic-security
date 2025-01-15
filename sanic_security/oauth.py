@@ -149,7 +149,9 @@ async def oauth_revoke(request: Request, client: BaseOAuth2) -> dict:
             token_info = await oauth_decode(request, client, False)
             request.ctx.oauth["revoked"] = True
             with suppress(RevokeTokenNotSupportedError):
-                await client.revoke_token(token_info.get("access_token"), "access_token")
+                await client.revoke_token(
+                    token_info.get("access_token"), "access_token"
+                )
             return token_info
         except RevokeTokenError as e:
             raise OAuthError(f"Failed to revoke access token {e.response.text}")
