@@ -538,7 +538,7 @@ async def on_check_perms(request):
 @app.post("api/security/perms")
 @requires_permission("channels:view", "voice:*")
 async def on_check_perms(request):
-    return json("Account is authorized.", request.ctx.session)
+    return json("Account is authorized.", request.ctx.session.json)
 ```
 
 * Check Roles
@@ -556,7 +556,7 @@ async def on_check_roles(request):
 @app.post("api/security/roles")
 @requires_role("Chat Room Moderator")
 async def on_check_roles(request):
-    return json("Account is authorized.", request.ctx.session)
+    return json("Account is authorized.", request.ctx.session.json)
 ```
 
 ## Testing
