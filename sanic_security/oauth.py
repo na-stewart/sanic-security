@@ -235,5 +235,4 @@ def initialize_oauth(app: Sanic) -> None:
             if request.ctx.oauth.get("is_refresh"):
                 oauth_encode(response, request.ctx.oauth)
             elif request.ctx.oauth.get("revoked"):
-                print("revoked.")
                 response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")
