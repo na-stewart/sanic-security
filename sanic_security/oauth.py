@@ -133,17 +133,12 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     )
 
 
-async def oauth_revoke(
-    request: Request,
-    response: HTTPResponse,
-    client: BaseOAuth2,
-) -> None:
+async def oauth_revoke(request: Request, client: BaseOAuth2) -> dict:
     """
     Revokes the client's access token.
 
     Args:
         request (Request): Sanic request parameter.
-        response (HTTPResponse): Sanic response used to delete the client's JWT cookie.
         client (BaseOAuth2): OAuth provider.
 
     Raises:
@@ -152,9 +147,10 @@ async def oauth_revoke(
     if request.cookies.get(f"{config.SESSION_PREFIX}_oauth"):
         try:
             token_info = await oauth_decode(request, client, False)
+            request.ctx.oauth["revoked"] = True
             with suppress(RevokeTokenNotSupportedError):
                 await client.revoke_token(token_info.get("access_token"))
-            response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")
+            return token_info
         except RevokeTokenError as e:
             raise OAuthError(f"Failed to revoke access token {e.response.text}")
 
@@ -227,15 +223,17 @@ def requires_oauth(client: BaseOAuth2):
 
 def initialize_oauth(app: Sanic) -> None:
     """
-    Attaches refresh encoder middleware.
+    Attaches session middleware.
 
     Args:
         app (Sanic): Sanic application instance.
     """
 
     @app.on_response
-    async def refresh_encoder_middleware(request, response):
-        if hasattr(request.ctx, "oauth") and getattr(
-            request.ctx.oauth, "is_refresh", False
-        ):
-            oauth_encode(response, request.ctx.oauth)
+    async def session_middleware(request, response):
+        if hasattr(request.ctx, "oauth"):
+            if request.ctx.oauth.get("is_refresh"):
+                oauth_encode(response, request.ctx.oauth)
+            elif request.ctx.oauth.get("revoked"):
+                print("revoked.")
+                response.delete_cookie(f"{config.SESSION_PREFIX}_oauth")

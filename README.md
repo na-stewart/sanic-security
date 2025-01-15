@@ -346,8 +346,11 @@ async def on_anonymous_login(request):
 @app.post("api/security/logout")
 async def on_logout(request):
     authentication_session = await logout(request)
-    response = json("Logout successful!", authentication_session.json)
-    await oauth_revoke(request, response, google_oauth)  # Remove if not utilizing OAuth
+    token_info = await oauth_revoke(request, google_oauth)  # Remove if not utilizing OAuth
+    response = json(
+        "Logout successful!",
+        {"token_info": token_info, "auth_session": authentication_session.json},
+    )
     return response
 ```
 
@@ -385,7 +388,7 @@ or you can download/create your own and specify its path in the configuration.
 ```python
 @app.get("api/security/captcha")
 async def on_captcha_img_request(request):
-    captcha_session = await request_captcha(request)
+    captcha_session = await CaptchaSession.new(request)
     response = raw(
         captcha_session.get_image(), content_type="image/jpeg"
     )  # Captcha: LJ0F3U

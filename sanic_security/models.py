@@ -331,7 +331,7 @@ class Session(BaseModel):
         elif is_expired(self.expiration_date):
             raise ExpiredError
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         """
         Renders session deactivated and therefor unusable.
 
@@ -482,6 +482,7 @@ class Session(BaseModel):
             decoded_session = (
                 await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
             )
+            request.ctx.session = decoded_session
         except DoesNotExist:
             raise NotFoundError("Session could not be found.")
         return decoded_session
@@ -640,12 +641,11 @@ class AuthenticationSession(Session):
             session
         """
         if self.active and not is_expired(self.refresh_expiration_date):
-            self.active = False
-            await self.save(update_fields=["active"])
+            await self.deactivate()
             logging.info(
                 f"Client {get_ip(request)} has refreshed authentication session {self.id}."
             )
-            return await self.new(request, self.bearer, True)
+            return await self.new(request, self.bearer)
         else:
             raise ExpiredError
 
@@ -654,7 +654,6 @@ class AuthenticationSession(Session):
         cls,
         request: Request,
         account: Account = None,
-        is_refresh=False,
         **kwargs: Union[int, str, bool, float, list, dict],
     ):
         authentication_session = await cls.create(
@@ -668,7 +667,6 @@ class AuthenticationSession(Session):
                 config.AUTHENTICATION_REFRESH_EXPIRATION
             ),
         )
-        authentication_session.is_refresh = is_refresh
         return authentication_session
 
     class Meta:

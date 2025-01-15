@@ -223,7 +223,8 @@ async def authenticate(request: Request) -> AuthenticationSession:
             authentication_session.bearer.validate()
     except ExpiredError:
         authentication_session = await authentication_session.refresh(request)
-    request.ctx.session = authentication_session
+        authentication_session.is_refresh = True
+        request.ctx.session = authentication_session
     return authentication_session
 
 
@@ -285,7 +286,7 @@ def validate_password(password: str) -> str:
 
 def initialize_security(app: Sanic, create_root: bool = True) -> None:
     """
-    Audits configuration, creates root administrator account, and attaches refresh encoder middleware.
+    Audits configuration, creates root administrator account, and attaches session middleware.
 
     Args:
         app (Sanic): Sanic application instance.
@@ -351,8 +352,11 @@ def initialize_security(app: Sanic, create_root: bool = True) -> None:
             logger.info("Initial admin account created.")
 
         @app.on_response
-        async def refresh_encoder_middleware(request, response):
-            if hasattr(request.ctx, "session") and getattr(
-                request.ctx.session, "is_refresh", False
-            ):
-                request.ctx.session.encode(response)
+        async def session_middleware(request, response):
+            if hasattr(request.ctx, "session"):
+                if getattr(request.ctx.session, "is_refresh", False):
+                    request.ctx.session.encode(response)
+                elif not request.ctx.session.active:
+                    response.delete_cookie(
+                        f"{config.SESSION_PREFIX}_{request.ctx.session.__class__.__name__[:7].lower()}"
+                    )

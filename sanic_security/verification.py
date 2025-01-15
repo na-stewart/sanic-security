@@ -65,6 +65,7 @@ async def request_two_step_verification(
     if request.form.get("email") or not account:
         account = await Account.get_via_email(request.form.get("email"))
     two_step_session = await TwoStepSession.new(request, account)
+    request.ctx.session = two_step_session
     return two_step_session
 
 
@@ -102,7 +103,6 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     logger.info(
         f"Client {get_ip(request)} has completed two-step session {two_step_session.id} challenge."
     )
-    request.ctx.session = two_step_session
     return two_step_session
 
 
@@ -182,23 +182,6 @@ async def verify_account(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-async def request_captcha(request: Request) -> CaptchaSession:
-    """
-    Creates a captcha session and deactivates the client's current captcha session if found.
-
-    Args:
-        request (Request): Sanic request parameter.
-
-    Returns:
-        captcha_session
-    """
-    with suppress(NotFoundError, JWTDecodeError):
-        captcha_session = await CaptchaSession.decode(request)
-        if captcha_session.active:
-            await captcha_session.deactivate()
-    return await CaptchaSession.new(request)
-
-
 async def captcha(request: Request) -> CaptchaSession:
     """
     Validates a captcha challenge attempt.
@@ -230,7 +213,6 @@ async def captcha(request: Request) -> CaptchaSession:
     logger.info(
         f"Client {get_ip(request)} has completed captcha session {captcha_session.id} challenge."
     )
-    request.ctx.session = captcha_session
     return captcha_session
 
 

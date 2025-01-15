@@ -129,7 +129,7 @@ class JWTDecodeError(SessionError):
     """
 
     def __init__(
-        self, message="Session token invalid, not provided, or expired.", code=400
+        self, message="Session token invalid, not provided, or expired.", code=401
     ):
         super().__init__(message, code)
 

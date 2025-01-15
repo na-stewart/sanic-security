@@ -67,7 +67,6 @@ async def check_permissions(
         for role_permission in role.permissions:
             for required_permission in required_permissions:
                 if check_wildcard(role_permission, required_permission):
-                    request.ctx.session = authentication_session
                     return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action."
@@ -131,7 +130,6 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
             deleted=False
         ).all()
     }:
-        request.ctx.session = authentication_session
         return authentication_session
     logger.warning(
         f"Client {get_ip(request)} with account {authentication_session.bearer.id} attempted an unauthorized action"
@@ -178,7 +176,7 @@ def requires_permission(*required_permissions: str):
 
             @app.post("api/auth/perms")
             @requires_permission("admin:update", "employee:add")
-            async def on_require_perms(request):
+            async def on_authorize(request):
                 return text("Account permitted.")
 
     Raises:
@@ -216,7 +214,7 @@ def requires_role(*required_roles: str):
 
             @app.post("api/auth/roles")
             @requires_role("Admin", "Moderator")
-            async def on_require_roles(request):
+            async def on_authorize(request):
                 return text("Account permitted")
 
     Raises:

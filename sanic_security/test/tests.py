@@ -325,21 +325,23 @@ class VerificationTest(TestCase):
         assert (
             two_step_verification_invalid_attempt_response.status_code == 401
         ), two_step_verification_invalid_attempt_response.text
-        two_step_verification_attempt_response = self.client.post(
-            "http://127.0.0.1:8000/api/test/two-step",
-            data={
-                "code": json.loads(two_step_verification_request_response.text)["data"]
-            },
-        )
-        assert (
-            two_step_verification_attempt_response.status_code == 200
-        ), two_step_verification_attempt_response.text
         two_step_verification_no_email_request_response = self.client.post(
             "http://127.0.0.1:8000/api/test/two-step/request",
         )
         assert (
             two_step_verification_no_email_request_response.status_code == 200
         ), two_step_verification_no_email_request_response.text
+        two_step_verification_attempt_response = self.client.post(
+            "http://127.0.0.1:8000/api/test/two-step",
+            data={
+                "code": json.loads(
+                    two_step_verification_no_email_request_response.text
+                )["data"]
+            },
+        )
+        assert (
+            two_step_verification_attempt_response.status_code == 200
+        ), two_step_verification_attempt_response.text
 
     def test_account_verification(self):
         """Account registration and verification process with successful login."""

@@ -27,14 +27,12 @@ from sanic_security.oauth import (
     oauth_callback,
     oauth_decode,
     oauth_revoke,
-    requires_oauth,
 )
 from sanic_security.utils import json, str_to_bool, password_hasher
 from sanic_security.verification import (
     request_two_step_verification,
     requires_two_step_verification,
     verify_account,
-    request_captcha,
     requires_captcha,
 )
 
@@ -142,8 +140,8 @@ async def on_two_factor_authentication(request):
 async def on_logout(request):
     """Logout of currently logged in account."""
     authentication_session = await logout(request)
+    await oauth_revoke(request, google_oauth)
     response = json("Logout successful!", authentication_session.json)
-    await oauth_revoke(request, response, google_oauth)
     return response
 
 
@@ -190,7 +188,7 @@ async def on_get_associated_authentication_sessions(request):
 @app.get("api/test/capt/request")
 async def on_captcha_request(request):
     """Request captcha with solution in response."""
-    captcha_session = await request_captcha(request)
+    captcha_session = await CaptchaSession.new(request)
     response = json("Captcha request successful!", captcha_session.code)
     captcha_session.encode(response)
     return response
@@ -317,9 +315,8 @@ async def on_oauth_token(request):
 @app.route("api/test/oauth/revoke", methods=["GET", "POST"])
 async def on_oauth_revoke(request):
     """OAuth token revocation."""
-    response = json("Access token revoked!", None)
-    await oauth_revoke(request, response, google_oauth)
-    return response
+    token_info = await oauth_revoke(request, google_oauth)
+    return json("Access token revoked!", token_info)
 
 
 @app.exception(SecurityError)
