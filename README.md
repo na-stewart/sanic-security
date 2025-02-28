@@ -1,12 +1,3 @@
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Downloads](https://static.pepy.tech/badge/sanic-security)](https://pepy.tech/project/sanic-security)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/sanic-security.svg)](https://anaconda.org/conda-forge/sanic-security)
@@ -47,7 +38,7 @@
 ## About The Project
 
 Sanic Security is an authentication, authorization, and verification library designed for use with the 
-[Sanic](https://github.com/huge-success/sanic) framework.
+[Sanic](https://github.com/huge-success/sanic) web app framework.
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
@@ -62,16 +53,16 @@ Visit [security.na-stewart.com](https://security.na-stewart.com) for documentati
 <!-- GETTING STARTED -->
 ## Getting Started
 
-In order to get started, please install [PyPI](https://pypi.org/).
+In order to get started, please install [PyPI](https://pypi.org/) (likely included with your Python build).
 
 ### Installation
 
-* Install the Sanic Security pip package.
+* Install the Sanic Security package.
 ```shell
 pip3 install sanic-security
 ````
 
-* Install the Sanic Security pip package with the `cryptography` dependency included.
+* Install the Sanic Security package with the [cryptography](https://github.com/pyca/cryptography) dependency included.
 
 If you're planning on encoding or decoding JWTs using certain digital signature algorithms (like RSA or ECDSA which use 
 the public secret and private secret), you will need to install the `cryptography` library. This can be installed explicitly, or 
@@ -81,7 +72,7 @@ as an extra requirement.
 pip3 install sanic-security[crypto]
 ````
 
-* Install the Sanic Security pip package with the `httpx-oauth` dependency included.
+* Install the Sanic Security package with the [httpx-oauth](https://github.com/frankie567/httpx-oauth) dependency included.
 
 If you're planning on utilizing OAuth, you will need to install the `httpx-oauth` library. This can be installed explicitly, or 
 as an extra requirement.
@@ -98,8 +89,7 @@ pip3 install sanic-security --upgrade
 
 ### Configuration
 
-Sanic Security configuration is merely an object that can be modified either using dot-notation or like a 
-dictionary.
+Sanic Security configuration is merely an object that can be modified either using dot-notation or like a dictionary.
 
 For example: 
 
@@ -107,7 +97,7 @@ For example:
 from sanic_security.configuration import config as security_config
 
 security_config.SECRET = "This is a big secret. Shhhhh"
-security_config["CAPTCHA_FONT"] = "./resources/captcha-font.ttf"
+security_config["CAPTCHA_FONT"] = "resources/captcha-font.ttf"
 ```
 
 You can also use the update() method like on regular dictionaries.
@@ -144,8 +134,7 @@ You can load environment variables with a different prefix via `security_config.
 
 ## Usage
 
-Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent
-along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
+Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
 
 * Initialize Sanic Security as follows:
 ```python
@@ -235,7 +224,7 @@ async def on_oauth_token(request):
 
 ## Authentication
   
-* Registration (With two-step account verification)
+* Registration (with two-step account verification)
 
 Phone can be null or empty.
 
@@ -278,7 +267,7 @@ async def on_verify(request):
     )
 ```
 
-* Login (With two-factor authentication)
+* Login (with two-factor authentication)
 
 Credentials are retrieved via header are constructed by first combining the username and the password with a colon 
 (aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
@@ -367,7 +356,7 @@ async def on_authenticate(request):
     return response
 ```
 
-* Requires Authentication (This method is not called directly and instead used as a decorator)
+* Requires Authentication (this method is not called directly and instead used as a decorator)
 
 ```python
 @app.post("api/security/auth")
@@ -418,7 +407,7 @@ async def on_captcha(request):
     return json("Captcha attempt successful!", captcha_session.json)
 ```
 
-* Requires CAPTCHA (This method is not called directly and instead used as a decorator)
+* Requires CAPTCHA (this method is not called directly and instead used as a decorator)
 
 | Key         | Value  |
 |-------------|--------|
@@ -479,7 +468,7 @@ async def on_two_step_verification(request):
     return response
 ```
 
-* Requires Two-step Verification (This method is not called directly and instead used as a decorator)
+* Requires Two-step Verification (this method is not called directly and instead used as a decorator)
 
 | Key      | Value  |
 |----------|--------|
@@ -532,7 +521,7 @@ async def on_check_perms(request):
     return json("Account is authorized.", authentication_session.json)
 ```
 
-* Require Permissions (This method is not called directly and instead used as a decorator.)
+* Require Permissions (this method is not called directly and instead used as a decorator.)
 
 ```python
 @app.post("api/security/perms")
