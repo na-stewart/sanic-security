@@ -140,7 +140,7 @@ async def check_roles(request: Request, *required_roles: str) -> AuthenticationS
 async def assign_role(
     name: str,
     account: Account,
-    description: str,
+    description: str = None,
     *permissions: str,
 ) -> Role:
     """
