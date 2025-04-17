@@ -100,8 +100,6 @@ security_config.SECRET = "This is a big secret. Shhhhh"
 security_config["CAPTCHA_FONT"] = "resources/captcha-font.ttf"
 ```
 
-You can also use the update() method like on regular dictionaries.
-
 Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the config. For example, setting 
 SANIC_SECURITY_SECRET will be loaded by the application automatically and fed into the SECRET config variable.
 
