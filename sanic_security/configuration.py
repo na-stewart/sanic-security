@@ -1,4 +1,5 @@
 from os import environ
+from types import SimpleNamespace
 
 from sanic.utils import str_to_bool
 
@@ -50,7 +51,7 @@ DEFAULT_CONFIG = {
 }
 
 
-class Config(dict):
+class Config(SimpleNamespace):
     """
     Sanic Security configuration.
 
@@ -102,30 +103,23 @@ class Config(dict):
     INITIAL_ADMIN_PASSWORD: str
     TEST_DATABASE_URL: str
 
-    def load_environment_variables(self, load_env="SANIC_SECURITY_") -> None:
-        """
-        Any environment variables defined with the prefix argument will be applied to the config.
+    def __init__(self, default_config: dict = None):
+        super().__init__(**(default_config or DEFAULT_CONFIG))
+        self.load_environment_variables()
 
-        Args:
-            load_env (str): Prefix being used to apply environment variables into the config.
-        """
+    def load_environment_variables(self, env_prefix: str = "SANIC_SECURITY_"):
         for key, value in environ.items():
-            if not key.startswith(load_env):
+            if not key.startswith(env_prefix):
                 continue
 
-            _, config_key = key.split(load_env, 1)
+            _, config_key = key.split(env_prefix, 1)
 
             for converter in (int, float, str_to_bool, str):
                 try:
-                    self[config_key] = converter(value)
+                    setattr(self, config_key, converter(value))
                     break
                 except ValueError:
                     pass
 
-    def __init__(self):
-        super().__init__(DEFAULT_CONFIG)
-        self.__dict__ = self
-        self.load_environment_variables()
 
-
-config = Config()
+config = Config(DEFAULT_CONFIG)
