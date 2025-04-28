@@ -89,15 +89,14 @@ pip3 install sanic-security --upgrade
 
 ### Configuration
 
-Sanic Security configuration is merely an object that can be modified either using dot-notation or like a dictionary.
-
+Sanic Security configuration is merely a `SimpleNamespace` that can be modified using dot-notation.
 For example: 
 
 ```python
 from sanic_security.configuration import config as security_config
 
 security_config.SECRET = "This is a big secret. Shhhhh"
-security_config["CAPTCHA_FONT"] = "resources/captcha-font.ttf"
+security_config.CAPTCHA_FONT = "resources/captcha-font.ttf"
 ```
 
 Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the config. For example, setting 
