@@ -369,7 +369,7 @@ class Session(BaseModel):
             samesite=config.SESSION_SAMESITE,
             secure=config.SESSION_SECURE,
             domain=config.SESSION_DOMAIN,
-            expires=getattr(self, "refresh_expiration_date", self.expiration_date)
+            expires=getattr(self, "refresh_expiration_date", self.expiration_date),
         )
 
     @property
