@@ -259,9 +259,7 @@ Verifies the client's account via two-step session code.
 @app.put("api/security/verify")
 async def on_verify(request):
     two_step_session = await verify_account(request)
-    return json(
-        "You have verified your account and may login!", two_step_session.json
-    )
+    return json("You have verified your account and may login!", two_step_session.json)
 ```
 
 * Login (with two-factor authentication)
@@ -332,7 +330,9 @@ async def on_anonymous_login(request):
 @app.post("api/security/logout")
 async def on_logout(request):
     authentication_session = await logout(request)
-    token_info = await oauth_revoke(request, google_oauth)  # Remove if not utilizing OAuth
+    token_info = await oauth_revoke(
+        request, google_oauth
+    )  # Remove if not utilizing OAuth
     response = json(
         "Logout successful!",
         {"token_info": token_info, "auth_session": authentication_session.json},
