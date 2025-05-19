@@ -44,7 +44,6 @@ Sanic Security is an authentication, authorization, and verification library des
 * Login, registration, and authentication with refresh mechanisms
 * Role based authorization with wildcard permissions
 * Image & audio CAPTCHA
-* Two-factor authentication
 * Two-step verification
 * Logging & auditing
 
@@ -221,7 +220,7 @@ async def on_oauth_token(request):
 
 ## Authentication
   
-* Registration (with two-step account verification)
+* Registration (with two-step email verification)
 
 Phone can be null or empty.
 
@@ -262,7 +261,7 @@ async def on_verify(request):
     return json("You have verified your account and may login!", two_step_session.json)
 ```
 
-* Login (with two-factor authentication)
+* Login (with two-step email verification)
 
 Credentials are retrieved via header are constructed by first combining the username and the password with a colon 
 (aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
@@ -288,7 +287,7 @@ async def on_login(request):
     return response
 ```
 
-If this isn't desired, you can pass an account and password attempt directly into the login method instead.
+If this isn't desired, you can pass a username and password attempt directly into the login method instead.
 
 * Fulfill Second Factor
 

@@ -88,8 +88,9 @@ async def register(
 
 async def login(
     request: Request,
-    account: Account = None,
+    *,
     require_second_factor: bool = False,
+    username: str = None,
     password: str = None,
 ) -> AuthenticationSession:
     """
@@ -97,8 +98,8 @@ async def login(
 
     Args:
         request (Request): Sanic request parameter, login credentials are retrieved via the authorization header.
-        account (Account): Account being logged into, overrides account retrieved via email or username.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
+        username (str): Username of account being logged into, overrides account retrieved via email or username in form.
         password (str): Overrides user's password attempt retrieved via the authorization header.
 
     Returns:
@@ -111,10 +112,12 @@ async def login(
         UnverifiedError
         DisabledError
     """
-    if not account:
+    if not username:
         account, password = await Account.get_via_header(request)
     elif not password:
         raise CredentialsError("Password parameter is empty.")
+    else:
+        account = await Account.get_via_credential(username)
     try:
         password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
