@@ -38,7 +38,7 @@
 ## About The Project
 
 Sanic Security is an authentication, authorization, and verification library designed for use with the 
-[Sanic](https://github.com/huge-success/sanic) web app framework.
+[Sanic](https://github.com/huge-success/sanic) web app framework. Designed to prioritize rapid prototyping with forgiving syntax and structure.
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
@@ -265,8 +265,11 @@ async def on_verify(request):
 
 Credentials are retrieved via header are constructed by first combining the username and the password with a colon 
 (aladdin:opensesame), and then by encoding the resulting string in base64 (YWxhZGRpbjpvcGVuc2VzYW1l). 
-Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`. You can use a username 
-as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
+Here is an example authorization header: `Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l`. 
+
+If this isn't desired, you can pass credentials into the login method instead.
+
+You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNAME` is true in the config.
 
 ```python
 @app.post("api/security/login")
@@ -286,8 +289,6 @@ async def on_login(request):
     two_step_session.encode(response)
     return response
 ```
-
-If this isn't desired, you can pass an account directly into the login method instead.
 
 * Fulfill Second Factor
 
@@ -627,7 +628,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- Versioning -->
 ## Versioning
 
-**0.0.0**
+**x.x.x**
 
 * MAJOR version when you make incompatible API changes.
 

@@ -7,8 +7,8 @@ from sanic.request import Request
 from sanic_security.exceptions import (
     JWTDecodeError,
     NotFoundError,
-    VerifiedError,
     MaxedOutChallengeError,
+    DeactivatedError,
 )
 from sanic_security.models import (
     Account,
@@ -157,14 +157,13 @@ async def verify_account(request: Request) -> TwoStepSession:
         DeactivatedError
         ChallengeError
         MaxedOutChallengeError
-        VerifiedError
 
     Returns:
          two_step_session
     """
     two_step_session = await TwoStepSession.decode(request)
     if two_step_session.bearer.verified:
-        raise VerifiedError
+        raise DeactivatedError("Account already verified.", 403)
     two_step_session.validate()
     try:
         await two_step_session.check_code(request.form.get("code"))

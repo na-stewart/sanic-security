@@ -12,7 +12,6 @@ from sanic_security.configuration import config, DEFAULT_CONFIG
 from sanic_security.exceptions import (
     CredentialsError,
     DeactivatedError,
-    SecondFactorFulfilledError,
     ExpiredError,
     AuditWarning,
 )
@@ -51,7 +50,7 @@ async def register(
     Args:
         request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): email, username, password, phone (including country code).
         verified (bool): Sets the verification requirement for the account being registered.
-        disabled (bool): Renders the account being registered unusable.
+        disabled (bool): Renders the account being registered unusable until manual activation.
 
     Returns:
         account
@@ -90,7 +89,7 @@ async def login(
     request: Request,
     *,
     require_second_factor: bool = False,
-    username: str = None,
+    email: str = None,
     password: str = None,
 ) -> AuthenticationSession:
     """
@@ -99,7 +98,7 @@ async def login(
     Args:
         request (Request): Sanic request parameter, login credentials are retrieved via the authorization header.
         require_second_factor (bool): Determines authentication session second factor requirement on login.
-        username (str): Username of account being logged into, overrides account retrieved via email or username in form.
+        email (str): Email (or username) of account being logged into, overrides account retrieved via authorization header.
         password (str): Overrides user's password attempt retrieved via the authorization header.
 
     Returns:
@@ -112,12 +111,12 @@ async def login(
         UnverifiedError
         DisabledError
     """
-    if not username:
+    if not email:
         account, password = await Account.get_via_header(request)
     elif not password:
         raise CredentialsError("Password parameter is empty.")
     else:
-        account = await Account.get_via_credential(username)
+        account = await Account.get_via_credential(email)
     try:
         password_hasher.verify(account.password, password)
         if password_hasher.check_needs_rehash(account.password):
@@ -179,14 +178,13 @@ async def fulfill_second_factor(request: Request) -> AuthenticationSession:
         DeactivatedError
         ChallengeError
         MaxedOutChallengeError
-        SecondFactorFulfilledError
 
     Returns:
          authentication_session
     """
     authentication_session = await AuthenticationSession.decode(request)
     if not authentication_session.requires_second_factor:
-        raise SecondFactorFulfilledError
+        raise DeactivatedError("Session second factor requirement already met.", 403)
     two_step_session = await TwoStepSession.decode(request)
     two_step_session.validate()
     await two_step_session.check_code(request.form.get("code"))
@@ -268,7 +266,7 @@ def requires_authentication(arg=None):
 
 def validate_password(password: str) -> str:
     """
-    Validates password requirements.
+    Validates password formatting requirements.
 
     Args:
         password (str): Password being validated.

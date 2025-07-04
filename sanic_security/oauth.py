@@ -110,7 +110,7 @@ async def oauth_callback(
 
 def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     """
-    Transforms access token into JWT and then is stored in a cookie.
+    Transforms token info into JWT and then is stored in a cookie.
 
     Args:
         response (HTTPResponse): Sanic response used to store JWT into a cookie on the client.
@@ -133,33 +133,9 @@ def oauth_encode(response: HTTPResponse, token_info: dict) -> None:
     )
 
 
-async def oauth_revoke(request: Request, client: BaseOAuth2) -> dict:
-    """
-    Revokes the client's access token.
-
-    Args:
-        request (Request): Sanic request parameter.
-        client (BaseOAuth2): OAuth provider.
-
-    Raises:
-        OAuthError
-    """
-    if request.cookies.get(f"{config.SESSION_PREFIX}_oauth"):
-        try:
-            token_info = await oauth_decode(request, client, False)
-            request.ctx.oauth["revoked"] = True
-            with suppress(RevokeTokenNotSupportedError):
-                await client.revoke_token(
-                    token_info.get("access_token"), "access_token"
-                )
-            return token_info
-        except RevokeTokenError as e:
-            raise OAuthError(f"Failed to revoke access token {e.response.text}")
-
-
 async def oauth_decode(request: Request, client: BaseOAuth2, refresh=True) -> dict:
     """
-    Decodes JWT token from client cookie into an access token.
+    Decodes JWT from client cookie into token info.
 
     Args:
         request (Request): Sanic request parameter.
@@ -191,6 +167,30 @@ async def oauth_decode(request: Request, client: BaseOAuth2, refresh=True) -> di
         raise OAuthError(f"Failed to refresh access token: {e.response.text}")
     except DecodeError:
         raise OAuthError(f"Access token invalid, not provided, or expired.", 400)
+
+
+async def oauth_revoke(request: Request, client: BaseOAuth2) -> dict:
+    """
+    Revokes the client's access token.
+
+    Args:
+        request (Request): Sanic request parameter.
+        client (BaseOAuth2): OAuth provider.
+
+    Raises:
+        OAuthError
+    """
+    if request.cookies.get(f"{config.SESSION_PREFIX}_oauth"):
+        try:
+            token_info = await oauth_decode(request, client, False)
+            request.ctx.oauth["revoked"] = True
+            with suppress(RevokeTokenNotSupportedError):
+                await client.revoke_token(
+                    token_info.get("access_token"), "access_token"
+                )
+            return token_info
+        except RevokeTokenError as e:
+            raise OAuthError(f"Failed to revoke access token {e.response.text}")
 
 
 def requires_oauth(client: BaseOAuth2):
