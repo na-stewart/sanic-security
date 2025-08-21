@@ -235,7 +235,7 @@ Phone can be null or empty.
 @app.post("api/security/register")
 async def on_register(request):
     account = await register(request)
-    two_step_session = await request_two_step_verification(request, account, "2fa")
+    two_step_session = await request_two_step_verification(request, account)
     await email_code(
         account.email, two_step_session.code  # Code = 24KF19
     )  # Custom method for emailing verification code.
@@ -276,7 +276,7 @@ You can use a username as well as an email for login if `ALLOW_LOGIN_WITH_USERNA
 async def on_login(request):
     authentication_session = await login(request, require_second_factor=True)
     two_step_session = await request_two_step_verification(
-        request, authentication_session.bearer
+        request, authentication_session.bearer, "2fa"
     )
     await email_code(
         authentication_session.bearer.email, two_step_session.code  # Code = XGED2U

@@ -101,7 +101,7 @@ async def on_login(request):
     )
     if str_to_bool(request.args.get("two-factor-authentication")):
         two_step_session = await request_two_step_verification(
-            request, authentication_session.bearer
+            request, authentication_session.bearer, "2fa"
         )
         response = json(
             "Login successful! Two-factor authentication required.",
