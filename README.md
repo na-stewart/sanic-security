@@ -146,7 +146,7 @@ The tables in the below examples represent example [request form-data](https://s
 
 Provides users with a familiar experience by having them register/login using their existing credentials from other trusted services (such as Google, Discord, etc.).
 
-This feature is designed to complement existing protocols by linking a Sanic Security account with the user's OAuth credentials. As a result, developers can leverage all of Sanic Security's capabilities including robust session handling and account management.
+This feature is designed to complement existing protocols by linking Sanic Security with the user's OAuth credentials. As a result, developers can leverage robust session handling and account management.
 
 * Define OAuth clients
 

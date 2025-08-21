@@ -52,6 +52,7 @@ async def oauth_callback(
     client: BaseOAuth2,
     redirect_uri: str = config.OAUTH_REDIRECT,
     code_verifier: str = None,
+    link: bool = True,
 ) -> tuple[dict, AuthenticationSession]:
     """
     Requests an access token using the authorization code obtained after the user has authorized the application.
@@ -62,6 +63,7 @@ async def oauth_callback(
         client (BaseOAuth2): OAuth provider.
         redirect_uri (str): The URL where the user was redirected after authorization.
         code_verifier (str): Optional code verifier used in the [PKCE](https://datatracker.ietf.org/doc/html/rfc7636)) flow.
+        link (bool): Determines if client is logged into account on OAuth flow completion.
 
     Raises:
         CredentialsError
@@ -78,28 +80,27 @@ async def oauth_callback(
         )
         if "expires_at" not in token_info:
             token_info["expires_at"] = time.time() + token_info["expires_in"]
-        oauth_id, email = await client.get_id_email(token_info["access_token"])
-        try:
-            account = await Account.get(oauth_id=oauth_id)
-        except DoesNotExist:
-            account = await Account.create(
-                email=email,
-                username=email.split("@")[0],
-                password="",
-                oauth_id=oauth_id,
-                verified=True,
-            )
-        authentication_session = await AuthenticationSession.new(
-            request,
-            account,
-        )
+        authentication_session = None
+        if link:
+            oauth_id, email = await client.get_id_email(token_info["access_token"])
+            try:
+                account = await Account.get(oauth_id=oauth_id)
+            except DoesNotExist:
+                account = await Account.create(
+                    email=email,
+                    username=email.split("@")[0],
+                    password="",
+                    oauth_id=oauth_id,
+                    verified=True,
+                )
+            authentication_session = await AuthenticationSession.new(request, account)
         logger.info(
-            f"Client {get_ip(request)} has logged in via {client.__class__.__name__} with authentication session {authentication_session.id}."
+            f"Client {get_ip(request)} has logged in via {client.__class__.__name__} with authentication session {authentication_session.id if link else None}."
         )
         return token_info, authentication_session
     except IntegrityError:
         raise CredentialsError(
-            f"Account may not be linked to this OAuth provider if it already exists.",
+            "Account may not be linked to this OAuth provider if it already exists.",
             409,
         )
     except GetAccessTokenError as e:
