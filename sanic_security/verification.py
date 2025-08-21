@@ -41,7 +41,7 @@ SOFTWARE.
 
 
 async def request_two_step_verification(
-    request: Request, account: Account = None
+    request: Request, account: Account = None, tag: str = "2sv"
 ) -> TwoStepSession:
     """
     Creates a two-step session and deactivates the client's current two-step session if found.
@@ -49,6 +49,7 @@ async def request_two_step_verification(
     Args:
         request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): email.
         account (Account): The account being associated with the new verification session. If None, an account is retrieved via the email in the request form-data or an existing two-step session.
+        tag (str): Label used to distinguish verification for specific purposes.
 
     Raises:
         NotFoundError
@@ -64,17 +65,18 @@ async def request_two_step_verification(
             account = two_step_session.bearer
     if request.form.get("email") or not account:
         account = await Account.get_via_email(request.form.get("email"))
-    two_step_session = await TwoStepSession.new(request, account)
+    two_step_session = await TwoStepSession.new(request, account, tag=tag)
     request.ctx.session = two_step_session
     return two_step_session
 
 
-async def two_step_verification(request: Request) -> TwoStepSession:
+async def two_step_verification(request: Request, tag: str = "2sv") -> TwoStepSession:
     """
     Validates a two-step verification attempt.
 
     Args:
         request (Request): Sanic request parameter. Request body should contain form-data with the following argument(s): code.
+        tag (str): Label used to distinguish verification for specific purposes.
 
     Raises:
         NotFoundError
@@ -90,7 +92,7 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession.decode(request)
+    two_step_session = await TwoStepSession.decode(request, tag=tag)
     two_step_session.validate()
     two_step_session.bearer.validate()
     try:
@@ -106,9 +108,12 @@ async def two_step_verification(request: Request) -> TwoStepSession:
     return two_step_session
 
 
-def requires_two_step_verification(arg=None):
+def requires_two_step_verification(func=None, *, tag="2sv"):
     """
     Validates a two-step verification attempt.
+
+    Args:
+        tag (str): Label used to distinguish verification for specific purposes.
 
     Example:
         This method is not called directly and instead used as a decorator:
@@ -134,12 +139,12 @@ def requires_two_step_verification(arg=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(request, *args, **kwargs):
-            await two_step_verification(request)
+            await two_step_verification(request, tag)
             return await func(request, *args, **kwargs)
 
         return wrapper
 
-    return decorator(arg) if callable(arg) else decorator
+    return decorator if func is None else decorator(func)
 
 
 async def verify_account(request: Request) -> TwoStepSession:
@@ -161,7 +166,7 @@ async def verify_account(request: Request) -> TwoStepSession:
     Returns:
          two_step_session
     """
-    two_step_session = await TwoStepSession.decode(request)
+    two_step_session = await TwoStepSession.decode(request, tag="2fa")
     if two_step_session.bearer.verified:
         raise DeactivatedError("Account already verified.", 403)
     two_step_session.validate()

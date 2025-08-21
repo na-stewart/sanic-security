@@ -71,7 +71,7 @@ async def on_register(request):
         disabled=str_to_bool(request.form.get("disabled")),
     )
     if not account.verified:
-        two_step_session = await request_two_step_verification(request, account)
+        two_step_session = await request_two_step_verification(request, account, "2fa")
         response = json(
             "Registration successful! Verification required.", two_step_session.code
         )

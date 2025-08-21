@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     "ALLOW_LOGIN_WITH_USERNAME": False,
     "INITIAL_ADMIN_EMAIL": "admin@example.com",
     "INITIAL_ADMIN_PASSWORD": "admin123",
-    "TEST_DATABASE_URL": "sqlite://:memory:",
+    "TEST_DATABASE_URL": "sqlite://db.sqlite3",
 }
 
 

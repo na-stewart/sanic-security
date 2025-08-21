@@ -38,7 +38,7 @@
 ## About The Project
 
 Sanic Security is an authentication, authorization, and verification library designed for use with the 
-[Sanic](https://github.com/huge-success/sanic) web app framework. Designed to prioritize rapid prototyping with forgiving syntax and structure.
+[Sanic](https://github.com/huge-success/sanic) web app framework.
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
@@ -235,7 +235,7 @@ Phone can be null or empty.
 @app.post("api/security/register")
 async def on_register(request):
     account = await register(request)
-    two_step_session = await request_two_step_verification(request, account)
+    two_step_session = await request_two_step_verification(request, account, "2fa")
     await email_code(
         account.email, two_step_session.code  # Code = 24KF19
     )  # Custom method for emailing verification code.

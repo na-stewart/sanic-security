@@ -216,8 +216,24 @@ async def authenticate(request: Request) -> AuthenticationSession:
         DisabledError
         SecondFactorRequiredError
         ExpiredError
+        CredentialsError
     """
-    authentication_session = await AuthenticationSession.decode(request)
+
+    authentication_jwt = AuthenticationSession.decode_raw(request)
+    if not await AuthenticationSession.filter(
+        bearer=authentication_jwt["bearer"],
+        ip=get_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        active=True,
+        deleted=False,
+    ).exists():
+        logger.warning(
+            f"Unrecognized client {get_ip(request)} attempted to utilize authentication session {authentication_jwt["id"]}."
+        )
+        raise CredentialsError("Client is unrecognized.")
+    authentication_session = await AuthenticationSession.decode(
+        request, authentication_jwt
+    )
     try:
         authentication_session.validate()
         if not authentication_session.anonymous:

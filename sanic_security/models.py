@@ -128,7 +128,7 @@ class Account(BaseModel):
     )
     phone: str = fields.CharField(
         unique=True,
-        max_length=15,
+        max_length=20,
         null=True,
         validators=[
             RegexValidator(r"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$", re.I)
@@ -462,12 +462,20 @@ class Session(BaseModel):
             raise JWTDecodeError(str(e))
 
     @classmethod
-    async def decode(cls, request: Request):
+    async def decode(
+        cls,
+        request: Request,
+        raw: dict = None,
+        **kwargs: Union[int, str, bool, float],
+    ):
         """
         Decodes session JWT token from client cookie into a session model.
 
         Args:
             request (Request): Sanic request parameter.
+            raw (Request): Decoded JWT token provided by the client, include only for optimization purposes.
+            **kwargs (Union[int, str, bool, float]): Extra filter arguments applied during session decoding.
+
 
         Returns:
             session
@@ -477,9 +485,11 @@ class Session(BaseModel):
             NotFoundError
         """
         try:
-            decoded_raw = cls.decode_raw(request)
+            decoded_raw = raw or cls.decode_raw(request)
             decoded_session = (
-                await cls.filter(id=decoded_raw["id"]).prefetch_related("bearer").get()
+                await cls.filter(**kwargs, id=decoded_raw["id"], deleted=False)
+                .prefetch_related("bearer")
+                .get()
             )
             request.ctx.session = decoded_session
         except DoesNotExist:
@@ -539,7 +549,14 @@ class VerificationSession(Session):
 
 
 class TwoStepSession(VerificationSession):
-    """Validates client using a code sent via email or text."""
+    """
+    Validates client using a code sent via email or text.
+
+    Attributes:
+        tag (str): Label used to distinguish sessions for specific purposes.
+    """
+
+    tag: str = fields.CharField(max_length=20)
 
     @classmethod
     async def new(
@@ -605,11 +622,13 @@ class AuthenticationSession(Session):
     Attributes:
         refresh_expiration_date (datetime): Date and time the session can no longer be refreshed.
         requires_second_factor (bool): Determines if session requires a second factor.
+        user_agent (bool): Identifies client application, operating system, vendor, and/or version.
         is_refresh (bool): Will only be true once when instantiated during the refresh of expired session.
     """
 
     refresh_expiration_date: datetime.datetime = fields.DatetimeField(null=True)
     requires_second_factor: bool = fields.BooleanField(default=False)
+    user_agent: str = fields.CharField(max_length=255, null=True)
     is_refresh: bool = False
 
     def validate(self) -> None:
@@ -659,6 +678,7 @@ class AuthenticationSession(Session):
             **kwargs,
             bearer=account,
             ip=get_ip(request),
+            user_agent=request.headers.get("user-agent"),
             expiration_date=get_expiration_date(
                 config.AUTHENTICATION_SESSION_EXPIRATION
             ),
