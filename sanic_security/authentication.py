@@ -368,12 +368,12 @@ def initialize_security(app: Sanic, create_root: bool = True) -> None:
             await account.roles.add(role)
             logger.info("Initial admin account created.")
 
-        @app.on_response
-        async def session_middleware(request, response):
-            if hasattr(request.ctx, "session"):
-                if getattr(request.ctx.session, "is_refresh", False):
-                    request.ctx.session.encode(response)
-                elif not request.ctx.session.active:
-                    response.delete_cookie(
-                        f"{config.SESSION_PREFIX}_{request.ctx.session.__class__.__name__[:7].lower()}"
-                    )
+    @app.on_response
+    async def session_middleware(request, response):
+        if hasattr(request.ctx, "session"):
+            if getattr(request.ctx.session, "is_refresh", False):
+                request.ctx.session.encode(response)
+            elif not request.ctx.session.active:
+                response.delete_cookie(
+                    f"{config.SESSION_PREFIX}_{request.ctx.session.__class__.__name__[:7].lower()}"
+                )
