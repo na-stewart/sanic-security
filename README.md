@@ -37,8 +37,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security is an authentication, authorization, and verification library designed for use with the 
-[Sanic](https://github.com/huge-success/sanic) web app framework.
+Sanic Security is a suite of authentication, authorization, and verification tools designed for use with the 
+[Sanic](https://github.com/sanic-org/sanic) web app framework.
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
@@ -430,7 +430,7 @@ Two-step verification should be integrated with other custom functionalities, su
 ```python
 @app.post("api/security/two-step/request")
 async def on_two_step_request(request):
-    two_step_session = await request_two_step_verification(request)  # Code = T2I58I
+    two_step_session = await request_two_step_verification(request, tag="forgot-pass")  # Code = T2I58I
     await email_code(
         two_step_session.bearer.email, two_step_session.code
     )  # Custom method for emailing verification code.
@@ -460,7 +460,7 @@ async def on_two_step_resend(request):
 ```python
 @app.post("api/security/two-step")
 async def on_two_step_verification(request):
-    two_step_session = await two_step_verification(request)
+    two_step_session = await two_step_verification(request, "forgot-pass")
     response = json("Two-step verification attempt successful!", two_step_session.json)
     return response
 ```
@@ -473,7 +473,7 @@ async def on_two_step_verification(request):
 
 ```python
 @app.post("api/security/two-step")
-@requires_two_step_verification
+@requires_two_step_verification("forgot-pass")
 async def on_two_step_verification(request):
     response = json(
         "Two-step verification attempt successful!", request.ctx.session.json
@@ -518,7 +518,7 @@ async def on_check_perms(request):
     return json("Account is authorized.", authentication_session.json)
 ```
 
-* Require Permissions (this method is not called directly and instead used as a decorator.)
+* Requires Permission (this method is not called directly and instead used as a decorator.)
 
 ```python
 @app.post("api/security/perms")
@@ -536,7 +536,7 @@ async def on_check_roles(request):
     return json("Account is authorized.", authentication_session.json)
 ```
 
-* Require Roles (This method is not called directly and instead used as a decorator)
+* Requires Role (This method is not called directly and instead used as a decorator)
 
 ```python
 @app.post("api/security/roles")

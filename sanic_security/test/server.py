@@ -218,14 +218,14 @@ async def on_captcha_attempt(request):
 @app.post("api/test/two-step/request")
 async def on_request_verification(request):
     """Request two-step verification with code in the response."""
-    two_step_session = await request_two_step_verification(request)
+    two_step_session = await request_two_step_verification(request, tag="forgot-pass")
     response = json("Verification request successful!", two_step_session.code)
     two_step_session.encode(response)
     return response
 
 
 @app.post("api/test/two-step")
-@requires_two_step_verification
+@requires_two_step_verification("forgot-pass")
 async def on_verification_attempt(request):
     """Attempt two-step verification challenge."""
     return json("Two step verification attempt successful!", request.ctx.session.json)

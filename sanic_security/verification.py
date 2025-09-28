@@ -135,12 +135,15 @@ def requires_two_step_verification(func=None, *, tag="2sv"):
         ChallengeError
         MaxedOutChallengeError
     """
+    if isinstance(func, str):
+        tag = func
+        func = None
 
-    def decorator(func):
-        @functools.wraps(func)
+    def decorator(inner_func):
+        @functools.wraps(inner_func)
         async def wrapper(request, *args, **kwargs):
             await two_step_verification(request, tag)
-            return await func(request, *args, **kwargs)
+            return await inner_func(request, *args, **kwargs)
 
         return wrapper
 
