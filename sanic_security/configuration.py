@@ -47,6 +47,7 @@ DEFAULT_CONFIG = {
     "ALLOW_LOGIN_WITH_USERNAME": False,
     "INITIAL_ADMIN_EMAIL": "admin@example.com",
     "INITIAL_ADMIN_PASSWORD": "admin123",
+    "CLIENT_RECOGNITION": True,
     "TEST_DATABASE_URL": "sqlite://db.sqlite3",
 }
 
@@ -75,6 +76,7 @@ class Config(SimpleNamespace):
         AUTHENTICATION_SESSION_EXPIRATION (int): The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.
         AUTHENTICATION_REFRESH_EXPIRATION (int): The amount of seconds till authentication session refresh expiration. Setting to 0 will disable refresh mechanism.
         ALLOW_LOGIN_WITH_USERNAME (bool): Allows login via username and email.
+        CLIENT_RECOGNITION (bool): Client will be logged out if ip address is unrecognized.
         INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
         INITIAL_ADMIN_PASSWORD (str): Password used when creating the initial admin account.
         TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
@@ -99,6 +101,7 @@ class Config(SimpleNamespace):
     AUTHENTICATION_SESSION_EXPIRATION: int
     AUTHENTICATION_REFRESH_EXPIRATION: int
     ALLOW_LOGIN_WITH_USERNAME: bool
+    CLIENT_RECOGNITION: bool
     INITIAL_ADMIN_EMAIL: str
     INITIAL_ADMIN_PASSWORD: str
     TEST_DATABASE_URL: str

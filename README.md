@@ -37,7 +37,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security is a suite of authentication, authorization, and verification tools designed for use with the 
+Sanic Security provides authentication, authorization, and verification for applications built with the 
 [Sanic](https://github.com/sanic-org/sanic) web app framework.
 
 * OAuth2 integration
@@ -125,6 +125,7 @@ You can load environment variables with a different prefix via `security_config.
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                   |
 | **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                        |
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username; unique constraint is disabled when set to false.                                                       |
+| **CLIENT_RECOGNITION**                | True                         | Client will be logged out if ip address is unrecognized.                                                                          |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                               |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                            |
 
@@ -430,7 +431,9 @@ Two-step verification should be integrated with other custom functionalities, su
 ```python
 @app.post("api/security/two-step/request")
 async def on_two_step_request(request):
-    two_step_session = await request_two_step_verification(request, tag="forgot-pass")  # Code = T2I58I
+    two_step_session = await request_two_step_verification(
+        request, tag="forgot-pass"
+    )  # Code = T2I58I
     await email_code(
         two_step_session.bearer.email, two_step_session.code
     )  # Custom method for emailing verification code.
