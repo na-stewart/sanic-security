@@ -18,7 +18,6 @@
 
 * [About the Project](#about-the-project)
 * [Getting Started](#getting-started)
-  * [Prerequisites](#prerequisites)
   * [Installation](#installation)
   * [Configuration](#configuration)
 * [Usage](#usage)
@@ -32,7 +31,6 @@
 * [Contributing](#contributing)
 * [License](#license)
 * [Versioning](#versioning)
-* [Support](https://discord.gg/JHpZkMfKTJ)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -521,7 +519,7 @@ async def on_check_perms(request):
     return json("Account is authorized.", authentication_session.json)
 ```
 
-* Requires Permission (this method is not called directly and instead used as a decorator.)
+* Requires Permission (this method is not called directly and instead used as a decorator)
 
 ```python
 @app.post("api/security/perms")

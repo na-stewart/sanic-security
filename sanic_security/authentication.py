@@ -232,6 +232,9 @@ async def authenticate(request: Request) -> AuthenticationSession:
         logger.warning(
             f"Unrecognized client {get_ip(request)} attempted to utilize authentication session {authentication_jwt["id"]}."
         )
+        await AuthenticationSession.filter(id=authentication_jwt["id"]).update(
+            active=False
+        )
         raise DeactivatedError("Client is unrecognized.")
     authentication_session = await AuthenticationSession.decode(
         request, authentication_jwt
