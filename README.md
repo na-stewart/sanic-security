@@ -8,7 +8,7 @@
 <p align="center">
   <h3 align="center">Sanic Security</h3>
   <p align="center">
-   An async security library for the Sanic framework.
+    An async security library for the Sanic framework.
   </p>
 </p>
 
@@ -36,7 +36,7 @@
 ## About The Project
 
 Sanic Security provides authentication, authorization, and verification for applications built with the 
-[Sanic](https://github.com/sanic-org/sanic) web app framework.
+[Sanic](https://github.com/sanic-org/sanic) Python framework.
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
@@ -123,13 +123,17 @@ You can load environment variables with a different prefix via `security_config.
 | **AUTHENTICATION_SESSION_EXPIRATION** | 86400                        | The amount of seconds till authentication session expiration on creation. Setting to 0 will disable expiration.                   |
 | **AUTHENTICATION_REFRESH_EXPIRATION** | 604800                       | The amount of seconds till authentication refresh expiration. Setting to 0 will disable refresh mechanism.                        |
 | **ALLOW_LOGIN_WITH_USERNAME**         | False                        | Allows login via username; unique constraint is disabled when set to false.                                                       |
-| **CLIENT_RECOGNITION**                | True                         | Client will be logged out if ip address is unrecognized.                                                                          |
+| **IP_RECOGNITION**                    | True                         | Client will be logged out if ip address is unrecognized.                                                                          |
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                               |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                            |
 
 ## Usage
 
-Sanic Security's authentication and verification functionality is session based. A new session will be created for the user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent along with every subsequent request. The server can then compare the session stored on the cookie against the session information stored in the database to verify user’s identity and send a response with the corresponding state.
+Sanic Security's authentication and verification functionality is session based. A new session will be created for the 
+user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded 
+into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent along with every subsequent request. 
+The server can then compare the session stored on the cookie against the session information stored in the database to verify 
+user’s identity and send a response with the corresponding state.
 
 * Initialize Sanic Security as follows:
 ```python
