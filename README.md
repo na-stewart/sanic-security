@@ -35,14 +35,13 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Sanic Security provides authentication, authorization, and verification for applications built with the 
-[Sanic](https://github.com/sanic-org/sanic) Python framework.
+Provides authentication, authorization, and verification features including:
 
 * OAuth2 integration
 * Login, registration, and authentication with refresh mechanisms
-* Role based authorization with wildcard permissions
 * Image & audio CAPTCHA
 * Two-step verification
+* Role based authorization with wildcard permissions
 * Logging & auditing
 
 Visit [security.na-stewart.com](https://security.na-stewart.com) for documentation.
@@ -87,7 +86,6 @@ pip3 install sanic-security --upgrade
 ### Configuration
 
 Sanic Security configuration is merely a `SimpleNamespace` that can be modified using dot-notation.
-For example: 
 
 ```python
 from sanic_security.configuration import config as security_config
@@ -369,7 +367,7 @@ async def on_authenticate(request):
 ## CAPTCHA
 
 Protects against spam and malicious activities by ensuring that only real humans can complete certain actions like 
-submitting a form or creating an account. A font and voice library for CAPTCHA challenges is included in the repository, 
+submitting a form or creating an account. A font and voice library for CAPTCHA challenges is included in the repository
 or you can download/create your own and specify its path in the configuration.
 
 * Request CAPTCHA
@@ -490,7 +488,6 @@ async def on_two_step_verification(request):
 
 Sanic Security uses role based authorization with wildcard permissions.
 
-Roles are created for various job functions. The permissions to perform certain operations are assigned to specific roles. 
 Users are assigned particular roles, and through those role assignments acquire the permissions needed to perform 
 particular system functions. Since users are not assigned permissions directly, but only acquire them through their 
 role (or roles), management of individual user rights becomes a matter of simply assigning appropriate roles to the 
