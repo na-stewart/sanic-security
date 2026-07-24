@@ -1,5 +1,5 @@
 import datetime
-import random
+import secrets
 from string import ascii_uppercase, digits
 
 from argon2 import PasswordHasher
@@ -64,7 +64,7 @@ def get_code(digits_only: bool = False) -> str:
         code
     """
     return "".join(
-        random.choice(("" if digits_only else ascii_uppercase) + digits)
+        secrets.choice(("" if digits_only else ascii_uppercase) + digits)
         for _ in range(6)
     )
 
