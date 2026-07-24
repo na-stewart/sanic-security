@@ -94,7 +94,7 @@ security_config.SECRET = "This is a big secret. Shhhhh"
 security_config.CAPTCHA_FONT = "resources/captcha-font.ttf"
 ```
 
-Any environment variables defined with the SANIC_SECURITY_ prefix will be applied to the config. For example, setting 
+Environment variables defined with the SANIC_SECURITY_ prefix will be applied to the config. For example, setting 
 SANIC_SECURITY_SECRET will be loaded by the application automatically and fed into the SECRET config variable.
 
 You can load environment variables with a different prefix via `security_config.load_environment_variables("NEW_PREFIX_")` method.
@@ -127,9 +127,8 @@ You can load environment variables with a different prefix via `security_config.
 
 ## Usage
 
-Sanic Security's authentication and verification functionality is session based. A new session will be created for the 
-user after the user logs in or requests some form of verification (two-step, captcha). The session data is then encoded 
-into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent along with every subsequent request. 
+Sanic Security's authentication and verification sessions are created for the user after the user logs in or requests some form of verification (two-step, captcha). 
+The session data is then encoded into a JWT and stored on a cookie on the user’s browser. The session cookie is then sent along with every subsequent request. 
 The server can then compare the session stored on the cookie against the session information stored in the database to verify 
 user’s identity and send a response with the corresponding state.
 
@@ -583,7 +582,7 @@ register_tortoise(
 )
 ```
 
-* Define your models like so:
+* Define your models:
 
 ```python
 from tortoise.models import Model
