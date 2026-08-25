@@ -125,11 +125,9 @@ You can load environment variables with a different prefix via `security_config.
 | **INITIAL_ADMIN_EMAIL**               | admin@example.com            | Email used when creating the initial admin account.                                                                               |
 | **INITIAL_ADMIN_PASSWORD**            | admin123                     | Password used when creating the initial admin account.                                                                            |
 | **SMTP_HOSTNAME**                     | smtp.example.com             | The hostname of the SMTP server used for sending emails.                                                                          |
-| **SMTP_PORT**                         | 587                          | The port of the SMTP server used for sending emails.                                                                              |
 | **SMTP_USERNAME**                     | None                         | The username used to authenticate with the SMTP server.                                                                           |
 | **SMTP_PASSWORD**                     | None                         | The password used to authenticate with the SMTP server. Keep it safe.                                                             |
 | **SMTP_FROM**                         | noreply@example.com          | The address emails are sent from, and that recipients will see as the sender.                                                     |
-| **SMTP_START_TLS**                    | True                         | Upgrades the SMTP connection to TLS via STARTTLS before authenticating.                                                           |
 | **TEMPLATE_PATH**                     | email-template.html          | The file path to the HTML template used when rendering emails. Raw text is sent if the file does not exist.                       |
 
 ## Usage
