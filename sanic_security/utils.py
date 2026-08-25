@@ -1,7 +1,11 @@
 import datetime
+import os
 import secrets
-from string import ascii_uppercase, digits
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from string import ascii_uppercase, digits, Template
 
+import aiosmtplib
 from argon2 import PasswordHasher
 from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
@@ -118,4 +122,34 @@ def json(message: str, data, status_code: int = 200) -> HTTPResponse:
     """
     return sanic_json(
         {"message": message, "code": status_code, "data": data}, status=status_code
+    )
+
+
+async def send_email(to_address, subject, data):
+    """
+    Sends an email to a given address. Renders an HTML template from config.TEMPLATE_PATH if it exists, substituting
+    values from data. Otherwise, raw text will be sent.
+
+    Args:
+        to_address (str): Recipient's email address.
+        subject (str): Subject line of the email.
+        data (dict | str): Substitution values for the template if one exists, otherwise the plain text body.
+    """
+    msg = MIMEMultipart()
+    msg["From"] = config.SMTP_FROM
+    msg["To"] = to_address
+    msg["Subject"] = subject
+    if os.path.exists(config.TEMPLATE_PATH):
+        with open(config.TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            html_content = Template(f.read()).safe_substitute(data)
+        msg.attach(MIMEText(html_content, "html"))
+    else:
+        msg.attach(MIMEText(data, "plain"))
+    await aiosmtplib.send(
+        msg,
+        hostname=config.SMTP_HOSTNAME,
+        port=config.SMTP_PORT,
+        start_tls=config.SMTP_START_TLS,
+        username=config.SMTP_USERNAME,
+        password=config.SMTP_PASSWORD,
     )

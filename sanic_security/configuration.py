@@ -48,6 +48,13 @@ DEFAULT_CONFIG = {
     "INITIAL_ADMIN_EMAIL": "admin@example.com",
     "INITIAL_ADMIN_PASSWORD": "admin123",
     "IP_RECOGNITION": True,
+    "SMTP_HOSTNAME": "smtp.example.com",
+    "SMTP_PORT": 587,
+    "SMTP_USERNAME": None,
+    "SMTP_PASSWORD": None,
+    "SMTP_FROM": "noreply@example.com",
+    "SMTP_START_TLS": True,
+    "TEMPLATE_PATH": "email-template.html",
     "TEST_DATABASE_URL": "sqlite://db.sqlite3",
 }
 
@@ -79,6 +86,13 @@ class Config(SimpleNamespace):
         IP_RECOGNITION (bool): Client will be logged out if ip address is unrecognized.
         INITIAL_ADMIN_EMAIL (str): Email used when creating the initial admin account.
         INITIAL_ADMIN_PASSWORD (str): Password used when creating the initial admin account.
+        SMTP_HOSTNAME (str): The hostname of the SMTP server used for sending emails.
+        SMTP_PORT (int): The port of the SMTP server used for sending emails.
+        SMTP_USERNAME (str): The username used to authenticate with the SMTP server.
+        SMTP_PASSWORD (str): The password used to authenticate with the SMTP server. Keep it safe.
+        SMTP_FROM (str): The address emails are sent from, and that recipients will see as the sender.
+        SMTP_START_TLS (bool): Upgrades the SMTP connection to TLS via STARTTLS before authenticating.
+        TEMPLATE_PATH (str): The file path to the HTML template used when rendering emails. Raw text is sent if the file does not exist.
         TEST_DATABASE_URL (str): Database URL for connecting to the database Sanic Security will use for testing
     """
 
@@ -104,6 +118,13 @@ class Config(SimpleNamespace):
     IP_RECOGNITION: bool
     INITIAL_ADMIN_EMAIL: str
     INITIAL_ADMIN_PASSWORD: str
+    SMTP_HOSTNAME: str
+    SMTP_PORT: int
+    SMTP_USERNAME: str
+    SMTP_PASSWORD: str
+    SMTP_FROM: str
+    SMTP_START_TLS: bool
+    TEMPLATE_PATH: str
     TEST_DATABASE_URL: str
 
     def __init__(self, default_config: dict = None):
