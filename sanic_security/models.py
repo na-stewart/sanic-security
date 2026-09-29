@@ -1,5 +1,6 @@
 import base64
 import datetime
+import hmac
 import logging
 import re
 import uuid
@@ -11,6 +12,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from tortoise import fields, Model
 from tortoise.exceptions import DoesNotExist, ValidationError
+from tortoise.expressions import F
 from tortoise.validators import RegexValidator
 
 from sanic_security.configuration import config
@@ -523,17 +525,37 @@ class VerificationSession(Session):
             ChallengeError
             MaxedOutChallengeError
         """
-        if not code or self.code != code.upper():
-            self.attempts += 1
-            if self.attempts < config.MAX_CHALLENGE_ATTEMPTS:
-                await self.save(update_fields=["attempts"])
-                raise ChallengeError(
-                    "Your code does not match verification session code."
-                )
-            else:
-                raise MaxedOutChallengeError
-        else:
-            await self.deactivate()
+        claimed = (
+            await type(self)
+            .filter(
+                id=self.id,
+                active=True,
+                deleted=False,
+                attempts__lt=config.MAX_CHALLENGE_ATTEMPTS,
+            )
+            .update(attempts=F("attempts") + 1)
+        )
+        if not claimed:
+            await type(self).filter(id=self.id).update(active=False)
+            raise MaxedOutChallengeError
+
+        await self.refresh_from_db(fields=["attempts"])
+        if code and hmac.compare_digest(self.code, code.upper()):
+            # Atomic single-use: only one request can flip active -> False.
+            if (
+                not await type(self)
+                .filter(id=self.id, active=True)
+                .update(active=False)
+            ):
+                raise DeactivatedError("Session is already deactivated.", 403)
+            self.active = False
+            return
+
+        if self.attempts >= config.MAX_CHALLENGE_ATTEMPTS:
+            await type(self).filter(id=self.id).update(active=False)
+            self.active = False
+            raise MaxedOutChallengeError
+        raise ChallengeError("Your code does not match verification session code.")
 
     @classmethod
     async def new(

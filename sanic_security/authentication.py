@@ -337,11 +337,7 @@ def initialize_security(app: Sanic, create_root: bool = True) -> None:
             and config.INITIAL_ADMIN_PASSWORD
             == DEFAULT_CONFIG["INITIAL_ADMIN_PASSWORD"]
         ):
-            warnings.warn(
-                "Initial admin password should be changed from default.",
-                AuditWarning,
-                2,
-            )
+            raise ValueError("Initial admin password must be changed from default.")
 
     @app.listener("before_server_start")
     async def create_root_account(app, loop):

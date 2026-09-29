@@ -128,7 +128,6 @@ You can load environment variables with a different prefix via `security_config.
 | **SMTP_USERNAME**                     | None                         | The username used to authenticate with the SMTP server.                                                                           |
 | **SMTP_PASSWORD**                     | None                         | The password used to authenticate with the SMTP server. Keep it safe.                                                             |
 | **SMTP_FROM**                         | noreply@example.com          | The address emails are sent from, and that recipients will see as the sender.                                                     |
-| **TEMPLATE_PATH**                     | email-template.html          | The file path to the HTML template used when rendering emails. Raw text is sent if the file does not exist.                       |
 
 ## Usage
 
