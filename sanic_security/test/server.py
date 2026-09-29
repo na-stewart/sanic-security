@@ -353,6 +353,7 @@ MHlkstd6FFYu5lJQcuppOm79iQIDAQAB
 -----END PUBLIC KEY-----
 """
 config.INITIAL_ADMIN_EMAIL = "admin@login.test"
+config.INITIAL_ADMIN_PASSWORD = "password"
 config.SESSION_ENCODING_ALGORITHM = "RS256"
 config.ALLOW_LOGIN_WITH_USERNAME = True
 config.SESSION_SECURE = False

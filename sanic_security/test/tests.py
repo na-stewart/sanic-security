@@ -219,7 +219,7 @@ class LoginTest(TestCase):
         """Initial admin account login and authorization."""
         login_response = self.client.post(
             "http://127.0.0.1:8000/api/test/auth/login",
-            auth=("admin@login.test", "admin123"),
+            auth=("admin@login.test", "password"),
         )
         assert login_response.status_code == 200, login_response.text
         permitted_authorization_response = self.client.post(
